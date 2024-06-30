@@ -1,0 +1,12 @@
+data
+.envrc
+
+# Python specific
+*.pyc
+*.pyo
+__pycache__/
+venv/
+env/
+dist/
+build/
+*.egg-info/
