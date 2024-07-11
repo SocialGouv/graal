@@ -11,6 +11,7 @@ CollectionMetadata = dict[str, Any]
 ExpertiseDesc = str
 Metadata = Union[str, int, float]
 ExpertiseID = str  # hash of ExpertDesc
+IntIndex = int
 
 
 class ExpertMetadata(TypedDict):
