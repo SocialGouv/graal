@@ -6,8 +6,10 @@ import pandas as pd
 from amendements_intelligents.clients.summary_generator_clients import (
     SummaryGeneratorOllamaClient,
 )
-from amendements_intelligents.loaders.plfss_json_loader import PLFSSDataPreProcessor
-from amendements_intelligents.utils.sheet_data_extractor import SheetDataExtractor
+from amendements_intelligents.loaders.plfss_data_loader import PLFSSDataLoader
+from amendements_intelligents.loaders.plfss_sheet_data_loader import (
+    PLFSSSheetDataLoader,
+)
 
 DATA_FOLDER = os.getenv("DATA_FOLDER")
 
@@ -27,10 +29,10 @@ if __name__ == "__main__":
     sheet_name = args.sheet_name
     nb_results = args.nb_results
 
-    data_extractor = SheetDataExtractor(plfss_excel_path)
+    data_extractor = PLFSSSheetDataLoader(plfss_excel_path)
     df = data_extractor.extract_sheet_data(sheet_name)
 
-    plfss_preprocessor = PLFSSDataPreProcessor(df)
+    plfss_preprocessor = PLFSSDataLoader(df)
     filtered_df = plfss_preprocessor.filter_amendements()
     shuffled_df = filtered_df.sample(frac=1).reset_index(drop=True)
 
