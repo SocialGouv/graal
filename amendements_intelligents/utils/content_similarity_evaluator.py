@@ -1,7 +1,12 @@
+from typing import Any
+
 import numpy as np
+import pandas as pd
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+from amendements_intelligents.types import IntIndex
 
 
 class ContentSimilarityEvaluator:
@@ -10,7 +15,7 @@ class ContentSimilarityEvaluator:
         documents_to_search: list[str],
         documents_to_filter: list[str],
         threshold: float = 0.4,
-    ) -> dict[int, list[int]]:
+    ) -> dict[IntIndex, list[IntIndex]]:
         # Combine old and new documents for TF-IDF vectorization
         all_docs = documents_to_search + documents_to_filter
 
@@ -36,8 +41,11 @@ class ContentSimilarityEvaluator:
 
     @staticmethod
     def find_best_matching_docs(
-        similar_doc_indices, left_docs, right_docs, threshold_ratio=0.95
-    ):
+        similar_doc_indices: dict[IntIndex, list[IntIndex]],
+        left_docs: pd.DataFrame,
+        right_docs: dict,
+        threshold_ratio: float = 0.95,
+    ) -> dict[IntIndex, dict[str, Any]]:
         right_doc_texts = right_docs["text"]
         right_doc_comparison_values = right_docs["comparison_value"]
 
