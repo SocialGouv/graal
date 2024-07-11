@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class PLFSSDataPreProcessor:
+class PLFSSDataLoader:
     def __init__(self, df: pd.DataFrame):
         self.df = df
 
