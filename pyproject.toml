@@ -16,6 +16,12 @@ datasets = "^2.20.0"
 accelerate = "^0.31.0"
 sentence-transformers = "^3.0.1"
 chromadb = "^0.5.3"
+rapidfuzz = "^3.9.4"
+datasketch = "^1.6.5"
+numpy = "^1.26.4"
+scikit-learn = "^1.5.1"
+scipy = "^1.14.0"
+python-levenshtein = "^0.25.1"
 
 
 [tool.poetry.group.dev.dependencies]
