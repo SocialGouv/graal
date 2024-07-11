@@ -71,7 +71,7 @@ class SummaryGeneratorOllamaClient:
         prompt = f"""
         Contexte : Tu es un juriste spécialisé dans le droit de la sécurité sociale en France. Ta tâche est de résumer un amendement et de rester politiquement correct.
 
-        Instruction: Résume l'amendement en français en une phrase de 10 à 20 mots. Le résumé doit être concis, neutre, commencer par un verbe à l'infinitif, inclure les taux (mais pas d'autres chiffres), ne pas inventer de chiffres qui ne figurent pas dans l'amendement, ne pas utiliser d'adjectifs, et exclure les justifications de l'amendement. Assume que le lecteur connaît le contexte. Utilise des acronymes sans les expliciter. Si l'amendement concerne une expérimentation ou un rapport, mentionne-le dans le résumé. N'ajoute pas de notes expliquant le résumé.
+        Instruction: Résume l'amendement en français en une phrase de 8 à 18 mots. Le résumé doit être concis, neutre, commencer par un verbe à l'infinitif, inclure les taux (mais pas d'autres chiffres), ne pas inventer de chiffres qui ne figurent pas dans l'amendement, ne pas utiliser d'adjectifs, et exclure les justifications de l'amendement. Assume que le lecteur connaît le contexte. Utilise des acronymes sans les expliciter. Si l'amendement concerne une expérimentation ou un rapport, mentionne-le dans le résumé. N'ajoute pas de notes expliquant le résumé.
 
         Exemples :
 
