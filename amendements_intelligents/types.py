@@ -1,17 +1,19 @@
 from typing import Any, TypedDict, Union
 
-TxtContent = str
-AmendementTxt = str
-Prompt = str
-APIKey = str
 Vector = Union[list[float], list[int]]
 Embedding = Vector
-Embeddings = list[Embedding]
+
+AmendementTxt = str
+APIKey = str
 CollectionMetadata = dict[str, Any]
+ColumnName = str
+Embeddings = list[Embedding]
 ExpertiseDesc = str
-Metadata = Union[str, int, float]
 ExpertiseID = str  # hash of ExpertDesc
 IntIndex = int
+Metadata = Union[str, int, float]
+Prompt = str
+TxtContent = str
 
 
 class ExpertMetadata(TypedDict):
