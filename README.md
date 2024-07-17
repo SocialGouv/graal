@@ -44,3 +44,31 @@ python amendements_intelligents/populate_allotments.py
 ### Generate amendement summaries
 
 \[WIP\]
+
+## Tests
+
+Run a single test file (here `tests/unit/test_text_utils.py`) with :
+
+```bash
+poetry run pytest tests/unit/test_text_utils.py
+```
+
+Run a single test (here `test_normalize_text`) within a specific test file (here `tests/unit/test_text_utils.py`) with :
+
+```bash
+poetry run pytest tests/unit/test_text_utils.py::test_normalize_text
+```
+
+### Unit tests
+
+Run the test suite with :
+
+```bash
+make test
+```
+
+### Integration tests
+
+```bash
+make integration_test
+```
