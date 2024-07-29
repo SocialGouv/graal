@@ -1,8 +1,55 @@
 import html
 import re
 
+import nltk
 from bs4 import BeautifulSoup
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 from unidecode import unidecode
+
+FRENCH_IRREGULAR_PLURALS = {
+    "travaux": "travail",
+    "vitraux": "vitrail",
+    "yeux": "œil",
+    "chacals": "chacal",
+}
+
+# Define the decorator
+def ensure_stopwords_downloaded(func):
+    def wrapper(*args, **kwargs):
+        try:
+            stopwords.words("french")
+        except LookupError:
+            print("Downloading stopwords...")
+            nltk.download("stopwords")
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@ensure_stopwords_downloaded
+def remove_stop_words(text, language="french"):
+    stop_words = set(stopwords.words(language))
+    words = word_tokenize(text)
+    filtered_text = [word for word in words if word.lower() not in stop_words]
+    return " ".join(filtered_text)
+
+
+def remove_french_plurals(word):
+    """
+    Dummy removal of the plural form of the given French word.
+    This function will wrongfully remove x and s sometimes (like "nous allons" -> "nous allon")
+    but it is not a problem for our use case.
+    """
+    if word in FRENCH_IRREGULAR_PLURALS:
+        return FRENCH_IRREGULAR_PLURALS[word]
+    if word.endswith("s") and not word.endswith(("is", "us", "os", "as")):
+        return word[:-1]
+    if word.endswith("aux") and not word.endswith("eaux"):
+        return word[:-3] + "al"
+    if word.endswith("x") and word not in FRENCH_IRREGULAR_PLURALS:
+        return word[:-1]
+    return word
 
 
 def normalize_text(text: str) -> str:
