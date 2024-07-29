@@ -1,4 +1,5 @@
 import json
+import re
 
 import pandas as pd
 from pydantic import FilePath
@@ -50,8 +51,9 @@ class PLFSSDataProcessor:
         self.amendments_df["Allotissement"] = None
 
         self.preprocessed_amendments_df = self.amendments_df.copy()
+        return self.preprocessed_amendments_df
 
-    def _handle_common_amendment_bodies(self) -> None:
+    def handle_common_amendment_bodies(self) -> None:
         """
         Append 'Num article' to :
         - Small amendment bodies
@@ -86,8 +88,9 @@ class PLFSSDataProcessor:
             + " "
             + self.preprocessed_amendments_df.loc[mask, "Num article"]
         )
+        return self.preprocessed_amendments_df
 
-    def _remove_empty_rows_for_given_columns(
+    def remove_empty_rows_for_given_columns(
         self,
         columns_to_filter_with: list[ColumnName] = ["Corps amdt"],
     ) -> None:
@@ -96,14 +99,24 @@ class PLFSSDataProcessor:
             self.preprocessed_amendments_df = self.preprocessed_amendments_df[
                 self.preprocessed_amendments_df[column].str.strip().apply(len) > 0
             ]
+        return self.preprocessed_amendments_df
 
-    def preprocess_plfss(self) -> pd.DataFrame:
-        columns_to_filter_with = ["Corps amdt"]
-        self._remove_empty_rows_for_given_columns(
-            columns_to_filter_with=columns_to_filter_with,
-        )
-        self._handle_common_amendment_bodies()
-        for column in columns_to_filter_with:
+    @staticmethod
+    def remove_sentences_starting_with_abc(text: str) -> str:
+        sentences = [
+            sentence
+            for sentence in re.split(r"\.|\n", text)
+            if not sentence.strip().lower().startswith("la perte de recettes pour")
+        ]
+        for sentence in sentences:
+            print(sentence)
+        return " ".join(sentences)
+
+    def normalize_plfss(self, columns_to_normalize=["Corps amdt"]) -> pd.DataFrame:
+        for column in columns_to_normalize:
+            self.preprocessed_amendments_df[column] = self.preprocessed_amendments_df[
+                column
+            ].apply(self.remove_sentences_starting_with_abc)
             self.preprocessed_amendments_df[column] = self.preprocessed_amendments_df[
                 column
             ].apply(normalize_text)

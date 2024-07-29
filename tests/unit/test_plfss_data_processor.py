@@ -1,12 +1,14 @@
 import pandas as pd
+import pytest
 
 from amendements_intelligents.data_handlers.plfss_data_processor import (
     PLFSSDataProcessor,
 )
 
 
-def test_replace_common_amendment_bodies():
-    df = pd.DataFrame(
+@pytest.fixture
+def df():
+    return pd.DataFrame(
         {
             "Corps amdt": [
                 "Supprimer cet article.",
@@ -28,10 +30,13 @@ def test_replace_common_amendment_bodies():
             ],
         }
     )
+
+
+def test_replace_common_amendment_bodies(df):
     plfss_processor = PLFSSDataProcessor("dummy_path")
     plfss_processor.preprocessed_amendments_df = df.copy()
 
-    plfss_processor._handle_common_amendment_bodies()
+    plfss_processor.handle_common_amendment_bodies()
     preprocessed_amendments_df = plfss_processor.preprocessed_amendments_df
 
     expected_processed_legistique = [
@@ -69,9 +74,7 @@ def test_remove_useless_amendments():
     processor = PLFSSDataProcessor("dummy_path")
     processor.preprocessed_amendments_df = df.copy()
 
-    processor._remove_empty_rows_for_given_columns(
-        columns_to_filter_with=["Corps amdt"]
-    )
+    processor.remove_empty_rows_for_given_columns(columns_to_filter_with=["Corps amdt"])
 
     expected_df = pd.DataFrame(
         {
@@ -83,4 +86,51 @@ def test_remove_useless_amendments():
     pd.testing.assert_frame_equal(
         processor.preprocessed_amendments_df.reset_index(drop=True),
         expected_df.reset_index(drop=True),
+    )
+
+
+def test_normalize_plfss(df):
+    df = pd.DataFrame(
+        {
+            "test1": [
+                "fooàé 1",
+                'bar"\\[}  2',
+                """
+                Hello
+
+                la perte de recettes pour this should be removed.
+                world.
+                """,
+            ],
+            "test2": [
+                "fooàé 1",
+                'bar"\\[}  2',
+                "foo",
+            ],
+        }
+    )
+
+    expected_normalized_df = pd.DataFrame(
+        {
+            "test1": [
+                "fooae 1",
+                "bar 2",
+                "hello world",
+            ],
+            "test2": [
+                "fooàé 1",
+                'bar"\\[}  2',
+                "foo",
+            ],
+        }
+    )
+
+    plfss_processor = PLFSSDataProcessor("dummy_path")
+    plfss_processor.preprocessed_amendments_df = df.copy()
+
+    normalized_df = plfss_processor.normalize_plfss(columns_to_normalize=["test1"])
+
+    pd.testing.assert_frame_equal(
+        normalized_df.reset_index(drop=True),
+        expected_normalized_df.reset_index(drop=True),
     )
