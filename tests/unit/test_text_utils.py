@@ -1,6 +1,7 @@
 import pytest
 
 from amendements_intelligents.utils.text_utils import (
+    digitize_small_french_numbers,
     normalize_text,
     remove_french_plurals,
     remove_stop_words,
@@ -85,3 +86,40 @@ def test_remove_stop_words():
 )
 def test_remove_plurals(input_word, expected_output):
     assert remove_french_plurals(input_word) == expected_output
+
+
+@pytest.mark.parametrize(
+    "input_phrase, expected_output",
+    [
+        ("zero", "0"),
+        ("un", "1"),
+        ("deux", "2"),
+        ("trois", "3"),
+        ("trois ans", "3 ans"),
+        ("un deux trois", "1 2 3"),
+        ("quatre cinq six", "4 5 6"),
+        ("Un DEUX Trois", "1 2 3"),
+        ("QUATRE cinq Six", "4 5 6"),
+        ("Bonjour le monde", "Bonjour le monde"),
+        ("12345", "12345"),
+        ("dix sept", "17"),
+        ("soixante seize", "76"),
+        ("soixante dix sept", "77"),
+        ("soixante dix huit", "78"),
+        ("soixante dix neuf", "79"),
+        ("quatre vingt", "80"),
+        ("quatre vingt seize", "96"),
+        ("quatre vingt dix sept", "97"),
+        ("quatre vingt dix huit", "98"),
+        ("quatre vingt dix neuf", "99"),
+        (
+            "Il y a dix sept oiseaux et quatre vingts poissons.",
+            "Il y a 17 oiseaux et 80 poissons.",
+        ),
+        ("", ""),
+        ("un.", "1."),
+        ("Il y a un.", "Il y a 1."),
+    ],
+)
+def test_replace_french_numbers(input_phrase, expected_output):
+    assert digitize_small_french_numbers(input_phrase) == expected_output

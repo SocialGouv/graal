@@ -14,6 +14,72 @@ FRENCH_IRREGULAR_PLURALS = {
     "chacals": "chacal",
 }
 
+# We want this to work after dashes and accents have been removed so we don't write them here.
+# Also, we don't really care about numbers above 100 when working with amendments.
+FRENCH_NUMBER_MAPPING = {
+    "zero": "0",
+    "un": "1",
+    "une": "1",
+    "deux": "2",
+    "trois": "3",
+    "quatre": "4",
+    "cinq": "5",
+    "six": "6",
+    "sept": "7",
+    "huit": "8",
+    "neuf": "9",
+    "dix": "10",
+    "onze": "11",
+    "douze": "12",
+    "treize": "13",
+    "quatorze": "14",
+    "quinze": "15",
+    "seize": "16",
+    "dix sept": "17",
+    "dix huit": "18",
+    "dix neuf": "19",
+    "vingt": "20",
+    "vingts": "20",
+    "trente": "30",
+    "quarante": "40",
+    "cinquante": "50",
+    "soixante": "60",
+    "soixante dix": "70",
+    "soixante seize": "76",
+    "soixante dix sept": "77",
+    "soixante dix huit": "78",
+    "soixante dix neuf": "79",
+    "quatre vingt": "80",
+    "quatre vingts": "80",
+    "quatre vingt dix": "90",
+    "quatre vingt seize": "96",
+    "quatre vingt dix sept": "97",
+    "quatre vingt dix huit": "98",
+    "quatre vingt dix neuf": "99",
+}
+
+
+def digitize_small_french_numbers(text):
+    """
+    Replace French number words < 100 with their corresponding digits in the given text.
+    """
+    pattern = re.compile(
+        r"\b("
+        + "|".join(
+            re.escape(key)
+            for key in sorted(FRENCH_NUMBER_MAPPING.keys(), key=len, reverse=True)
+        )
+        + r")\b",
+        re.IGNORECASE,
+    )
+
+    # Replace the number words with corresponding digits
+    def replace_match(match):
+        return FRENCH_NUMBER_MAPPING[match.group(0).lower()]
+
+    return pattern.sub(replace_match, text)
+
+
 # Define the decorator
 def ensure_stopwords_downloaded(func):
     def wrapper(*args, **kwargs):
