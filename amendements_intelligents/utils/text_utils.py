@@ -127,13 +127,18 @@ def normalize_text(text: str) -> str:
     text = text.strip().lower()
     # Remove accents
     text = text.encode("ascii", "ignore").decode("utf-8")
+
     # Replace apostrophes, backticks and list dashes with spaces
     text = re.sub(r"['`’_]", " ", text)
-    # text = re.sub(r"- ", "", text)
-    # Remove special characters except for dashes and dots because they are important for articles
+    # Replace dashes with a space unless they are surrounded by numbers
+    text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
+    # Remove other special characters
     text = re.sub(r"[^a-zA-Z0-9\s\-]", "", text)
     # Remove extra whitespaces
     text = re.sub(r"\s+", " ", text)
+    text = remove_stop_words(text)
+    text = digitize_small_french_numbers(text)
+    text = " ".join(remove_french_plurals(word) for word in text.split())
     return text.strip()
 
 
