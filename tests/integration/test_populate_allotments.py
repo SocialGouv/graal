@@ -18,7 +18,7 @@ def test_populate_allotments_ratio_matching_allotments():
     INPUT_FILE = f"{DATA_FOLDER}/PLFSS 2024.json"
 
     test_df = load_test_file_to_compare(
-        "tests/test_data/test_populate_allotments.xlsx", "test1"
+        "tests/test_data/test_populate_allotments_jul30.xlsx", "test1"
     )
     # test_df = load_test_file_to_compare("data/PLFSS_2024.xlsx", "Sheet1")
     test_df["Allotissement"] = test_df["Allotissement"].apply(
@@ -33,7 +33,7 @@ def test_populate_allotments_ratio_matching_allotments():
     merged_df = merged_df.drop("Corps amdt_algo", axis=1)
     merged_df = merged_df.rename(columns={"Corps amdt_test": "Corps amdt"})
 
-    # test_output_file = "tests/integration/compare_allotments.xlsx"
+    # test_output_file = "tests/integration/compare_allotments_test.xlsx"
     # not_detected_allotments = []
     # surplus_allotments = []
 
