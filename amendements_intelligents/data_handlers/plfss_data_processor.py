@@ -103,14 +103,12 @@ class PLFSSDataProcessor:
 
     @staticmethod
     def remove_sentences_starting_with_abc(text: str) -> str:
-        sentences = [
+        filtered_sentences = [
             sentence
             for sentence in re.split(r"\.|\n", text)
             if not sentence.strip().lower().startswith("la perte de recettes pour")
         ]
-        for sentence in sentences:
-            print(sentence)
-        return " ".join(sentences)
+        return " ".join(filtered_sentences)
 
     def normalize_plfss(self, columns_to_normalize=["Corps amdt"]) -> pd.DataFrame:
         for column in columns_to_normalize:
