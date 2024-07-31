@@ -1,5 +1,3 @@
-import json
-
 import pandas as pd
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import DBSCAN
@@ -8,8 +6,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 class PLFSSClusterFinder:
-    def __init__(self, preprocessed_amendments_df: pd.DataFrame):
-        self.preprocessed_amendments_df = preprocessed_amendments_df.copy()
+    def __init__(self, amendments_df: pd.DataFrame):
+        self.amendments_df = amendments_df.copy()
         self.vectorizer = TfidfVectorizer()
         self.vectors_per_lecture = {}
         self.distance_matrix_per_lecture = {}
@@ -18,14 +16,12 @@ class PLFSSClusterFinder:
 
     def _vectorize_data(self) -> None:
         print("Converting strings to TF-IDF vectors for all data...\n")
-        strings = self.preprocessed_amendments_df["Corps amdt"].tolist()
+        strings = self.amendments_df["Corps amdt"].tolist()
         self.vectorizer.fit(strings)
 
     def _transform_lecture_group(self, lecture_group) -> None:
         print(f"Transforming data for lecture: {lecture_group}...")
-        df_group = self.preprocessed_amendments_df[
-            self.preprocessed_amendments_df["Lecture"] == lecture_group
-        ]
+        df_group = self.amendments_df[self.amendments_df["Lecture"] == lecture_group]
         strings = df_group["Corps amdt"].tolist()
         self.vectors_per_lecture[lecture_group] = self.vectorizer.transform(strings)
 
@@ -38,7 +34,7 @@ class PLFSSClusterFinder:
 
     def find_similarity_clusters(self, eps=0.5, min_samples=2) -> pd.DataFrame:
         self._vectorize_data()
-        lecture_groups = self.preprocessed_amendments_df["Lecture"].unique()
+        lecture_groups = self.amendments_df["Lecture"].unique()
         for lecture_group in lecture_groups:
             self._transform_lecture_group(lecture_group)
             self._compute_distance_matrix(lecture_group)
@@ -68,13 +64,13 @@ class PLFSSClusterFinder:
         return self.tfidf_clusters_per_lecture
 
     def refine_clusters_with_exact_match(self, threshold: float = 0.01) -> pd.DataFrame:
-        lecture_groups = self.preprocessed_amendments_df["Lecture"].unique()
+        lecture_groups = self.amendments_df["Lecture"].unique()
         for lecture_group in lecture_groups:
             print(
                 f'Refining clusters for lecture "{lecture_group}" with Damerau-Levenshtein distance...'
             )
-            df_group = self.preprocessed_amendments_df[
-                self.preprocessed_amendments_df["Lecture"] == lecture_group
+            df_group = self.amendments_df[
+                self.amendments_df["Lecture"] == lecture_group
             ]
 
             refined_clusters = []

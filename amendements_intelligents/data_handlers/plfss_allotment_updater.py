@@ -6,18 +6,18 @@ from amendements_intelligents.types import IntIndex
 class PLFSSAllotmentUpdater:
     def __init__(
         self,
-        amendments_df: pd.DataFrame,
-        preprocessed_amendments_df: pd.DataFrame,
+        original_amendments_df: pd.DataFrame,
+        work_amendments_df: pd.DataFrame,
         final_clusters: dict[str, list[list[IntIndex]]],
     ) -> None:
-        self.amendments_df = amendments_df
-        self.preprocessed_amendments_df = preprocessed_amendments_df
+        self.amendments_df = original_amendments_df
+        self.work_amendments_df = work_amendments_df
         self.final_clusters = final_clusters
 
-    def update_allotissement(self) -> None:
+    def update_allotissement(self) -> pd.DataFrame:
         for lecture, clusters in self.final_clusters.items():
-            df_group = self.preprocessed_amendments_df[
-                self.preprocessed_amendments_df["Lecture"] == lecture
+            df_group = self.work_amendments_df[
+                self.work_amendments_df["Lecture"] == lecture
             ]
             for cluster_indices in clusters:
                 cluster_numeros = sorted(

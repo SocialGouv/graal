@@ -8,24 +8,28 @@ from amendements_intelligents.clustering.plfss_cluster_finder import PLFSSCluste
 from amendements_intelligents.data_handlers.plfss_allotment_updater import (
     PLFSSAllotmentUpdater,
 )
-from amendements_intelligents.data_handlers.plfss_data_processor import (
-    PLFSSDataProcessor,
+from amendements_intelligents.data_handlers.plfss_pre_processor import (
+    PLFSSPreProcessor,
 )
 
 
 class PLFSSAllotmentPopulator:
-    def __init__(self, input_file: FilePath) -> None:
-        self.input_file = input_file
+    def __init__(self) -> None:
+        self.plfss_pre_processor = PLFSSPreProcessor()
+
+    def load_data(self, input_file: FilePath) -> None:
+        self.plfss_pre_processor.load_plfss(input_file=input_file)
+
+    def preprocess(self) -> None:
+        self.plfss_pre_processor.clean_up_original_amendments()
+        self.plfss_pre_processor.remove_empty_rows_for_given_columns()
+        self.plfss_pre_processor.handle_common_amendment_bodies()
+        self.plfss_pre_processor.normalize_plfss()
 
     def process(self) -> pd.DataFrame:
-        # Data processing
-        plfss_data_processor = PLFSSDataProcessor(input_file=self.input_file)
-        plfss_data_processor.load_plfss()
-        preprocessed_amendments_df = plfss_data_processor.preprocess_plfss()
-
         # Clustering
         cluster_finder = PLFSSClusterFinder(
-            preprocessed_amendments_df=preprocessed_amendments_df
+            amendments_df=self.plfss_pre_processor.work_amendments_df
         )
         final_clusters = cluster_finder.find_similarity_clusters(eps=0.01)
         final_clusters = cluster_finder.refine_clusters_with_exact_match(
@@ -34,8 +38,8 @@ class PLFSSAllotmentPopulator:
 
         # Result processing
         allotment_updater = PLFSSAllotmentUpdater(
-            amendments_df=plfss_data_processor.amendments_df,
-            preprocessed_amendments_df=plfss_data_processor.preprocessed_amendments_df,
+            original_amendments_df=self.plfss_pre_processor.original_amendments_df,
+            work_amendments_df=self.plfss_pre_processor.work_amendments_df,
             final_clusters=final_clusters,
         )
         return allotment_updater.update_allotissement()
@@ -55,7 +59,9 @@ def main():
         "Exposé amdt",
     ]
 
-    allotment_populator = PLFSSAllotmentPopulator(input_file=INPUT_FILE)
+    allotment_populator = PLFSSAllotmentPopulator()
+    allotment_populator.load_data(input_file=INPUT_FILE)
+    allotment_populator.preprocess()
     amendments_df = allotment_populator.process()
 
     amendments_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)

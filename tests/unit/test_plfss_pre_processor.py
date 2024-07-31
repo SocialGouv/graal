@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.data_handlers.plfss_data_processor import (
-    PLFSSDataProcessor,
+from amendements_intelligents.data_handlers.plfss_pre_processor import (
+    PLFSSPreProcessor,
 )
 
 
@@ -33,11 +33,11 @@ def df():
 
 
 def test_replace_common_amendment_bodies(df):
-    plfss_processor = PLFSSDataProcessor("dummy_path")
-    plfss_processor.preprocessed_amendments_df = df.copy()
+    plfss_processor = PLFSSPreProcessor()
+    plfss_processor.work_amendments_df = df.copy()
 
     plfss_processor.handle_common_amendment_bodies()
-    preprocessed_amendments_df = plfss_processor.preprocessed_amendments_df
+    preprocessed_amendments_df = plfss_processor.work_amendments_df
 
     expected_processed_legistique = [
         "Supprimer cet article. Article 1",
@@ -71,8 +71,8 @@ def test_remove_useless_amendments():
             ],
         }
     )
-    processor = PLFSSDataProcessor("dummy_path")
-    processor.preprocessed_amendments_df = df.copy()
+    processor = PLFSSPreProcessor()
+    processor.work_amendments_df = df.copy()
 
     processor.remove_empty_rows_for_given_columns(columns_to_filter_with=["Corps amdt"])
 
@@ -84,7 +84,7 @@ def test_remove_useless_amendments():
     )
 
     pd.testing.assert_frame_equal(
-        processor.preprocessed_amendments_df.reset_index(drop=True),
+        processor.work_amendments_df.reset_index(drop=True),
         expected_df.reset_index(drop=True),
     )
 
@@ -125,8 +125,8 @@ def test_normalize_plfss(df):
         }
     )
 
-    plfss_processor = PLFSSDataProcessor("dummy_path")
-    plfss_processor.preprocessed_amendments_df = df.copy()
+    plfss_processor = PLFSSPreProcessor()
+    plfss_processor.work_amendments_df = df.copy()
 
     normalized_df = plfss_processor.normalize_plfss(columns_to_normalize=["test1"])
 
