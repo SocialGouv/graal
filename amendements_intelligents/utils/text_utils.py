@@ -122,6 +122,16 @@ def remove_small_roman_numerals(text: str) -> str:
     text = re.sub(r"\b[IVX]{1,5}\b", "", text)
     return text
 
+
+def remove_sentences_starting_with(text: str, pattern: str) -> str:
+    filtered_sentences = [
+        sentence.strip()
+        for sentence in re.split(r"\.|\n", text)
+        if not sentence.strip().lower().startswith(pattern.strip().lower())
+    ]
+    return " ".join(filtered_sentences)
+
+
 def normalize_text(text: str) -> str:
     """
     Normalize the given text by removing accents, apostrophes, dashes, backticks,
@@ -132,20 +142,23 @@ def normalize_text(text: str) -> str:
     # Remove accents
     text = unidecode(text)
     text = text.strip().lower()
-    # Remove accents
-    text = text.encode("ascii", "ignore").decode("utf-8")
-
     # Replace apostrophes, backticks and list dashes with spaces
     text = re.sub(r"['`’_]", " ", text)
     # Replace dashes with a space unless they are surrounded by numbers
     text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
     # Remove other special characters
     text = re.sub(r"[^a-zA-Z0-9\s\-]", "", text)
-    # Remove extra whitespaces
-    text = re.sub(r"\s+", " ", text)
+
+    text = remove_sentences_starting_with(
+        text, pattern=unidecode("la perte de recettes pour")
+    )
+
     text = remove_stop_words(text)
     text = digitize_small_french_numbers(text)
     text = " ".join(remove_french_plurals(word) for word in text.split())
+
+    # Remove extra whitespaces
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 

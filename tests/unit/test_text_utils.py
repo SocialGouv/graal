@@ -4,8 +4,10 @@ from amendements_intelligents.utils.text_utils import (
     digitize_small_french_numbers,
     normalize_text,
     remove_french_plurals,
+    remove_sentences_starting_with,
     remove_small_roman_numerals,
     remove_stop_words,
+)
 
 
 @pytest.mark.parametrize(
@@ -25,6 +27,35 @@ from amendements_intelligents.utils.text_utils import (
 def test_remove_small_roman_numerals(input_text, expected_output):
     assert remove_small_roman_numerals(input_text) == expected_output
 
+
+@pytest.mark.parametrize(
+    "input_text, pattern, expected_output",
+    [
+        (
+            """
+            First line.
+            Second line
+            Third line.
+            """,
+            "Second",
+            "First line  Third line",
+        ),
+        (
+            "First line. Second line. Third line.",
+            "Second",
+            "First line Third line",
+        ),
+        (
+            "First line\n\n\tSecond line.\nThird line.",
+            "Second",
+            "First line   Third line",
+        ),
+    ],
+)
+def test_remove_sentences_starting_with(input_text, pattern, expected_output):
+    assert (
+        remove_sentences_starting_with(input_text, pattern).strip() == expected_output
+    )
 
 
 @pytest.mark.parametrize(
