@@ -4,8 +4,27 @@ from amendements_intelligents.utils.text_utils import (
     digitize_small_french_numbers,
     normalize_text,
     remove_french_plurals,
+    remove_small_roman_numerals,
     remove_stop_words,
+
+
+@pytest.mark.parametrize(
+    "input_text, expected_output",
+    [
+        (
+            "This is a test with no roman numerals.",
+            "This is a test with no roman numerals.",
+        ),
+        ("This is a test with I and II.", "This is a test with  and ."),
+        ("This is a test with III, IV, and V.", "This is a test with , , and ."),
+        ("This is a test with VI, VII, and VIII.", "This is a test with , , and ."),
+        ("This is a test with IX, X, and XI.", "This is a test with , , and ."),
+        ("This is a test with XIV, XV, and XVI.", "This is a test with , , and ."),
+    ],
 )
+def test_remove_small_roman_numerals(input_text, expected_output):
+    assert remove_small_roman_numerals(input_text) == expected_output
+
 
 
 @pytest.mark.parametrize(
@@ -128,6 +147,14 @@ def test_replace_french_numbers(input_phrase, expected_output):
         (
             "AVEC MES soixante seize baleines, je peux aller sur cinq continents",
             "76 baleine peu aller 5 continent",
+        ),
+        (
+            """
+            III. – Un rapport d’évaluation est
+            IV. – La perte de recettes pour l’État est co
+            V. – La perte de recettes pour les organismes. »
+            """,
+            "rapport evaluation",
         ),
     ],
 )

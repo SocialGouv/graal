@@ -118,11 +118,18 @@ def remove_french_plurals(word):
     return word
 
 
+def remove_small_roman_numerals(text: str) -> str:
+    text = re.sub(r"\b[IVX]{1,5}\b", "", text)
+    return text
+
 def normalize_text(text: str) -> str:
     """
     Normalize the given text by removing accents, apostrophes, dashes, backticks,
     special characters, and extra whitespaces.
     """
+    text = remove_small_roman_numerals(text)
+
+    # Remove accents
     text = unidecode(text)
     text = text.strip().lower()
     # Remove accents
