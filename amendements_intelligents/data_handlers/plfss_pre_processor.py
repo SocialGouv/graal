@@ -50,6 +50,12 @@ class PLFSSPreProcessor:
         }
         self.original_amendments_df.rename(columns=column_mapping, inplace=True)
         self.original_amendments_df["Allotissement"] = None
+        self.original_amendments_df["Corps amdt orig"] = self.original_amendments_df[
+            "Corps amdt"
+        ]
+        self.original_amendments_df["Exposé amdt orig"] = self.original_amendments_df[
+            "Exposé amdt"
+        ]
 
         self.work_amendments_df = self.original_amendments_df.copy()
         return self.work_amendments_df

@@ -6,9 +6,8 @@ from amendements_intelligents.data_handlers.plfss_pre_processor import (
 )
 
 
-@pytest.fixture
-def df():
-    return pd.DataFrame(
+def test_replace_common_amendment_bodies():
+    df = pd.DataFrame(
         {
             "Corps amdt": [
                 "Supprimer cet article.",
@@ -30,9 +29,6 @@ def df():
             ],
         }
     )
-
-
-def test_replace_common_amendment_bodies(df):
     plfss_processor = PLFSSPreProcessor()
     plfss_processor.work_amendments_df = df.copy()
 
@@ -89,7 +85,7 @@ def test_remove_useless_amendments():
     )
 
 
-def test_normalize_plfss(df):
+def test_normalize_plfss():
     df = pd.DataFrame(
         {
             "test1": [
@@ -188,3 +184,44 @@ def test_handle_common_amendment_expose(input_df, expected_df):
     plfss_processor.work_amendments_df = input_df.copy()
     result_df = plfss_processor.handle_common_amendment_expose()
     pd.testing.assert_frame_equal(result_df, expected_df)
+
+
+def test_clean_up_original_amendments():
+    plfss_processor = PLFSSPreProcessor()
+    plfss_processor.original_amendments_df = pd.DataFrame(
+        {
+            "chambre": ["A", "B"],
+            "legislature": [1, 2],
+            "corps": ["<p>Corps 1</p>", "<p>Corps 2</p>"],
+            "expose": ["<p>Expose 1</p>", "<p>Expose 2</p>"],
+            "sort": ["<p>Sort 1</p>", "<p>Sort 2</p>"],
+            "reponse": ["<p>Réponse 1</p>", "<p>Réponse 2</p>"],
+            "computed_batch": ["1,2", "18,29"],
+            "num": [1, 2],
+            "article": ["Article 1", "Article 2"],
+        }
+    )
+
+    expected_work_amendments_df = pd.DataFrame(
+        {
+            "chambre": ["A", "B"],
+            "legislature": [1, 2],
+            "Lecture": ["A 1", "B 2"],
+            "Num amdt": [1, 2],
+            "Sort": ["Sort 1", "Sort 2"],
+            "Réponse": ["Réponse 1", "Réponse 2"],
+            "Num article": ["Article 1", "Article 2"],
+            "Corps amdt": ["Corps 1", "Corps 2"],
+            "Corps amdt orig": ["Corps 1", "Corps 2"],
+            "Exposé amdt": ["Expose 1", "Expose 2"],
+            "Exposé amdt orig": ["Expose 1", "Expose 2"],
+            "Allotissement": [None, None],
+        }
+    )
+
+    result_work_amendments_df = plfss_processor.clean_up_original_amendments()
+
+    pd.testing.assert_frame_equal(
+        result_work_amendments_df.reset_index(drop=True).sort_index(axis=1),
+        expected_work_amendments_df.reset_index(drop=True).sort_index(axis=1),
+    )
