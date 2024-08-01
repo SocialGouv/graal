@@ -17,6 +17,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     test_df = load_test_file_to_compare(
         "tests/integration/test_data/test_populate_allotments_jul30.xlsx", "test1"
     )
+    # test_df = load_test_file_to_compare("data/PLFSS_2024/.xlsx", "Sheet1")
 
     test_df["Allotissement"] = test_df["Allotissement"].apply(
         lambda x: None if pd.isna(x) else x
@@ -25,8 +26,6 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     test_df["Sort"] = None
     test_df["Réponse"] = None
     test_df["Lecture"] = "test_lecture"
-
-    print(f"test_df {test_df}")
 
     # Process the data frame as if it were a real PLFSS
     allotment_populator = PLFSSAllotmentPopulator()
@@ -53,7 +52,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     merged_df = merged_df.drop("Corps amdt_algo", axis=1)
     merged_df = merged_df.rename(columns={"Corps amdt_test": "Corps amdt"})
 
-    # test_output_file = "tests/integration/compare_allotments_test3.xlsx"
+    # test_output_file = "tests/integration/compare_allotments_test.xlsx"
     # not_detected_allotments = []
     # surplus_allotments = []
 
@@ -91,7 +90,6 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
 
         total_nb_matches += nb_matches
         total_nb_test_lot += nb_test_lot
-        total_nb_algo_lot += nb_algo_lot
 
     # with pd.ExcelWriter(test_output_file) as writer:
     #     print(f"Saving comparison in {test_output_file}...")
@@ -103,8 +101,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     #     )
 
     coverage_test_allotments = total_nb_matches / total_nb_test_lot
-    coverage_algo_allotments = total_nb_matches / total_nb_algo_lot
-    print(f"Coverage test {coverage_test_allotments}")
-    print(f"Coverage algo {coverage_algo_allotments}")
+    print(f"Total number of allotments: {total_nb_matches}")
+    print(f"Coverage test: {coverage_test_allotments}")
 
     assert coverage_test_allotments > 0.99
