@@ -39,6 +39,10 @@ class PLFSSPreProcessor:
             "reponse"
         ].apply(extract_plain_text_from_html)
 
+        self.original_amendments_df["computed_batch"] = self.original_amendments_df[
+            "computed_batch"
+        ].apply(lambda x: ",".join(map(str, x)))
+
         column_mapping = {
             "computed_batch": "Allotissement",
             "num": "Num amdt",
@@ -49,6 +53,9 @@ class PLFSSPreProcessor:
             "article": "Num article",
         }
         self.original_amendments_df.rename(columns=column_mapping, inplace=True)
+        return self.original_amendments_df
+
+    def prepare_work_amendments_df(self) -> pd.DataFrame:
         self.original_amendments_df["Allotissement"] = None
         self.original_amendments_df["Corps amdt orig"] = self.original_amendments_df[
             "Corps amdt"

@@ -22,6 +22,7 @@ class PLFSSAllotmentPopulator:
 
     def preprocess(self) -> None:
         self.plfss_pre_processor.clean_up_original_amendments()
+        self.plfss_pre_processor.prepare_work_amendments_df()
         self.plfss_pre_processor.remove_empty_rows_for_given_columns()
         self.plfss_pre_processor.handle_common_amendment_bodies()
         self.plfss_pre_processor.normalize_plfss()

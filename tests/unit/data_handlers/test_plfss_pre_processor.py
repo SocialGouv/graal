@@ -196,7 +196,7 @@ def test_clean_up_original_amendments():
             "expose": ["<p>Expose 1</p>", "<p>Expose 2</p>"],
             "sort": ["<p>Sort 1</p>", "<p>Sort 2</p>"],
             "reponse": ["<p>Réponse 1</p>", "<p>Réponse 2</p>"],
-            "computed_batch": ["1,2", "18,29"],
+            "computed_batch": [[1, 2], [18, 29]],
             "num": [1, 2],
             "article": ["Article 1", "Article 2"],
         }
@@ -212,16 +212,14 @@ def test_clean_up_original_amendments():
             "Réponse": ["Réponse 1", "Réponse 2"],
             "Num article": ["Article 1", "Article 2"],
             "Corps amdt": ["Corps 1", "Corps 2"],
-            "Corps amdt orig": ["Corps 1", "Corps 2"],
             "Exposé amdt": ["Expose 1", "Expose 2"],
-            "Exposé amdt orig": ["Expose 1", "Expose 2"],
-            "Allotissement": [None, None],
+            "Allotissement": ["1,2", "18,29"],
         }
     )
 
-    result_work_amendments_df = plfss_processor.clean_up_original_amendments()
+    result_amendments_df = plfss_processor.clean_up_original_amendments()
 
     pd.testing.assert_frame_equal(
-        result_work_amendments_df.reset_index(drop=True).sort_index(axis=1),
+        result_amendments_df.reset_index(drop=True).sort_index(axis=1),
         expected_work_amendments_df.reset_index(drop=True).sort_index(axis=1),
     )
