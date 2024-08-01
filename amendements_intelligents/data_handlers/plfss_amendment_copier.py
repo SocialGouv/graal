@@ -29,8 +29,12 @@ class AmendmentCopier:
 
             matching_numero = self.old_amendments_df.iloc[best_match_idx]["Num amdt"]
             matching_lecture = self.old_amendments_df.iloc[best_match_idx]["Lecture"]
-            matching_corps = self.old_amendments_df.iloc[best_match_idx]["Corps amdt orig"]
-            matching_expose = self.old_amendments_df.iloc[best_match_idx]["Exposé amdt orig"]
+            matching_corps = self.old_amendments_df.iloc[best_match_idx][
+                "Corps amdt orig"
+            ]
+            matching_expose = self.old_amendments_df.iloc[best_match_idx][
+                "Exposé amdt orig"
+            ]
             matching_year = -closest_doc["best_matching_comparison_value"]
 
             target_df.loc[mask, "Commentaires"] = textwrap.dedent(f"""
@@ -39,8 +43,8 @@ class AmendmentCopier:
             Numéro d'amendement : {matching_numero}
             """)
 
-            target_df.loc[mask, "Corps amdt trouvé"] = matching_corps
-            target_df.loc[mask, "Exposé amdt trouvé"] = matching_expose
+            target_df.loc[mask, "Corps amdt found"] = matching_corps
+            target_df.loc[mask, "Exposé amdt found"] = matching_expose
 
             old_sort_value = self.old_amendments_df.iloc[best_match_idx]["Sort"]
             if old_sort_value and "irrecevable" in old_sort_value.lower():
