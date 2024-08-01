@@ -134,3 +134,57 @@ def test_normalize_plfss(df):
         normalized_df.reset_index(drop=True),
         expected_normalized_df.reset_index(drop=True),
     )
+
+
+@pytest.mark.parametrize(
+    "input_df, expected_df",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "Exposé amdt": [
+                        "Amendement rédactionnel.",
+                        "A small amendment",
+                        "Another amendment that is too long to be replaced",
+                    ],
+                    "Corps amdt": ["Body 1", "Body 2", "Body 3"],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "Exposé amdt": [
+                        "Body 1",
+                        "Body 2",
+                        "Another amendment that is too long to be replaced",
+                    ],
+                    "Corps amdt": ["Body 1", "Body 2", "Body 3"],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "Exposé amdt": [
+                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be replaced!",
+                        "Short",
+                    ],
+                    "Corps amdt": ["Body B", "Body C"],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "Exposé amdt": [
+                        "Body B",
+                        "Body C",
+                    ],
+                    "Corps amdt": ["Body B", "Body C"],
+                }
+            ),
+        ),
+    ],
+)
+def test_handle_common_amendment_expose(input_df, expected_df):
+    plfss_processor = PLFSSPreProcessor()
+    plfss_processor.work_amendments_df = input_df.copy()
+    result_df = plfss_processor.handle_common_amendment_expose()
+    pd.testing.assert_frame_equal(result_df, expected_df)

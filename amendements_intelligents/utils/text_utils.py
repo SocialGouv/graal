@@ -146,8 +146,8 @@ def normalize_text(text: str) -> str:
     text = re.sub(r"['`’_]", " ", text)
     # Replace dashes with a space unless they are surrounded by numbers
     text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
-    # Remove other special characters
-    text = re.sub(r"[^a-zA-Z0-9\s\-]", "", text)
+    # Remove most special characters
+    text = re.sub(r"[^a-zA-Z0-9\s\-%]", "", text)
 
     text = remove_sentences_starting_with(
         text, pattern=unidecode("la perte de recettes pour")

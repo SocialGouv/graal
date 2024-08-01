@@ -91,6 +91,36 @@ class PLFSSPreProcessor:
         )
         return self.work_amendments_df
 
+    def handle_common_amendment_expose(self) -> None:
+        """
+        Replace Exposé amdt with Corps amdt if Exposé amdt is:
+        - Small (< 50 characters)
+        - A common pattern (i.e. "Amendement rédactionnel.")
+        """
+
+        very_common_patterns = [
+            "amendement rédactionnel",
+        ]
+        combined_pattern = "|".join(very_common_patterns)
+
+        # Create mask with regex. It does not need to be an exact match
+        mask = (
+            self.work_amendments_df["Exposé amdt"]
+            .str.contains(combined_pattern, regex=True, case=False)
+            .fillna(False)
+        )
+
+        # Also append 'Num article' to small amendment bodies
+        mask = mask | (self.work_amendments_df["Exposé amdt"].str.len() < 25)
+        print(
+            f"Replacing Exposé amdt with Corps Amdt in {mask.sum()} amendements to get better clusters...\n"
+        )
+
+        self.work_amendments_df.loc[mask, "Exposé amdt"] = self.work_amendments_df.loc[
+            mask, "Corps amdt"
+        ]
+        return self.work_amendments_df
+
     def remove_empty_rows_for_given_columns(
         self,
         columns_to_filter_with: list[ColumnName] = ["Corps amdt"],
