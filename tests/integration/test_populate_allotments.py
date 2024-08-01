@@ -1,9 +1,9 @@
 import pandas as pd
 
-from amendements_intelligents.data_handlers.plfss_sheet_data_loader import (
+from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
+from amendements_intelligents.utils.plfss_sheet_data_loader import (
     PLFSSSheetDataLoader,
 )
-from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
 
 
 def load_test_file_to_compare(

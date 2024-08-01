@@ -1,10 +1,10 @@
 import os
 
 from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
-from amendements_intelligents.data_handlers.plfss_amendment_copier import (
+from amendements_intelligents.utils.plfss_amendment_copier import (
     AmendmentCopier,
 )
-from amendements_intelligents.data_handlers.plfss_pre_processor import PLFSSPreProcessor
+from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
 OLD_PLFSS_YEAR = 2023

@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from amendements_intelligents.data_handlers.plfss_sheet_data_loader import (
+from amendements_intelligents.utils.plfss_sheet_data_loader import (
     PLFSSSheetDataLoader,
 )
 

@@ -1,4 +1,4 @@
-from amendements_intelligents.data_handlers.plfss_pre_processor import PLFSSPreProcessor
+from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 
 def main():

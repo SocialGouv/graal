@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.clustering.plfss_cluster_finder import PLFSSClusterFinder
+from amendements_intelligents.clustering.cluster_finder import PLFSSClusterFinder
 
 
 @pytest.fixture

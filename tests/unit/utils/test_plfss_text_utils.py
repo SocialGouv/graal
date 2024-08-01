@@ -1,6 +1,6 @@
 import pytest
 
-from amendements_intelligents.utils.text_utils import (
+from amendements_intelligents.utils.plfss_text_utils import (
     digitize_small_french_numbers,
     normalize_text,
     remove_french_plurals,

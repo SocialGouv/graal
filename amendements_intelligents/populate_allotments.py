@@ -4,11 +4,11 @@ import time
 import pandas as pd
 from pydantic import FilePath
 
-from amendements_intelligents.clustering.plfss_cluster_finder import PLFSSClusterFinder
-from amendements_intelligents.data_handlers.plfss_allotment_updater import (
+from amendements_intelligents.clustering.cluster_finder import PLFSSClusterFinder
+from amendements_intelligents.utils.plfss_allotment_updater import (
     PLFSSAllotmentUpdater,
 )
-from amendements_intelligents.data_handlers.plfss_pre_processor import (
+from amendements_intelligents.utils.plfss_pre_processor import (
     PLFSSPreProcessor,
 )
 
