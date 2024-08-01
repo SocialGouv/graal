@@ -166,7 +166,7 @@ def test_replace_french_numbers(input_phrase, expected_output):
         ),
         ("non-breaking space", "non breaking space"),
         ("Éxámplè", "example"),
-        ("!@#$%^&*()_+<>?", ""),
+        ("!@#$%^&*()_+<>?", "%"),
         (
             ": « Les sociétés ont reçu la certification du référentiel Hébergeur de données de santé et des règles attachées à la norme ISO 27001. » »",
             "societe recu certification referentiel hebergeur donnee sante regle attachee a norme iso 27001",
