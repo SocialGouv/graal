@@ -3,7 +3,7 @@ import textwrap
 import pandas as pd
 import pytest
 
-from amendements_intelligents.data_handlers.plfss_amendment_copier import (
+from amendements_intelligents.utils.plfss_amendment_copier import (
     AmendmentCopier,
 )
 
@@ -53,8 +53,8 @@ def test_copy_matches_to_plfss_df(sample_data):
         Lecture : A
         Numéro d'amendement : 1
         """)
-    assert result_df.loc[0, "Corps amdt trouvé"] == "Corps 1"
-    assert result_df.loc[0, "Exposé amdt trouvé"] == "Exposé 1"
+    assert result_df.loc[0, "Corps amdt found"] == "Corps 1"
+    assert result_df.loc[0, "Exposé amdt found"] == "Exposé 1"
     assert result_df.loc[0, "Sort"] == ""
 
     assert result_df.loc[1, "Réponse"] == "Response 2"
@@ -63,8 +63,8 @@ def test_copy_matches_to_plfss_df(sample_data):
         Lecture : B
         Numéro d'amendement : 2
         """)
-    assert result_df.loc[1, "Corps amdt trouvé"] == "Corps 2"
-    assert result_df.loc[1, "Exposé amdt trouvé"] == "Exposé 2"
+    assert result_df.loc[1, "Corps amdt found"] == "Corps 2"
+    assert result_df.loc[1, "Exposé amdt found"] == "Exposé 2"
     assert result_df.loc[1, "Sort"] == "Irrecevable 123"
 
     assert result_df.loc[2, "Réponse"] == "Response 3"
@@ -73,6 +73,6 @@ def test_copy_matches_to_plfss_df(sample_data):
         Lecture : C
         Numéro d'amendement : 3
         """)
-    assert result_df.loc[2, "Corps amdt trouvé"] == "Corps 3"
-    assert result_df.loc[2, "Exposé amdt trouvé"] == "Exposé 3"
+    assert result_df.loc[2, "Corps amdt found"] == "Corps 3"
+    assert result_df.loc[2, "Exposé amdt found"] == "Exposé 3"
     assert result_df.loc[2, "Sort"] == ""

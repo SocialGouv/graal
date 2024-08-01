@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.data_handlers.plfss_pre_processor import (
+from amendements_intelligents.utils.plfss_pre_processor import (
     PLFSSPreProcessor,
 )
 

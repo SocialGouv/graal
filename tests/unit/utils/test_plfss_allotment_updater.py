@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.data_handlers.plfss_allotment_updater import (
+from amendements_intelligents.utils.plfss_allotment_updater import (
     PLFSSAllotmentUpdater,
 )
 
