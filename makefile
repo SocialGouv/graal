@@ -1,7 +1,7 @@
 test:
-	poetry run pytest **/unit/*.py
+	poetry run pytest tests/unit/**/*.py
 	@echo "===== Finished running unit tests ====="
 
 integration_test:
-	poetry run pytest **/integration/*.py
+	poetry run pytest tests/integration/*.py
 	@echo "===== Finished running integration tests ====="

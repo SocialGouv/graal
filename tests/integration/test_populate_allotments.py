@@ -15,7 +15,7 @@ def load_test_file_to_compare(
 
 def test_populate_allotments_ratio_matching_allotments() -> None:
     test_df = load_test_file_to_compare(
-        "tests/test_data/test_populate_allotments_jul30.xlsx", "test1"
+        "tests/integration/test_data/test_populate_allotments_jul30.xlsx", "test1"
     )
 
     test_df["Allotissement"] = test_df["Allotissement"].apply(
