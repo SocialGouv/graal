@@ -15,7 +15,7 @@ class SimilarityFinder:
         self.similar_doc_indices = None
 
     def prefilter_similar_docs(
-        self, column_used_for_comparison: str = "Exposé amdt"
+        self, column_used_for_comparison: str = "Exposé amdt", threshold=0.7
     ) -> dict[IntIndex, list[IntIndex]]:
         """
         Pre-filters similar documents based on a TF-IDF comparison of the `column_used_for_comparison` in the old and new amendments.
@@ -32,7 +32,7 @@ class SimilarityFinder:
             documents_to_filter=self.new_amendments_df[
                 column_used_for_comparison
             ].tolist(),
-            threshold=0.7,
+            threshold=threshold,
         )
         list_lengths = [len(docs) for docs in self.similar_doc_indices.values()]
         average_length = sum(list_lengths) / len(list_lengths)
@@ -42,7 +42,7 @@ class SimilarityFinder:
     def find_best_matches(
         self,
         column_used_for_comparison: str = "Exposé amdt",
-        threshold_ratio: float = 0.95,
+        threshold_ratio: float = 0.75,
     ) -> dict:
         if self.similar_doc_indices is None:
             raise ValueError(
