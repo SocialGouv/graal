@@ -1,3 +1,7 @@
+"""
+Extract a PLFSS sheet from an Excel file and save it as a JSON file.
+"""
+
 import argparse
 import os
 

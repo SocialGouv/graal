@@ -40,7 +40,6 @@ def main():
         columns_to_normalize=["Exposé amdt"]
     )
     old_amendments_df["Year"] = OLD_PLFSS_YEAR
-    print(f"old_amendments_df.columns {old_amendments_df.columns}")
 
     new_plfss_data_processor = PLFSSPreProcessor()
     new_plfss_data_processor.load_plfss(input_file=INPUT_FILE_NEW_PLFSS)
@@ -62,10 +61,10 @@ def main():
         new_amendments_df=new_amendments_df,
     )
     similarity_evaluator.prefilter_similar_docs(
-        column_used_for_comparison="Exposé amdt"
+        column_used_for_comparison="Exposé amdt", threshold=0.7
     )
     closest_docs = similarity_evaluator.find_best_matches(
-        column_used_for_comparison="Exposé amdt"
+        column_used_for_comparison="Exposé amdt", threshold_ratio=0.75
     )
 
     amendment_copier = AmendmentCopier(
