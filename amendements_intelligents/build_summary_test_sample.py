@@ -16,8 +16,8 @@ N_SAMPLES = 50
 
 if __name__ == "__main__":
     preproc = PLFSSPreProcessor()
-    preproc.load_plfss(INPUT_FILE_PLFSS)
-    preproc.clean_up_original_amendments()
+    preproc.load_plfss_json(INPUT_FILE_PLFSS)
+    preproc.remap_columns_in_json_amendments()
 
     df = preproc.original_amendments_df.copy()
     df = df[df["Exposé amdt"].str.len() > 50]
