@@ -217,7 +217,7 @@ def test_clean_up_original_amendments():
         }
     )
 
-    result_amendments_df = plfss_processor.clean_up_original_amendments()
+    result_amendments_df = plfss_processor.remap_columns_in_json_amendments()
 
     pd.testing.assert_frame_equal(
         result_amendments_df.reset_index(drop=True).sort_index(axis=1),

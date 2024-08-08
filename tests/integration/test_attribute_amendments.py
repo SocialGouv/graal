@@ -19,14 +19,12 @@ def test_integration_attribute_amendments():
         best_matching_codes_and_articles_per_amdt
     )
 
-    # group matching_df by "Num amdt" and "Lecture". Merge the "affectation_email" column by joining the values with a comma. Drop all other columns.
-    grouped_matching_df = matching_df.groupby(["Num amdt", "Lecture"]).agg(
-        {"Affectation (nom)": lambda x: ",".join(sorted(set(x)))}
-    )
+    # group matching_df by "Num amdt" and "Lecture". Merge the "Affectation (nom)" column by joining the values with a comma. Drop all other columns.
+    grouped_matching_df = processor.group_matching_rows_by_amdt_and_lecture(matching_df)
 
     diff_df = pd.DataFrame()
-    for (num_amdt, lecture), affectation in grouped_matching_df.iterrows():
-        found_matches = affectation["Affectation (nom)"]
+    for (num_amdt, lecture), matching_row in grouped_matching_df.iterrows():
+        found_matches = matching_row["Affectation (nom)"]
 
         expected_matches = processor.amendments_df.loc[
             (processor.amendments_df["Num amdt"] == num_amdt)

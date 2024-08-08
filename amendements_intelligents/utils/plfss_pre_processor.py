@@ -15,12 +15,15 @@ class PLFSSPreProcessor:
         self.original_amendments_df = None
         self.work_amendments_df = None
 
-    def load_plfss(self, input_file: FilePath) -> None:
+    def load_plfss_json(self, input_file: FilePath) -> None:
         with open(input_file, "r", encoding="utf-8-sig") as file:
             data = json.load(file)
         self.original_amendments_df = pd.DataFrame(data["amendements"])
 
-    def clean_up_original_amendments(self) -> pd.DataFrame:
+    def load_plfss_excel(self, input_file: FilePath) -> None:
+        self.original_amendments_df = pd.read_excel(input_file)
+
+    def remap_columns_in_json_amendments(self) -> pd.DataFrame:
         self.original_amendments_df["Lecture"] = (
             self.original_amendments_df["chambre"].astype(str)
             + " "
@@ -44,18 +47,22 @@ class PLFSSPreProcessor:
         ].apply(lambda x: ",".join(map(str, x)))
 
         column_mapping = {
+            "affectation_email": "Affectation (email)",
+            "affectation_name": "Affectation (nom)",
+            "article": "Num article",
             "computed_batch": "Allotissement",
-            "num": "Num amdt",
             "corps": "Corps amdt",
             "expose": "Exposé amdt",
-            "sort": "Sort",
+            "num": "Num amdt",
             "reponse": "Réponse",
-            "article": "Num article",
+            "sort": "Sort",
         }
         self.original_amendments_df.rename(columns=column_mapping, inplace=True)
         return self.original_amendments_df
 
     def prepare_work_amendments_df(self) -> pd.DataFrame:
+        self.original_amendments_df["Affectation (email)"] = None
+        self.original_amendments_df["Affectation (nom)"] = None
         self.original_amendments_df["Allotissement"] = None
         self.original_amendments_df["Corps amdt orig"] = self.original_amendments_df[
             "Corps amdt"

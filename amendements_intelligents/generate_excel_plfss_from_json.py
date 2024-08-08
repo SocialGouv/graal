@@ -7,6 +7,6 @@ from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 if __name__ == "__main__":
     plfss_preproc = PLFSSPreProcessor()
     FILE_NAME = "data/PLFSS_2022"
-    plfss_preproc.load_plfss(f"{FILE_NAME}.json")
-    df = plfss_preproc.clean_up_original_amendments()
+    plfss_preproc.load_plfss_json(f"{FILE_NAME}.json")
+    df = plfss_preproc.remap_columns_in_json_amendments()
     df.to_excel(f"{FILE_NAME}.xlsx", index=False)

@@ -28,8 +28,8 @@ COLUMNS_TO_OUTPUT = [
 
 def main():
     old_plfss_data_processor = PLFSSPreProcessor()
-    old_plfss_data_processor.load_plfss(input_file=INPUT_FILE_OLD_PLFSS)
-    old_plfss_data_processor.clean_up_original_amendments()
+    old_plfss_data_processor.load_plfss_json(input_file=INPUT_FILE_OLD_PLFSS)
+    old_plfss_data_processor.remap_columns_in_json_amendments()
     old_plfss_data_processor.prepare_work_amendments_df()
     old_plfss_data_processor.remove_empty_rows_for_given_columns(
         columns_to_filter_with=["Exposé amdt", "Corps amdt"]
@@ -42,8 +42,8 @@ def main():
     old_amendments_df["Year"] = OLD_PLFSS_YEAR
 
     new_plfss_data_processor = PLFSSPreProcessor()
-    new_plfss_data_processor.load_plfss(input_file=INPUT_FILE_NEW_PLFSS)
-    new_plfss_data_processor.clean_up_original_amendments()
+    new_plfss_data_processor.load_plfss_json(input_file=INPUT_FILE_NEW_PLFSS)
+    new_plfss_data_processor.remap_columns_in_json_amendments()
     new_plfss_data_processor.prepare_work_amendments_df()
     new_plfss_data_processor.remove_empty_rows_for_given_columns(
         columns_to_filter_with=["Exposé amdt", "Corps amdt"]
