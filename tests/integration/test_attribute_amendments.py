@@ -6,24 +6,25 @@ from amendements_intelligents.attribute_amendments import PLFSSAttributor
 def test_integration_attribute_amendments():
     test_file = "tests/integration/test_data/test_attribution_par_code.xlsx"
     mappings_file = "data/mappings_attributions_aug_7.xlsx"
-    diff_output_file = "tests/integration/test_data/diff_attribution_par_code.csv"
 
     processor = PLFSSAttributor()
-    processor.load_mappings(mappings_file)
-    processor.amendments_df = pd.read_excel(test_file)
+    processor.load_data(mappings_file, test_file)
 
-    best_matching_codes_and_articles_per_amdt = (
-        processor.find_best_matching_codes_and_articles_per_amdt()
-    )
-    matching_df = processor.get_rows_from_codes_and_articles_matches(
-        best_matching_codes_and_articles_per_amdt
-    )
+    # Match codes and articles to amendments
+    best_matches_per_amdt = processor.match_codes_and_articles_to_amendments()
+    matching_df = processor.filter_matching_codes_and_articles(best_matches_per_amdt)
 
-    # group matching_df by "Num amdt" and "Lecture". Merge the "Affectation (nom)" column by joining the values with a comma. Drop all other columns.
-    grouped_matching_df = processor.group_matching_rows_by_amdt_and_lecture(matching_df)
+    # Group the matching DataFrame by "Num amdt" and "Lecture"
+    grouped_matching_df = processor.aggregate_matches_by_amendment(matching_df)
+
+    # Use the newly named method to integrate the matches into the amendments DataFrame
+    processor.amendments_df = processor.integrate_code_article_matches_into_amendments(
+        grouped_matching_df
+    )
 
     diff_df = pd.DataFrame()
-    for (num_amdt, lecture), matching_row in grouped_matching_df.iterrows():
+    for _, matching_row in grouped_matching_df.iterrows():
+        num_amdt, lecture = matching_row["Num amdt"], matching_row["Lecture"]
         found_matches = matching_row["Affectation (nom)"]
 
         expected_matches = processor.amendments_df.loc[
@@ -47,12 +48,14 @@ def test_integration_attribute_amendments():
                 ]
             )
 
-    if len(diff_df):
-        diff_df.to_csv(diff_output_file, index=False)
+    if not diff_df.empty:
+        print(diff_df)
 
-    assert len(diff_df) == 0
+    assert diff_df.empty, f"Differences found: {len(diff_df)}"
 
-    nb_with_match = len(best_matching_codes_and_articles_per_amdt.keys())
-    nb_without_match = len(processor.amendments_df["Corps amdt"]) - nb_with_match
-    assert nb_with_match == 18
-    assert nb_without_match == 5
+    nb_with_match = len(best_matches_per_amdt)
+    nb_without_match = len(processor.amendments_df) - nb_with_match
+    assert nb_with_match == 18, f"Expected 18 matches, but got {nb_with_match}"
+    assert (
+        nb_without_match == 5
+    ), f"Expected 5 without matches, but got {nb_without_match}"
