@@ -170,3 +170,14 @@ def extract_plain_text_from_html(encoded_html: str) -> None:
     soup = BeautifulSoup(decoded_html, "html.parser")
     plain_text = soup.get_text()
     return plain_text
+
+
+class AttributionTextNormalizer:
+    @staticmethod
+    def normalize_text(text: str) -> str:
+        """Normalize text by stripping, converting to lowercase, and removing specific spaces."""
+        return re.sub(
+            r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]",
+            " ",
+            unidecode(text.strip().lower()),
+        )
