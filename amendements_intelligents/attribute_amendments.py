@@ -27,7 +27,7 @@ def update_affectation(row, keyword_matches):
 
 def main():
     amendments_file = "data/PLFSS_2024.json"
-    mappings_file = "data/mappings_attributions_aug_7.xlsx"
+    mappings_file = "data/mappings_attributions_aug_9.xlsx"
     output_file = "data/amendments_with_keyword_and_code_art_affectation.xlsx"
 
     attributor = PLFSSAttributor()

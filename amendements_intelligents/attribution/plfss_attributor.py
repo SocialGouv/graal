@@ -42,7 +42,7 @@ class PLFSSAttributor:
 
     def _extract_latin_ordinals(self):
         """Extract and store Latin ordinals from article texts."""
-        pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s([\w\s]+))?")
+        pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
         self.latin_ordinals_set = {
             match.group(1)
             for article in self.articles_set
