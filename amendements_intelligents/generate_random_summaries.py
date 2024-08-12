@@ -3,13 +3,11 @@ import os
 
 import pandas as pd
 
-from amendements_intelligents.clients.summary_generator_clients import (
+from amendements_intelligents.summary.summary_generator_clients import (
     SummaryGeneratorOllamaClient,
 )
-from amendements_intelligents.loaders.plfss_data_loader import PLFSSDataLoader
-from amendements_intelligents.loaders.plfss_sheet_data_loader import (
-    PLFSSSheetDataLoader,
-)
+from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
+from amendements_intelligents.utils.plfss_sheet_data_loader import PLFSSSheetDataLoader
 
 DATA_FOLDER = os.getenv("DATA_FOLDER")
 
@@ -32,18 +30,18 @@ if __name__ == "__main__":
     data_extractor = PLFSSSheetDataLoader(plfss_excel_path)
     df = data_extractor.extract_sheet_data(sheet_name)
 
-    plfss_preprocessor = PLFSSDataLoader(df)
+    plfss_preprocessor = PLFSSPreProcessor(df)
     filtered_df = plfss_preprocessor.filter_amendements()
     shuffled_df = filtered_df.sample(frac=1).reset_index(drop=True)
 
-    # Create a list to store the summaries and "Exposé des motifs"
+    # Create a list to store the summaries and "Exposé amdt"
     data = []
     ollama_client = SummaryGeneratorOllamaClient()
 
     for i in range(nb_results):
         print(f"i : {i}")
         line = shuffled_df.iloc[i]
-        exposé_des_motifs = line["Exposé des motifs"]
+        exposé_des_motifs = line["Exposé amdt"]
 
         # prompt = ollama_client.build_prompt(exposé_des_motifs)
         # summary = ollama_client.generate_response(prompt)
@@ -57,9 +55,7 @@ if __name__ == "__main__":
         # Append the data to the list
         data.append(
             {
-                "Exposé des motifs": exposé_des_motifs.replace('"', '""').replace(
-                    "\n", " "
-                ),
+                "Exposé amdt": exposé_des_motifs.replace('"', '""').replace("\n", " "),
                 # TODO: this failed once because it thought line["Objet"] was a float
                 "Objet (Expert)": line["Objet"].replace('"', '""').replace("\n", " "),
                 "Objet 3": summary3.replace('"', '""').replace("\n", " "),

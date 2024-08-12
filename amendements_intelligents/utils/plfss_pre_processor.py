@@ -19,11 +19,12 @@ class PLFSSPreProcessor:
         with open(input_file, "r", encoding="utf-8-sig") as file:
             data = json.load(file)
         self.original_amendments_df = pd.DataFrame(data["amendements"])
+        self.clean_up_json_columns()
 
     def load_plfss_excel(self, input_file: FilePath) -> None:
         self.original_amendments_df = pd.read_excel(input_file)
 
-    def remap_columns_in_json_amendments(self) -> pd.DataFrame:
+    def clean_up_json_columns(self) -> pd.DataFrame:
         self.original_amendments_df["Lecture"] = (
             self.original_amendments_df["chambre"].astype(str)
             + " "
@@ -46,6 +47,7 @@ class PLFSSPreProcessor:
             "computed_batch"
         ].apply(lambda x: ",".join(map(str, x)))
 
+    def remap_columns_in_json_amendments(self) -> pd.DataFrame:
         column_mapping = {
             "affectation_email": "Affectation (email)",
             "affectation_name": "Affectation (nom)",
