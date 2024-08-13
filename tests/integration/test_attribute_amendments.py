@@ -25,8 +25,6 @@ def test_integration_attribute_amendments():
         grouped_matching_df
     )
 
-    grouped_matching_df.to_csv("tests/integration/test_data/grouped_matching.csv")
-
     # Step 2: Match keywords to amendments
     keyword_matches_df = attributor.match_keywords_to_amendments(threshold=95)
 
