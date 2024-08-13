@@ -10,5 +10,7 @@ env/
 dist/
 build/
 *.egg-info/
+.coverage*
+*.info
 
 *_vector_db
