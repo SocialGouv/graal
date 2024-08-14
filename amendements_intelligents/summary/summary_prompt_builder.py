@@ -7,10 +7,6 @@ class SummaryPromptBuilder:
     def build_prompt(
         explanatory_statement: TxtContent, amdt_body: TxtContent
     ) -> Prompt:
-        cleaned_explanatory_statement = SummaryTextNormalizer.normalize_text(
-            explanatory_statement
-        )
-        cleaned_amdt_body = SummaryTextNormalizer.normalize_text(amdt_body)
         prompt = f"""Contexte : Tu es un juriste spécialisé dans le droit de la sécurité sociale en France. Ta tâche est de résumer un amendement et de rester politiquement correct.
 
         Instruction: Résume l'amendement en français en une phrase courte (de 8 à 18 mots). Le résumé doit être concis, neutre, commencer par un verbe à l'infinitif, inclure les taux pour la clareté (mais pas d'autres chiffres), ne pas inventer de chiffres qui ne figurent pas dans l'amendement, ne pas utiliser d'adjectifs. Exclus les justifications de l'amendement. Ne répète pas le contexte. Utilise des acronymes, sans les expliciter. Si l'amendement concerne un rapport, commence ta réponse par "Remettre un rapport". N'ajoute pas de notes expliquant le résumé. Ne soit pas trop technique.
@@ -42,10 +38,10 @@ class SummaryPromptBuilder:
         Voici l'amendement que tu dois résumer :
 
         Corps de l'amendement :
-        {cleaned_amdt_body}
+        {amdt_body}
 
         Amendement :
-        {cleaned_explanatory_statement}
+        {explanatory_statement}
 
         Résumé :
         """
