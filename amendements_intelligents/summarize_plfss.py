@@ -42,7 +42,7 @@ def submit_and_track_futures(
         row = amendments_df.iloc[index]
         if row["Exposé amdt"].strip() != "":
             prompt = prompt_builder.build_prompt(
-                explanatory_statement=row["Exposé amdt"], body=row["Corps amdt"]
+                explanatory_statement=row["Exposé amdt"], amdt_body=row["Corps amdt"]
             )
             future = executor.submit(vllm_client.generate_summary, prompt)
             futures_to_index[future] = index
@@ -64,7 +64,7 @@ def submit_and_track_futures(
         row = amendments_df.iloc[next_index]
         if row["Exposé amdt"].strip() != "":
             prompt = prompt_builder.build_prompt(
-                explanatory_statement=row["Exposé amdt"], body=row["Corps amdt"]
+                explanatory_statement=row["Exposé amdt"], amdt_body=row["Corps amdt"]
             )
             future = executor.submit(vllm_client.generate_summary, prompt)
             futures_to_index[future] = next_index

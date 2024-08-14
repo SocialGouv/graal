@@ -166,3 +166,23 @@ class AttributionTextNormalizer:
             " ",
             unidecode(text.strip().lower()),
         )
+
+
+class SummaryTextNormalizer:
+    @staticmethod
+    def normalize_text(text: str) -> str:
+        """
+        Pre-process the user text to safely integrate into an LLM prompt.
+        """
+
+        cleaned_text = text.replace("\n", " ").replace("\r", "").lower()
+        cleaned_text = re.sub(
+            r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000]",
+            " ",
+            cleaned_text,
+        )
+        cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
+
+        cleaned_text = re.sub(r"[^a-z0-9À-ÿ'.,!? \-]+", "", cleaned_text)
+
+        return cleaned_text

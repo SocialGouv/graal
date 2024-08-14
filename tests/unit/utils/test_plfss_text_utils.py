@@ -2,6 +2,7 @@ import pytest
 
 from amendements_intelligents.utils.plfss_text_utils import (
     AttributionTextNormalizer,
+    SummaryTextNormalizer,
     digitize_small_french_numbers,
     normalize_text,
     remove_french_plurals,
@@ -222,3 +223,36 @@ def test_normalize_text_with_special_characters():
 )
 def test_attribution_text_normalizer(input_text, expected_output):
     assert AttributionTextNormalizer.normalize_text(input_text) == expected_output
+
+
+@pytest.mark.parametrize(
+    "input_text, expected_output",
+    [
+        (
+            "This is a test.\nNew line should be replaced.",
+            "this is a test. new line should be replaced.",
+        ),
+        (
+            "Multiple   spaces should be reduced.",
+            "multiple spaces should be reduced.",
+        ),
+        (
+            "Special characters like !@#$%^&*()?., should be removed.",
+            "special characters like !?., should be removed.",
+        ),
+        (
+            "Accented characters like é, à, and ü should be kept.",
+            "accented characters like é, à, and ü should be kept.",
+        ),
+        (
+            " Leading and trailing spaces should be trimmed.   ",
+            "leading and trailing spaces should be trimmed.",
+        ),
+        (
+            "Non-breaking\u00a0spaces should be replaced.",
+            "non-breaking spaces should be replaced.",
+        ),
+    ],
+)
+def test_summary_text_normalizer(input_text, expected_output):
+    assert SummaryTextNormalizer.normalize_text(input_text) == expected_output
