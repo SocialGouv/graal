@@ -1,5 +1,6 @@
 test:
 	poetry run pytest tests/unit
+	python scripts/check_coverage.py coverage.json
 	@echo "===== Finished running unit tests ====="
 
 integration_test:

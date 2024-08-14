@@ -12,5 +12,6 @@ build/
 *.egg-info/
 .coverage*
 *.info
+coverage.json
 
 *_vector_db
