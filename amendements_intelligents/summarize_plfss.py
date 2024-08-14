@@ -72,27 +72,32 @@ def submit_and_track_futures(
         next_index += 1
 
 
-max_concurrent = 10
-start_index = 1580
-# Main execution with thread pool
-with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-    submit_and_track_futures(
-        executor,
-        amendments_df,
-        start_index=start_index,
-        stop_index=amendments_df.shape[0],
-        max_concurrent=max_concurrent,
-    )
+def main():
+    max_concurrent = 10
+    start_index = 1580
+    # Main execution with thread pool
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+        submit_and_track_futures(
+            executor,
+            amendments_df,
+            start_index=start_index,
+            stop_index=amendments_df.shape[0],
+            max_concurrent=max_concurrent,
+        )
 
-for i in range(start_index, start_index + 25):
-    print(
-        f'amendments_df {i}, {amendments_df.loc[i, "Num amdt"]}, "Objet 70B()": {amendments_df.loc[i, "Objet 70B()"]}\n'
-    )
+    for i in range(start_index, start_index + 25):
+        print(
+            f'amendments_df {i}, {amendments_df.loc[i, "Num amdt"]}, "Objet 70B()": {amendments_df.loc[i, "Objet 70B()"]}\n'
+        )
 
-executor.shutdown(wait=True)
+    executor.shutdown(wait=True)
 
-print(f'amendments_df.loc[0, "Objet 70B()"] {amendments_df.loc[0, "Objet 70B()"]}')
-end_time = time.time()
-print(f"Time taken: {end_time - start_time} seconds")
+    print(f'amendments_df.loc[0, "Objet 70B()"] {amendments_df.loc[0, "Objet 70B()"]}')
+    end_time = time.time()
+    print(f"Time taken: {end_time - start_time} seconds")
 
-amendments_df.to_excel("data/amendments_with_summary.xlsx", index=False)
+    amendments_df.to_excel("data/amendments_with_summary.xlsx", index=False)
+
+
+if __name__ == "__main__":
+    main()
