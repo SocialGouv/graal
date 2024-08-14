@@ -80,20 +80,6 @@ def digitize_small_french_numbers(text):
     return pattern.sub(replace_match, text)
 
 
-# Define the decorator
-def ensure_stopwords_downloaded(func):
-    def wrapper(*args, **kwargs):
-        try:
-            stopwords.words("french")
-        except LookupError:
-            print("Downloading stopwords...")
-            nltk.download("stopwords")
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-@ensure_stopwords_downloaded
 def remove_stop_words(text, language="french"):
     stop_words = set(stopwords.words(language))
     words = word_tokenize(text)

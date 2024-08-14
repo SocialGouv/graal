@@ -5,7 +5,7 @@
 ### Install python dependencies
 
 ```bash
-poetry install
+make install
 ```
 
 ### Prepare PLFSS data
