@@ -10,16 +10,12 @@ make install
 
 ### Prepare PLFSS data
 
-Get an ALED file (here `data/aled.xlsm`) from the DSS 5A office.
-Then extract PLFSS data from its sheets (here `PLFSS 2024`)
-
-```bash
-python amendements_intelligents/extract_plfss_excel_sheet.py --excel data/aled.xlsm --sheet "PLFSS 2024"
-```
+Get a PLFSS extract from Signale in JSON format
 
 ### Env variables
 
 ```bash
+# Folder where your data (like the PLFSS JSON extract) can be found
 export DATA_FOLDER="data"
 ```
 
@@ -27,7 +23,7 @@ export DATA_FOLDER="data"
 
 ### Copy similar amendments
 
-You must have PLFSS extracted into `data/PLFSS 2024.json` (Hardcoded for now, WIP)
+You must have PLFSS extracted into `data/PLFSS_2024.json` (Hardcoded for now, WIP)
 
 ```bash
 python amendements_intelligents/populate_similarities.py
@@ -35,7 +31,7 @@ python amendements_intelligents/populate_similarities.py
 
 ### Regroup similar amendements (allotment)
 
-You must have PLFSS extracted into `data/PLFSS 2024.json` (Hardcoded for now, WIP)
+You must have PLFSS extracted into `data/PLFSS_2024.json` (Hardcoded for now, WIP)
 
 ```bash
 python amendements_intelligents/populate_allotments.py
@@ -43,7 +39,11 @@ python amendements_intelligents/populate_allotments.py
 
 ### Generate amendement summaries
 
-\[WIP\]
+You must have PLFSS extracted into `data/PLFSS_2024.json` (Hardcoded for now, WIP)
+
+```bash
+python amendements_intelligents/summarize_plfss.py
+```
 
 ## Tests
 
@@ -69,7 +69,7 @@ make test
 
 ### Integration tests
 
-Run the integration test suite and coverage with :
+Run the integration test suite with :
 
 ```bash
 make integration_test
@@ -80,5 +80,4 @@ make integration_test
 1. Install the [coverage-gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters) extension
 1. `Command Palette > Coverage Gutter: Display Coverage` (cmd + shift + 7) to show coverage in one file OR `Command Palette > Coverage Gutter: Watch` (cmd + shift + 8) to constantly show coverage and keep it updated on code changes
 
-Some files are omitted by the coverage.
-You can find them in the pyproject.toml file under `tool.coverage.run`
+Some files are omitted by the coverage and you can find them in the pyproject.toml file under `tool.coverage.run.omit`
