@@ -252,6 +252,10 @@ def test_attribution_text_normalizer(input_text, expected_output):
             "Non-breaking\u00a0spaces should be replaced.",
             "non-breaking spaces should be replaced.",
         ),
+        (
+            "Supprimer l’article.",
+            "supprimer l'article.",
+        ),
     ],
 )
 def test_summary_text_normalizer(input_text, expected_output):
