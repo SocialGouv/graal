@@ -38,7 +38,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.coverage.run]
 source = ["livecov"]
-omit = ["tests/integration/*"]
+omit = [
+    "amendements_intelligents/build_summary_test_sample.py",
+    "amendements_intelligents/extract_plfss_excel_sheet.py",
+    "amendements_intelligents/merge_json_lectures.py",
+    "amendements_intelligents/types.py",
+    "amendements_intelligents/generate_excel_plfss_from_json.py",
+    "amendements_intelligents/summary/summary_prompt_builder.py",
+]
 
 [tool.coverage.report]
 include_namespace_packages = true
