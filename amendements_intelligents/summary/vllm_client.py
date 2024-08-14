@@ -1,15 +1,26 @@
+from abc import ABC, abstractmethod
+
 import requests
+from pydantic_core import Url
+
+from amendements_intelligents.types import TxtContent
 
 
-class VLLMClient:
-    def __init__(self, model_name, host, user, password):
+class LLMApiClient(ABC):
+    @abstractmethod
+    def generate_summary(self, prompt):
+        pass
+
+
+class VLLMApiClient(LLMApiClient):
+    def __init__(self, model_name: str, vllm_endpoint: Url, user: str, password: str):
         self.model_name = model_name
-        self.host = host
+        self.vllm_endpoint = vllm_endpoint
         self.user = user
         self.password = password
 
-    def generate_summary(self, prompt):
-        url = f"https://{self.host}/v1/completions"
+    def generate_summary(self, prompt: TxtContent) -> str:
+        url = self.vllm_endpoint
         headers = {"Content-Type": "application/json"}
         auth = (self.user, self.password)
 

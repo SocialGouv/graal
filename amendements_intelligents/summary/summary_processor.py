@@ -1,16 +1,21 @@
 import concurrent.futures
 
+import pandas as pd
+
 from amendements_intelligents.summary.summary_prompt_builder import SummaryPromptBuilder
+from amendements_intelligents.summary.vllm_client import LLMApiClient
 from amendements_intelligents.utils.plfss_text_utils import SummaryTextNormalizer
 
 
 class AmendmentSummaryProcessor:
-    def __init__(self, amendments_df, api_client):
+    def __init__(self, amendments_df: pd.DataFrame, api_client: LLMApiClient):
         self.amendments_df = amendments_df
         self.prompt_builder = SummaryPromptBuilder()
         self.api_client = api_client
 
-    def process_amendments(self, start_index=0, stop_index=25, max_concurrent=10):
+    def process_amendments(
+        self, stop_index: int, start_index: int = 0, max_concurrent: int = 10
+    ) -> None:
         """
         Process amendments in the DataFrame by generating summaries for each amendment.
         Calls to the LLM API are made concurrently using a ThreadPoolExecutor with a pool of size `max_concurrent`.
@@ -46,7 +51,12 @@ class AmendmentSummaryProcessor:
                     self._submit_task_if_valid(next_index, futures_to_index, executor)
                     next_index += 1
 
-    def _submit_task_if_valid(self, index, futures_to_index, executor):
+    def _submit_task_if_valid(
+        self,
+        index: int,
+        futures_to_index: dict,
+        executor: concurrent.futures.ThreadPoolExecutor,
+    ) -> None:
         """
         Helper method to submit a task to the executor if the amendment is valid.
         """
