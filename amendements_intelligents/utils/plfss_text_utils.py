@@ -183,8 +183,9 @@ class SummaryTextNormalizer:
             " ",
             cleaned_text,
         )
-        cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
 
-        cleaned_text = re.sub(r"[^a-z0-9À-ÿ'.,!? \-]+", "", cleaned_text)
+        cleaned_text = re.sub(r"[^a-z0-9À-ÿ'.,!? \-«»\"]+", "", cleaned_text)
+
+        cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
 
         return cleaned_text

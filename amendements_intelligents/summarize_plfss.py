@@ -27,11 +27,13 @@ def main():
 
     print("Starting processing amendments...")
     start_index = 0
+    stop_index = amendments_df.shape[0]
     processor.process_amendments(
-        start_index=start_index, stop_index=amendments_df.shape[0]
+        start_index=start_index,
+        stop_index=stop_index,
     )
 
-    for i in range(start_index, start_index + 25):
+    for i in range(start_index, stop_index):
         print(
             f'amendments_df {i}, {amendments_df.loc[i, "Num amdt"]}, "Objet 70B()": {amendments_df.loc[i, "Objet 70B()"]}\n'
         )
