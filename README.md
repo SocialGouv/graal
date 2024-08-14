@@ -79,3 +79,6 @@ make integration_test
 
 1. Install the [coverage-gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters) extension
 1. `Command Palette > Coverage Gutter: Display Coverage` (cmd + shift + 7) to show coverage in one file OR `Command Palette > Coverage Gutter: Watch` (cmd + shift + 8) to constantly show coverage and keep it updated on code changes
+
+Some files are omitted by the coverage.
+You can find them in the pyproject.toml file under `tool.coverage.run`

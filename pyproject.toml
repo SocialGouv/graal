@@ -45,6 +45,7 @@ omit = [
     "amendements_intelligents/types.py",
     "amendements_intelligents/generate_excel_plfss_from_json.py",
     "amendements_intelligents/summary/summary_prompt_builder.py",
+    "amendements_intelligents/utils/plfss_sheet_data_loader.py",
 ]
 
 [tool.coverage.report]
