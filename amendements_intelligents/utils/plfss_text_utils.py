@@ -1,7 +1,6 @@
 import html
 import re
 
-import nltk
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -163,7 +162,7 @@ class AttributionTextNormalizer:
     def normalize_text(text: str) -> str:
         """Normalize text by stripping, converting to lowercase, and removing specific spaces."""
         return re.sub(
-            r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]",
+            r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000]",
             " ",
             unidecode(text.strip().lower()),
         )

@@ -1,6 +1,7 @@
 import pytest
 
 from amendements_intelligents.utils.plfss_text_utils import (
+    AttributionTextNormalizer,
     digitize_small_french_numbers,
     normalize_text,
     remove_french_plurals,
@@ -199,3 +200,25 @@ def test_normalize_text_with_special_characters():
     ) == normalize_text(
         """Le 3° de l’article L. 4081‑2 du code de la santé publique est complété par une phrase ainsi rédigée : « Les sociétés ont reçu la certification du référentiel hébergeur de données de santé et des règles attachées à la norme ISO 27001. »"""
     )
+
+
+@pytest.mark.parametrize(
+    "input_text, expected_output",
+    [
+        (
+            "  Text with leading and trailing spaces  ",
+            "text with leading and trailing spaces",
+        ),
+        ("Text with\u00a0non-breaking space", "text with non-breaking space"),
+        ("Text with\u2009thin space", "text with thin space"),
+        ("Text with\u3000ideographic space", "text with ideographic space"),
+        ("Text with accents éàè", "text with accents eae"),
+        ("Text with mixed CASE", "text with mixed case"),
+        (
+            "  Text with multiple\u00a0spaces\u2009and\u3000various spaces  ",
+            "text with multiple spaces and various spaces",
+        ),
+    ],
+)
+def test_attribution_text_normalizer(input_text, expected_output):
+    assert AttributionTextNormalizer.normalize_text(input_text) == expected_output
