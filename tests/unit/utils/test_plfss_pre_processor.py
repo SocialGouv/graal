@@ -224,3 +224,33 @@ def test_clean_up_original_amendments():
         result_amendments_df.reset_index(drop=True).sort_index(axis=1),
         expected_work_amendments_df.reset_index(drop=True).sort_index(axis=1),
     )
+
+
+def test_prepare_work_amendments_df():
+    df = pd.DataFrame(
+        {
+            "Corps amdt": ["Body 1", "Body 2"],
+            "Exposé amdt": ["Expose 1", "Expose 2"],
+        }
+    )
+    expected_df = pd.DataFrame(
+        {
+            "Corps amdt": ["Body 1", "Body 2"],
+            "Exposé amdt": ["Expose 1", "Expose 2"],
+            "Affectation (email)": [None, None],
+            "Affectation (nom)": [None, None],
+            "Allotissement": [None, None],
+            "Corps amdt orig": ["Body 1", "Body 2"],
+            "Exposé amdt orig": ["Expose 1", "Expose 2"],
+        }
+    )
+
+    plfss_processor = PLFSSPreProcessor()
+    plfss_processor.original_amendments_df = df.copy()
+
+    prepared_df = plfss_processor.prepare_work_amendments_df()
+
+    pd.testing.assert_frame_equal(
+        prepared_df.reset_index(drop=True),
+        expected_df.reset_index(drop=True),
+    )
