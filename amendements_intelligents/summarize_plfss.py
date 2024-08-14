@@ -2,11 +2,11 @@ import os
 import time
 
 from amendements_intelligents.summary.summary_processor import AmendmentSummaryProcessor
-from amendements_intelligents.summary.vllm_client import VLLMClient
+from amendements_intelligents.summary.vllm_client import LLMApiClient, VLLMApiClient
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 MODEL_NAME = os.getenv("MODEL_NAME")
-HOST = os.getenv("HOST")
+VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT")
 USER = os.getenv("USER")
 PASSWORD = os.getenv("PASSWORD")
 
@@ -18,7 +18,8 @@ def main():
     amendments_df = preprocessor.prepare_work_amendments_df().copy()
     amendments_df["Objet 70B()"] = ""
 
-    vllm_client = VLLMClient(MODEL_NAME, HOST, USER, PASSWORD)
+    print(f"VLLM_ENDPOINT {VLLM_ENDPOINT}")
+    vllm_client: LLMApiClient = VLLMApiClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
 
     processor = AmendmentSummaryProcessor(amendments_df, vllm_client)
 
