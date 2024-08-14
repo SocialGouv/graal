@@ -15,30 +15,3 @@ class PLFSSSheetDataLoader:
         else:
             print(f"Sheet '{sheet_name}' not found.")
         return sheet_data
-
-    def show_exploratory_analysis(self, plfss_df: pd.DataFrame) -> None:
-        # Get the number of rows and columns
-        num_rows, num_cols = plfss_df.shape
-        print(f"Number of rows: {num_rows}")
-        print(f"Number of columns: {num_cols}")
-
-        # Get the column names
-        column_names = plfss_df.columns.tolist()
-        print("Column names:")
-        print(column_names)
-
-        # Calculate the ratio of missing values for each column
-        missing_ratio = plfss_df.isnull().mean()
-
-        # Print the missing ratio for each column
-        print("Missing value ratio for each column:")
-        print(missing_ratio * 100)
-
-        # Calculate the length of each value in the 'Exposé amdt' column
-        lengths = plfss_df["Exposé amdt"].dropna().apply(len)
-
-        # Display the minimum, mean, and maximum length
-        print("Analysis of 'Exposé amdt':")
-        print(f"Minimum length: {lengths.min()}")
-        print(f"Mean length: {lengths.mean()}")
-        print(f"Maximum length: {lengths.max()}")
