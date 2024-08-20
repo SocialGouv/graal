@@ -62,3 +62,14 @@ addopts = [
   "--cov-report=json:coverage.json",
   "--cov-report=",
 ]
+
+[tool.pylint]
+disable = [
+    "line-too-long",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "missing-class-docstring",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
