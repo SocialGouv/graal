@@ -1,22 +1,27 @@
 import os
+import time
 
 from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
 from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopier
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
+from amendements_intelligents.utils.plfss_text_utils import normalize_text
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
-OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_similarity_2024.xlsx"
+OUTPUT_FILE = (
+    f"{DATA_FOLDER}/amendments_with_similarity_2024_with_summary_comparison.xlsx"
+)
 COLUMNS_TO_OUTPUT = [
     "Num amdt",
     "Lecture",
-    "Num article",
-    "Sort",
     "Commentaires",
-    "Réponse",
+    "Objet",
+    "Objet found",
     "Exposé amdt",
     "Exposé amdt found",
     "Corps amdt",
     "Corps amdt found",
+    "Réponse",
+    "Sort",
 ]
 
 
@@ -27,6 +32,7 @@ def main():
         input_files=[
             (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
             (f"{DATA_FOLDER}/PLFSS_2022.json", 2022),
+            # (f"{DATA_FOLDER}/PLFSS_2021.json", 2021),
         ]
     )
     old_plfss_data_processor.remap_columns_in_json_amendments()
@@ -38,7 +44,7 @@ def main():
     old_plfss_data_processor.handle_common_amendment_bodies()
     old_plfss_data_processor.handle_common_amendment_expose()
     old_amendments_df = old_plfss_data_processor.normalize_plfss(
-        columns_to_normalize=["Exposé amdt"]
+        columns_to_normalize=["Exposé amdt", "Objet"]
     )
 
     new_plfss_data_processor = PLFSSPreProcessor()
@@ -55,21 +61,64 @@ def main():
     new_plfss_data_processor.handle_common_amendment_bodies()
     new_plfss_data_processor.handle_common_amendment_expose()
     new_amendments_df = new_plfss_data_processor.normalize_plfss(
-        columns_to_normalize=["Exposé amdt"]
+        columns_to_normalize=["Exposé amdt", "Objet"]
     )
 
-    similarity_evaluator = SimilarityFinder(
+    similarity_evaluator_expose = SimilarityFinder(
         old_amendments_df=old_amendments_df,
         new_amendments_df=new_amendments_df,
         default_threshold_ratio=0.75,
-        threshold_ratio_mappings={"amendement redactionnel": 0.97},
+        threshold_ratio_mappings={"amendement redactionnel": 0.85},
     )
-    similarity_evaluator.prefilter_similar_docs(
+    similarity_evaluator_expose.prefilter_similar_docs(
         column_used_for_comparison="Exposé amdt", threshold=0.7
     )
-    closest_docs = similarity_evaluator.find_best_matches(
+    closest_docs_expose = similarity_evaluator_expose.find_best_matches(
         column_used_for_comparison="Exposé amdt"
     )
+
+    filtered_old_amendments_df = old_amendments_df.copy()
+    objet_prefixes_for_removal = (
+        normalize_text("amendement rédactionnel"),
+        normalize_text("rédactionnel"),
+        normalize_text("amendement de suppression"),
+        normalize_text("supprimer l'article"),
+    )
+    filtered_old_amendments_df = filtered_old_amendments_df[
+        ~filtered_old_amendments_df["Objet"].str.startswith(objet_prefixes_for_removal)
+    ]
+
+    similarity_evaluator_object = SimilarityFinder(
+        old_amendments_df=filtered_old_amendments_df,
+        new_amendments_df=new_amendments_df,
+        default_threshold_ratio=0.95,
+    )
+    similarity_evaluator_object.prefilter_similar_docs(
+        column_used_for_comparison="Objet", threshold=0.95
+    )
+    closest_docs_object = similarity_evaluator_object.find_best_matches(
+        column_used_for_comparison="Objet"
+    )
+
+    # Merge closest_docs_expose and closest_docs_object together while keeping the best match if a conflict occurs
+    closest_docs = {}
+    for doc_id, doc_info in closest_docs_expose.items():
+        if doc_id in closest_docs_object:
+            if (
+                doc_info["similarity_ratio"]
+                > closest_docs_object[doc_id]["similarity_ratio"]
+            ):
+                closest_docs[doc_id] = doc_info
+            else:
+                closest_docs[doc_id] = closest_docs_object[doc_id]
+        else:
+            closest_docs[doc_id] = doc_info
+
+    for doc_id, doc_info in closest_docs_object.items():
+        if doc_id not in closest_docs:
+            closest_docs[doc_id] = doc_info
+
+    print(f"Total number of matches after merge: {len(closest_docs)}")
 
     amendment_copier = AmendmentCopier(
         new_amendments_df=new_amendments_df,
@@ -85,4 +134,7 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
