@@ -50,6 +50,9 @@ def test_prefilter_similar_docs(old_amendments_df, new_amendments_df):
                         "Un amendement qui n'a rien à voir",
                     ],
                     "Year": [3000, 2021, 2021, 2021],
+                    "Num amdt": [1, 2, 3, 4],
+                    "Lecture": [1, 2, 3, 4],
+                    "amdt_idx": [1, 2, 3, 4],
                 }
             ),
             pd.DataFrame(
@@ -61,6 +64,9 @@ def test_prefilter_similar_docs(old_amendments_df, new_amendments_df):
                         "Cet amendement aborde le DEF",
                     ],
                     "Year": [2023, 2023, 2023, 2023],
+                    "Num amdt": [5, 6, 7, 8],
+                    "Lecture": [5, 6, 7, 8],
+                    "amdt_idx": [5, 6, 7, 8],
                 }
             ),
         )
@@ -77,15 +83,17 @@ def test_find_best_matches(old_amendments_df, new_amendments_df):
     assert closest_docs == {
         1: {
             "best_matching_comparison_value": -3000,
-            "best_matching_doc_idx": 0,
             "best_matching_doc_length": 38,
             "similarity_ratio": 1.0,
+            "best_matching_doc_amdt_idx": 1,
+            "column_used_for_comparison": "Exposé amdt",
         },
         3: {
             "best_matching_comparison_value": -3000,
-            "best_matching_doc_idx": 0,
             "best_matching_doc_length": 38,
             "similarity_ratio": 0.7368421052631579,
+            "best_matching_doc_amdt_idx": 1,
+            "column_used_for_comparison": "Exposé amdt",
         },
     }
 

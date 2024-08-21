@@ -56,6 +56,7 @@ class SimilarityFinder:
             )
         old_amendments = {
             "text": self.old_amendments_df[column_used_for_comparison],
+            "amdt_idx": self.old_amendments_df["amdt_idx"],
             "comparison_value": -self.old_amendments_df["Year"],
         }
         new_amendments = self.new_amendments_df[column_used_for_comparison]
@@ -67,5 +68,9 @@ class SimilarityFinder:
             default_threshold_ratio=self.default_threshold_ratio,
             threshold_ratio_mappings=self.threshold_ratio_mappings,
         )
+
+        for _, doc_info in closest_docs.items():
+            doc_info["column_used_for_comparison"] = column_used_for_comparison
+
         print(f"Found matches in previous PLFSS for {len(closest_docs)} amendments")
         return closest_docs

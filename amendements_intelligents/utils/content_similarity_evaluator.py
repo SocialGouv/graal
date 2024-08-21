@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -45,9 +45,10 @@ class ContentSimilarityEvaluator:
         left_docs: pd.DataFrame,
         right_docs: dict,
         default_threshold_ratio: float,
-        threshold_ratio_mappings: dict[str, float] = None,
+        threshold_ratio_mappings: Optional[dict[str, float]] = None,
     ) -> dict[IntIndex, dict[str, Any]]:
         right_doc_texts = right_docs["text"]
+        right_doc_amdt_idx = right_docs["amdt_idx"]
         right_doc_comparison_values = right_docs["comparison_value"]
 
         closest_docs = {}
@@ -76,6 +77,7 @@ class ContentSimilarityEvaluator:
 
             if best_doc_idx is not None:
                 best_doc_text = right_doc_texts.iloc[best_doc_idx]
+                best_doc_amdt_idx = right_doc_amdt_idx.iloc[best_doc_idx]
                 best_doc_length = len(best_doc_text)
                 similarity_ratio = (best_doc_length - min_distance) / best_doc_length
 
@@ -88,7 +90,7 @@ class ContentSimilarityEvaluator:
                 if similarity_ratio >= threshold_ratio:
                     closest_docs[left_doc_idx] = {
                         "best_matching_comparison_value": min_comparison_value,
-                        "best_matching_doc_idx": best_doc_idx,
+                        "best_matching_doc_amdt_idx": best_doc_amdt_idx,
                         "best_matching_doc_length": best_doc_length,
                         "similarity_ratio": similarity_ratio,
                     }
