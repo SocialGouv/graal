@@ -30,8 +30,8 @@ def main():
         ]
     )
     old_plfss_data_processor.remap_columns_in_json_amendments()
-    old_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
     old_plfss_data_processor.prepare_work_amendments_df()
+    old_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
     old_plfss_data_processor.remove_empty_rows_for_given_columns(
         columns_to_filter_with=["Exposé amdt", "Corps amdt"]
     )
@@ -47,8 +47,8 @@ def main():
         input_files=[(f"{DATA_FOLDER}/PLFSS_2024.json", 2024)]
     )
     new_plfss_data_processor.remap_columns_in_json_amendments()
-    new_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
     new_plfss_data_processor.prepare_work_amendments_df()
+    new_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
     new_plfss_data_processor.remove_empty_rows_for_given_columns(
         columns_to_filter_with=["Exposé amdt", "Corps amdt"]
     )

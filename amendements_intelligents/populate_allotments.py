@@ -19,8 +19,8 @@ class PLFSSAllotmentPopulator:
     def preprocess(self, acronym_file: FilePath) -> None:
         self.plfss_pre_processor.load_acronyms_excel(acronym_file)
         self.plfss_pre_processor.remap_columns_in_json_amendments()
-        self.plfss_pre_processor.replace_acronyms(columns_to_normalize=["Corps amdt"])
         self.plfss_pre_processor.prepare_work_amendments_df()
+        self.plfss_pre_processor.replace_acronyms(columns_to_normalize=["Corps amdt"])
         self.plfss_pre_processor.remove_empty_rows_for_given_columns(
             columns_to_filter_with=["Corps amdt"]
         )
