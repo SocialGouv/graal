@@ -192,6 +192,7 @@ def test_clean_up_original_amendments():
             "legislature": [1, 2],
             "corps": ["<p>Corps 1</p>", "<p>Corps 2</p>"],
             "expose": ["<p>Expose 1</p>", "<p>Expose 2</p>"],
+            "objet": ["<p>Objet 1</p>", "<p>Objet 2</p>"],
             "sort": ["<p>Sort 1</p>", "<p>Sort 2</p>"],
             "reponse": ["<p>Réponse 1</p>", "<p>Réponse 2</p>"],
             "computed_batch": [[1, 2], [18, 29]],
@@ -206,6 +207,7 @@ def test_clean_up_original_amendments():
             "legislature": [1, 2],
             "Lecture": ["A 1", "B 2"],
             "Num amdt": [1, 2],
+            "Objet": ["Objet 1", "Objet 2"],
             "Sort": ["Sort 1", "Sort 2"],
             "Réponse": ["Réponse 1", "Réponse 2"],
             "Num article": ["Article 1", "Article 2"],
@@ -229,17 +231,20 @@ def test_prepare_work_amendments_df():
         {
             "Corps amdt": ["Body 1", "Body 2"],
             "Exposé amdt": ["Expose 1", "Expose 2"],
+            "Objet": ["Objet 1", "Objet 2"],
         }
     )
     expected_df = pd.DataFrame(
         {
             "Corps amdt": ["Body 1", "Body 2"],
             "Exposé amdt": ["Expose 1", "Expose 2"],
+            "Objet": ["Objet 1", "Objet 2"],
             "Affectation (email)": [None, None],
             "Affectation (nom)": [None, None],
             "Allotissement": [None, None],
             "Corps amdt orig": ["Body 1", "Body 2"],
             "Exposé amdt orig": ["Expose 1", "Expose 2"],
+            "Objet orig": ["Objet 1", "Objet 2"],
         }
     )
 

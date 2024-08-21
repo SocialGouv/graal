@@ -26,6 +26,7 @@ class PLFSSPreProcessor:
             dfs.append(df)
 
         self.original_amendments_df = pd.concat(dfs, ignore_index=True)
+        self.original_amendments_df["amdt_idx"] = range(len(self.original_amendments_df))
         self.clean_up_json_columns()
 
     def load_acronyms_excel(self, acronym_file: FilePath) -> None:
@@ -49,6 +50,9 @@ class PLFSSPreProcessor:
         self.original_amendments_df["expose"] = self.original_amendments_df[
             "expose"
         ].apply(extract_plain_text_from_html)
+        self.original_amendments_df["objet"] = self.original_amendments_df[
+            "objet"
+        ].apply(extract_plain_text_from_html)
         self.original_amendments_df["sort"] = self.original_amendments_df["sort"].apply(
             extract_plain_text_from_html
         )
@@ -70,6 +74,8 @@ class PLFSSPreProcessor:
             "corps": "Corps amdt",
             "expose": "Exposé amdt",
             "num": "Num amdt",
+            "objet": "Objet",
+            "organe": "Organe",
             "reponse": "Réponse",
             "sort": "Sort",
         }
@@ -86,6 +92,7 @@ class PLFSSPreProcessor:
         self.original_amendments_df["Exposé amdt orig"] = self.original_amendments_df[
             "Exposé amdt"
         ]
+        self.original_amendments_df["Objet orig"] = self.original_amendments_df["Objet"]
 
         self.work_amendments_df = self.original_amendments_df.copy()
         return self.work_amendments_df
