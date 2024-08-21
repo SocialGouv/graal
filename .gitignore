@@ -14,5 +14,6 @@ build/
 *.info
 coverage.json
 diff_amendments.csv
+grouped_matching.csv
 
 *_vector_db
