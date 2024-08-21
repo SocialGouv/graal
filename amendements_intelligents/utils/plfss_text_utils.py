@@ -114,7 +114,7 @@ def remove_sentences_starting_with(text: str, pattern: str) -> str:
         for sentence in re.split(r"\.|\n", text)
         if not sentence.strip().lower().startswith(pattern.strip().lower())
     ]
-    return " ".join(filtered_sentences)
+    return " ".join(sentence for sentence in filtered_sentences if sentence != "")
 
 
 def normalize_text(text: str) -> str:
@@ -127,7 +127,7 @@ def normalize_text(text: str) -> str:
     # Remove accents
     text = unidecode(text)
     text = text.strip().lower()
-    # Replace apostrophes, backticks and list dashes with spaces
+    # Replace apostrophes, backticks, underscores with spaces
     text = re.sub(r"['`’_]", " ", text)
     # Replace dashes with a space unless they are surrounded by numbers
     text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
@@ -161,11 +161,23 @@ class AttributionTextNormalizer:
     @staticmethod
     def normalize_text(text: str) -> str:
         """Normalize text by stripping, converting to lowercase, and removing specific spaces."""
-        return re.sub(
+        text = remove_small_roman_numerals(text)
+        text = unidecode(text.strip().lower())
+        # Replace dashes with a space unless they are surrounded by numbers
+        text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
+        text = re.sub(
             r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000]",
             " ",
-            unidecode(text.strip().lower()),
+            text,
         )
+        # Remove extra whitespaces
+        text = re.sub(r"\s+", " ", text)
+
+        text = remove_sentences_starting_with(
+            text, pattern=unidecode("la perte de recettes pour")
+        )
+
+        return text
 
 
 class SummaryTextNormalizer:

@@ -40,7 +40,7 @@ def test_remove_small_roman_numerals(input_text, expected_output):
             Third line.
             """,
             "Second",
-            "First line  Third line",
+            "First line Third line",
         ),
         (
             "First line. Second line. Third line.",
@@ -50,7 +50,7 @@ def test_remove_small_roman_numerals(input_text, expected_output):
         (
             "First line\n\n\tSecond line.\nThird line.",
             "Second",
-            "First line   Third line",
+            "First line Third line",
         ),
     ],
 )
@@ -210,7 +210,7 @@ def test_normalize_text_with_special_characters():
             "  Text with leading and trailing spaces  ",
             "text with leading and trailing spaces",
         ),
-        ("Text with\u00a0non-breaking space", "text with non-breaking space"),
+        ("Text with\u00a0non-breaking space", "text with non breaking space"),
         ("Text with\u2009thin space", "text with thin space"),
         ("Text with\u3000ideographic space", "text with ideographic space"),
         ("Text with accents éàè", "text with accents eae"),
@@ -218,6 +218,14 @@ def test_normalize_text_with_special_characters():
         (
             "  Text with multiple\u00a0spaces\u2009and\u3000various spaces  ",
             "text with multiple spaces and various spaces",
+        ),
+        (
+            """
+            III. – Un rapport d’évaluation est
+            IV. – La perte de recettes pour l’État est co
+            V. – La perte de recettes pour les organismes »
+            """,
+            "un rapport d'evaluation est",
         ),
     ],
 )
