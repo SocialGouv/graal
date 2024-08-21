@@ -14,39 +14,58 @@ class AmendmentCopier:
         self.old_amendments_df = old_amendments_df
         self.closest_docs = closest_docs
 
-    def copy_matches_to_plfss_df(self, target_df: pd.DataFrame):
+    def copy_matches_to_plfss_df(self, target_df: pd.DataFrame) -> pd.DataFrame:
+        # Iterate over the closest documents
         for new_idx, closest_doc in self.closest_docs.items():
+            # Retrieve the amendment number and lecture from the new amendments
             new_amendment_numero = self.new_amendments_df.iloc[new_idx]["Num amdt"]
             new_amendment_lecture = self.new_amendments_df.iloc[new_idx]["Lecture"]
-            mask = (target_df["Num amdt"] == new_amendment_numero) & (
+
+            # Create a mask for the target DataFrame to find the matching rows
+            new_amendment_mask = (target_df["Num amdt"] == new_amendment_numero) & (
                 target_df["Lecture"] == new_amendment_lecture
             )
-            best_match_idx = closest_doc["best_matching_doc_idx"]
 
-            target_df.loc[mask, "Réponse"] = self.old_amendments_df.iloc[
-                best_match_idx
-            ]["Réponse"]
+            # Get the best match details
+            best_matching_doc_amdt_idx = closest_doc["best_matching_doc_amdt_idx"]
+            column_used_for_comparison = closest_doc["column_used_for_comparison"]
 
-            matching_numero = self.old_amendments_df.iloc[best_match_idx]["Num amdt"]
-            matching_lecture = self.old_amendments_df.iloc[best_match_idx]["Lecture"]
-            matching_corps = self.old_amendments_df.iloc[best_match_idx][
-                "Corps amdt orig"
-            ]
-            matching_expose = self.old_amendments_df.iloc[best_match_idx][
-                "Exposé amdt orig"
-            ]
-            matching_year = -closest_doc["best_matching_comparison_value"]
+            # Filter old amendments for the best match
+            old_amendment_mask = (
+                self.old_amendments_df["amdt_idx"] == best_matching_doc_amdt_idx
+            )
+            matching_amendment = self.old_amendments_df.loc[old_amendment_mask]
 
-            target_df.loc[mask, "Commentaires"] = textwrap.dedent(f"""
-            Réponse copiée du PLFSS {matching_year}
-            Lecture : {matching_lecture}
-            Numéro d'amendement : {matching_numero}
-            """)
+            if not matching_amendment.empty:
+                # Copy the response if available
+                target_df.loc[new_amendment_mask, "Réponse"] = matching_amendment[
+                    "Réponse"
+                ].values[0]
 
-            target_df.loc[mask, "Corps amdt found"] = matching_corps
-            target_df.loc[mask, "Exposé amdt found"] = matching_expose
+                # Extract the matching details
+                matching_num_amdt = matching_amendment["Num amdt"].values[0]
+                matching_lecture = matching_amendment["Lecture"].values[0]
+                matching_organe = matching_amendment["Organe"].values[0]
+                matching_object = matching_amendment["Objet orig"].values[0]
+                matching_corps = matching_amendment["Corps amdt orig"].values[0]
+                matching_expose = matching_amendment["Exposé amdt orig"].values[0]
+                matching_year = -closest_doc["best_matching_comparison_value"]
 
-            old_sort_value = self.old_amendments_df.iloc[best_match_idx]["Sort"]
-            if old_sort_value and "irrecevable" in old_sort_value.lower():
-                target_df.loc[mask, "Sort"] = old_sort_value
+                # Update target DataFrame with the matched details
+                target_df.loc[new_amendment_mask, "Commentaires"] = textwrap.dedent(f"""
+                Réponse copiée du PLFSS {matching_year}
+                Numéro d'amendement : {matching_num_amdt}
+                Lecture : {matching_lecture}
+                Organe : {matching_organe}
+                Colonne similaire : {column_used_for_comparison}
+                """)
+                target_df.loc[new_amendment_mask, "Objet found"] = matching_object
+                target_df.loc[new_amendment_mask, "Corps amdt found"] = matching_corps
+                target_df.loc[new_amendment_mask, "Exposé amdt found"] = matching_expose
+
+                # Check and copy the "Sort" value if it is irrecevable
+                old_sort_value = matching_amendment["Sort"].values[0]
+                if pd.notna(old_sort_value) and "irrecevable" in old_sort_value.lower():
+                    target_df.loc[new_amendment_mask, "Sort"] = old_sort_value
+
         return target_df

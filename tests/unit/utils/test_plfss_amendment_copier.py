@@ -3,9 +3,7 @@ import textwrap
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.plfss_amendment_copier import (
-    AmendmentCopier,
-)
+from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopier
 
 
 @pytest.fixture
@@ -16,17 +14,35 @@ def sample_data():
     old_amendments_df = pd.DataFrame(
         {
             "Num amdt": [1, 2, 3],
+            "amdt_idx": [1, 2, 3],
             "Lecture": ["A", "B", "C"],
+            "Objet": ["Objet 1", "Objet 2", "Objet 3"],
+            "Organe": ["Organe 1", "Organe 2", "Organe 3"],
             "Réponse": ["Response 1", "Response 2", "Response 3"],
             "Corps amdt orig": ["Corps 1", "Corps 2", "Corps 3"],
             "Exposé amdt orig": ["Exposé 1", "Exposé 2", "Exposé 3"],
+            "Objet orig": ["Objet 1", "Objet 2", "Objet 3"],
             "Sort": ["Sort 1", "Irrecevable 123", "Sort 3"],
         }
     )
     closest_docs = {
-        0: {"best_matching_doc_idx": 0, "best_matching_comparison_value": -2022},
-        1: {"best_matching_doc_idx": 1, "best_matching_comparison_value": -2021},
-        2: {"best_matching_doc_idx": 2, "best_matching_comparison_value": -2020},
+        0: {
+            "best_matching_doc_amdt_idx": 1,
+            "best_matching_doc_lecture": "A",
+            "best_matching_comparison_value": -2022,
+            "column_used_for_comparison": "Exposé amdt",
+        },
+        1: {
+            "best_matching_doc_amdt_idx": 2,
+            "best_matching_doc_lecture": "B",
+            "best_matching_comparison_value": -2021,
+            "column_used_for_comparison": "Exposé amdt",
+        },
+        2: {
+            "best_matching_doc_amdt_idx": 3,
+            "best_matching_comparison_value": -2020,
+            "column_used_for_comparison": "Exposé amdt",
+        },
     }
     target_df = pd.DataFrame(
         {
@@ -50,8 +66,10 @@ def test_copy_matches_to_plfss_df(sample_data):
     assert result_df.loc[0, "Réponse"] == "Response 1"
     assert result_df.loc[0, "Commentaires"] == textwrap.dedent("""
         Réponse copiée du PLFSS 2022
-        Lecture : A
         Numéro d'amendement : 1
+        Lecture : A
+        Organe : Organe 1
+        Colonne similaire : Exposé amdt
         """)
     assert result_df.loc[0, "Corps amdt found"] == "Corps 1"
     assert result_df.loc[0, "Exposé amdt found"] == "Exposé 1"
@@ -60,8 +78,10 @@ def test_copy_matches_to_plfss_df(sample_data):
     assert result_df.loc[1, "Réponse"] == "Response 2"
     assert result_df.loc[1, "Commentaires"] == textwrap.dedent("""
         Réponse copiée du PLFSS 2021
-        Lecture : B
         Numéro d'amendement : 2
+        Lecture : B
+        Organe : Organe 2
+        Colonne similaire : Exposé amdt
         """)
     assert result_df.loc[1, "Corps amdt found"] == "Corps 2"
     assert result_df.loc[1, "Exposé amdt found"] == "Exposé 2"
@@ -70,8 +90,10 @@ def test_copy_matches_to_plfss_df(sample_data):
     assert result_df.loc[2, "Réponse"] == "Response 3"
     assert result_df.loc[2, "Commentaires"] == textwrap.dedent("""
         Réponse copiée du PLFSS 2020
-        Lecture : C
         Numéro d'amendement : 3
+        Lecture : C
+        Organe : Organe 3
+        Colonne similaire : Exposé amdt
         """)
     assert result_df.loc[2, "Corps amdt found"] == "Corps 3"
     assert result_df.loc[2, "Exposé amdt found"] == "Exposé 3"
