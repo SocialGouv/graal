@@ -16,7 +16,7 @@ N_SAMPLES = 50
 
 if __name__ == "__main__":
     preproc = PLFSSPreProcessor()
-    preproc.load_plfss_json(INPUT_FILE_PLFSS)
+    preproc.load_plfss_json([(INPUT_FILE_PLFSS, PLFSS_YEAR)])
     preproc.remap_columns_in_json_amendments()
 
     df = preproc.original_amendments_df.copy()

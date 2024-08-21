@@ -1,9 +1,7 @@
 import pandas as pd
 
 from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
-from amendements_intelligents.utils.plfss_sheet_data_loader import (
-    PLFSSSheetDataLoader,
-)
+from amendements_intelligents.utils.plfss_sheet_data_loader import PLFSSSheetDataLoader
 
 
 def load_test_file_to_compare(
@@ -37,9 +35,13 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         allotment_populator.plfss_pre_processor.original_amendments_df.copy()
     )
 
-    allotment_populator.plfss_pre_processor.remove_empty_rows_for_given_columns()
+    allotment_populator.plfss_pre_processor.remove_empty_rows_for_given_columns(
+        columns_to_filter_with=["Corps amdt"]
+    )
     allotment_populator.plfss_pre_processor.handle_common_amendment_bodies()
-    allotment_populator.plfss_pre_processor.normalize_plfss()
+    allotment_populator.plfss_pre_processor.normalize_plfss(
+        columns_to_normalize=["Corps amdt"]
+    )
 
     alloted_amendments_df = allotment_populator.process()
 

@@ -5,11 +5,7 @@ from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopie
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
-OLD_PLFSS_YEAR = 2023
-NEW_PLFSS_YEAR = 2024
-INPUT_FILE_OLD_PLFSS = f"{DATA_FOLDER}/PLFSS_{OLD_PLFSS_YEAR}.json"
-INPUT_FILE_NEW_PLFSS = f"{DATA_FOLDER}/PLFSS_{NEW_PLFSS_YEAR}.json"
-OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_similarity_{NEW_PLFSS_YEAR}.xlsx"
+OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_similarity_2024.xlsx"
 COLUMNS_TO_OUTPUT = [
     "Num amdt",
     "Lecture",
@@ -26,7 +22,12 @@ COLUMNS_TO_OUTPUT = [
 
 def main():
     old_plfss_data_processor = PLFSSPreProcessor()
-    old_plfss_data_processor.load_plfss_json(input_files=[INPUT_FILE_OLD_PLFSS])
+    old_plfss_data_processor.load_plfss_json(
+        input_files=[
+            (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
+            (f"{DATA_FOLDER}/PLFSS_2022.json", 2022),
+        ]
+    )
     old_plfss_data_processor.remap_columns_in_json_amendments()
     old_plfss_data_processor.prepare_work_amendments_df()
     old_plfss_data_processor.remove_empty_rows_for_given_columns(
@@ -37,10 +38,11 @@ def main():
     old_amendments_df = old_plfss_data_processor.normalize_plfss(
         columns_to_normalize=["Exposé amdt"]
     )
-    old_amendments_df["Year"] = OLD_PLFSS_YEAR
 
     new_plfss_data_processor = PLFSSPreProcessor()
-    new_plfss_data_processor.load_plfss_json(input_files=[INPUT_FILE_NEW_PLFSS])
+    new_plfss_data_processor.load_plfss_json(
+        input_files=[(f"{DATA_FOLDER}/PLFSS_2024.json", 2024)]
+    )
     new_plfss_data_processor.remap_columns_in_json_amendments()
     new_plfss_data_processor.prepare_work_amendments_df()
     new_plfss_data_processor.remove_empty_rows_for_given_columns(
@@ -51,8 +53,6 @@ def main():
     new_amendments_df = new_plfss_data_processor.normalize_plfss(
         columns_to_normalize=["Exposé amdt"]
     )
-
-    new_amendments_df["Year"] = NEW_PLFSS_YEAR
 
     similarity_evaluator = SimilarityFinder(
         old_amendments_df=old_amendments_df,

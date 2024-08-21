@@ -13,7 +13,7 @@ PASSWORD = os.getenv("PASSWORD")
 
 def main():
     preprocessor = PLFSSPreProcessor()
-    preprocessor.load_plfss_json(input_files=["data/PLFSS_2024.json"])
+    preprocessor.load_plfss_json(input_files=[("data/PLFSS_2024.json", 2024)])
     preprocessor.remap_columns_in_json_amendments()
     amendments_df = preprocessor.prepare_work_amendments_df().copy()
     amendments_df["Objet 70B()"] = ""
