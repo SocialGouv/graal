@@ -6,6 +6,7 @@ from amendements_intelligents.summary.vllm_client import LLMApiClient, VLLMApiCl
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 MODEL_NAME = os.getenv("MODEL_NAME")
+DATA_FOLDER = os.getenv("DATA_FOLDER")
 VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT")
 USER = os.getenv("USER")
 PASSWORD = os.getenv("PASSWORD")
@@ -13,8 +14,10 @@ PASSWORD = os.getenv("PASSWORD")
 
 def main():
     preprocessor = PLFSSPreProcessor()
-    preprocessor.load_plfss_json(input_files=[("data/PLFSS_2024.json", 2024)])
+    preprocessor.load_plfss_json(input_files=[(f"{DATA_FOLDER}/PLFSS_2024.json", 2024)])
+    preprocessor.load_acronyms_excel(f"{DATA_FOLDER}/acronym_mapping.xlsx")
     preprocessor.remap_columns_in_json_amendments()
+    preprocessor.replace_acronyms(columns_to_normalize=["Exposé amdt", "Corps amdt"])
     amendments_df = preprocessor.prepare_work_amendments_df().copy()
     amendments_df["Objet 70B()"] = ""
 

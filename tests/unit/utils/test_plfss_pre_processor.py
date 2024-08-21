@@ -252,3 +252,120 @@ def test_prepare_work_amendments_df():
         prepared_df.reset_index(drop=True),
         expected_df.reset_index(drop=True),
     )
+
+
+@pytest.mark.parametrize(
+    "input_df, acronym_mapping, columns_to_normalize, expected_df",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "Corps amdt": [
+                        "This is an amendment with an acronym ABC.",
+                        "Another amendment with acronym XYZ.",
+                        "No acronym here.",
+                    ],
+                    "Exposé amdt": [
+                        "Exposé with acronym ABC.",
+                        "Another exposé with XYZ.",
+                        "No acronym in exposé.",
+                    ],
+                }
+            ),
+            {
+                "ABC": "A Big Change",
+                "XYZ": "Xylophone Zebra Yak",
+            },
+            ["Corps amdt", "Exposé amdt"],
+            pd.DataFrame(
+                {
+                    "Corps amdt": [
+                        "This is an amendment with an acronym A Big Change.",
+                        "Another amendment with acronym Xylophone Zebra Yak.",
+                        "No acronym here.",
+                    ],
+                    "Exposé amdt": [
+                        "Exposé with acronym A Big Change.",
+                        "Another exposé with Xylophone Zebra Yak.",
+                        "No acronym in exposé.",
+                    ],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "Corps amdt": [
+                        "Amendment with acronym DEF.",
+                        "Another one with GHI.",
+                    ],
+                    "Exposé amdt": [
+                        "Exposé with DEF.",
+                        "Exposé with GHI.",
+                    ],
+                }
+            ),
+            {
+                "DEF": "Definite Explanation Found",
+                "GHI": "Great Historical Insight",
+            },
+            ["Corps amdt", "Exposé amdt"],
+            pd.DataFrame(
+                {
+                    "Corps amdt": [
+                        "Amendment with acronym Definite Explanation Found.",
+                        "Another one with Great Historical Insight.",
+                    ],
+                    "Exposé amdt": [
+                        "Exposé with Definite Explanation Found.",
+                        "Exposé with Great Historical Insight.",
+                    ],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "Corps amdt": [
+                        "Amendment with acronym JKL.",
+                        "Another one with MNO.",
+                    ],
+                    "Exposé amdt": [
+                        "Exposé with JKL.",
+                        "Exposé with MNO.",
+                    ],
+                }
+            ),
+            {
+                "JKL": "Just Kidding, Literally",
+                "MNO": "Many New Opportunities",
+            },
+            ["Corps amdt"],
+            pd.DataFrame(
+                {
+                    "Corps amdt": [
+                        "Amendment with acronym Just Kidding, Literally.",
+                        "Another one with Many New Opportunities.",
+                    ],
+                    "Exposé amdt": [
+                        "Exposé with JKL.",
+                        "Exposé with MNO.",
+                    ],
+                }
+            ),
+        ),
+    ],
+)
+def test_replace_acronyms(input_df, acronym_mapping, columns_to_normalize, expected_df):
+    plfss_processor = PLFSSPreProcessor()
+    plfss_processor.acronym_mapping = acronym_mapping
+    plfss_processor.work_amendments_df = input_df.copy()
+
+    result_df = plfss_processor.replace_acronyms(
+        columns_to_normalize=columns_to_normalize
+    )
+
+    pd.testing.assert_frame_equal(
+        result_df.reset_index(drop=True),
+        expected_df.reset_index(drop=True),
+    )

@@ -22,6 +22,7 @@ COLUMNS_TO_OUTPUT = [
 
 def main():
     old_plfss_data_processor = PLFSSPreProcessor()
+    old_plfss_data_processor.load_acronyms_excel(f"{DATA_FOLDER}/acronym_mapping.xlsx")
     old_plfss_data_processor.load_plfss_json(
         input_files=[
             (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
@@ -29,6 +30,7 @@ def main():
         ]
     )
     old_plfss_data_processor.remap_columns_in_json_amendments()
+    old_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
     old_plfss_data_processor.prepare_work_amendments_df()
     old_plfss_data_processor.remove_empty_rows_for_given_columns(
         columns_to_filter_with=["Exposé amdt", "Corps amdt"]
@@ -40,10 +42,12 @@ def main():
     )
 
     new_plfss_data_processor = PLFSSPreProcessor()
+    new_plfss_data_processor.load_acronyms_excel(f"{DATA_FOLDER}/acronym_mapping.xlsx")
     new_plfss_data_processor.load_plfss_json(
         input_files=[(f"{DATA_FOLDER}/PLFSS_2024.json", 2024)]
     )
     new_plfss_data_processor.remap_columns_in_json_amendments()
+    new_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
     new_plfss_data_processor.prepare_work_amendments_df()
     new_plfss_data_processor.remove_empty_rows_for_given_columns(
         columns_to_filter_with=["Exposé amdt", "Corps amdt"]

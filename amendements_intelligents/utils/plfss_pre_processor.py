@@ -14,6 +14,7 @@ class PLFSSPreProcessor:
     def __init__(self):
         self.original_amendments_df = None
         self.work_amendments_df = None
+        self.acronym_mapping = {}
 
     def load_plfss_json(self, input_files: tuple[FilePath, int]) -> None:
         dfs = []
@@ -26,6 +27,12 @@ class PLFSSPreProcessor:
 
         self.original_amendments_df = pd.concat(dfs, ignore_index=True)
         self.clean_up_json_columns()
+
+    def load_acronyms_excel(self, acronym_file: FilePath) -> None:
+        acronym_df = pd.read_excel(acronym_file)
+        self.acronym_mapping = dict(
+            zip(acronym_df["Acronyme"], acronym_df["Développement"])
+        )
 
     def load_plfss_excel(self, input_file: FilePath) -> None:
         self.original_amendments_df = pd.read_excel(input_file)
@@ -161,6 +168,17 @@ class PLFSSPreProcessor:
             self.work_amendments_df = self.work_amendments_df[
                 self.work_amendments_df[column].str.strip().apply(len) > 0
             ]
+        return self.work_amendments_df
+
+    def replace_acronyms(self, columns_to_normalize: list[ColumnName]) -> pd.DataFrame:
+        if self.acronym_mapping is None:
+            return self.work_amendments_df
+
+        for column in columns_to_normalize:
+            for acronym, full_name in self.acronym_mapping.items():
+                self.work_amendments_df[column] = self.work_amendments_df[
+                    column
+                ].str.replace(acronym, full_name, regex=True)
         return self.work_amendments_df
 
     def normalize_plfss(self, columns_to_normalize: list[ColumnName]) -> pd.DataFrame:

@@ -16,8 +16,10 @@ class PLFSSAllotmentPopulator:
     def load_data(self, input_file: FilePath, year: int = None) -> None:
         self.plfss_pre_processor.load_plfss_json(input_files=[(input_file, year)])
 
-    def preprocess(self) -> None:
+    def preprocess(self, acronym_file: FilePath) -> None:
+        self.plfss_pre_processor.load_acronyms_excel(acronym_file)
         self.plfss_pre_processor.remap_columns_in_json_amendments()
+        self.plfss_pre_processor.replace_acronyms(columns_to_normalize=["Corps amdt"])
         self.plfss_pre_processor.prepare_work_amendments_df()
         self.plfss_pre_processor.remove_empty_rows_for_given_columns(
             columns_to_filter_with=["Corps amdt"]
@@ -60,7 +62,7 @@ def main():
 
     allotment_populator = PLFSSAllotmentPopulator()
     allotment_populator.load_data(input_file=INPUT_FILE)
-    allotment_populator.preprocess()
+    allotment_populator.preprocess(acronym_file=f"{DATA_FOLDER}/acronym_mapping.xlsx")
     amendments_df = allotment_populator.process()
 
     amendments_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)
