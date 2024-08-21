@@ -14,7 +14,7 @@ class PLFSSAllotmentPopulator:
         self.plfss_pre_processor = PLFSSPreProcessor()
 
     def load_data(self, input_file: FilePath) -> None:
-        self.plfss_pre_processor.load_plfss_json(input_file=input_file)
+        self.plfss_pre_processor.load_plfss_json(input_files=[input_file])
 
     def preprocess(self) -> None:
         self.plfss_pre_processor.remap_columns_in_json_amendments()

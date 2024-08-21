@@ -21,7 +21,7 @@ class AttributionDataLoader:
     ) -> pd.DataFrame:
         """Load amendments data from a file."""
         if amendments_file.endswith(".json"):
-            pre_processor.load_plfss_json(input_file=amendments_file)
+            pre_processor.load_plfss_json(input_files=[amendments_file])
             pre_processor.remap_columns_in_json_amendments()
             pre_processor.prepare_work_amendments_df()
             return pre_processor.work_amendments_df.copy()

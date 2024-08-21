@@ -15,10 +15,15 @@ class PLFSSPreProcessor:
         self.original_amendments_df = None
         self.work_amendments_df = None
 
-    def load_plfss_json(self, input_file: FilePath) -> None:
-        with open(input_file, "r", encoding="utf-8-sig") as file:
-            data = json.load(file)
-        self.original_amendments_df = pd.DataFrame(data["amendements"])
+    def load_plfss_json(self, input_files: list[FilePath]) -> None:
+        dfs = []
+        for file in input_files:
+            with open(file, "r", encoding="utf-8-sig") as f:
+                data = json.load(f)
+            df = pd.DataFrame(data["amendements"])
+            dfs.append(df)
+
+        self.original_amendments_df = pd.concat(dfs, ignore_index=True)
         self.clean_up_json_columns()
 
     def load_plfss_excel(self, input_file: FilePath) -> None:
