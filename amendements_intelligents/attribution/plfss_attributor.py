@@ -61,6 +61,7 @@ class PLFSSAttributor:
             normalized_text = AttributionTextNormalizer.normalize_text(
                 row["Corps amdt"]
             )
+            # TODO: Use a unique index that we generate ourselves when loading amendments instead of the composite of num amdt and lecture which is not reliable.
             num_amdt, lecture = row["Num amdt"], row["Lecture"]
 
             code_matches = re.findall(
@@ -69,8 +70,9 @@ class PLFSSAttributor:
             matched_codes = {
                 self.matcher.find_best_match(match, self.codes_set, threshold=60)
                 for match in code_matches
-                if match
+                if match is not None
             }
+            matched_codes = {code for code in matched_codes if code is not None}
 
             article_pattern = rf"(?:(?:l\.|articles?|Art\.))+(?: et |\s?(\d+(?:-\d+)*(?:\s?(?:{possible_ordinals_pattern}))?))+"
             article_matches = set(re.findall(article_pattern, normalized_text))
