@@ -44,7 +44,8 @@ class ContentSimilarityEvaluator:
         similar_doc_indices: dict[IntIndex, list[IntIndex]],
         left_docs: pd.DataFrame,
         right_docs: dict,
-        threshold_ratio: float = 0.95,
+        default_threshold_ratio: float,
+        threshold_ratio_mappings: dict[str, float] = None,
     ) -> dict[IntIndex, dict[str, Any]]:
         right_doc_texts = right_docs["text"]
         right_doc_comparison_values = right_docs["comparison_value"]
@@ -77,6 +78,12 @@ class ContentSimilarityEvaluator:
                 best_doc_text = right_doc_texts.iloc[best_doc_idx]
                 best_doc_length = len(best_doc_text)
                 similarity_ratio = (best_doc_length - min_distance) / best_doc_length
+
+                threshold_ratio = default_threshold_ratio
+                for key in threshold_ratio_mappings:
+                    if left_doc_text.startswith(key):
+                        threshold_ratio = threshold_ratio_mappings[key]
+                        break
 
                 if similarity_ratio >= threshold_ratio:
                     closest_docs[left_doc_idx] = {

@@ -1,9 +1,7 @@
 import os
 
 from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
-from amendements_intelligents.utils.plfss_amendment_copier import (
-    AmendmentCopier,
-)
+from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopier
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
@@ -59,12 +57,14 @@ def main():
     similarity_evaluator = SimilarityFinder(
         old_amendments_df=old_amendments_df,
         new_amendments_df=new_amendments_df,
+        default_threshold_ratio=0.75,
+        threshold_ratio_mappings={"amendement redactionnel": 0.97},
     )
     similarity_evaluator.prefilter_similar_docs(
         column_used_for_comparison="Exposé amdt", threshold=0.7
     )
     closest_docs = similarity_evaluator.find_best_matches(
-        column_used_for_comparison="Exposé amdt", threshold_ratio=0.75
+        column_used_for_comparison="Exposé amdt"
     )
 
     amendment_copier = AmendmentCopier(

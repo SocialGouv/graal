@@ -8,11 +8,19 @@ from amendements_intelligents.utils.content_similarity_evaluator import (
 
 class SimilarityFinder:
     def __init__(
-        self, old_amendments_df: pd.DataFrame, new_amendments_df: pd.DataFrame
+        self,
+        old_amendments_df: pd.DataFrame,
+        new_amendments_df: pd.DataFrame,
+        default_threshold_ratio: float = 0.75,
+        threshold_ratio_mappings=None,
     ):
         self.old_amendments_df = old_amendments_df
         self.new_amendments_df = new_amendments_df
-        self.similar_doc_indices = None
+        self.similar_doc_indices: dict[IntIndex, list[IntIndex]] = {}
+        self.default_threshold_ratio = default_threshold_ratio
+        self.threshold_ratio_mappings = (
+            threshold_ratio_mappings if threshold_ratio_mappings is not None else {}
+        )
 
     def prefilter_similar_docs(
         self, column_used_for_comparison: str = "Exposé amdt", threshold=0.7
@@ -40,9 +48,7 @@ class SimilarityFinder:
         return self.similar_doc_indices
 
     def find_best_matches(
-        self,
-        column_used_for_comparison: str = "Exposé amdt",
-        threshold_ratio: float = 0.75,
+        self, column_used_for_comparison: str = "Exposé amdt"
     ) -> dict:
         if self.similar_doc_indices is None:
             raise ValueError(
@@ -58,7 +64,8 @@ class SimilarityFinder:
             similar_doc_indices=self.similar_doc_indices,
             left_docs=new_amendments,
             right_docs=old_amendments,
-            threshold_ratio=threshold_ratio,
+            default_threshold_ratio=self.default_threshold_ratio,
+            threshold_ratio_mappings=self.threshold_ratio_mappings,
         )
         print(f"Found matches in previous PLFSS for {len(closest_docs)} amendments")
         return closest_docs
