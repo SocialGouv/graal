@@ -20,8 +20,8 @@ def sample_amendments_df():
         "Corps amdt": [
             "Corps 1",
             "Corps 2",
-            "Supprimer l'article 26",
-            "Supprimer l'article.",
+            "Supprimer cet article",
+            "Supprimer cet article.",
         ],
         "Num amdt": [1, 2, 3, 4],
     }
@@ -32,9 +32,11 @@ def sample_amendments_df():
 
 def test_process_amendments(mock_vllm_client, sample_amendments_df):
     processor = AmendmentSummaryProcessor(sample_amendments_df, mock_vllm_client)
-    processor.process_amendments(max_concurrent=1)
+    processor.process_amendments(stop_index=3, max_concurrent=1)
 
     assert mock_vllm_client.generate_summary.call_count == 2
+
+    print(f'sample_amendments_df["Objet 70B()"] {sample_amendments_df["Objet 70B()"]}')
 
     assert sample_amendments_df.loc[0, "Objet 70B()"] == "mock_summary"
     assert sample_amendments_df.loc[1, "Objet 70B()"] == "mock_summary"
@@ -58,7 +60,7 @@ def test_process_amendments_with_high_start_index(
     mock_vllm_client, sample_amendments_df
 ):
     processor = AmendmentSummaryProcessor(sample_amendments_df, mock_vllm_client)
-    processor.process_amendments(start_index=5, max_concurrent=1)
+    processor.process_amendments(start_index=5, stop_index=3, max_concurrent=1)
 
     assert mock_vllm_client.generate_summary.call_count == 0
 
@@ -78,7 +80,7 @@ def test_process_amendments_with_invalid_rows(mock_vllm_client):
     df["Objet 70B()"] = ""
 
     processor = AmendmentSummaryProcessor(df, mock_vllm_client)
-    processor.process_amendments(max_concurrent=1)
+    processor.process_amendments(stop_index=3, max_concurrent=1)
 
     assert mock_vllm_client.generate_summary.call_count == 1
 

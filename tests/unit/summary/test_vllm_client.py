@@ -4,14 +4,14 @@ import pytest
 import requests
 from requests.models import Response
 
-from amendements_intelligents.summary.vllm_client import LLMApiClient
+from amendements_intelligents.summary.vllm_client import VLLMApiClient
 
 
 @pytest.fixture
 def vllm_client():
-    return LLMApiClient(
+    return VLLMApiClient(
         model_name="test-model",
-        host="test-host",
+        vllm_endpoint="https://test-host/v1/completions",
         user="test-user",
         password="test-password",
     )

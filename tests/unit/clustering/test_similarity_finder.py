@@ -67,9 +67,13 @@ def test_prefilter_similar_docs(old_amendments_df, new_amendments_df):
     ],
 )
 def test_find_best_matches(old_amendments_df, new_amendments_df):
-    similarity_finder = SimilarityFinder(old_amendments_df, new_amendments_df)
+    similarity_finder = SimilarityFinder(
+        old_amendments_df, new_amendments_df, default_threshold_ratio=0.7
+    )
     similarity_finder.prefilter_similar_docs()
-    closest_docs = similarity_finder.find_best_matches(threshold_ratio=0.7)
+    closest_docs = similarity_finder.find_best_matches(
+        column_used_for_comparison="Exposé amdt"
+    )
     assert closest_docs == {
         1: {
             "best_matching_comparison_value": -3000,
@@ -88,5 +92,5 @@ def test_find_best_matches(old_amendments_df, new_amendments_df):
 
 def test_find_best_matches_without_prefilter():
     similarity_finder = SimilarityFinder(None, None)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         similarity_finder.find_best_matches()

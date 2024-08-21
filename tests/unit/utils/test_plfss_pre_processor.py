@@ -1,9 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.plfss_pre_processor import (
-    PLFSSPreProcessor,
-)
+from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 
 def test_replace_common_amendment_bodies():
@@ -141,7 +139,7 @@ def test_normalize_plfss():
                     "Exposé amdt": [
                         "Amendement rédactionnel.",
                         "A small amendment",
-                        "Another amendment that is too long to be replaced",
+                        "Another amendment that is too long to be appended to!",
                     ],
                     "Corps amdt": ["Body 1", "Body 2", "Body 3"],
                 }
@@ -149,9 +147,9 @@ def test_normalize_plfss():
             pd.DataFrame(
                 {
                     "Exposé amdt": [
-                        "Body 1",
-                        "Body 2",
-                        "Another amendment that is too long to be replaced",
+                        "Amendement rédactionnel. Body 1",
+                        "A small amendment Body 2",
+                        "Another amendment that is too long to be appended to!",
                     ],
                     "Corps amdt": ["Body 1", "Body 2", "Body 3"],
                 }
@@ -161,7 +159,7 @@ def test_normalize_plfss():
             pd.DataFrame(
                 {
                     "Exposé amdt": [
-                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be replaced!",
+                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be appended to!",
                         "Short",
                     ],
                     "Corps amdt": ["Body B", "Body C"],
@@ -170,8 +168,8 @@ def test_normalize_plfss():
             pd.DataFrame(
                 {
                     "Exposé amdt": [
-                        "Body B",
-                        "Body C",
+                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be appended to! Body B",
+                        "Short Body C",
                     ],
                     "Corps amdt": ["Body B", "Body C"],
                 }

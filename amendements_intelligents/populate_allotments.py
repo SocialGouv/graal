@@ -5,12 +5,8 @@ import pandas as pd
 from pydantic import FilePath
 
 from amendements_intelligents.clustering.cluster_finder import PLFSSClusterFinder
-from amendements_intelligents.utils.plfss_allotment_updater import (
-    PLFSSAllotmentUpdater,
-)
-from amendements_intelligents.utils.plfss_pre_processor import (
-    PLFSSPreProcessor,
-)
+from amendements_intelligents.utils.plfss_allotment_updater import PLFSSAllotmentUpdater
+from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 
 class PLFSSAllotmentPopulator:
@@ -23,9 +19,11 @@ class PLFSSAllotmentPopulator:
     def preprocess(self) -> None:
         self.plfss_pre_processor.remap_columns_in_json_amendments()
         self.plfss_pre_processor.prepare_work_amendments_df()
-        self.plfss_pre_processor.remove_empty_rows_for_given_columns()
+        self.plfss_pre_processor.remove_empty_rows_for_given_columns(
+            columns_to_filter_with=["Corps amdt"]
+        )
         self.plfss_pre_processor.handle_common_amendment_bodies()
-        self.plfss_pre_processor.normalize_plfss()
+        self.plfss_pre_processor.normalize_plfss(columns_to_normalize=["Corps amdt"])
 
     def process(self) -> pd.DataFrame:
         # Clustering

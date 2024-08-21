@@ -46,6 +46,7 @@ class PLFSSPreProcessor:
         self.original_amendments_df["computed_batch"] = self.original_amendments_df[
             "computed_batch"
         ].apply(lambda x: ",".join(map(str, x)))
+        return self.original_amendments_df
 
     def remap_columns_in_json_amendments(self) -> pd.DataFrame:
         column_mapping = {
@@ -115,7 +116,7 @@ class PLFSSPreProcessor:
 
     def handle_common_amendment_expose(self) -> None:
         """
-        Replace Exposé amdt with Corps amdt if Exposé amdt is:
+        Concatenate Exposé amdt with Corps amdt if Exposé amdt is:
         - Small (< 50 characters)
         - A common pattern (i.e. "Amendement rédactionnel.")
         """
@@ -135,17 +136,19 @@ class PLFSSPreProcessor:
         # Also append 'Num article' to small amendment bodies
         mask = mask | (self.work_amendments_df["Exposé amdt"].str.len() < 25)
         print(
-            f"Replacing Exposé amdt with Corps Amdt in {mask.sum()} amendements to get better clusters...\n"
+            f"Concatenating Corps Amdt to Exposé amdt in {mask.sum()} amendements to get better clusters...\n"
         )
 
-        self.work_amendments_df.loc[mask, "Exposé amdt"] = self.work_amendments_df.loc[
-            mask, "Corps amdt"
-        ]
+        self.work_amendments_df.loc[mask, "Exposé amdt"] = (
+            self.work_amendments_df.loc[mask, "Exposé amdt"]
+            + " "
+            + self.work_amendments_df.loc[mask, "Corps amdt"]
+        )
         return self.work_amendments_df
 
     def remove_empty_rows_for_given_columns(
         self,
-        columns_to_filter_with: list[ColumnName] = ["Corps amdt"],
+        columns_to_filter_with: list[ColumnName],
     ) -> None:
         for column in columns_to_filter_with:
             self.work_amendments_df.dropna(subset=column, inplace=True)
@@ -154,7 +157,7 @@ class PLFSSPreProcessor:
             ]
         return self.work_amendments_df
 
-    def normalize_plfss(self, columns_to_normalize=["Corps amdt"]) -> pd.DataFrame:
+    def normalize_plfss(self, columns_to_normalize: list[ColumnName]) -> pd.DataFrame:
         for column in columns_to_normalize:
             self.work_amendments_df[column] = self.work_amendments_df[column].apply(
                 normalize_text
