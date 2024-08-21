@@ -108,11 +108,13 @@ def remove_small_roman_numerals(text: str) -> str:
     return text
 
 
-def remove_sentences_starting_with(text: str, pattern: str) -> str:
+def remove_sentences_starting_with(
+    text: str, pattern: str, delimiter_pattern: str = r"\.|\n"
+) -> str:
     filtered_sentences = [
         sentence.strip()
-        for sentence in re.split(r"\.|\n", text)
-        if not sentence.strip().lower().startswith(pattern.strip().lower())
+        for sentence in re.split(delimiter_pattern, text)
+        if sentence and not sentence.strip().lower().startswith(pattern.strip().lower())
     ]
     return " ".join(sentence for sentence in filtered_sentences if sentence != "")
 
@@ -172,9 +174,10 @@ class AttributionTextNormalizer:
         )
         # Remove extra whitespaces
         text = re.sub(r"\s+", " ", text)
-
         text = remove_sentences_starting_with(
-            text, pattern=unidecode("la perte de recettes pour")
+            text,
+            pattern=unidecode("la perte de recettes pour"),
+            delimiter_pattern=r"(?<! art)(?<! l)\.|(\n)",
         )
 
         return text
