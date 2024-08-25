@@ -68,7 +68,7 @@ def main():
         old_amendments_df=old_amendments_df,
         new_amendments_df=new_amendments_df,
         default_threshold_ratio=0.75,
-        threshold_ratio_mappings={"amendement redactionnel": 0.85},
+        threshold_ratio_mappings={"amendement redactionnel": 0.9},
     )
     similarity_evaluator_expose.prefilter_similar_docs(
         column_used_for_comparison="Exposé amdt", threshold=0.7
@@ -77,6 +77,7 @@ def main():
         column_used_for_comparison="Exposé amdt"
     )
 
+    # For object comparison, we remove the redactionnel and suppression amendments
     filtered_old_amendments_df = old_amendments_df.copy()
     objet_prefixes_for_removal = (
         normalize_text("amendement rédactionnel"),
@@ -103,20 +104,18 @@ def main():
     # Merge closest_docs_expose and closest_docs_object together while keeping the best match if a conflict occurs
     closest_docs = {}
     for doc_id, doc_info in closest_docs_expose.items():
+        closest_docs[doc_id] = doc_info
         if doc_id in closest_docs_object:
+            # If the similarity ratio is higher in closest_docs_object, use that instead
             if (
-                doc_info["similarity_ratio"]
-                > closest_docs_object[doc_id]["similarity_ratio"]
+                closest_docs_object[doc_id]["similarity_ratio"]
+                > doc_info["similarity_ratio"]
             ):
-                closest_docs[doc_id] = doc_info
-            else:
                 closest_docs[doc_id] = closest_docs_object[doc_id]
-        else:
-            closest_docs[doc_id] = doc_info
 
     for doc_id, doc_info in closest_docs_object.items():
         if doc_id not in closest_docs:
-            closest_docs[doc_id] = doc_info
+            closest_docs[doc_id] = doc_info  # Priority given to closest_docs_object
 
     print(f"Total number of matches after merge: {len(closest_docs)}")
 

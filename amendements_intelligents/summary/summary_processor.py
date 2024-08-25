@@ -4,6 +4,7 @@ import pandas as pd
 
 from amendements_intelligents.summary.summary_prompt_builder import SummaryPromptBuilder
 from amendements_intelligents.summary.vllm_client import LLMApiClient
+from amendements_intelligents.types import IntIndex
 from amendements_intelligents.utils.plfss_text_utils import SummaryTextNormalizer
 
 
@@ -23,7 +24,7 @@ class AmendmentSummaryProcessor:
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_concurrent
         ) as executor:
-            futures_to_index = {}
+            futures_to_index: dict[concurrent.futures.Future, IntIndex] = {}
 
             cur_index = start_index
             # Submit initial batch of tasks
@@ -56,7 +57,7 @@ class AmendmentSummaryProcessor:
     def _submit_task_if_valid(
         self,
         index: int,
-        futures_to_index: dict,
+        futures_to_index: dict[concurrent.futures.Future, IntIndex],
         executor: concurrent.futures.ThreadPoolExecutor,
     ) -> None:
         """
