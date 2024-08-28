@@ -2,23 +2,23 @@ import concurrent.futures
 
 import pandas as pd
 
+from amendements_intelligents.summary.llm_clients import LLMAPIClient
 from amendements_intelligents.summary.summary_prompt_builder import SummaryPromptBuilder
-from amendements_intelligents.summary.vllm_client import LLMApiClient
 from amendements_intelligents.types import IntIndex
 from amendements_intelligents.utils.plfss_text_utils import SummaryTextNormalizer
 
 
-class AmendmentSummaryProcessor:
-    def __init__(self, amendments_df: pd.DataFrame, api_client: LLMApiClient):
+class AmendmentSummarizer:
+    def __init__(self, amendments_df: pd.DataFrame, api_client: LLMAPIClient):
         self.amendments_df = amendments_df
         self.prompt_builder = SummaryPromptBuilder()
         self.api_client = api_client
 
-    def process_amendments(
-        self, stop_index: int, start_index: int = 0, max_concurrent: int = 8
-    ) -> None:
+    def summarize(
+        self, start_index: int, stop_index: int, max_concurrent: int = 8
+    ) -> pd.DataFrame:
         """
-        Process amendments in the DataFrame by generating summaries for each amendment.
+        Process amendments in the DataFrame by generating summaries for each amendment from start_index to stop_index (included).
         Calls to the LLM API are made concurrently using a ThreadPoolExecutor with a pool of size `max_concurrent`.
         """
         with concurrent.futures.ThreadPoolExecutor(
@@ -42,7 +42,9 @@ class AmendmentSummaryProcessor:
                     )
                     summary = completed_future.result()
                     index = futures_to_index.pop(completed_future)
-                    self.amendments_df.loc[index, "Objet 70B()"] = summary
+                    self.amendments_df.loc[
+                        self.amendments_df["amdt_idx"] == index, "Objet 70B()"
+                    ] = summary.strip()
                     print(f"COMPLETED: {index}")
 
                 if cur_index < self.amendments_df.shape[0] and cur_index <= stop_index:
@@ -53,6 +55,7 @@ class AmendmentSummaryProcessor:
                     cur_index >= self.amendments_df.shape[0] or cur_index > stop_index
                 ):
                     break
+        return self.amendments_df
 
     def _submit_task_if_valid(
         self,
@@ -63,7 +66,7 @@ class AmendmentSummaryProcessor:
         """
         Helper method to submit a task to the executor if the amendment is valid, meaning that it doesn't start with "supprimer cet article" or is not empty.
         """
-        row = self.amendments_df.iloc[index]
+        row = self.amendments_df[self.amendments_df["amdt_idx"] == index].iloc[0]
         cleaned_explanatory_statement = SummaryTextNormalizer.normalize_text(
             row["Exposé amdt"]
         )
@@ -72,8 +75,10 @@ class AmendmentSummaryProcessor:
         if cleaned_explanatory_statement != "" and cleaned_amdt_body != "":
             # Special case if row["Corps amdt"] starts with "supprimer cet article"
             if cleaned_amdt_body.startswith("supprimer cet article"):
-                self.amendments_df.loc[index, "Objet 70B()"] = "Supprimer cet article"
-                print(f'"Supprimer cet article" for index {index}')
+                self.amendments_df.loc[
+                    self.amendments_df["amdt_idx"] == index, "Objet 70B()"
+                ] = "Supprimer cet article"
+                print(f'"Supprimer cet article" for amdt_index {index}')
                 future = executor.submit(lambda x: x, "Supprimer cet article")
                 futures_to_index[future] = index
                 return

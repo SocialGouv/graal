@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
-from amendements_intelligents.summarize_plfss import AmendmentSummaryProcessor
+from amendements_intelligents.populate_summaries import AmendmentSummarizer
 
 
 @pytest.fixture
@@ -24,6 +24,7 @@ def sample_amendments_df():
             "Supprimer cet article.",
         ],
         "Num amdt": [1, 2, 3, 4],
+        "amdt_idx": [0, 1, 2, 3],
     }
     df = pd.DataFrame(data)
     df["Objet 70B()"] = ""
@@ -31,8 +32,8 @@ def sample_amendments_df():
 
 
 def test_process_amendments(mock_vllm_client, sample_amendments_df):
-    processor = AmendmentSummaryProcessor(sample_amendments_df, mock_vllm_client)
-    processor.process_amendments(stop_index=3, max_concurrent=1)
+    processor = AmendmentSummarizer(sample_amendments_df, mock_vllm_client)
+    processor.summarize(start_index=0, stop_index=3, max_concurrent=1)
 
     assert mock_vllm_client.generate_summary.call_count == 2
 
@@ -45,8 +46,8 @@ def test_process_amendments(mock_vllm_client, sample_amendments_df):
 
 
 def test_process_amendments_with_low_stop_index(mock_vllm_client, sample_amendments_df):
-    processor = AmendmentSummaryProcessor(sample_amendments_df, mock_vllm_client)
-    processor.process_amendments(stop_index=2, max_concurrent=1)
+    processor = AmendmentSummarizer(sample_amendments_df, mock_vllm_client)
+    processor.summarize(start_index=0, stop_index=2, max_concurrent=1)
 
     assert mock_vllm_client.generate_summary.call_count == 2
 
@@ -59,8 +60,8 @@ def test_process_amendments_with_low_stop_index(mock_vllm_client, sample_amendme
 def test_process_amendments_with_high_start_index(
     mock_vllm_client, sample_amendments_df
 ):
-    processor = AmendmentSummaryProcessor(sample_amendments_df, mock_vllm_client)
-    processor.process_amendments(start_index=5, stop_index=3, max_concurrent=1)
+    processor = AmendmentSummarizer(sample_amendments_df, mock_vllm_client)
+    processor.summarize(start_index=5, stop_index=3, max_concurrent=1)
 
     assert mock_vllm_client.generate_summary.call_count == 0
 
@@ -75,12 +76,13 @@ def test_process_amendments_with_invalid_rows(mock_vllm_client):
         "Exposé amdt": ["", "Exposé 2", "", "Exposé 4"],
         "Corps amdt": ["", "Corps 2", "Supprimer l'article 26", ""],
         "Num amdt": [1, 2, 3, 4],
+        "amdt_idx": [0, 1, 2, 3],
     }
     df = pd.DataFrame(data)
     df["Objet 70B()"] = ""
 
-    processor = AmendmentSummaryProcessor(df, mock_vllm_client)
-    processor.process_amendments(stop_index=3, max_concurrent=1)
+    processor = AmendmentSummarizer(df, mock_vllm_client)
+    processor.summarize(start_index=0, stop_index=3, max_concurrent=1)
 
     assert mock_vllm_client.generate_summary.call_count == 1
 
