@@ -1,0 +1,85 @@
+import time
+from abc import ABC, abstractmethod
+
+import requests
+from groq import Groq
+from pydantic_core import Url
+
+from amendements_intelligents.types import TxtContent
+
+
+class LLMAPIClient(ABC):
+    @abstractmethod
+    def generate_summary(self, prompt):
+        pass
+
+
+class VllmAPIClient(LLMAPIClient):
+    def __init__(self, model_name: str, vllm_endpoint: Url, user: str, password: str):
+        self.model_name = model_name
+        self.vllm_endpoint = vllm_endpoint
+        self.user = user
+        self.password = password
+
+    def generate_summary(self, prompt: TxtContent) -> str:
+        url = self.vllm_endpoint
+        headers = {"Content-Type": "application/json"}
+        auth = (self.user, self.password)
+
+        data = {
+            "model": self.model_name,
+            "prompt": prompt,
+            "max_tokens": 1024,
+            "temperature": 0,
+        }
+
+        response = requests.post(
+            url, headers=headers, json=data, auth=auth, timeout=3 * 60
+        )
+        summary = response.json()["choices"][0]["text"].strip()
+        return summary
+
+
+class GroqAPIClient(LLMAPIClient):
+    def __init__(self, model_name: str = "llama-3.1-70b-versatile") -> None:
+        self.client = Groq()
+        self.model_name = model_name
+
+    def generate_summary(self, prompt: TxtContent) -> str:
+        completion = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1024,
+            temperature=0,
+        )
+
+        print(f"completion {completion}")
+
+        return completion.choices[0].message.content.strip()
+
+
+class LLMInferenceAPIClient(LLMAPIClient):
+    """
+    This is a client that can talk to our own LLM inference API.
+    See https://github.com/SocialGouv/llm-inference-server to set it up.
+    """
+
+    def __init__(
+        self,
+        url: str,
+    ):
+        self.url = url
+
+    def generate_summary(self, prompt: TxtContent) -> str:
+        # Create the payload for the request
+        payload = {"prompts": [prompt]}
+
+        response = requests.post(self.url, json=payload, timeout=3 * 60)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Extract and return the generated text
+            generated_texts = response.json().get("generated_texts", [])
+            return generated_texts[0]
+        else:
+            return f"Failed to get a response. Status code: {response.status_code}"
