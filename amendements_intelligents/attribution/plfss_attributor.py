@@ -15,20 +15,41 @@ from amendements_intelligents.utils.plfss_text_utils import AttributionTextNorma
 
 class PLFSSAttributor:
     def __init__(self):
-        self.pre_processor = PLFSSPreProcessor()
         self.data_loader = AttributionDataLoader()
         self.matcher = AttributionMatcher()
         self.codes_set: Set[str] = set()
         self.articles_set: Set[str] = set()
         self.latin_ordinals_set: Set[str] = set()
         self.max_code_length = 0
+        self.amendments_df = None
+
+    def _load_amendments(self, amendments_file: FilePath) -> None:
+        """Load amendments data from a file."""
+        if amendments_file.endswith(".json"):
+            pre_processor = PLFSSPreProcessor
+            amendments_df = pre_processor.load_plfss_json(
+                input_files=[(amendments_file, None)]
+            )
+            amendments_df = pre_processor.remap_columns_in_json_amendments(
+                amendments_df=amendments_df
+            )
+            self.amendments_df = pre_processor.prepare_amendments_columns(
+                amendments_df=amendments_df
+            )
+        elif amendments_file.endswith(".xlsx"):
+            self.amendments_df = pre_processor.load_plfss_excel(
+                input_file=amendments_file
+            )
+        else:
+            raise ValueError(f"Unsupported file format: {amendments_file}")
+        self.amendments_df["Corps amdt"] = self.amendments_df["Corps amdt"].apply(
+            lambda x: AttributionTextNormalizer.normalize_text(str(x))
+        )
 
     def load_data(self, mappings_file: str, amendments_file: FilePath):
         """Load mappings and amendments data."""
         self.data_loader.load_mappings(mappings_file)
-        self.amendments_df = self.data_loader.load_amendments(
-            amendments_file, self.pre_processor
-        )
+        self._load_amendments(amendments_file)
         self._prepare_data_sets()
 
     def _prepare_data_sets(self):
@@ -58,7 +79,7 @@ class PLFSSAttributor:
             sorted(self.latin_ordinals_set, reverse=True)
         )
         for _, row in self.amendments_df.iterrows():
-            normalized_text =  row["Corps amdt"]
+            normalized_text = row["Corps amdt"]
             # TODO: Use a unique index that we generate ourselves when loading amendments instead of the composite of num amdt and lecture which is not reliable.
             num_amdt, lecture = row["Num amdt"], row["Lecture"]
 

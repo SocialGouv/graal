@@ -11,12 +11,8 @@ from amendements_intelligents.utils.plfss_text_utils import (
 
 
 class PLFSSPreProcessor:
-    def __init__(self):
-        self.original_amendments_df = None
-        self.work_amendments_df = None
-        self.acronym_mapping = {}
-
-    def load_plfss_json(self, input_files: tuple[FilePath, int]) -> None:
+    @staticmethod
+    def load_plfss_json(input_files: list[tuple[FilePath, int]]) -> pd.DataFrame:
         dfs = []
         for file_name, year in input_files:
             with open(file_name, "r", encoding="utf-8-sig") as f:
@@ -25,47 +21,50 @@ class PLFSSPreProcessor:
             df["Year"] = year
             dfs.append(df)
 
-        self.original_amendments_df = pd.concat(dfs, ignore_index=True)
-        self.original_amendments_df["amdt_idx"] = range(len(self.original_amendments_df))
-        self.clean_up_json_columns()
+        original_amendments_df = pd.concat(dfs, ignore_index=True)
+        original_amendments_df["amdt_idx"] = range(len(original_amendments_df))
+        return PLFSSPreProcessor.clean_up_json_columns(original_amendments_df)
 
-    def load_acronyms_excel(self, acronym_file: FilePath) -> None:
+    @staticmethod
+    def load_acronyms_excel(acronym_file: FilePath) -> dict[str, str]:
         acronym_df = pd.read_excel(acronym_file)
-        self.acronym_mapping = dict(
-            zip(acronym_df["Acronyme"], acronym_df["Développement"])
-        )
+        acronym_mapping = dict(zip(acronym_df["Acronyme"], acronym_df["Développement"]))
+        return acronym_mapping
 
-    def load_plfss_excel(self, input_file: FilePath) -> None:
-        self.original_amendments_df = pd.read_excel(input_file)
+    @staticmethod
+    def load_plfss_excel(input_file: FilePath) -> pd.DataFrame:
+        return pd.read_excel(input_file)
 
-    def clean_up_json_columns(self) -> pd.DataFrame:
-        self.original_amendments_df["Lecture"] = (
-            self.original_amendments_df["chambre"].astype(str)
+    @staticmethod
+    def clean_up_json_columns(amendements_df: pd.DataFrame) -> pd.DataFrame:
+        amendements_df["Lecture"] = (
+            amendements_df["chambre"].astype(str)
             + " "
-            + self.original_amendments_df["legislature"].astype(str)
+            + amendements_df["legislature"].astype(str)
         )
-        self.original_amendments_df["corps"] = self.original_amendments_df[
-            "corps"
-        ].apply(extract_plain_text_from_html)
-        self.original_amendments_df["expose"] = self.original_amendments_df[
-            "expose"
-        ].apply(extract_plain_text_from_html)
-        self.original_amendments_df["objet"] = self.original_amendments_df[
-            "objet"
-        ].apply(extract_plain_text_from_html)
-        self.original_amendments_df["sort"] = self.original_amendments_df["sort"].apply(
+        amendements_df["corps"] = amendements_df["corps"].apply(
             extract_plain_text_from_html
         )
-        self.original_amendments_df["reponse"] = self.original_amendments_df[
-            "reponse"
-        ].apply(extract_plain_text_from_html)
+        amendements_df["expose"] = amendements_df["expose"].apply(
+            extract_plain_text_from_html
+        )
+        amendements_df["objet"] = amendements_df["objet"].apply(
+            extract_plain_text_from_html
+        )
+        amendements_df["sort"] = amendements_df["sort"].apply(
+            extract_plain_text_from_html
+        )
+        amendements_df["reponse"] = amendements_df["reponse"].apply(
+            extract_plain_text_from_html
+        )
 
-        self.original_amendments_df["computed_batch"] = self.original_amendments_df[
-            "computed_batch"
-        ].apply(lambda x: ",".join(map(str, x)))
-        return self.original_amendments_df
+        amendements_df["computed_batch"] = amendements_df["computed_batch"].apply(
+            lambda x: ",".join(map(str, x))
+        )
+        return amendements_df
 
-    def remap_columns_in_json_amendments(self) -> pd.DataFrame:
+    @staticmethod
+    def remap_columns_in_json_amendments(amendments_df: pd.DataFrame) -> pd.DataFrame:
         column_mapping = {
             "affectation_email": "Affectation (email)",
             "affectation_name": "Affectation (nom)",
@@ -79,25 +78,22 @@ class PLFSSPreProcessor:
             "reponse": "Réponse",
             "sort": "Sort",
         }
-        self.original_amendments_df.rename(columns=column_mapping, inplace=True)
-        return self.original_amendments_df
+        amendments_df.rename(columns=column_mapping, inplace=True)
+        return amendments_df
 
-    def prepare_work_amendments_df(self) -> pd.DataFrame:
-        self.original_amendments_df["Affectation (email)"] = None
-        self.original_amendments_df["Affectation (nom)"] = None
-        self.original_amendments_df["Allotissement"] = None
-        self.original_amendments_df["Corps amdt orig"] = self.original_amendments_df[
-            "Corps amdt"
-        ]
-        self.original_amendments_df["Exposé amdt orig"] = self.original_amendments_df[
-            "Exposé amdt"
-        ]
-        self.original_amendments_df["Objet orig"] = self.original_amendments_df["Objet"]
+    @staticmethod
+    def prepare_amendments_columns(amendments_df: pd.DataFrame) -> pd.DataFrame:
+        amendments_df["Affectation (email)"] = None
+        amendments_df["Affectation (nom)"] = None
+        amendments_df["Allotissement"] = None
+        amendments_df["Corps amdt orig"] = amendments_df["Corps amdt"]
+        amendments_df["Exposé amdt orig"] = amendments_df["Exposé amdt"]
+        amendments_df["Objet orig"] = amendments_df["Objet"]
 
-        self.work_amendments_df = self.original_amendments_df.copy()
-        return self.work_amendments_df
+        return amendments_df.copy()
 
-    def handle_common_amendment_bodies(self) -> None:
+    @staticmethod
+    def handle_common_amendment_bodies(amendments_df: pd.DataFrame) -> pd.DataFrame:
         """
         Append 'Num article' to :
         - Small amendment bodies
@@ -115,26 +111,27 @@ class PLFSSPreProcessor:
 
         # Create mask with regex. It does not need to be an exact match
         mask = (
-            self.work_amendments_df["Corps amdt"]
+            amendments_df["Corps amdt"]
             .str.contains(combined_pattern, regex=True)
             .fillna(False)
         )
 
         # Also append 'Num article' to small amendment bodies
-        mask = mask | (self.work_amendments_df["Corps amdt"].str.len() < 50)
+        mask = mask | (amendments_df["Corps amdt"].str.len() < 50)
         print(
             f'Appending {mask.sum()} "Num article" to small amendment bodies to get better clusters...\n'
         )
 
         # Concatenate the "Num article" to "Corps amdt" for the masked rows
-        self.work_amendments_df.loc[mask, "Corps amdt"] = (
-            self.work_amendments_df.loc[mask, "Corps amdt"]
+        amendments_df.loc[mask, "Corps amdt"] = (
+            amendments_df.loc[mask, "Corps amdt"]
             + " "
-            + self.work_amendments_df.loc[mask, "Num article"]
+            + amendments_df.loc[mask, "Num article"]
         )
-        return self.work_amendments_df
+        return amendments_df
 
-    def handle_common_amendment_expose(self) -> None:
+    @staticmethod
+    def handle_common_amendment_expose(amendments_df: pd.DataFrame) -> pd.DataFrame:
         """
         Concatenate Exposé amdt with Corps amdt if Exposé amdt is:
         - Small (< 50 characters)
@@ -148,51 +145,58 @@ class PLFSSPreProcessor:
 
         # Create mask with regex. It does not need to be an exact match
         mask = (
-            self.work_amendments_df["Exposé amdt"]
+            amendments_df["Exposé amdt"]
             .str.contains(combined_pattern, regex=True, case=False)
             .fillna(False)
         )
 
         # Also append 'Num article' to small amendment bodies
-        mask = mask | (self.work_amendments_df["Exposé amdt"].str.len() < 25)
+        mask = mask | (amendments_df["Exposé amdt"].str.len() < 25)
         print(
             f"Concatenating Corps Amdt to Exposé amdt in {mask.sum()} amendements to get better clusters...\n"
         )
 
-        self.work_amendments_df.loc[mask, "Exposé amdt"] = (
-            self.work_amendments_df.loc[mask, "Exposé amdt"]
+        amendments_df.loc[mask, "Exposé amdt"] = (
+            amendments_df.loc[mask, "Exposé amdt"]
             + " "
-            + self.work_amendments_df.loc[mask, "Corps amdt"]
+            + amendments_df.loc[mask, "Corps amdt"]
         )
-        return self.work_amendments_df
+        return amendments_df
 
+    @staticmethod
     def remove_empty_rows_for_given_columns(
-        self,
+        amendments_df: pd.DataFrame,
         columns_to_filter_with: list[ColumnName],
-    ) -> None:
+    ) -> pd.DataFrame:
         for column in columns_to_filter_with:
-            self.work_amendments_df.dropna(subset=column, inplace=True)
-            self.work_amendments_df = self.work_amendments_df[
-                self.work_amendments_df[column].str.strip().apply(len) > 0
+            amendments_df.dropna(subset=column, inplace=True)
+            amendments_df = amendments_df[
+                amendments_df[column].str.strip().apply(len) > 0
             ]
-        return self.work_amendments_df
+        return amendments_df
 
-    def replace_acronyms(self, columns_to_normalize: list[ColumnName]) -> pd.DataFrame:
-        if self.acronym_mapping is None:
-            return self.work_amendments_df
+    @staticmethod
+    def replace_acronyms(
+        amendments_df: pd.DataFrame,
+        acronym_mapping: dict[str, str],
+        columns_to_normalize: list[ColumnName],
+    ) -> pd.DataFrame:
+        if acronym_mapping is None:
+            return amendments_df
 
         for column in columns_to_normalize:
-            for acronym, full_name in self.acronym_mapping.items():
-                self.work_amendments_df[column] = self.work_amendments_df[
-                    column
-                ].str.replace(acronym, full_name, regex=True)
-        return self.work_amendments_df
+            for acronym, full_name in acronym_mapping.items():
+                amendments_df[column] = amendments_df[column].str.replace(
+                    acronym, full_name, regex=True
+                )
+        return amendments_df
 
-    def normalize_plfss(self, columns_to_normalize: list[ColumnName]) -> pd.DataFrame:
+    @staticmethod
+    def normalize_plfss(
+        amendments_df: pd.DataFrame, columns_to_normalize: list[ColumnName]
+    ) -> pd.DataFrame:
         for column in columns_to_normalize:
-            self.work_amendments_df[column] = self.work_amendments_df[column].apply(
-                normalize_text
-            )
+            amendments_df[column] = amendments_df[column].apply(normalize_text)
         print("PLFSS loaded for processing\n")
 
-        return self.work_amendments_df
+        return amendments_df

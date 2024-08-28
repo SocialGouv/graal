@@ -11,27 +11,41 @@ from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 class PLFSSAllotmentPopulator:
     def __init__(self) -> None:
-        self.plfss_pre_processor = PLFSSPreProcessor()
+        self.amendements_df = None
+        self.prepared_df = None
 
     def load_data(self, input_file: FilePath, year: int = None) -> None:
-        self.plfss_pre_processor.load_plfss_json(input_files=[(input_file, year)])
+        self.amendements_df = PLFSSPreProcessor.load_plfss_json(
+            input_files=[(input_file, year)]
+        )
 
     def preprocess(self, acronym_file: FilePath) -> None:
-        self.plfss_pre_processor.load_acronyms_excel(acronym_file)
-        self.plfss_pre_processor.remap_columns_in_json_amendments()
-        self.plfss_pre_processor.prepare_work_amendments_df()
-        self.plfss_pre_processor.replace_acronyms(columns_to_normalize=["Corps amdt"])
-        self.plfss_pre_processor.remove_empty_rows_for_given_columns(
-            columns_to_filter_with=["Corps amdt"]
+        plfss_pre_processor = PLFSSPreProcessor
+        acronym_mapping = plfss_pre_processor.load_acronyms_excel(acronym_file)
+        self.amendements_df = plfss_pre_processor.remap_columns_in_json_amendments(
+            amendments_df=self.amendements_df
         )
-        self.plfss_pre_processor.handle_common_amendment_bodies()
-        self.plfss_pre_processor.normalize_plfss(columns_to_normalize=["Corps amdt"])
+        self.prepared_df = plfss_pre_processor.prepare_amendments_columns(
+            amendments_df=self.amendements_df
+        )
+        self.prepared_df = plfss_pre_processor.replace_acronyms(
+            amendments_df=self.prepared_df,
+            acronym_mapping=acronym_mapping,
+            columns_to_normalize=["Corps amdt"],
+        )
+        self.prepared_df = plfss_pre_processor.remove_empty_rows_for_given_columns(
+            amendments_df=self.prepared_df, columns_to_filter_with=["Corps amdt"]
+        )
+        self.prepared_df = plfss_pre_processor.handle_common_amendment_bodies(
+            amendments_df=self.prepared_df
+        )
+        self.prepared_df = plfss_pre_processor.normalize_plfss(
+            amendments_df=self.prepared_df, columns_to_normalize=["Corps amdt"]
+        )
 
     def process(self) -> pd.DataFrame:
         # Clustering
-        cluster_finder = PLFSSClusterFinder(
-            amendments_df=self.plfss_pre_processor.work_amendments_df
-        )
+        cluster_finder = PLFSSClusterFinder(amendments_df=self.amendements_df)
         final_clusters = cluster_finder.find_similarity_clusters(eps=0.01)
         final_clusters = cluster_finder.refine_clusters_with_exact_match(
             threshold=0.0001
@@ -39,8 +53,8 @@ class PLFSSAllotmentPopulator:
 
         # Result processing
         allotment_updater = PLFSSAllotmentUpdater(
-            original_amendments_df=self.plfss_pre_processor.original_amendments_df,
-            work_amendments_df=self.plfss_pre_processor.work_amendments_df,
+            original_amendments_df=self.amendements_df,
+            work_amendments_df=self.prepared_df,
             final_clusters=final_clusters,
         )
         return allotment_updater.update_allotissement()

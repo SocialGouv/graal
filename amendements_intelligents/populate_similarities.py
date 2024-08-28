@@ -26,42 +26,69 @@ COLUMNS_TO_OUTPUT = [
 
 
 def main():
-    old_plfss_data_processor = PLFSSPreProcessor()
-    old_plfss_data_processor.load_acronyms_excel(f"{DATA_FOLDER}/acronym_mapping.xlsx")
-    old_plfss_data_processor.load_plfss_json(
+    plfss_data_processor = PLFSSPreProcessor
+    acronym_mapping = plfss_data_processor.load_acronyms_excel(
+        f"{DATA_FOLDER}/acronym_mapping.xlsx"
+    )
+    old_amendments_df = plfss_data_processor.load_plfss_json(
         input_files=[
             (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
             (f"{DATA_FOLDER}/PLFSS_2022.json", 2022),
-            # (f"{DATA_FOLDER}/PLFSS_2021.json", 2021),
+            (f"{DATA_FOLDER}/PLFSS_2021.json", 2021),
         ]
     )
-    old_plfss_data_processor.remap_columns_in_json_amendments()
-    old_plfss_data_processor.prepare_work_amendments_df()
-    old_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
-    old_plfss_data_processor.remove_empty_rows_for_given_columns(
-        columns_to_filter_with=["Exposé amdt", "Corps amdt"]
+    old_amendments_df = plfss_data_processor.remap_columns_in_json_amendments(
+        amendments_df=old_amendments_df
     )
-    old_plfss_data_processor.handle_common_amendment_bodies()
-    old_plfss_data_processor.handle_common_amendment_expose()
-    old_amendments_df = old_plfss_data_processor.normalize_plfss(
-        columns_to_normalize=["Exposé amdt", "Objet"]
+    old_amendments_df = plfss_data_processor.prepare_amendments_columns(
+        amendments_df=old_amendments_df
+    )
+    old_amendments_df = plfss_data_processor.replace_acronyms(
+        amendments_df=old_amendments_df,
+        acronym_mapping=acronym_mapping,
+        columns_to_normalize=["Exposé amdt"],
+    )
+    old_amendments_df = plfss_data_processor.remove_empty_rows_for_given_columns(
+        amendments_df=old_amendments_df,
+        columns_to_filter_with=["Exposé amdt", "Corps amdt"],
+    )
+    old_amendments_df = plfss_data_processor.handle_common_amendment_bodies(
+        amendments_df=old_amendments_df
+    )
+    old_amendments_df = plfss_data_processor.handle_common_amendment_expose(
+        amendments_df=old_amendments_df
+    )
+    old_amendments_df = plfss_data_processor.normalize_plfss(
+        amendments_df=old_amendments_df, columns_to_normalize=["Exposé amdt", "Objet"]
     )
 
-    new_plfss_data_processor = PLFSSPreProcessor()
-    new_plfss_data_processor.load_acronyms_excel(f"{DATA_FOLDER}/acronym_mapping.xlsx")
-    new_plfss_data_processor.load_plfss_json(
+    new_amendments_df = plfss_data_processor.load_plfss_json(
         input_files=[(f"{DATA_FOLDER}/PLFSS_2024.json", 2024)]
     )
-    new_plfss_data_processor.remap_columns_in_json_amendments()
-    new_plfss_data_processor.prepare_work_amendments_df()
-    new_plfss_data_processor.replace_acronyms(columns_to_normalize=["Exposé amdt"])
-    new_plfss_data_processor.remove_empty_rows_for_given_columns(
-        columns_to_filter_with=["Exposé amdt", "Corps amdt"]
+    original_new_amendments_df = new_amendments_df.copy()
+    new_amendments_df = plfss_data_processor.remap_columns_in_json_amendments(
+        amendments_df=new_amendments_df
     )
-    new_plfss_data_processor.handle_common_amendment_bodies()
-    new_plfss_data_processor.handle_common_amendment_expose()
-    new_amendments_df = new_plfss_data_processor.normalize_plfss(
-        columns_to_normalize=["Exposé amdt", "Objet"]
+    new_amendments_df = plfss_data_processor.prepare_amendments_columns(
+        amendments_df=new_amendments_df
+    )
+    new_amendments_df = plfss_data_processor.replace_acronyms(
+        amendments_df=new_amendments_df,
+        acronym_mapping=acronym_mapping,
+        columns_to_normalize=["Exposé amdt"],
+    )
+    new_amendments_df = plfss_data_processor.remove_empty_rows_for_given_columns(
+        amendments_df=new_amendments_df,
+        columns_to_filter_with=["Exposé amdt", "Corps amdt"],
+    )
+    new_amendments_df = plfss_data_processor.handle_common_amendment_bodies(
+        amendments_df=new_amendments_df
+    )
+    new_amendments_df = plfss_data_processor.handle_common_amendment_expose(
+        amendments_df=new_amendments_df
+    )
+    new_amendments_df = plfss_data_processor.normalize_plfss(
+        amendments_df=new_amendments_df, columns_to_normalize=["Exposé amdt", "Objet"]
     )
 
     similarity_evaluator_expose = SimilarityFinder(
@@ -125,7 +152,7 @@ def main():
         closest_docs=closest_docs,
     )
     new_amendments_with_copies_df = amendment_copier.copy_matches_to_plfss_df(
-        target_df=new_plfss_data_processor.original_amendments_df
+        target_df=original_new_amendments_df
     )
 
     new_amendments_with_copies_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)

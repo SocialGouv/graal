@@ -27,11 +27,9 @@ def test_replace_common_amendment_bodies():
             ],
         }
     )
-    plfss_processor = PLFSSPreProcessor()
-    plfss_processor.work_amendments_df = df.copy()
+    plfss_processor = PLFSSPreProcessor
 
-    plfss_processor.handle_common_amendment_bodies()
-    preprocessed_amendments_df = plfss_processor.work_amendments_df
+    preprocessed_amendments_df = plfss_processor.handle_common_amendment_bodies(df)
 
     expected_processed_legistique = [
         "Supprimer cet article. Article 1",
@@ -65,10 +63,10 @@ def test_remove_useless_amendments():
             ],
         }
     )
-    processor = PLFSSPreProcessor()
-    processor.work_amendments_df = df.copy()
-
-    processor.remove_empty_rows_for_given_columns(columns_to_filter_with=["Corps amdt"])
+    processor = PLFSSPreProcessor
+    result_df = processor.remove_empty_rows_for_given_columns(
+        amendments_df=df, columns_to_filter_with=["Corps amdt"]
+    )
 
     expected_df = pd.DataFrame(
         {
@@ -78,7 +76,7 @@ def test_remove_useless_amendments():
     )
 
     pd.testing.assert_frame_equal(
-        processor.work_amendments_df.reset_index(drop=True),
+        result_df.reset_index(drop=True),
         expected_df.reset_index(drop=True),
     )
 
@@ -119,10 +117,11 @@ def test_normalize_plfss():
         }
     )
 
-    plfss_processor = PLFSSPreProcessor()
-    plfss_processor.work_amendments_df = df.copy()
+    plfss_processor = PLFSSPreProcessor
 
-    normalized_df = plfss_processor.normalize_plfss(columns_to_normalize=["test1"])
+    normalized_df = plfss_processor.normalize_plfss(
+        amendments_df=df, columns_to_normalize=["test1"]
+    )
 
     pd.testing.assert_frame_equal(
         normalized_df.reset_index(drop=True),
@@ -178,15 +177,14 @@ def test_normalize_plfss():
     ],
 )
 def test_handle_common_amendment_expose(input_df, expected_df):
-    plfss_processor = PLFSSPreProcessor()
-    plfss_processor.work_amendments_df = input_df.copy()
-    result_df = plfss_processor.handle_common_amendment_expose()
+    plfss_processor = PLFSSPreProcessor
+    result_df = plfss_processor.handle_common_amendment_expose(amendments_df=input_df)
     pd.testing.assert_frame_equal(result_df, expected_df)
 
 
 def test_clean_up_original_amendments():
-    plfss_processor = PLFSSPreProcessor()
-    plfss_processor.original_amendments_df = pd.DataFrame(
+    plfss_processor = PLFSSPreProcessor
+    original_amendments_df = pd.DataFrame(
         {
             "chambre": ["A", "B"],
             "legislature": [1, 2],
@@ -217,8 +215,12 @@ def test_clean_up_original_amendments():
         }
     )
 
-    result_amendments_df = plfss_processor.clean_up_json_columns()
-    result_amendments_df = plfss_processor.remap_columns_in_json_amendments()
+    result_amendments_df = plfss_processor.clean_up_json_columns(
+        amendements_df=original_amendments_df
+    )
+    result_amendments_df = plfss_processor.remap_columns_in_json_amendments(
+        amendments_df=result_amendments_df
+    )
 
     pd.testing.assert_frame_equal(
         result_amendments_df.reset_index(drop=True).sort_index(axis=1),
@@ -248,10 +250,8 @@ def test_prepare_work_amendments_df():
         }
     )
 
-    plfss_processor = PLFSSPreProcessor()
-    plfss_processor.original_amendments_df = df.copy()
-
-    prepared_df = plfss_processor.prepare_work_amendments_df()
+    plfss_processor = PLFSSPreProcessor
+    prepared_df = plfss_processor.prepare_amendments_columns(df)
 
     pd.testing.assert_frame_equal(
         prepared_df.reset_index(drop=True),
@@ -362,12 +362,12 @@ def test_prepare_work_amendments_df():
     ],
 )
 def test_replace_acronyms(input_df, acronym_mapping, columns_to_normalize, expected_df):
-    plfss_processor = PLFSSPreProcessor()
-    plfss_processor.acronym_mapping = acronym_mapping
-    plfss_processor.work_amendments_df = input_df.copy()
+    plfss_processor = PLFSSPreProcessor
 
     result_df = plfss_processor.replace_acronyms(
-        columns_to_normalize=columns_to_normalize
+        amendments_df=input_df,
+        acronym_mapping=acronym_mapping,
+        columns_to_normalize=columns_to_normalize,
     )
 
     pd.testing.assert_frame_equal(
