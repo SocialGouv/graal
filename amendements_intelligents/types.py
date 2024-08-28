@@ -14,6 +14,7 @@ IntIndex = int
 Metadata = Union[str, int, float]
 Prompt = str
 TxtContent = str
+Year = int
 
 
 class ExpertMetadata(TypedDict):
