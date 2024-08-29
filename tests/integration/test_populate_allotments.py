@@ -43,7 +43,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         columns_to_normalize=["Corps amdt"]
     )
 
-    alloted_amendments_df = allotment_populator.process()
+    alloted_amendments_df = allotment_populator.populate()
 
     # Now we must compare our results with the expected results (in test_df)
     merged_df = test_df.merge(

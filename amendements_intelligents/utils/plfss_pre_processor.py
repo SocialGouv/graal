@@ -181,9 +181,6 @@ class PLFSSPreProcessor:
         acronym_mapping: dict[str, str],
         columns_to_normalize: list[ColumnName],
     ) -> pd.DataFrame:
-        if acronym_mapping is None:
-            return amendments_df
-
         for column in columns_to_normalize:
             for acronym, full_name in acronym_mapping.items():
                 amendments_df[column] = amendments_df[column].str.replace(
