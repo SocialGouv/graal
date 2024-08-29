@@ -1,15 +1,14 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.plfss_allotment_updater import (
-    PLFSSAllotmentUpdater,
-)
+from amendements_intelligents.utils.plfss_allotment_updater import PLFSSAllotmentUpdater
 
 
 @pytest.fixture
 def amendments_df():
     amendments_data = {
         "Num amdt": [1, 2, 3, 4, 5, 6],
+        "amdt_idx": [0, 1, 2, 3, 4, 5],
         "Lecture": ["First", "First", "Second", "Second", "First", "First"],
         "Allotissement": [None, None, None, None, None, None],
     }
@@ -21,25 +20,21 @@ def amendments_df():
 def preprocessed_amendments_df():
     preprocessed_amendments_data = {
         "Num amdt": [1, 2, 3, 4, 5, 6],
+        "amdt_idx": [0, 1, 2, 3, 4, 5],
         "Lecture": ["First", "First", "Second", "Second", "First", "First"],
     }
     preprocessed_amendments_df = pd.DataFrame(preprocessed_amendments_data)
     return preprocessed_amendments_df
 
 
-@pytest.fixture
-def final_clusters():
-    return {
-        "First": [[0, 2], [1, 3]],
-        "Second": [[0, 1]],
+def test_update_allotissement(amendments_df, preprocessed_amendments_df):
+    final_clusters = {
+        "First": [[0, 4], [1, 5]],
+        "Second": [[2, 3]],
     }
-
-
-def test_update_allotissement(
-    amendments_df, preprocessed_amendments_df, final_clusters
-):
     expected_amendments_data = {
         "Num amdt": [1, 2, 3, 4, 5, 6],
+        "amdt_idx": [0, 1, 2, 3, 4, 5],
         "Lecture": ["First", "First", "Second", "Second", "First", "First"],
         "Allotissement": ["1,5", "2,6", "3,4", "3,4", "1,5", "2,6"],
     }
@@ -71,6 +66,7 @@ def test_single_entry_cluster(amendments_df, preprocessed_amendments_df):
 
     expected_amendments_data = {
         "Num amdt": [1, 2, 3, 4, 5, 6],
+        "amdt_idx": [0, 1, 2, 3, 4, 5],
         "Lecture": ["First", "First", "Second", "Second", "First", "First"],
         "Allotissement": ["1", None, None, None, None, None],
     }
@@ -86,11 +82,12 @@ def test_single_entry_cluster(amendments_df, preprocessed_amendments_df):
 
 def test_multiple_clusters_same_lecture(amendments_df, preprocessed_amendments_df):
     final_clusters = {
-        "First": [[0, 2], [1]],
+        "First": [[0, 4], [1]],
     }
 
     expected_amendments_data = {
         "Num amdt": [1, 2, 3, 4, 5, 6],
+        "amdt_idx": [0, 1, 2, 3, 4, 5],
         "Lecture": ["First", "First", "Second", "Second", "First", "First"],
         "Allotissement": ["1,5", "2", None, None, "1,5", None],
     }

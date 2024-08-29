@@ -8,6 +8,7 @@ from amendements_intelligents.clustering.cluster_finder import PLFSSClusterFinde
 def df():
     data = {
         "Lecture": ["A", "A", "B", "B", "B", "C", "C", "C", "C"],
+        "amdt_idx": [0, 1, 2, 3, 4, 5, 6, 7, 8],
         "Corps amdt": [
             "text foo in lecture A",
             "some text that is not similar to the first one in order to make some tests fail for lecture A",
@@ -65,39 +66,42 @@ def test_transform_lecture_group(cluster_finder, df, lecture_group):
 
 
 @pytest.mark.parametrize(
-    "lecture_group, eps, expected_clusters",
+    "lecture_group, eps, expected_amdt_idx_clusters",
     [
         ("A", 1, [[0, 1]]),
         ("A", 0.5, []),
-        ("B", 0.5, [[0, 1, 2]]),
-        ("C", 0.5, [[0, 1, 2, 3]]),
+        ("B", 0.5, [[2, 3, 4]]),
+        ("C", 0.5, [[5, 6, 7, 8]]),
         ("A", 0.2, []),
-        ("B", 0.2, [[1, 2]]),
-        ("C", 0.2, [[0, 1], [2, 3]]),
+        ("B", 0.2, [[3, 4]]),
+        ("C", 0.2, [[5, 6], [7, 8]]),
     ],
 )
 def test_find_similarity_clusters(
-    cluster_finder, lecture_group, eps, expected_clusters
+    cluster_finder, lecture_group, eps, expected_amdt_idx_clusters
 ):
     tfidf_clusters_per_lecture = cluster_finder.find_similarity_clusters(eps=eps)
-    assert tfidf_clusters_per_lecture[lecture_group] == expected_clusters
+    assert tfidf_clusters_per_lecture[lecture_group] == expected_amdt_idx_clusters
 
 
 @pytest.mark.parametrize(
-    "lecture_group, eps, expected_clusters",
+    "lecture_group, eps, expected_amdt_idx_clusters",
     [
-        ("A", 1, [[0, 1]]),
+        ("A", 1, [[1, 2]]),
         ("A", 0.5, []),
-        ("B", 0.5, [[0, 1, 3]]),
-        ("C", 0.5, [[0, 1, 2, 3]]),
+        ("B", 0.5, [[3, 4, 8]]),
+        ("C", 0.5, [[0, 5, 6, 9]]),
         ("A", 0.2, []),
-        ("B", 0.2, [[1, 3]]),
-        ("C", 0.2, [[0, 1], [2, 3]]),
+        ("B", 0.2, [[4, 8]]),
+        ("C", 0.2, [[0, 5], [6, 9]]),
     ],
 )
-def test_find_similarity_clusters_messy_data(lecture_group, eps, expected_clusters):
+def test_find_similarity_clusters_messy_data(
+    lecture_group, eps, expected_amdt_idx_clusters
+):
     data = {
         "Lecture": ["C", "A", "A", "B", "B", "C", "C", "B", "B", "C"],
+        "amdt_idx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
         "Corps amdt": [
             "text foo in lecture C",
             "text foo in lecture A",
@@ -115,25 +119,23 @@ def test_find_similarity_clusters_messy_data(lecture_group, eps, expected_cluste
     cluster_finder = PLFSSClusterFinder(df)
     cluster_finder._vectorize_data()  # Ensure vectorizer is fitted before tests
     tfidf_clusters_per_lecture = cluster_finder.find_similarity_clusters(eps=eps)
-    assert tfidf_clusters_per_lecture[lecture_group] == expected_clusters
+    assert tfidf_clusters_per_lecture[lecture_group] == expected_amdt_idx_clusters
 
 
 @pytest.mark.parametrize(
-    "lecture_group, threshold, expected_clusters",
+    "lecture_group, threshold, expected_amdt_idx_clusters",
     [
         ("A", 0.5, []),
         ("A", 0.2, []),
-        ("B", 0.2, [[0, 1, 2]]),
-        ("B", 0.01, [[1, 2]]),
-        ("C", 0.2, [[0, 1, 2, 3]]),
-        ("C", 0.01, [[0, 1], [2, 3]]),
+        ("B", 0.2, [[2, 3, 4]]),
+        ("B", 0.01, [[3, 4]]),
+        ("C", 0.2, [[5, 6, 7, 8]]),
+        ("C", 0.01, [[5, 6], [7, 8]]),
     ],
 )
-def test_refine_clusters_for_exact_match(
-    cluster_finder, lecture_group, threshold, expected_clusters
+def test_refine_clusters_with_distance(
+    cluster_finder, lecture_group, threshold, expected_amdt_idx_clusters
 ):
     cluster_finder.find_similarity_clusters(eps=0.5)
-    refined_clusters = cluster_finder.refine_clusters_with_exact_match(
-        threshold=threshold
-    )
-    assert refined_clusters[lecture_group] == expected_clusters
+    refined_clusters = cluster_finder.refine_clusters_with_distance(threshold=threshold)
+    assert refined_clusters[lecture_group] == expected_amdt_idx_clusters

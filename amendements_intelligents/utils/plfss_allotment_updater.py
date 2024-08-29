@@ -20,14 +20,20 @@ class PLFSSAllotmentUpdater:
                 self.work_amendments_df["Lecture"] == lecture
             ]
             for cluster_indices in clusters:
-                cluster_numeros = sorted(
-                    df_group.iloc[idx]["Num amdt"] for idx in cluster_indices
+                # Get the Num amdt for the indices in cluster_indices based on amdt_idx
+                cluster_num_amdt = sorted(
+                    df_group[df_group["amdt_idx"].isin(cluster_indices)]["Num amdt"]
                 )
-                cluster_numeros_str = ",".join(map(str, cluster_numeros))
-                for idx in cluster_indices:
-                    amendment_numero = df_group.iloc[idx]["Num amdt"]
-                    mask = (self.amendments_df["Num amdt"] == amendment_numero) & (
+                cluster_num_amdt_str = ",".join(map(str, cluster_num_amdt))
+
+                for amdt_idx in cluster_indices:
+                    # Get the Num amdt for the current amdt_idx
+                    num_amdt = df_group[df_group["amdt_idx"] == amdt_idx][
+                        "Num amdt"
+                    ].values[0]
+                    mask = (self.amendments_df["Num amdt"] == num_amdt) & (
                         self.amendments_df["Lecture"] == lecture
                     )
-                    self.amendments_df.loc[mask, "Allotissement"] = cluster_numeros_str
+                    self.amendments_df.loc[mask, "Allotissement"] = cluster_num_amdt_str
+
         return self.amendments_df

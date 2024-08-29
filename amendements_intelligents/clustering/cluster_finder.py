@@ -4,8 +4,12 @@ from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from amendements_intelligents.types import IntIndex
+
 
 class PLFSSClusterFinder:
+    """Find clusters of similar amendments using DBSCAN on TF-IDF vectors"""
+
     def __init__(self, amendments_df: pd.DataFrame):
         self.amendments_df = amendments_df.copy()
         self.vectorizer = TfidfVectorizer()
@@ -15,17 +19,20 @@ class PLFSSClusterFinder:
         self.final_clusters_per_lecture = {}
 
     def _vectorize_data(self) -> None:
+        """Convert strings to TF-IDF vectors for all Corps amdt"""
         print("Converting strings to TF-IDF vectors for all data...\n")
         strings = self.amendments_df["Corps amdt"].tolist()
         self.vectorizer.fit(strings)
 
     def _transform_lecture_group(self, lecture_group) -> None:
+        """Transform strings to TF-IDF vectors for a specific lecture group"""
         print(f"Transforming data for lecture: {lecture_group}...")
         df_group = self.amendments_df[self.amendments_df["Lecture"] == lecture_group]
         strings = df_group["Corps amdt"].tolist()
         self.vectors_per_lecture[lecture_group] = self.vectorizer.transform(strings)
 
     def _compute_distance_matrix(self, lecture_group) -> None:
+        """Compute cosine similarity matrix for a specific lecture group"""
         print(f"Computing cosine similarity matrix for lecture: {lecture_group}...")
         similarity_matrix = cosine_similarity(self.vectors_per_lecture[lecture_group])
         distance_matrix = 1 - similarity_matrix
@@ -33,6 +40,7 @@ class PLFSSClusterFinder:
         self.distance_matrix_per_lecture[lecture_group] = distance_matrix
 
     def find_similarity_clusters(self, eps=0.5, min_samples=2) -> pd.DataFrame:
+        """Find clusters using DBSCAN on the cosine similarity matrix"""
         self._vectorize_data()
         lecture_groups = self.amendments_df["Lecture"].unique()
         for lecture_group in lecture_groups:
@@ -45,13 +53,18 @@ class PLFSSClusterFinder:
             )
 
             # Extract clusters
-            clustered_strings = {}
+            clustered_strings: dict[int, IntIndex] = {}
+            df_group = self.amendments_df[
+                self.amendments_df["Lecture"] == lecture_group
+            ]
+            amdt_idx_list = df_group["amdt_idx"].tolist()
+
             for idx, label in enumerate(clusters):
                 if label == -1:  # Ignore noise points
                     continue
                 if label not in clustered_strings:
                     clustered_strings[label] = []
-                clustered_strings[label].append(idx)
+                clustered_strings[label].append(amdt_idx_list[idx])
 
             # Filter out singleton clusters
             self.tfidf_clusters_per_lecture[lecture_group] = [
@@ -63,7 +76,8 @@ class PLFSSClusterFinder:
 
         return self.tfidf_clusters_per_lecture
 
-    def refine_clusters_with_exact_match(self, threshold: float = 0.01) -> pd.DataFrame:
+    def refine_clusters_with_distance(self, threshold: float = 0.01) -> pd.DataFrame:
+        """Refine clusters using Damerau-Levenshtein distance"""
         lecture_groups = self.amendments_df["Lecture"].unique()
         for lecture_group in lecture_groups:
             print(
@@ -75,7 +89,13 @@ class PLFSSClusterFinder:
 
             refined_clusters = []
             for cluster in self.tfidf_clusters_per_lecture[lecture_group]:
-                strings = df_group.iloc[cluster]["Corps amdt"].tolist()
+                # Get the strings and corresponding amdt_idx for the current cluster
+                strings = df_group[df_group["amdt_idx"].isin(cluster)][
+                    "Corps amdt"
+                ].tolist()
+                cluster_amdt_idx = df_group[df_group["amdt_idx"].isin(cluster)][
+                    "amdt_idx"
+                ].tolist()
                 n = len(strings)
                 damerau_distance_matrix = [[0] * n for _ in range(n)]
 
@@ -99,7 +119,7 @@ class PLFSSClusterFinder:
                         continue
                     if label not in refined_clustered_strings:
                         refined_clustered_strings[label] = []
-                    refined_clustered_strings[label].append(cluster[idx])
+                    refined_clustered_strings[label].append(cluster_amdt_idx[idx])
 
                 # Filter out singleton clusters
                 refined_clusters.extend(
