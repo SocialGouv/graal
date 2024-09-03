@@ -26,18 +26,17 @@ class PLFSSAttributor:
     def _load_amendments(self, amendments_file: FilePath) -> None:
         """Load amendments data from a file."""
         if amendments_file.endswith(".json"):
-            pre_processor = PLFSSPreProcessor
-            amendments_df = pre_processor.load_plfss_json(
+            amendments_df = PLFSSPreProcessor.load_plfss_json(
                 input_files=[(amendments_file, None)]
             )
-            amendments_df = pre_processor.remap_columns_in_json_amendments(
+            amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
                 amendments_df=amendments_df
             )
-            self.amendments_df = pre_processor.prepare_amendments_columns(
+            self.amendments_df = PLFSSPreProcessor.prepare_amendments_columns(
                 amendments_df=amendments_df
             )
         elif amendments_file.endswith(".xlsx"):
-            self.amendments_df = pre_processor.load_plfss_excel(
+            self.amendments_df = PLFSSPreProcessor.load_plfss_excel(
                 input_file=amendments_file
             )
         else:
