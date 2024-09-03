@@ -32,26 +32,27 @@ class AmendmentSummaryPopulator:
         self.llm_api_client = llm_api_client
         self.summary_column = summary_column
 
+    def preprocess(self) -> pd.DataFrame:
+        self.amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
+            self.amendments_df
+        )
+        self.amendments_df = PLFSSPreProcessor.replace_acronyms(
+            amendments_df=self.amendments_df,
+            acronym_mapping=self.acronym_mapping,
+            columns_to_normalize=["Exposé amdt", "Corps amdt"],
+        )
+        self.amendments_df = PLFSSPreProcessor.prepare_amendments_columns(
+            amendments_df=self.amendments_df
+        )
+        self.amendments_df[self.summary_column] = ""
+        return self.amendments_df
+
     def populate_summaries(
         self,
         start_index: Optional[int] = None,
         stop_index: Optional[int] = None,
         max_concurrent: int = 4,
     ) -> pd.DataFrame:
-        preprocessor = PLFSSPreProcessor
-        self.amendments_df = preprocessor.remap_columns_in_json_amendments(
-            self.amendments_df
-        )
-        self.amendments_df = preprocessor.replace_acronyms(
-            amendments_df=self.amendments_df,
-            acronym_mapping=self.acronym_mapping,
-            columns_to_normalize=["Exposé amdt", "Corps amdt"],
-        )
-        self.amendments_df = preprocessor.prepare_amendments_columns(
-            amendments_df=self.amendments_df
-        )
-        self.amendments_df[self.summary_column] = ""
-
         summarizer = AmendmentSummarizer(
             self.amendments_df, self.llm_api_client, summary_column=self.summary_column
         )
@@ -88,18 +89,19 @@ def main():
     plfss_input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     acronym_file = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
-    preprocessor = PLFSSPreProcessor
-    amendments_df = preprocessor.load_plfss_json(input_files=[plfss_input_file])
-    acronym_mapping = preprocessor.load_acronyms_excel(acronym_file=acronym_file)
+    amendments_df = PLFSSPreProcessor.load_plfss_json(input_files=[plfss_input_file])
+    acronym_mapping = PLFSSPreProcessor.load_acronyms_excel(acronym_file=acronym_file)
 
-    populator = AmendmentSummaryPopulator(
+    amdt_summary_populator = AmendmentSummaryPopulator(
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
         summary_column="Objet",
     )
 
-    amdt_with_summaries_df = populator.populate_summaries(max_concurrent=2)
+    amdt_summary_populator.preprocess()
+
+    amdt_with_summaries_df = amdt_summary_populator.populate_summaries(max_concurrent=2)
 
     amdt_with_summaries_df.to_excel(
         "data/amendments_with_summary_local.xlsx", index=False

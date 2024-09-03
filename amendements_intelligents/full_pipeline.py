@@ -21,16 +21,29 @@ def main():
 
     plfss_input_file = ((f"{DATA_FOLDER}/PLFSS_2024.json", 2024),)
     acronym_file = (f"{DATA_FOLDER}/acronym_mapping.xlsx",)
+    SUMMARY_COLUMN = "Objet"
 
     preprocessor = PLFSSPreProcessor
     amendments_df = preprocessor.load_plfss_json(input_files=[plfss_input_file])
     acronym_mapping = preprocessor.load_acronyms_excel(acronym_file=acronym_file)
 
+    amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(amendments_df)
+    amendments_df = PLFSSPreProcessor.replace_acronyms(
+        amendments_df=amendments_df,
+        acronym_mapping=acronym_mapping,
+        columns_to_normalize=["Exposé amdt", "Corps amdt"],
+    )
+    amendments_df = PLFSSPreProcessor.prepare_amendments_columns(
+        amendments_df=amendments_df
+    )
+
     amdt_summary_populator = AmendmentSummaryPopulator(
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
+        summary_column=SUMMARY_COLUMN,
     )
+    amendments_df[SUMMARY_COLUMN] = ""
 
     amendments_df = amdt_summary_populator.populate_summaries()
 
