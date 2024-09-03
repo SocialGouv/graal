@@ -2,6 +2,7 @@ import re
 from multiprocessing import Pool, cpu_count
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 
 from amendements_intelligents.attribution.attribution_matcher import AttributionMatcher
@@ -26,6 +27,29 @@ class PLFSSAttributor:
         self.keywords_df = keywords_df
         self.latin_ordinals_set = latin_ordinals_set
         self.max_code_length = max_code_length
+        self.best_matches_per_amdt = {}
+
+    @staticmethod
+    def update_affectation_row(row: pd.Series, keyword_matches_df: pd.DataFrame) -> str:
+        affectation_names = row["Affectation (nom)"]
+        keyword_affectation_names = set(
+            keyword_matches_df.loc[row.name]["Affectation (nom)"]
+            if row.name in keyword_matches_df.index
+            else []
+        )
+
+        if affectation_names is np.nan or len(affectation_names) == 0:
+            return ",".join(sorted(keyword_affectation_names))
+
+        if len(affectation_names) == 1:
+            return affectation_names[0]
+
+        common_names = sorted(
+            set(affectation_names).intersection(keyword_affectation_names)
+        )
+        if not common_names:
+            return ",".join(sorted(affectation_names))
+        return ",".join(common_names)
 
     def match_codes_and_articles_to_amendments(
         self,
@@ -136,3 +160,38 @@ class PLFSSAttributor:
                 [(amendment, keywords, threshold) for amendment in amendments],
             )
         return [match for sublist in results for match in sublist]
+
+    def populate(self):
+        # Step 1: Match codes and articles to amendments
+        self.best_matches_per_amdt = self.match_codes_and_articles_to_amendments()
+        matching_rows_df = self.filter_matching_codes_and_articles(
+            self.best_matches_per_amdt
+        )
+        grouped_matching_df = self.aggregate_matches_by_amendment(matching_rows_df)
+        amendments_df = self.integrate_code_article_matches_into_amendments(
+            grouped_matching_df
+        )
+
+        matched_count = len(self.best_matches_per_amdt)
+        unmatched_count = len(self.amendments_df) - matched_count
+        print(f"# matched amendments: {matched_count}")
+        print(f"# amendments without a match: {unmatched_count}")
+
+        # Step 2: Match keywords to amendments
+        keyword_matches_df = self.match_keywords_to_amendments(threshold=95)
+        keyword_matches_df.set_index(["Num amdt", "Lecture"], inplace=True)
+        keyword_matches_df.sort_index(inplace=True)
+        amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
+
+        amendments_df["Affectation (nom)"] = amendments_df[
+            "Affectation (nom)"
+        ].str.split(",")
+
+        amendments_df["Affectation (nom)"] = amendments_df.apply(
+            PLFSSAttributor.update_affectation_row,
+            axis=1,
+            keyword_matches_df=keyword_matches_df,
+        )
+
+        amendments_df.reset_index(inplace=True)
+        return amendments_df

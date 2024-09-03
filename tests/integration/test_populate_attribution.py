@@ -6,7 +6,6 @@ from amendements_intelligents.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
 from amendements_intelligents.attribution.plfss_attributor import PLFSSAttributor
-from amendements_intelligents.populate_attribution import AffectationUpdater
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
 
@@ -25,7 +24,7 @@ def test_integration_attribute_amendments():
     amendments_df = PLFSSPreProcessor.prepare_amendments_columns(
         amendments_df=amendments_df
     )
-    amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
+    amendments_df["Corps amdt"] = amendments_df["Corps amdt orig"].apply(
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
     )
 
@@ -52,35 +51,7 @@ def test_integration_attribute_amendments():
         latin_ordinals_set=latin_ordinals_set,
         max_code_length=max_code_length,
     )
-
-    # Match codes and articles to amendments
-    best_matches_per_amdt = attributor.match_codes_and_articles_to_amendments()
-    matching_df = attributor.filter_matching_codes_and_articles(best_matches_per_amdt)
-
-    # Group the matching DataFrame by "Num amdt" and "Lecture"
-    grouped_matching_df = attributor.aggregate_matches_by_amendment(matching_df)
-
-    # Use the newly named method to integrate the matches into the amendments DataFrame
-    amendments_df = attributor.integrate_code_article_matches_into_amendments(
-        grouped_matching_df
-    )
-
-    # Step 2: Match keywords to amendments
-    keyword_matches_df = attributor.match_keywords_to_amendments(threshold=95)
-
-    keyword_matches_df.set_index(["Num amdt", "Lecture"], inplace=True)
-    keyword_matches_df = keyword_matches_df.sort_index()
-    amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
-
-    amendments_df["Affectation (nom)"] = amendments_df["Affectation (nom)"].str.split(
-        ","
-    )
-
-    amendments_df["Affectation (nom)"] = amendments_df.apply(
-        AffectationUpdater.update, axis=1, keyword_matches_df=keyword_matches_df
-    )
-
-    amendments_df.reset_index(inplace=True)
+    amendments_df = attributor.populate()
 
     diff_df = pd.DataFrame()
     for _, matching_row in amendments_df.iterrows():
@@ -117,7 +88,7 @@ def test_integration_attribute_amendments():
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"
 
-    nb_with_match = len(best_matches_per_amdt)
+    nb_with_match = len(attributor.best_matches_per_amdt)
     nb_without_match = len(original_amendments_df) - nb_with_match
     assert nb_with_match == 21, f"Expected 21 matches, but got {nb_with_match}"
     assert (
