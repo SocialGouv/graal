@@ -1,5 +1,7 @@
 import os
 import time
+from tracemalloc import start
+from typing import Optional
 
 import pandas as pd
 
@@ -23,13 +25,18 @@ class AmendmentSummaryPopulator:
         acronym_mapping: dict[str, str],
         amendments_df: pd.DataFrame,
         llm_api_client: LLMAPIClient,
+        summary_column: str = "Objet",
     ):
         self.acronym_mapping = acronym_mapping
         self.amendments_df = amendments_df
         self.llm_api_client = llm_api_client
+        self.summary_column = summary_column
 
     def populate_summaries(
         self,
+        start_index: Optional[int] = None,
+        stop_index: Optional[int] = None,
+        max_concurrent: int = 4,
     ) -> pd.DataFrame:
         preprocessor = PLFSSPreProcessor
         self.amendments_df = preprocessor.remap_columns_in_json_amendments(
@@ -43,12 +50,14 @@ class AmendmentSummaryPopulator:
         self.amendments_df = preprocessor.prepare_amendments_columns(
             amendments_df=self.amendments_df
         )
-        self.amendments_df["Objet 70B()"] = ""
+        self.amendments_df[self.summary_column] = ""
 
-        summarizer = AmendmentSummarizer(self.amendments_df, self.llm_api_client)
+        summarizer = AmendmentSummarizer(
+            self.amendments_df, self.llm_api_client, summary_column=self.summary_column
+        )
 
-        start_index = 0
-        stop_index = self.amendments_df.shape[0]
+        start_index = 0 if start_index is None else start_index
+        stop_index = self.amendments_df.shape[0] if stop_index is None else stop_index
         print(
             f"Starting to generate summaries for {stop_index - start_index + 1} amendments..."
         )
@@ -56,11 +65,12 @@ class AmendmentSummaryPopulator:
         amdt_with_summaries_df = summarizer.summarize(
             start_index=start_index,
             stop_index=stop_index,
+            max_concurrent=max_concurrent,
         )
 
         # for i in range(start_index, stop_index):
         #     print(
-        #         f'amdt_with_summaries_df {i}, {amdt_with_summaries_df.loc[i, "Num amdt"]}, "Objet 70B()": {amdt_with_summaries_df.loc[i, "Objet 70B()"]}\n'
+        #         f'amdt_with_summaries_df {i}, {amdt_with_summaries_df.loc[i, "Num amdt"]}, self.summary_column: {amdt_with_summaries_df.loc[i, self.summary_column]}\n'
         #     )
 
         end_time = time.time()
@@ -86,11 +96,14 @@ def main():
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
+        summary_column="Objet",
     )
 
-    amdt_with_summaries_df = populator.populate_summaries()
+    amdt_with_summaries_df = populator.populate_summaries(max_concurrent=2)
 
-    amdt_with_summaries_df.to_excel("data/amendments_with_summary.xlsx", index=False)
+    amdt_with_summaries_df.to_excel(
+        "data/amendments_with_summary_local.xlsx", index=False
+    )
 
 
 if __name__ == "__main__":
