@@ -71,7 +71,7 @@ disable = [
     "missing-class-docstring",
     "redefined-outer-name",
     "protected-access",
-
+    "C0103", # Invalid name
 ]
 
 [tool.mypy]
