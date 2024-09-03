@@ -1,3 +1,5 @@
+import logging
+import logging.config
 import os
 import time
 
@@ -6,6 +8,8 @@ import pandas as pd
 from amendements_intelligents.clustering.cluster_finder import PLFSSClusterFinder
 from amendements_intelligents.utils.plfss_allotment_updater import PLFSSAllotmentUpdater
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
+
+logging.config.fileConfig("logging.conf")
 
 
 class PLFSSAllotmentPopulator:
@@ -94,11 +98,11 @@ def main():
     )
 
     amdt_with_allotments_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)
-    print(f"Saved result in {OUTPUT_FILE}\n")
+    logging.info(f"Saved result in {OUTPUT_FILE}\n")
 
     end_time = time.time()
     execution_time = end_time - start_time
-    print("Script execution time:", execution_time, "seconds")
+    logging.info(f"Script execution time: {execution_time} seconds")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
+import logging
+import logging.config
 import re
 
-import numpy as np
 import pandas as pd
 
 from amendements_intelligents.attribution.attribution_data_loader import (
@@ -9,6 +10,8 @@ from amendements_intelligents.attribution.attribution_data_loader import (
 from amendements_intelligents.attribution.plfss_attributor import PLFSSAttributor
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
+
+logging.config.fileConfig("logging.conf")
 
 
 def main():
@@ -56,7 +59,7 @@ def main():
     amendments_df = attributor.populate()
 
     amendments_df.to_excel(output_file, index=False)
-    print(
+    logging.info(
         f"Saved amendment with keyword and code/article affectation to: {output_file}"
     )
 

@@ -1,6 +1,6 @@
+import logging
 import os
 import time
-from tracemalloc import start
 from typing import Optional
 
 import pandas as pd
@@ -12,11 +12,7 @@ from amendements_intelligents.summary.llm_clients import (
 )
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
-MODEL_NAME = os.getenv("MODEL_NAME")
-DATA_FOLDER = os.getenv("DATA_FOLDER")
-VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT")
-USER = os.getenv("USER")
-PASSWORD = os.getenv("PASSWORD")
+logging.config.fileConfig("logging.conf")
 
 
 class AmendmentSummaryPopulator:
@@ -59,7 +55,7 @@ class AmendmentSummaryPopulator:
 
         start_index = 0 if start_index is None else start_index
         stop_index = self.amendments_df.shape[0] if stop_index is None else stop_index
-        print(
+        logging.info(
             f"Starting to generate summaries for {stop_index - start_index + 1} amendments..."
         )
         start_time = time.time()
@@ -70,17 +66,22 @@ class AmendmentSummaryPopulator:
         )
 
         # for i in range(start_index, stop_index):
-        #     print(
+        #     logging.info(
         #         f'amdt_with_summaries_df {i}, {amdt_with_summaries_df.loc[i, "Num amdt"]}, self.summary_column: {amdt_with_summaries_df.loc[i, self.summary_column]}\n'
         #     )
 
         end_time = time.time()
-        print(f"Time taken: {end_time - start_time} seconds")
+        logging.info(f"Time taken: {end_time - start_time} seconds")
 
         return amdt_with_summaries_df
 
 
 def main():
+    DATA_FOLDER = os.getenv("DATA_FOLDER")
+    # MODEL_NAME = os.getenv("MODEL_NAME")
+    # VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT")
+    # USER = os.getenv("USER")
+    # PASSWORD = os.getenv("PASSWORD")
     # llm_api_client: LLMAPIClient = VllmAPIClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
     # llm_api_client: LLMAPIClient = GroqAPIClient()
     llm_api_client: LLMAPIClient = LLMInferenceAPIClient(

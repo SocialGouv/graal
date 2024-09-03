@@ -53,8 +53,6 @@ class GroqAPIClient(LLMAPIClient):
             temperature=0,
         )
 
-        print(f"completion {completion}")
-
         return completion.choices[0].message.content.strip()
 
 

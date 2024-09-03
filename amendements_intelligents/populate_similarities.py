@@ -1,3 +1,5 @@
+import logging
+import logging.config
 import os
 import time
 
@@ -5,6 +7,8 @@ from amendements_intelligents.clustering.similarity_finder import SimilarityFind
 from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopier
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_text_utils import normalize_text
+
+logging.config.fileConfig("logging.conf")
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
 OUTPUT_FILE = (
@@ -144,7 +148,7 @@ def main():
         if doc_id not in closest_docs:
             closest_docs[doc_id] = doc_info  # Priority given to closest_docs_object
 
-    print(f"Total number of matches after merge: {len(closest_docs)}")
+    logging.info(f"Total number of matches after merge: {len(closest_docs)}")
 
     amendment_copier = AmendmentCopier(
         new_amendments_df=new_amendments_df,
@@ -156,11 +160,11 @@ def main():
     )
 
     new_amendments_with_copies_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)
-    print(f"Saved result in {OUTPUT_FILE}")
+    logging.info(f"Saved result in {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":
     start_time = time.time()
     main()
     end_time = time.time()
-    print(f"Execution time: {end_time - start_time} seconds")
+    logging.info(f"Execution time: {end_time - start_time} seconds")

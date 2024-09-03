@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import DBSCAN
@@ -20,20 +22,22 @@ class PLFSSClusterFinder:
 
     def _vectorize_data(self) -> None:
         """Convert strings to TF-IDF vectors for all Corps amdt"""
-        print("Converting strings to TF-IDF vectors for all data...\n")
+        logging.info("Converting strings to TF-IDF vectors for all data...\n")
         strings = self.amendments_df["Corps amdt"].tolist()
         self.vectorizer.fit(strings)
 
     def _transform_lecture_group(self, lecture_group) -> None:
         """Transform strings to TF-IDF vectors for a specific lecture group"""
-        print(f"Transforming data for lecture: {lecture_group}...")
+        logging.info(f"Transforming data for lecture: {lecture_group}...")
         df_group = self.amendments_df[self.amendments_df["Lecture"] == lecture_group]
         strings = df_group["Corps amdt"].tolist()
         self.vectors_per_lecture[lecture_group] = self.vectorizer.transform(strings)
 
     def _compute_distance_matrix(self, lecture_group) -> None:
         """Compute cosine similarity matrix for a specific lecture group"""
-        print(f"Computing cosine similarity matrix for lecture: {lecture_group}...")
+        logging.info(
+            f"Computing cosine similarity matrix for lecture: {lecture_group}..."
+        )
         similarity_matrix = cosine_similarity(self.vectors_per_lecture[lecture_group])
         distance_matrix = 1 - similarity_matrix
         distance_matrix[distance_matrix < 0] = 0  # Ensure no negative values
@@ -46,7 +50,7 @@ class PLFSSClusterFinder:
         for lecture_group in lecture_groups:
             self._transform_lecture_group(lecture_group)
             self._compute_distance_matrix(lecture_group)
-            print(f"Finding clusters for lecture: {lecture_group}...")
+            logging.info(f"Finding clusters for lecture: {lecture_group}...")
             dbscan = DBSCAN(metric="precomputed", eps=eps, min_samples=min_samples)
             clusters = dbscan.fit_predict(
                 self.distance_matrix_per_lecture[lecture_group]
@@ -70,7 +74,7 @@ class PLFSSClusterFinder:
             self.tfidf_clusters_per_lecture[lecture_group] = [
                 cluster for cluster in clustered_strings.values() if len(cluster) > 1
             ]
-            print(
+            logging.info(
                 f"Number of clusters for lecture {lecture_group}: {len(self.tfidf_clusters_per_lecture[lecture_group])}\n"
             )
 
@@ -80,7 +84,7 @@ class PLFSSClusterFinder:
         """Refine clusters using Damerau-Levenshtein distance"""
         lecture_groups = self.amendments_df["Lecture"].unique()
         for lecture_group in lecture_groups:
-            print(
+            logging.info(
                 f'Refining clusters for lecture "{lecture_group}" with Damerau-Levenshtein distance...'
             )
             df_group = self.amendments_df[
@@ -131,7 +135,7 @@ class PLFSSClusterFinder:
                 )
 
             self.final_clusters_per_lecture[lecture_group] = refined_clusters
-            print(
+            logging.info(
                 f"Number of refined clusters for lecture {lecture_group}: {len(self.final_clusters_per_lecture[lecture_group])}\n"
             )
 

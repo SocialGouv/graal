@@ -1,4 +1,5 @@
 import json
+import logging
 
 import pandas as pd
 from pydantic import FilePath
@@ -118,7 +119,7 @@ class PLFSSPreProcessor:
 
         # Also append 'Num article' to small amendment bodies
         mask = mask | (amendments_df["Corps amdt"].str.len() < 50)
-        print(
+        logging.info(
             f'Appending {mask.sum()} "Num article" to small amendment bodies to get better clusters...\n'
         )
 
@@ -152,7 +153,7 @@ class PLFSSPreProcessor:
 
         # Also append 'Num article' to small amendment bodies
         mask = mask | (amendments_df["Exposé amdt"].str.len() < 25)
-        print(
+        logging.info(
             f"Concatenating Corps Amdt to Exposé amdt in {mask.sum()} amendements to get better clusters...\n"
         )
 
@@ -193,7 +194,7 @@ class PLFSSPreProcessor:
         amendments_df: pd.DataFrame, columns_to_normalize: list[ColumnName]
     ) -> pd.DataFrame:
         for column in columns_to_normalize:
-            amendments_df[column] = amendments_df[column].apply(normalize_text)
-        print("PLFSS loaded for processing\n")
+            amendments_df.loc[:, column] = amendments_df[column].apply(normalize_text)
+        logging.info("PLFSS loaded for processing\n")
 
         return amendments_df

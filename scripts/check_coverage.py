@@ -4,12 +4,11 @@ import sys
 
 import tabulate
 
-required_coverage_per_file = {
-    # "my_file": 70,
-}
-
 
 def main():
+    required_coverage_per_file = {
+        # "my_file": 70,
+    }
     parser = argparse.ArgumentParser(description="Check coverage of JSON files")
     parser.add_argument(
         "file_path", nargs="?", default="coverage.json", help="Path to the JSON file"
@@ -21,7 +20,7 @@ def main():
 
     try:
         # Open the JSON file
-        with open(args.file_path) as file:
+        with open(args.file_path, encoding="UTF-8") as file:
             data = json.load(file)
             errors = []
             files = data["files"]

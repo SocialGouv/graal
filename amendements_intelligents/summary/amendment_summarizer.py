@@ -1,6 +1,6 @@
 import concurrent.futures
+import logging
 import time
-from concurrent.futures import TimeoutError
 
 import pandas as pd
 
@@ -57,9 +57,9 @@ class AmendmentSummarizer:
                     )
                     try:
                         summary = completed_future.result(timeout=3 * 60)
-                    except (TimeoutError, Exception) as e:
+                    except Exception as e:
                         amdt_idx = futures_to_index.pop(completed_future)
-                        print(f"Error for index {amdt_idx}: {e}")
+                        logging.warning(f"Error for index {amdt_idx}: {e}")
                         retries = (
                             completed_future.retries
                             if hasattr(completed_future, "retries")
@@ -70,7 +70,7 @@ class AmendmentSummarizer:
                             backoff_time = (
                                 retries * self.base_linear_backoff_sec
                             )  # Linear backoff
-                            print(
+                            logging.warning(
                                 f"Retrying index {amdt_idx} in {backoff_time} seconds... (Retry {retries}/{self.max_retries})"
                             )
                             time.sleep(backoff_time)
@@ -78,7 +78,7 @@ class AmendmentSummarizer:
                                 amdt_idx, retries, futures_to_index, executor
                             )
                         else:
-                            print(
+                            logging.warning(
                                 f"Max retries reached for index {amdt_idx}. Skipping..."
                             )
                         summary = ""
@@ -89,7 +89,7 @@ class AmendmentSummarizer:
                                 self.amendments_df["amdt_idx"] == amdt_idx,
                                 self.summary_column,
                             ] = summary.strip()
-                        print(f"COMPLETED: {amdt_idx}")
+                        logging.info(f"COMPLETED: {amdt_idx}")
 
                 if cur_index < self.amendments_df.shape[0] and cur_index <= stop_index:
                     self._submit_task_if_valid(cur_index, futures_to_index, executor)
@@ -122,7 +122,7 @@ class AmendmentSummarizer:
                 self.amendments_df.loc[
                     self.amendments_df["amdt_idx"] == index, self.summary_column
                 ] = "Supprimer cet article"
-                print(f'"Supprimer cet article" for amdt_index {index}')
+                logging.info(f'"Supprimer cet article" for amdt_index {index}')
                 future = executor.submit(lambda x: x, "Supprimer cet article")
                 futures_to_index[future] = index
                 return
@@ -131,11 +131,11 @@ class AmendmentSummarizer:
                 explanatory_statement=row["Exposé amdt"],
                 amdt_body=row["Corps amdt"],
             )
-            # print(f"prompt {prompt}")
+            # logging.info(f"prompt {prompt}")
             future = executor.submit(self.api_client.generate_summary, prompt)
             futures_to_index[future] = index
             future.retries = 0  # Initialize retries count
-            print(f"Submitted task for index {index}")
+            logging.info(f"Submitted task for index {index}")
 
     def _retry_task(
         self,
@@ -155,6 +155,6 @@ class AmendmentSummarizer:
         future = executor.submit(self.api_client.generate_summary, prompt)
         future.retries = retries  # Pass along the current retry count
         futures_to_index[future] = amdt_idx
-        print(
+        logging.info(
             f"Retrying task for index {amdt_idx} (Retry {retries}/{self.max_retries})"
         )

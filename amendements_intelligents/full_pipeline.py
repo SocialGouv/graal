@@ -1,3 +1,5 @@
+import logging
+import logging.config
 import os
 import re
 
@@ -12,6 +14,8 @@ from amendements_intelligents.populate_summaries import AmendmentSummaryPopulato
 from amendements_intelligents.summary.llm_clients import FakeLLMAPIClient, LLMAPIClient
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
+
+logging.config.fileConfig("logging.conf")
 
 
 def main():
@@ -114,7 +118,9 @@ def main():
     # END ATTRIBUTION
 
     result_df.to_excel(OUTPUT_FILE)
-    print(f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}")
+    logging.info(
+        f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}"
+    )
 
 
 if __name__ == "__main__":

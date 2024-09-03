@@ -1,3 +1,4 @@
+import logging
 import re
 from multiprocessing import Pool, cpu_count
 from typing import Tuple
@@ -174,8 +175,8 @@ class PLFSSAttributor:
 
         matched_count = len(self.best_matches_per_amdt)
         unmatched_count = len(self.amendments_df) - matched_count
-        print(f"# matched amendments: {matched_count}")
-        print(f"# amendments without a match: {unmatched_count}")
+        logging.info(f"# matched amendments: {matched_count}")
+        logging.info(f"# amendments without a match: {unmatched_count}")
 
         # Step 2: Match keywords to amendments
         keyword_matches_df = self.match_keywords_to_amendments(threshold=95)

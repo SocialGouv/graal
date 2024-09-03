@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 
 from amendements_intelligents.types import IntIndex
@@ -32,7 +34,7 @@ class SimilarityFinder:
 
         Return: The dictionnary mentionned above.
         """
-        print("Pre-filtering similar documents for optimization...")
+        logging.info("Pre-filtering similar documents for optimization...")
         self.similar_doc_indices = ContentSimilarityEvaluator.tf_idf_filtering(
             documents_to_search=self.old_amendments_df[
                 column_used_for_comparison
@@ -44,7 +46,9 @@ class SimilarityFinder:
         )
         list_lengths = [len(docs) for docs in self.similar_doc_indices.values()]
         average_length = sum(list_lengths) / len(list_lengths)
-        print(f"Average number of potential matches per amendment: {average_length}")
+        logging.info(
+            f"Average number of potential matches per amendment: {average_length}"
+        )
         return self.similar_doc_indices
 
     def find_best_matches(
@@ -60,7 +64,7 @@ class SimilarityFinder:
             "comparison_value": -self.old_amendments_df["Year"],
         }
         new_amendments = self.new_amendments_df[column_used_for_comparison]
-        print("Looking for best matches on pre-filtered amendments...")
+        logging.info("Looking for best matches on pre-filtered amendments...")
         closest_docs = ContentSimilarityEvaluator.find_best_matching_docs(
             similar_doc_indices=self.similar_doc_indices,
             left_docs=new_amendments,
@@ -72,5 +76,7 @@ class SimilarityFinder:
         for _, doc_info in closest_docs.items():
             doc_info["column_used_for_comparison"] = column_used_for_comparison
 
-        print(f"Found matches in previous PLFSS for {len(closest_docs)} amendments")
+        logging.info(
+            f"Found matches in previous PLFSS for {len(closest_docs)} amendments"
+        )
         return closest_docs

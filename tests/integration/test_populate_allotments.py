@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 
 from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
@@ -93,7 +95,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         total_nb_test_lot += nb_test_lot
 
     # with pd.ExcelWriter(test_output_file) as writer:
-    #     print(f"Saving comparison in {test_output_file}...")
+    #     logging.info(f"Saving comparison in {test_output_file}...")
     #     pd.DataFrame(not_detected_allotments).to_excel(
     #         writer, sheet_name="Allotissements manqués", index=False
     #     )
@@ -102,7 +104,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     #     )
 
     coverage_test_allotments = total_nb_matches / total_nb_test_lot
-    print(f"Total number of allotments: {total_nb_matches}")
-    print(f"Coverage test: {coverage_test_allotments}")
+    logging.info(f"Total number of allotments: {total_nb_matches}")
+    logging.info(f"Coverage test: {coverage_test_allotments}")
 
     assert coverage_test_allotments > 0.99

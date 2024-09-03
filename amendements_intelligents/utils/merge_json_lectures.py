@@ -1,5 +1,9 @@
 import json
+import logging
+import logging.config
 import os
+
+logging.config.fileConfig("logging.conf")
 
 
 def main():
@@ -19,7 +23,7 @@ def main():
     # Dump merged amendments into a single file
     with open(OUTPUT_FILE, "w", encoding="utf-8-sig") as f:
         json.dump(output, f, ensure_ascii=False)
-    print(f"Merged lectures saved in {OUTPUT_FILE}")
+    logging.info(f"Merged lectures saved in {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":

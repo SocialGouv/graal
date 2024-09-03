@@ -3,15 +3,17 @@ Extract a PLFSS sheet from an Excel file and save it as a JSON file.
 """
 
 import argparse
+import logging
+import logging.config
 import os
 
-from amendements_intelligents.utils.plfss_sheet_data_loader import (
-    PLFSSSheetDataLoader,
-)
+from amendements_intelligents.utils.plfss_sheet_data_loader import PLFSSSheetDataLoader
 
-DATA_FOLDER = os.getenv("DATA_FOLDER")
+logging.config.fileConfig("logging.conf")
 
-if __name__ == "__main__":
+
+def main():
+    DATA_FOLDER = os.getenv("DATA_FOLDER")
     parser = argparse.ArgumentParser()
     parser.add_argument("--excel", default=f"{DATA_FOLDER}/aled.xlsm")
     parser.add_argument("--sheet", default="PLFSS 2024")
@@ -25,4 +27,8 @@ if __name__ == "__main__":
     data_extractor = PLFSSSheetDataLoader(plfss_excel_path)
     df = data_extractor.extract_sheet_data(sheet_name)
     df.to_json(output_file, orient="records", index=False)
-    print(f"PLFSS extracted in {output_file}")
+    logging.info(f"PLFSS extracted in {output_file}")
+
+
+if __name__ == "__main__":
+    main()

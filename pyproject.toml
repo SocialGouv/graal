@@ -71,7 +71,8 @@ disable = [
     "missing-class-docstring",
     "redefined-outer-name",
     "protected-access",
-    "C0103", # Invalid name
+    "invalid-name",
+    "logging-fstring-interpolation",
 ]
 
 [tool.mypy]

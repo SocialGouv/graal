@@ -1,3 +1,4 @@
+import logging
 import re
 
 import pandas as pd
@@ -83,7 +84,7 @@ def test_integration_attribute_amendments():
             )
 
     if not diff_df.empty:
-        print(diff_df)
+        logging.info(diff_df)
         diff_df.to_csv("tests/integration/test_data/diff_amendments.csv")
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"
