@@ -1,6 +1,7 @@
 import pandas as pd
 
 from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
+from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_sheet_data_loader import PLFSSSheetDataLoader
 
 
@@ -13,9 +14,8 @@ def load_test_file_to_compare(
 
 def test_populate_allotments_ratio_matching_allotments() -> None:
     test_df = load_test_file_to_compare(
-        "tests/integration/test_data/test_populate_allotments_jul30.xlsx", "test1"
+        "tests/integration/test_data/test_populate_allotments_sep3.xlsx", "test1"
     )
-    # test_df = load_test_file_to_compare("data/PLFSS_2024/.xlsx", "Sheet1")
 
     test_df["Allotissement"] = test_df["Allotissement"].apply(
         lambda x: None if pd.isna(x) else x
@@ -26,24 +26,23 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     test_df["Lecture"] = "test_lecture"
 
     # Process the data frame as if it were a real PLFSS
-    allotment_populator = PLFSSAllotmentPopulator()
-    allotment_populator.plfss_pre_processor.original_amendments_df = test_df.copy()
-    allotment_populator.plfss_pre_processor.original_amendments_df["Allotissement"] = (
-        None
+    original_amendments_df = test_df.copy()
+    original_amendments_df["Allotissement"] = None
+    prepared_df = original_amendments_df.copy()
+
+    prepared_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
+        amendments_df=prepared_df, columns_to_filter_with=["Corps amdt"]
     )
-    allotment_populator.plfss_pre_processor.work_amendments_df = (
-        allotment_populator.plfss_pre_processor.original_amendments_df.copy()
+    prepared_df = PLFSSPreProcessor.handle_common_amendment_bodies(
+        amendments_df=prepared_df
+    )
+    prepared_df = PLFSSPreProcessor.normalize_plfss(
+        amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
     )
 
-    allotment_populator.plfss_pre_processor.remove_empty_rows_for_given_columns(
-        columns_to_filter_with=["Corps amdt"]
+    alloted_amendments_df = PLFSSAllotmentPopulator.populate(
+        original_amendments_df=original_amendments_df, prepared_df=prepared_df
     )
-    allotment_populator.plfss_pre_processor.handle_common_amendment_bodies()
-    allotment_populator.plfss_pre_processor.normalize_plfss(
-        columns_to_normalize=["Corps amdt"]
-    )
-
-    alloted_amendments_df = allotment_populator.populate()
 
     # Now we must compare our results with the expected results (in test_df)
     merged_df = test_df.merge(

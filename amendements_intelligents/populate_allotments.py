@@ -1,9 +1,7 @@
 import os
 import time
-from typing import Tuple
 
 import pandas as pd
-from pydantic import FilePath
 
 from amendements_intelligents.clustering.cluster_finder import PLFSSClusterFinder
 from amendements_intelligents.utils.plfss_allotment_updater import PLFSSAllotmentUpdater
@@ -12,37 +10,38 @@ from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 class PLFSSAllotmentPopulator:
     @staticmethod
-    def preprocess(
-        amendments_df: pd.DataFrame, acronym_file: FilePath
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Returns a tuple of the original amendments dataframe with a small cleanup and the dataframe prepared for processing"""
-        plfss_pre_processor = PLFSSPreProcessor
-
-        acronym_mapping = plfss_pre_processor.load_acronyms_excel(acronym_file)
-
-        amendments_df = plfss_pre_processor.remap_columns_in_json_amendments(
+    def preprocess_json_amendments(
+        amendments_df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
             amendments_df=amendments_df
         )
-        # split
-        prepared_df = plfss_pre_processor.prepare_amendments_columns(
+
+        return amendments_df
+
+    @staticmethod
+    def preprocess_amendments(
+        amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
+    ) -> pd.DataFrame:
+        prepared_df = PLFSSPreProcessor.prepare_amendments_columns(
             amendments_df=amendments_df
         )
-        prepared_df = plfss_pre_processor.replace_acronyms(
+        prepared_df = PLFSSPreProcessor.replace_acronyms(
             amendments_df=prepared_df,
             acronym_mapping=acronym_mapping,
             columns_to_normalize=["Corps amdt"],
         )
-        prepared_df = plfss_pre_processor.remove_empty_rows_for_given_columns(
+        prepared_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
             amendments_df=prepared_df, columns_to_filter_with=["Corps amdt"]
         )
-        prepared_df = plfss_pre_processor.handle_common_amendment_bodies(
+        prepared_df = PLFSSPreProcessor.handle_common_amendment_bodies(
             amendments_df=prepared_df
         )
-        prepared_df = plfss_pre_processor.normalize_plfss(
+        prepared_df = PLFSSPreProcessor.normalize_plfss(
             amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
         )
 
-        return amendments_df, prepared_df
+        return prepared_df
 
     @staticmethod
     def populate(
@@ -80,15 +79,21 @@ def main():
     ]
 
     amendments_df = PLFSSPreProcessor.load_plfss_json(input_files=[(INPUT_FILE, YEAR)])
-    original_amendments_df, prepared_df = PLFSSAllotmentPopulator.preprocess(
-        amendments_df=amendments_df,
-        acronym_file=f"{DATA_FOLDER}/acronym_mapping.xlsx",
+    acronym_mapping = PLFSSPreProcessor.load_acronyms_excel(
+        acronym_file=f"{DATA_FOLDER}/acronym_mapping.xlsx"
     )
-    populated_df = PLFSSAllotmentPopulator.populate(
+    original_amendments_df = PLFSSAllotmentPopulator.preprocess_json_amendments(
+        amendments_df=amendments_df
+    )
+    prepared_df = PLFSSAllotmentPopulator.preprocess_amendments(
+        amendments_df=amendments_df,
+        acronym_mapping=acronym_mapping,
+    )
+    amdt_with_allotments_df = PLFSSAllotmentPopulator.populate(
         original_amendments_df=original_amendments_df, prepared_df=prepared_df
     )
 
-    populated_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)
+    amdt_with_allotments_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)
     print(f"Saved result in {OUTPUT_FILE}\n")
 
     end_time = time.time()
