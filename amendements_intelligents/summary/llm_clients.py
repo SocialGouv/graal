@@ -1,4 +1,4 @@
-import time
+import random
 from abc import ABC, abstractmethod
 
 import requests
@@ -83,3 +83,16 @@ class LLMInferenceAPIClient(LLMAPIClient):
             return generated_texts[0]
         else:
             return f"Failed to get a response. Status code: {response.status_code}"
+
+
+class FakeLLMAPIClient(LLMAPIClient):
+    def generate_summary(self, prompt: TxtContent) -> str:
+        # Generate a random summary
+        summary = random.choice(
+            [
+                "Lorem ipsum dolor sit amet",
+                "Consectetur adipiscing elit",
+                "Sed do eiusmod tempor incididunt",
+            ]
+        )
+        return summary
