@@ -17,12 +17,14 @@ class AmendmentSummarizer:
         api_client: LLMAPIClient,
         summary_column: str = "Objet",
         max_retries: int = 3,  # Maximum number of retries
+        base_linear_backoff_sec: int = 10,  # Base backoff time in seconds
     ):
         self.amendments_df = amendments_df
         self.prompt_builder = SummaryPromptBuilder()
         self.api_client = api_client
         self.summary_column = summary_column
         self.max_retries = max_retries
+        self.base_linear_backoff_sec = base_linear_backoff_sec
 
     def summarize(
         self,
@@ -55,10 +57,9 @@ class AmendmentSummarizer:
                     )
                     try:
                         summary = completed_future.result(timeout=3 * 60)
-                        index = futures_to_index[completed_future]
                     except (TimeoutError, Exception) as e:
-                        index = futures_to_index[completed_future]
-                        print(f"Error for index {index}: {e}")
+                        amdt_idx = futures_to_index.pop(completed_future)
+                        print(f"Error for index {amdt_idx}: {e}")
                         retries = (
                             completed_future.retries
                             if hasattr(completed_future, "retries")
@@ -66,23 +67,29 @@ class AmendmentSummarizer:
                         )
                         if retries < self.max_retries:
                             retries += 1
-                            backoff_time = retries * 10  # Linear backoff
+                            backoff_time = (
+                                retries * self.base_linear_backoff_sec
+                            )  # Linear backoff
                             print(
-                                f"Retrying index {index} in {backoff_time} seconds... (Retry {retries}/{self.max_retries})"
+                                f"Retrying index {amdt_idx} in {backoff_time} seconds... (Retry {retries}/{self.max_retries})"
                             )
                             time.sleep(backoff_time)
-                            self._retry_task(index, retries, futures_to_index, executor)
+                            self._retry_task(
+                                amdt_idx, retries, futures_to_index, executor
+                            )
                         else:
-                            print(f"Max retries reached for index {index}. Skipping...")
+                            print(
+                                f"Max retries reached for index {amdt_idx}. Skipping..."
+                            )
                         summary = ""
                     else:
-                        index = futures_to_index.pop(completed_future)
+                        amdt_idx = futures_to_index.pop(completed_future)
                         if summary:
                             self.amendments_df.loc[
-                                self.amendments_df["amdt_idx"] == index,
+                                self.amendments_df["amdt_idx"] == amdt_idx,
                                 self.summary_column,
                             ] = summary.strip()
-                        print(f"COMPLETED: {index}")
+                        print(f"COMPLETED: {amdt_idx}")
 
                 if cur_index < self.amendments_df.shape[0] and cur_index <= stop_index:
                     self._submit_task_if_valid(cur_index, futures_to_index, executor)
@@ -132,7 +139,7 @@ class AmendmentSummarizer:
 
     def _retry_task(
         self,
-        index: int,
+        amdt_idx: int,
         retries: int,
         futures_to_index: dict[concurrent.futures.Future, IntIndex],
         executor: concurrent.futures.ThreadPoolExecutor,
@@ -140,12 +147,14 @@ class AmendmentSummarizer:
         """
         Helper method to retry a task with a specified retry count.
         """
-        row = self.amendments_df[self.amendments_df["amdt_idx"] == index].iloc[0]
+        row = self.amendments_df[self.amendments_df["amdt_idx"] == amdt_idx].iloc[0]
         prompt = self.prompt_builder.build_prompt(
             explanatory_statement=row["Exposé amdt"],
             amdt_body=row["Corps amdt"],
         )
         future = executor.submit(self.api_client.generate_summary, prompt)
         future.retries = retries  # Pass along the current retry count
-        futures_to_index[future] = index
-        print(f"Retrying task for index {index} (Retry {retries}/{self.max_retries})")
+        futures_to_index[future] = amdt_idx
+        print(
+            f"Retrying task for index {amdt_idx} (Retry {retries}/{self.max_retries})"
+        )
