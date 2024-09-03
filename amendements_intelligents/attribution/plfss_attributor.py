@@ -1,77 +1,35 @@
 import re
 from multiprocessing import Pool, cpu_count
-from typing import Dict, List, Set, Tuple
+from typing import Tuple
 
 import pandas as pd
-from pydantic import FilePath
 
-from amendements_intelligents.attribution.attribution_data_loader import (
-    AttributionDataLoader,
-)
 from amendements_intelligents.attribution.attribution_matcher import AttributionMatcher
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
-from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
 
 
 class PLFSSAttributor:
-    def __init__(self):
-        self.data_loader = AttributionDataLoader()
+    def __init__(
+        self,
+        amendments_df: pd.DataFrame,
+        articles_set: set[str],
+        codes_articles_df: pd.DataFrame,
+        codes_set: set[str],
+        keywords_df: pd.DataFrame,
+        latin_ordinals_set: set[str],
+        max_code_length: int,
+    ):
         self.matcher = AttributionMatcher()
-        self.codes_set: Set[str] = set()
-        self.articles_set: Set[str] = set()
-        self.latin_ordinals_set: Set[str] = set()
-        self.max_code_length = 0
-        self.amendments_df = None
-
-    def _load_amendments(self, amendments_file: FilePath) -> None:
-        """Load amendments data from a file."""
-        if amendments_file.endswith(".json"):
-            amendments_df = PLFSSPreProcessor.load_plfss_json(
-                input_files=[(amendments_file, None)]
-            )
-            amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
-                amendments_df=amendments_df
-            )
-            self.amendments_df = PLFSSPreProcessor.prepare_amendments_columns(
-                amendments_df=amendments_df
-            )
-        elif amendments_file.endswith(".xlsx"):
-            self.amendments_df = PLFSSPreProcessor.load_plfss_excel(
-                input_file=amendments_file
-            )
-        else:
-            raise ValueError(f"Unsupported file format: {amendments_file}")
-        self.amendments_df["Corps amdt"] = self.amendments_df["Corps amdt"].apply(
-            lambda x: AttributionTextNormalizer.normalize_text(str(x))
-        )
-
-    def load_data(self, mappings_file: str, amendments_file: FilePath):
-        """Load mappings and amendments data."""
-        self.data_loader.load_mappings(mappings_file)
-        self._load_amendments(amendments_file)
-        self._prepare_data_sets()
-
-    def _prepare_data_sets(self):
-        """Prepare the code, article, and ordinals sets."""
-        self.codes_set = set(self.data_loader.codes_articles_df["Code"])
-        self.max_code_length = (
-            self.data_loader.codes_articles_df["Code"].str.len().max()
-        )
-        self.articles_set = set(self.data_loader.codes_articles_df["Articles"])
-        self._extract_latin_ordinals()
-
-    def _extract_latin_ordinals(self):
-        """Extract and store Latin ordinals from article texts."""
-        pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
-        self.latin_ordinals_set = {
-            match.group(1)
-            for article in self.articles_set
-            if (match := pattern.match(article)) and match.group(1)
-        }
+        self.amendments_df = amendments_df
+        self.articles_set = articles_set
+        self.codes_articles_df = codes_articles_df
+        self.codes_set = codes_set
+        self.keywords_df = keywords_df
+        self.latin_ordinals_set = latin_ordinals_set
+        self.max_code_length = max_code_length
 
     def match_codes_and_articles_to_amendments(
         self,
-    ) -> Dict[Tuple[str, str], Dict[str, Set[str]]]:
+    ) -> dict[Tuple[str, str], dict[str, set[str]]]:
         """Find the best matching codes and articles for each amendment."""
         matches_per_amdt = {}
         possible_ordinals_pattern = "|".join(
@@ -105,7 +63,7 @@ class PLFSSAttributor:
         return matches_per_amdt
 
     def filter_matching_codes_and_articles(
-        self, matches_per_amdt: Dict[Tuple[str, str], Dict[str, Set[str]]]
+        self, matches_per_amdt: dict[Tuple[str, str], dict[str, set[str]]]
     ) -> pd.DataFrame:
         """Retrieve rows from the codes and articles DataFrame that match the amendments."""
         matching_rows_df = pd.DataFrame(
@@ -121,13 +79,9 @@ class PLFSSAttributor:
         )
 
         for (num_amdt, lecture), matches in matches_per_amdt.items():
-            matched_rows = self.data_loader.codes_articles_df[
-                self.data_loader.codes_articles_df["Code"].isin(
-                    matches["matching_codes"]
-                )
-                & self.data_loader.codes_articles_df["Articles"].isin(
-                    matches["matching_articles"]
-                )
+            matched_rows = self.codes_articles_df[
+                self.codes_articles_df["Code"].isin(matches["matching_codes"])
+                & self.codes_articles_df["Articles"].isin(matches["matching_articles"])
             ].copy()
 
             if not matched_rows.empty:
@@ -165,15 +119,15 @@ class PLFSSAttributor:
     def match_keywords_to_amendments(self, threshold: int = 75) -> pd.DataFrame:
         """Find keyword matches for the amendments."""
         matcher = AttributionMatcher()
-        keywords = set(self.data_loader.keywords_df["Mots clés"].dropna())
+        keywords = set(self.keywords_df["Mots clés"].dropna())
         keyword_matches = self.parallel_keyword_matching(keywords, matcher, threshold)
         return pd.DataFrame(keyword_matches).merge(
-            self.data_loader.keywords_df, left_on="Keyword", right_on="Mots clés"
+            self.keywords_df, left_on="Keyword", right_on="Mots clés"
         )
 
     def parallel_keyword_matching(
-        self, keywords: Set[str], matcher: AttributionMatcher, threshold: int
-    ) -> List[Dict[str, str]]:
+        self, keywords: set[str], matcher: AttributionMatcher, threshold: int
+    ) -> list[dict[str, str]]:
         """Parallel fuzzy matching of keywords."""
         amendments = self.amendments_df.to_dict(orient="records")
         with Pool(cpu_count()) as pool:
