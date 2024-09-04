@@ -16,10 +16,15 @@ class AmendmentCopier:
 
     def copy_matches_to_plfss_df(self, target_df: pd.DataFrame) -> pd.DataFrame:
         # Iterate over the closest documents
-        for new_idx, closest_doc in self.closest_docs.items():
+        for new_amdt_idx, closest_doc in self.closest_docs.items():
             # Retrieve the amendment number and lecture from the new amendments
-            new_amendment_numero = self.new_amendments_df.iloc[new_idx]["Num amdt"]
-            new_amendment_lecture = self.new_amendments_df.iloc[new_idx]["Lecture"]
+            new_amendment_mask = self.old_amendments_df["amdt_idx"] == new_amdt_idx
+            new_amendment_numero = self.new_amendments_df.loc[new_amendment_mask][
+                "Num amdt"
+            ]
+            new_amendment_lecture = self.new_amendments_df.loc[new_amendment_mask][
+                "Lecture"
+            ]
 
             # Create a mask for the target DataFrame to find the matching rows
             new_amendment_mask = (target_df["Num amdt"] == new_amendment_numero) & (
