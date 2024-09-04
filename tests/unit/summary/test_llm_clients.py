@@ -29,7 +29,10 @@ def groq_client():
 
 @pytest.fixture
 def llm_inference_client():
-    return LLMInferenceAPIClient(url="https://test-inference-api/v1/generate")
+    return LLMInferenceAPIClient(
+        url="https://test-inference-api/v1/generate",
+        auth=("fake_user", "fake_password"),
+    )
 
 
 def test_generate_summary(vllm_client):
@@ -93,6 +96,8 @@ def test_llm_inference_api_client_generate_summary(llm_inference_client):
         mock_post.assert_called_once_with(
             "https://test-inference-api/v1/generate",
             json={"prompts": [prompt]},
+            headers={"Content-Type": "application/json"},
+            auth=("fake_user", "fake_password"),
             timeout=180,
         )
         assert summary == expected_summary
@@ -110,6 +115,8 @@ def test_llm_inference_api_client_generate_summary_failure(llm_inference_client)
         mock_post.assert_called_once_with(
             "https://test-inference-api/v1/generate",
             json={"prompts": [prompt]},
+            headers={"Content-Type": "application/json"},
+            auth=("fake_user", "fake_password"),
             timeout=180,
         )
         assert summary == "Failed to get a response. Status code: 500"
