@@ -1,11 +1,16 @@
 import random
 from abc import ABC, abstractmethod
+from typing import Optional, Tuple
 
 import requests
 from groq import Groq
 from pydantic_core import Url
 
-from amendements_intelligents.types import TxtContent
+from amendements_intelligents.types import (
+    CredentialsPassword,
+    CredentialsUsername,
+    TxtContent,
+)
 
 
 class LLMAPIClient(ABC):
@@ -65,14 +70,20 @@ class LLMInferenceAPIClient(LLMAPIClient):
     def __init__(
         self,
         url: str,
+        auth: Optional[Tuple[CredentialsUsername, CredentialsPassword]] = None,
     ):
         self.url = url
+        self.auth = auth
 
     def generate_summary(self, prompt: TxtContent) -> str:
+        headers = {"Content-Type": "application/json"}
+
         # Create the payload for the request
         payload = {"prompts": [prompt]}
 
-        response = requests.post(self.url, json=payload, timeout=3 * 60)
+        response = requests.post(
+            self.url, json=payload, headers=headers, auth=self.auth, timeout=3 * 60
+        )
 
         # Check if the request was successful
         if response.status_code == 200:
