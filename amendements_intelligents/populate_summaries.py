@@ -80,14 +80,16 @@ class AmendmentSummaryPopulator:
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     # MODEL_NAME = os.getenv("MODEL_NAME")
-    # VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT")
-    # USER = os.getenv("USER")
-    # PASSWORD = os.getenv("PASSWORD")
+    LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
+    USER = os.getenv("USER")
+    PASSWORD = os.getenv("PASSWORD")
+    llm_api_client: LLMAPIClient = LLMInferenceAPIClient(
+        url=LLM_ENDPOINT,
+        auth=(USER, PASSWORD),
+    )
     # llm_api_client: LLMAPIClient = VllmAPIClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
     # llm_api_client: LLMAPIClient = GroqAPIClient()
-    llm_api_client: LLMAPIClient = LLMInferenceAPIClient(
-        url="http://localhost:8000/generate"
-    )
+
     plfss_input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     acronym_file = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
