@@ -171,9 +171,9 @@ class PLFSSPreProcessor:
     ) -> pd.DataFrame:
         for column in columns_to_filter_with:
             amendments_df.dropna(subset=column, inplace=True)
-            amendments_df = amendments_df[
-                amendments_df[column].str.strip().apply(len) > 0
-            ]
+            amendments_df.loc[
+                amendments_df[column].str.strip().apply(len) > 0, column
+            ] = amendments_df[column].str.strip()
         return amendments_df
 
     @staticmethod
