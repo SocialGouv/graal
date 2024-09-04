@@ -94,7 +94,9 @@ class PLFSSPreProcessor:
         return amendments_df.copy()
 
     @staticmethod
-    def handle_common_amendment_bodies(amendments_df: pd.DataFrame) -> pd.DataFrame:
+    def handle_common_amendment_bodies(
+        amendments_df: pd.DataFrame, amdt_bodies_column: str = "Corps amdt"
+    ) -> pd.DataFrame:
         """
         Append 'Num article' to :
         - Small amendment bodies
@@ -112,29 +114,33 @@ class PLFSSPreProcessor:
 
         # Create mask with regex. It does not need to be an exact match
         mask = (
-            amendments_df["Corps amdt"]
+            amendments_df[amdt_bodies_column]
             .str.contains(combined_pattern, regex=True)
             .fillna(False)
         )
 
         # Also append 'Num article' to small amendment bodies
-        mask = mask | (amendments_df["Corps amdt"].str.len() < 50)
+        mask = mask | (amendments_df[amdt_bodies_column].str.len() < 50)
         logging.info(
             f'Appending {mask.sum()} "Num article" to small amendment bodies to get better clusters...\n'
         )
 
-        # Concatenate the "Num article" to "Corps amdt" for the masked rows
-        amendments_df.loc[mask, "Corps amdt"] = (
-            amendments_df.loc[mask, "Corps amdt"]
+        # Concatenate the "Num article" to amdt_bodies_column for the masked rows
+        amendments_df.loc[mask, amdt_bodies_column] = (
+            amendments_df.loc[mask, amdt_bodies_column]
             + " "
             + amendments_df.loc[mask, "Num article"]
         )
         return amendments_df
 
     @staticmethod
-    def handle_common_amendment_expose(amendments_df: pd.DataFrame) -> pd.DataFrame:
+    def handle_common_amendment_expose(
+        amendments_df: pd.DataFrame,
+        expose_column: str = "Exposé amdt",
+        amdt_bodies_column: str = "Corps amdt",
+    ) -> pd.DataFrame:
         """
-        Concatenate Exposé amdt with Corps amdt if Exposé amdt is:
+        Concatenate expose_column with amdt_bodies_column if expose_column is:
         - Small (< 50 characters)
         - A common pattern (i.e. "Amendement rédactionnel.")
         """
@@ -146,21 +152,21 @@ class PLFSSPreProcessor:
 
         # Create mask with regex. It does not need to be an exact match
         mask = (
-            amendments_df["Exposé amdt"]
+            amendments_df[expose_column]
             .str.contains(combined_pattern, regex=True, case=False)
             .fillna(False)
         )
 
         # Also append 'Num article' to small amendment bodies
-        mask = mask | (amendments_df["Exposé amdt"].str.len() < 25)
+        mask = mask | (amendments_df[expose_column].str.len() < 25)
         logging.info(
-            f"Concatenating Corps Amdt to Exposé amdt in {mask.sum()} amendements to get better clusters...\n"
+            f'Concatenating "{amdt_bodies_column}" to "{expose_column}" in {mask.sum()} amendements to get better clusters...\n'
         )
 
-        amendments_df.loc[mask, "Exposé amdt"] = (
-            amendments_df.loc[mask, "Exposé amdt"]
+        amendments_df.loc[mask, expose_column] = (
+            amendments_df.loc[mask, expose_column]
             + " "
-            + amendments_df.loc[mask, "Corps amdt"]
+            + amendments_df.loc[mask, amdt_bodies_column]
         )
         return amendments_df
 
@@ -171,9 +177,9 @@ class PLFSSPreProcessor:
     ) -> pd.DataFrame:
         for column in columns_to_filter_with:
             amendments_df.dropna(subset=column, inplace=True)
-            amendments_df.loc[
-                amendments_df[column].str.strip().apply(len) > 0, column
-            ] = amendments_df[column].str.strip()
+            amendments_df = amendments_df[
+                amendments_df[column].str.strip().apply(len) > 0
+            ].copy()
         return amendments_df
 
     @staticmethod
