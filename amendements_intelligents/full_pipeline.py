@@ -11,7 +11,11 @@ from amendements_intelligents.attribution.attribution_data_loader import (
 from amendements_intelligents.attribution.plfss_attributor import PLFSSAttributor
 from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
 from amendements_intelligents.populate_summaries import AmendmentSummaryPopulator
-from amendements_intelligents.summary.llm_clients import FakeLLMAPIClient, LLMAPIClient
+from amendements_intelligents.summary.llm_clients import (
+    FakeLLMAPIClient,
+    LLMAPIClient,
+    LLMInferenceAPIClient,
+)
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
 
@@ -22,12 +26,14 @@ def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df.xlsx"
     # MODEL_NAME = os.getenv("MODEL_NAME")
-    # VLLM_ENDPOINT = os.getenv("VLLM_ENDPOINT")
+    # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
     # USER = os.getenv("USER")
     # PASSWORD = os.getenv("PASSWORD")
     # llm_api_client: LLMAPIClient = LLMInferenceAPIClient(
-    #     url="http://localhost:8000/generate"
+    #     url=LLM_ENDPOINT,
+    #     auth=(USER, PASSWORD),
     # )
+    llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
     # BEGIN LOAD AND PRE-PROCESS DATA
     plfss_input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
@@ -51,7 +57,6 @@ def main():
     # END LOAD AND PRE-PROCESS DATA
 
     # BEGIN SUMMARY GENERATION
-    llm_api_client: LLMAPIClient = FakeLLMAPIClient()
     amdt_summary_populator = AmendmentSummaryPopulator(
         llm_api_client=llm_api_client,
         amendments_df=cleaned_original_amdt_df,
