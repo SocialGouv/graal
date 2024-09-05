@@ -16,7 +16,7 @@ class SimilarityFinder:
         old_amendments_df: pd.DataFrame,
         new_amendments_df: pd.DataFrame,
         default_threshold_ratio: float = 0.75,
-        threshold_ratio_mappings=None,
+        threshold_ratio_mappings: Optional[dict[str, float]] = None,
     ):
         self.old_amendments_df = old_amendments_df
         self.new_amendments_df = new_amendments_df
@@ -30,9 +30,9 @@ class SimilarityFinder:
         self, column_used_for_similarity: str = "Exposé amdt", threshold=0.7
     ) -> dict[IntIndex, list[IntIndex]]:
         """
-        Pre-filters similar documents based on a TF-IDF comparison of the `column_used_for_comparison` in the old and new amendments.
+        Pre-filters similar documents based on a TF-IDF comparison of the `column_used_for_similarity` in the old and new amendments.
 
-        Internally, it saves a dictionary with keys being the index of the new amendment and values being a list of indices of the old amendments that are similar. It will be used to find the best matches later on.
+        Internally, it saves a dictionary with keys being the amdt_idx of the new amendment and values being a list of amdt_idx of the old amendments that are similar. It will be used to find the best matches later on.
 
         Return: The dictionnary mentionned above.
         """
@@ -40,14 +40,18 @@ class SimilarityFinder:
             f'Pre-filtering similar "{column_used_for_similarity}" for optimization...'
         )
         self.similar_doc_indices = SimilarityFinder.tf_idf_filtering(
-            documents_to_search=self.old_amendments_df[
-                column_used_for_similarity
-            ].tolist(),
-            documents_to_filter=self.new_amendments_df[
-                column_used_for_similarity
-            ].tolist(),
+            old_amdt_values=self.old_amendments_df[column_used_for_similarity].tolist(),
+            new_amd_values=self.new_amendments_df[column_used_for_similarity].tolist(),
             threshold=threshold,
         )
+        # Transform indices into corresponding amdt_idx
+        self.similar_doc_indices = {
+            self.new_amendments_df.iloc[new_idx]["amdt_idx"]: [
+                self.old_amendments_df.iloc[old_idx]["amdt_idx"]
+                for old_idx in old_indices
+            ]
+            for new_idx, old_indices in self.similar_doc_indices.items()
+        }
         list_lengths = [len(docs) for docs in self.similar_doc_indices.values()]
         average_length = sum(list_lengths) / len(list_lengths)
         logging.info(
@@ -62,17 +66,36 @@ class SimilarityFinder:
             raise ValueError(
                 "You need to prefilter similar documents (with `prefilter_similar_docs`) before finding the best matches."
             )
-        old_amendments = {
-            "text": self.old_amendments_df[column_used_for_similarity],
-            "amdt_idx": self.old_amendments_df["amdt_idx"],
-            "comparison_value": -self.old_amendments_df["Year"],
+        old_amdt_data = {
+            "text": {
+                old_amdt_idx: old_amdt_text
+                for old_amdt_idx, old_amdt_text in zip(
+                    self.old_amendments_df["amdt_idx"],
+                    self.old_amendments_df[column_used_for_similarity],
+                )
+            },
+            "comparison_value": {
+                old_amdt_idx: -old_amdt_year
+                for old_amdt_idx, old_amdt_year in zip(
+                    self.old_amendments_df["amdt_idx"],
+                    self.old_amendments_df["Year"],
+                )
+            },
         }
-        new_amendments = self.new_amendments_df[column_used_for_similarity]
+        new_amdt_data = {
+            "text": {
+                old_amdt_idx: old_amdt_text
+                for old_amdt_idx, old_amdt_text in zip(
+                    self.new_amendments_df["amdt_idx"],
+                    self.new_amendments_df[column_used_for_similarity],
+                )
+            }
+        }
         logging.info("Looking for best matches on pre-filtered amendments...")
         closest_docs = SimilarityFinder.find_best_matching_docs(
             similar_doc_indices=self.similar_doc_indices,
-            left_docs=new_amendments,
-            right_docs=old_amendments,
+            new_amdt_data=new_amdt_data,
+            old_amdt_data=old_amdt_data,
             default_threshold_ratio=self.default_threshold_ratio,
             threshold_ratio_mappings=self.threshold_ratio_mappings,
         )
@@ -87,83 +110,82 @@ class SimilarityFinder:
 
     @staticmethod
     def tf_idf_filtering(
-        documents_to_search: list[str],
-        documents_to_filter: list[str],
+        old_amdt_values: list[str],
+        new_amd_values: list[str],
         threshold: float = 0.4,
     ) -> dict[IntIndex, list[IntIndex]]:
         # Combine old and new documents for TF-IDF vectorization
-        all_docs = documents_to_search + documents_to_filter
+        all_docs = old_amdt_values + new_amd_values
 
         # Calculate TF-IDF vectors
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform(all_docs)
 
         # Split the TF-IDF matrix into old and new parts
-        db_tfidf_matrix = tfidf_matrix[: len(documents_to_search)]
-        to_filter_tfidf_matrix = tfidf_matrix[len(documents_to_search) :]
+        db_tfidf_matrix = tfidf_matrix[: len(old_amdt_values)]
+        to_filter_tfidf_matrix = tfidf_matrix[len(old_amdt_values) :]
 
         # Calculate cosine similarity
         cosine_sim_matrix = cosine_similarity(to_filter_tfidf_matrix, db_tfidf_matrix)
 
         # Find candidates using cosine similarity
         similar_doc_indices = {}
-        for i, sim_vector in enumerate(cosine_sim_matrix):
+        for index, sim_vector in enumerate(cosine_sim_matrix):
             similar_docs = np.where(sim_vector >= threshold)[0].tolist()
             if similar_docs:
-                similar_doc_indices[i] = similar_docs
+                similar_doc_indices[index] = similar_docs
 
         return similar_doc_indices
 
     @staticmethod
     def find_best_matching_docs(
         similar_doc_indices: dict[IntIndex, list[IntIndex]],
-        left_docs: pd.DataFrame,
-        right_docs: dict,
+        new_amdt_data: dict,
+        old_amdt_data: dict,
         default_threshold_ratio: float,
-        threshold_ratio_mappings: Optional[dict[str, float]] = None,
+        threshold_ratio_mappings: dict[str, float],
     ) -> dict[IntIndex, dict[str, Any]]:
-        right_doc_texts = right_docs["text"]
-        right_doc_amdt_idx = right_docs["amdt_idx"]
-        right_doc_comparison_values = right_docs["comparison_value"]
+        old_amdt_data_texts = old_amdt_data["text"]
+        old_amdt_data_comparison_values = old_amdt_data["comparison_value"]
+        new_amdt_data_texts = new_amdt_data["text"]
 
         closest_docs = {}
 
-        for left_doc_idx, right_doc_indices in similar_doc_indices.items():
-            left_doc_text = left_docs.iloc[left_doc_idx]
+        for new_amdt_idx, old_amdt_data_indices in similar_doc_indices.items():
+            new_amdt_data_text = new_amdt_data_texts[new_amdt_idx]
 
-            best_doc_idx = None
+            best_doc_amdt_idx = None
             min_distance = float("inf")
             min_comparison_value = float("inf")
-            for right_doc_idx in right_doc_indices:
+            for old_amdt_data_idx in old_amdt_data_indices:
                 # The min_comparison_value is the most important filter so if we don't improve on it,
                 # we can simply skip
-                comparison_value = right_doc_comparison_values.iloc[right_doc_idx]
+                comparison_value = old_amdt_data_comparison_values[old_amdt_data_idx]
 
                 if comparison_value > min_comparison_value:
                     continue
 
                 distance = DamerauLevenshtein.distance(
-                    left_doc_text, right_doc_texts.iloc[right_doc_idx]
+                    new_amdt_data_text, old_amdt_data_texts[old_amdt_data_idx]
                 )
                 if distance < min_distance:
                     min_distance = distance
-                    best_doc_idx = right_doc_idx
+                    best_doc_amdt_idx = old_amdt_data_idx
                     min_comparison_value = comparison_value
 
-            if best_doc_idx is not None:
-                best_doc_text = right_doc_texts.iloc[best_doc_idx]
-                best_doc_amdt_idx = right_doc_amdt_idx.iloc[best_doc_idx]
+            if best_doc_amdt_idx is not None:
+                best_doc_text = old_amdt_data_texts[best_doc_amdt_idx]
                 best_doc_length = len(best_doc_text)
                 similarity_ratio = (best_doc_length - min_distance) / best_doc_length
 
                 threshold_ratio = default_threshold_ratio
                 for key in threshold_ratio_mappings:
-                    if left_doc_text.startswith(key):
+                    if new_amdt_data_text.startswith(key):
                         threshold_ratio = threshold_ratio_mappings[key]
                         break
 
                 if similarity_ratio >= threshold_ratio:
-                    closest_docs[left_doc_idx] = {
+                    closest_docs[new_amdt_idx] = {
                         "best_matching_comparison_value": min_comparison_value,
                         "best_matching_doc_amdt_idx": best_doc_amdt_idx,
                         "best_matching_doc_length": best_doc_length,
