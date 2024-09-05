@@ -23,9 +23,10 @@ def test_integration_attribute_amendments():
     )
     original_amendments_df = amendments_df.copy()
     amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=amendments_df
+        amendments_df=amendments_df,
+        columns_to_clear=["Affectation (email)", "Affectation (nom)"],
     )
-    amendments_df["Corps amdt"] = amendments_df["Corps amdt orig"].apply(
+    amendments_df["Corps amdt"] = original_amendments_df["Corps amdt"].apply(
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
     )
 

@@ -3,7 +3,7 @@ import textwrap
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopier
+from amendements_intelligents.utils.plfss_amendment_copier import SimilarAmendmentCopier
 
 
 @pytest.fixture
@@ -64,7 +64,7 @@ def sample_data():
 
 def test_copy_matches_to_plfss_df(sample_data):
     new_amendments_df, old_amendments_df, closest_docs, target_df = sample_data
-    copier = AmendmentCopier(new_amendments_df, old_amendments_df, closest_docs)
+    copier = SimilarAmendmentCopier(new_amendments_df, old_amendments_df, closest_docs)
     result_df = copier.copy_matches_to_plfss_df(target_df)
 
     assert result_df.loc[0, "Réponse"] == "Response 1"
@@ -75,8 +75,6 @@ def test_copy_matches_to_plfss_df(sample_data):
         Organe : Organe 1
         Colonne similaire : Exposé amdt
         """)
-    assert result_df.loc[0, "Corps amdt found"] == "Corps 1"
-    assert result_df.loc[0, "Exposé amdt found"] == "Exposé 1"
     assert result_df.loc[0, "Sort"] == ""
 
     assert result_df.loc[1, "Réponse"] == "Response 2"
@@ -87,8 +85,6 @@ def test_copy_matches_to_plfss_df(sample_data):
         Organe : Organe 2
         Colonne similaire : Exposé amdt
         """)
-    assert result_df.loc[1, "Corps amdt found"] == "Corps 2"
-    assert result_df.loc[1, "Exposé amdt found"] == "Exposé 2"
     assert result_df.loc[1, "Sort"] == "Irrecevable 123"
 
     assert result_df.loc[2, "Réponse"] == "Response 3"
@@ -99,6 +95,4 @@ def test_copy_matches_to_plfss_df(sample_data):
         Organe : Organe 3
         Colonne similaire : Exposé amdt
         """)
-    assert result_df.loc[2, "Corps amdt found"] == "Corps 3"
-    assert result_df.loc[2, "Exposé amdt found"] == "Exposé 3"
     assert result_df.loc[2, "Sort"] == ""

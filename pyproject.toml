@@ -73,6 +73,7 @@ disable = [
     "protected-access",
     "invalid-name",
     "logging-fstring-interpolation",
+    "fixme"
 ]
 
 [tool.mypy]

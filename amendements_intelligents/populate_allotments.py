@@ -28,7 +28,7 @@ class PLFSSAllotmentPopulator:
         amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
     ) -> pd.DataFrame:
         prepared_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
-            amendments_df=amendments_df
+            amendments_df=amendments_df, columns_to_clear=["Allotissement"]
         )
         prepared_df = PLFSSPreProcessor.replace_acronyms(
             amendments_df=prepared_df,

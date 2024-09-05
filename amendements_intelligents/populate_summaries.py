@@ -8,6 +8,7 @@ import pandas as pd
 
 from amendements_intelligents.summary.amendment_summarizer import AmendmentSummarizer
 from amendements_intelligents.summary.llm_clients import (
+    FakeLLMAPIClient,
     LLMAPIClient,
     LLMInferenceAPIClient,
 )
@@ -39,7 +40,7 @@ class AmendmentSummaryPopulator:
             columns_to_normalize=["Exposé amdt", "Corps amdt"],
         )
         self.amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
-            amendments_df=self.amendments_df
+            amendments_df=self.amendments_df, columns_to_clear=[self.summary_column]
         )
         self.amendments_df[self.summary_column] = ""
         return self.amendments_df
@@ -80,15 +81,16 @@ class AmendmentSummaryPopulator:
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     # MODEL_NAME = os.getenv("MODEL_NAME")
-    LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
-    USER = os.getenv("USER")
-    PASSWORD = os.getenv("PASSWORD")
-    llm_api_client: LLMAPIClient = LLMInferenceAPIClient(
-        url=LLM_ENDPOINT,
-        auth=(USER, PASSWORD),
-    )
+    # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
+    # USER = os.getenv("USER")
+    # PASSWORD = os.getenv("PASSWORD")
+    # llm_api_client: LLMAPIClient = LLMInferenceAPIClient(
+    #     url=LLM_ENDPOINT,
+    #     auth=(USER, PASSWORD),
+    # )
     # llm_api_client: LLMAPIClient = VllmAPIClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
     # llm_api_client: LLMAPIClient = GroqAPIClient()
+    llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
     plfss_input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     acronym_file = f"{DATA_FOLDER}/acronym_mapping.xlsx"

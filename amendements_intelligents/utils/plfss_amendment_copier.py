@@ -3,7 +3,8 @@ import textwrap
 import pandas as pd
 
 
-class AmendmentCopier:
+class SimilarAmendmentCopier:
+    # TODO: Get rid of this class, we could simply make `copy_matches_to_plfss_df` into a staticmethod in SimilarityHandler
     def __init__(
         self,
         new_amendments_df: pd.DataFrame,
@@ -52,9 +53,6 @@ class AmendmentCopier:
                 matching_num_amdt = matching_amendment["Num amdt"].values[0]
                 matching_lecture = matching_amendment["Lecture"].values[0]
                 matching_organe = matching_amendment["Organe"].values[0]
-                matching_object = matching_amendment["Objet orig"].values[0]
-                matching_corps = matching_amendment["Corps amdt orig"].values[0]
-                matching_expose = matching_amendment["Exposé amdt orig"].values[0]
                 matching_year = -closest_doc["best_matching_comparison_value"]
 
                 # Update target DataFrame with the matched details
@@ -65,11 +63,8 @@ class AmendmentCopier:
                 Organe : {matching_organe}
                 Colonne similaire : {column_used_for_comparison}
                 """)
-                target_df.loc[new_amendment_mask, "Objet found"] = matching_object
-                target_df.loc[new_amendment_mask, "Corps amdt found"] = matching_corps
-                target_df.loc[new_amendment_mask, "Exposé amdt found"] = matching_expose
 
-                # Check and copy the "Sort" value if it is irrecevable
+                # Check and copy the "Sort" value if it contains "Irrecevable"
                 old_sort_value = matching_amendment["Sort"].values[0]
                 if pd.notna(old_sort_value) and "irrecevable" in old_sort_value.lower():
                     target_df.loc[new_amendment_mask, "Sort"] = old_sort_value

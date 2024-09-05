@@ -228,12 +228,15 @@ def test_clean_up_original_amendments():
     )
 
 
-def test_prepare_work_amendments_df():
+def test_clear_columns_to_be_overridden():
     df = pd.DataFrame(
         {
             "Corps amdt": ["Body 1", "Body 2"],
             "Exposé amdt": ["Expose 1", "Expose 2"],
             "Objet": ["Objet 1", "Objet 2"],
+            "Affectation (email)": ["email 1", "email 2"],
+            "Affectation (nom)": ["nom 1", "nom 2"],
+            "Allotissement": [2, 1],
         }
     )
     expected_df = pd.DataFrame(
@@ -244,14 +247,14 @@ def test_prepare_work_amendments_df():
             "Affectation (email)": [None, None],
             "Affectation (nom)": [None, None],
             "Allotissement": [None, None],
-            "Corps amdt orig": ["Body 1", "Body 2"],
-            "Exposé amdt orig": ["Expose 1", "Expose 2"],
-            "Objet orig": ["Objet 1", "Objet 2"],
         }
     )
 
     plfss_processor = PLFSSPreProcessor
-    prepared_df = plfss_processor.clear_columns_to_be_overridden(df)
+    prepared_df = plfss_processor.clear_columns_to_be_overridden(
+        df,
+        columns_to_clear=["Allotissement", "Affectation (email)", "Affectation (nom)"],
+    )
 
     pd.testing.assert_frame_equal(
         prepared_df.reset_index(drop=True),

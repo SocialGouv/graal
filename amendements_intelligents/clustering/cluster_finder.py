@@ -57,7 +57,7 @@ class PLFSSClusterFinder:
             )
 
             # Extract clusters
-            clustered_strings: dict[int, IntIndex] = {}
+            clustered_strings: dict[int, list[IntIndex]] = {}
             df_group = self.amendments_df[
                 self.amendments_df["Lecture"] == lecture_group
             ]

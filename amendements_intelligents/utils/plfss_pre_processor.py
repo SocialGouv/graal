@@ -83,15 +83,13 @@ class PLFSSPreProcessor:
         return amendments_df
 
     @staticmethod
-    def clear_columns_to_be_overridden(amendments_df: pd.DataFrame) -> pd.DataFrame:
-        amendments_df["Affectation (email)"] = None
-        amendments_df["Affectation (nom)"] = None
-        amendments_df["Allotissement"] = None
-        amendments_df["Corps amdt orig"] = amendments_df["Corps amdt"]
-        amendments_df["Exposé amdt orig"] = amendments_df["Exposé amdt"]
-        amendments_df["Objet orig"] = amendments_df["Objet"]
+    def clear_columns_to_be_overridden(
+        amendments_df: pd.DataFrame, columns_to_clear: list[ColumnName]
+    ) -> pd.DataFrame:
+        for col_name in columns_to_clear:
+            amendments_df[col_name] = None
 
-        return amendments_df.copy()
+        return amendments_df
 
     @staticmethod
     def handle_common_amendment_bodies(

@@ -6,7 +6,7 @@ import time
 import pandas as pd
 
 from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
-from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopier
+from amendements_intelligents.utils.plfss_amendment_copier import SimilarAmendmentCopier
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_text_utils import normalize_text
 
@@ -22,7 +22,7 @@ class SimilarityHandler:
             amendments_df=amendments_df
         )
         amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
-            amendments_df=amendments_df
+            amendments_df=amendments_df, columns_to_clear=["Réponse", "Sort"]
         )
         amendments_df = PLFSSPreProcessor.replace_acronyms(
             amendments_df=amendments_df,
@@ -101,7 +101,7 @@ class SimilarityHandler:
         logging.info(f"Total number of matches after merge: {len(closest_amdts)}")
 
         # Copy matched amendments to new_amendments_df
-        amendment_copier = AmendmentCopier(
+        amendment_copier = SimilarAmendmentCopier(
             new_amendments_df=preprocessed_new_amendments_df,
             old_amendments_df=preprocessed_old_amendments_df,
             closest_amdts=closest_amdts,
@@ -123,11 +123,8 @@ def main():
         "Lecture",
         "Commentaires",
         "Objet",
-        "Objet found",
         "Exposé amdt",
-        "Exposé amdt found",
         "Corps amdt",
-        "Corps amdt found",
         "Réponse",
         "Sort",
     ]
