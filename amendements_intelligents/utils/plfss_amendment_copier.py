@@ -8,23 +8,24 @@ class AmendmentCopier:
         self,
         new_amendments_df: pd.DataFrame,
         old_amendments_df: pd.DataFrame,
-        closest_docs: dict,
+        closest_amdts: dict,
     ):
         self.new_amendments_df = new_amendments_df
         self.old_amendments_df = old_amendments_df
-        self.closest_docs = closest_docs
+        self.closest_amdts = closest_amdts
 
     def copy_matches_to_plfss_df(self, target_df: pd.DataFrame) -> pd.DataFrame:
         # Iterate over the closest documents
-        for new_amdt_idx, closest_doc in self.closest_docs.items():
+        for new_amdt_idx, closest_doc in self.closest_amdts.items():
             # Retrieve the amendment number and lecture from the new amendments
-            new_amendment_mask = self.old_amendments_df["amdt_idx"] == new_amdt_idx
-            new_amendment_numero = self.new_amendments_df.loc[new_amendment_mask][
-                "Num amdt"
-            ]
+            new_amendment_mask = self.new_amendments_df["amdt_idx"] == new_amdt_idx
+            new_amendment_numero = self.new_amendments_df.loc[
+                new_amendment_mask, "Num amdt"
+            ].values[0]
+
             new_amendment_lecture = self.new_amendments_df.loc[new_amendment_mask][
                 "Lecture"
-            ]
+            ].values[0]
 
             # Create a mask for the target DataFrame to find the matching rows
             new_amendment_mask = (target_df["Num amdt"] == new_amendment_numero) & (

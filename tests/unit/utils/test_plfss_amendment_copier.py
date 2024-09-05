@@ -9,7 +9,11 @@ from amendements_intelligents.utils.plfss_amendment_copier import AmendmentCopie
 @pytest.fixture
 def sample_data():
     new_amendments_df = pd.DataFrame(
-        {"Num amdt": [1, 2, 3], "Lecture": ["A", "B", "C"]}
+        {
+            "Num amdt": [1, 2, 3],
+            "Lecture": ["A", "B", "C"],
+            "amdt_idx": [97, 98, 99],
+        }
     )
     old_amendments_df = pd.DataFrame(
         {
@@ -26,19 +30,19 @@ def sample_data():
         }
     )
     closest_docs = {
-        0: {
+        97: {
             "best_matching_doc_amdt_idx": 1,
             "best_matching_doc_lecture": "A",
             "best_matching_comparison_value": -2022,
             "column_used_for_comparison": "Exposé amdt",
         },
-        1: {
+        98: {
             "best_matching_doc_amdt_idx": 2,
             "best_matching_doc_lecture": "B",
             "best_matching_comparison_value": -2021,
             "column_used_for_comparison": "Exposé amdt",
         },
-        2: {
+        99: {
             "best_matching_doc_amdt_idx": 3,
             "best_matching_comparison_value": -2020,
             "column_used_for_comparison": "Exposé amdt",
