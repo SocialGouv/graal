@@ -83,7 +83,7 @@ class PLFSSPreProcessor:
         return amendments_df
 
     @staticmethod
-    def prepare_amendments_columns(amendments_df: pd.DataFrame) -> pd.DataFrame:
+    def clear_columns_to_be_overridden(amendments_df: pd.DataFrame) -> pd.DataFrame:
         amendments_df["Affectation (email)"] = None
         amendments_df["Affectation (nom)"] = None
         amendments_df["Allotissement"] = None

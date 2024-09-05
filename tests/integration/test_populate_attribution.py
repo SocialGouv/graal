@@ -22,7 +22,7 @@ def test_integration_attribute_amendments():
         amendments_df=amendments_df
     )
     original_amendments_df = amendments_df.copy()
-    amendments_df = PLFSSPreProcessor.prepare_amendments_columns(
+    amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df
     )
     amendments_df["Corps amdt"] = amendments_df["Corps amdt orig"].apply(

@@ -38,7 +38,7 @@ class AmendmentSummaryPopulator:
             acronym_mapping=self.acronym_mapping,
             columns_to_normalize=["Exposé amdt", "Corps amdt"],
         )
-        self.amendments_df = PLFSSPreProcessor.prepare_amendments_columns(
+        self.amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
             amendments_df=self.amendments_df
         )
         self.amendments_df[self.summary_column] = ""

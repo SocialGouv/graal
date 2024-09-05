@@ -24,7 +24,7 @@ def main():
         input_files=[(amendments_file, YEAR)]
     )
     amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(amendments_df)
-    amendments_df = PLFSSPreProcessor.prepare_amendments_columns(amendments_df)
+    amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(amendments_df)
 
     amendments_df["Corps amdt"] = amendments_df["Corps amdt orig"].apply(
         lambda x: AttributionTextNormalizer.normalize_text(str(x))

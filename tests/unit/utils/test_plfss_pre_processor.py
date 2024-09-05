@@ -251,7 +251,7 @@ def test_prepare_work_amendments_df():
     )
 
     plfss_processor = PLFSSPreProcessor
-    prepared_df = plfss_processor.prepare_amendments_columns(df)
+    prepared_df = plfss_processor.clear_columns_to_be_overridden(df)
 
     pd.testing.assert_frame_equal(
         prepared_df.reset_index(drop=True),
