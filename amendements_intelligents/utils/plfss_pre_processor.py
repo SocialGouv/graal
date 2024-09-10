@@ -70,6 +70,7 @@ class PLFSSPreProcessor:
             "affectation_email": "Affectation (email)",
             "affectation_name": "Affectation (nom)",
             "article": "Num article",
+            "avis": "Avis du Gouvernement",
             "computed_batch": "Allotissement",
             "corps": "Corps amdt",
             "expose": "Exposé amdt",
@@ -78,6 +79,7 @@ class PLFSSPreProcessor:
             "organe": "Organe",
             "reponse": "Réponse",
             "sort": "Sort",
+            "has_ever_been_on_dossier_de_banc": "A été dans le Dossier de Banc",
         }
         amendments_df.rename(columns=column_mapping, inplace=True)
         return amendments_df
@@ -199,6 +201,6 @@ class PLFSSPreProcessor:
     ) -> pd.DataFrame:
         for column in columns_to_normalize:
             amendments_df.loc[:, column] = amendments_df[column].apply(normalize_text)
-        logging.info("PLFSS loaded for processing\n")
+            logging.info(f'Column "{column}" normalized.\n')
 
         return amendments_df

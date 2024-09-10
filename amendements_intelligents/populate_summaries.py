@@ -7,11 +7,7 @@ from typing import Optional
 import pandas as pd
 
 from amendements_intelligents.summary.amendment_summarizer import AmendmentSummarizer
-from amendements_intelligents.summary.llm_clients import (
-    FakeLLMAPIClient,
-    LLMAPIClient,
-    LLMInferenceAPIClient,
-)
+from amendements_intelligents.summary.llm_clients import FakeLLMAPIClient, LLMAPIClient
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 
 logging.config.fileConfig("logging.conf")

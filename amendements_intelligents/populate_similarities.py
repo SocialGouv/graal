@@ -146,8 +146,9 @@ def main():
     original_new_amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
         amendments_df=original_new_amendments_df
     )
-    original_new_amendments_df["Sort"] = None
-    original_new_amendments_df["Réponse"] = None
+    original_new_amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=original_new_amendments_df, columns_to_clear=["Réponse", "Sort"]
+    )
 
     old_amendments_df = SimilarityHandler.preprocess_for_similarity(
         amendments_df=old_amendments_df, acronym_mapping=acronym_mapping

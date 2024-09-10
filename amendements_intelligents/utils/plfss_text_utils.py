@@ -1,5 +1,6 @@
 import html
 import re
+from typing import Optional
 
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
@@ -119,11 +120,13 @@ def remove_sentences_starting_with(
     return " ".join(sentence for sentence in filtered_sentences if sentence != "")
 
 
-def normalize_text(text: str) -> str:
+def normalize_text(text: Optional[str]) -> str:
     """
     Normalize the given text by removing accents, apostrophes, dashes, backticks,
     special characters, and extra whitespaces.
     """
+    if text is None:
+        return ""
     text = remove_small_roman_numerals(text)
 
     # Remove accents

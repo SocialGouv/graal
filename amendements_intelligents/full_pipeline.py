@@ -10,12 +10,9 @@ from amendements_intelligents.attribution.attribution_data_loader import (
 )
 from amendements_intelligents.attribution.plfss_attributor import PLFSSAttributor
 from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
+from amendements_intelligents.populate_similarities import SimilarityHandler
 from amendements_intelligents.populate_summaries import AmendmentSummaryPopulator
-from amendements_intelligents.summary.llm_clients import (
-    FakeLLMAPIClient,
-    LLMAPIClient,
-    LLMInferenceAPIClient,
-)
+from amendements_intelligents.summary.llm_clients import FakeLLMAPIClient, LLMAPIClient
 from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
 from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
 
@@ -24,7 +21,7 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df.xlsx"
+    OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df"
     # MODEL_NAME = os.getenv("MODEL_NAME")
     # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
     # USER = os.getenv("USER")
@@ -37,39 +34,43 @@ def main():
 
     # BEGIN LOAD AND PRE-PROCESS DATA
     plfss_input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
+    # plfss_input_file = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
     acronym_file = f"{DATA_FOLDER}/acronym_mapping.xlsx"
-    mappings_file = f"{DATA_FOLDER}/mappings_attributions_aug_9.xlsx"
-    SUMMARY_COLUMN = "Objet"
 
     preprocessor = PLFSSPreProcessor
     amendments_df = preprocessor.load_plfss_json(input_files=[plfss_input_file])
     acronym_mapping = preprocessor.load_acronyms_excel(acronym_file=acronym_file)
 
     amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(amendments_df)
-    cleaned_original_amdt_df = PLFSSPreProcessor.replace_acronyms(
+    amendments_df = PLFSSPreProcessor.replace_acronyms(
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
         columns_to_normalize=["Exposé amdt", "Corps amdt"],
     )
-    cleaned_original_amdt_df = PLFSSPreProcessor.prepare_amendments_columns(
-        amendments_df=amendments_df
-    )
+    preprocessed_original_amdt_df = amendments_df.copy()
     # END LOAD AND PRE-PROCESS DATA
 
     # BEGIN SUMMARY GENERATION
+    amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=amendments_df, columns_to_clear=["Objet amdt"]
+    )
     amdt_summary_populator = AmendmentSummaryPopulator(
         llm_api_client=llm_api_client,
-        amendments_df=cleaned_original_amdt_df,
+        amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
-        summary_column=SUMMARY_COLUMN,
+        summary_column="Objet amdt",
     )
-    cleaned_original_amdt_df[SUMMARY_COLUMN] = ""
     amdt_with_summaries_df = amdt_summary_populator.populate_summaries()
+    # amdt_with_summaries_df.to_excel(f"{DATA_FOLDER}/amdt_with_summaries_df.xlsx")
     # END SUMMARY GENERATION
 
-    # BEGIN PRE-PROCESS FOR ALLOTMENTS
+    # BEGIN ALLOTMENTS
+    saved_amdt_df = amdt_with_summaries_df.copy()
+    prepared_for_alot_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=amdt_with_summaries_df, columns_to_clear=["Allotissement"]
+    )
     prepared_for_alot_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
-        amendments_df=amdt_with_summaries_df, columns_to_filter_with=["Corps amdt"]
+        amendments_df=prepared_for_alot_df, columns_to_filter_with=["Corps amdt"]
     )
     prepared_for_alot_df = PLFSSPreProcessor.handle_common_amendment_bodies(
         amendments_df=prepared_for_alot_df
@@ -77,21 +78,26 @@ def main():
     prepared_for_alot_df = PLFSSPreProcessor.normalize_plfss(
         amendments_df=prepared_for_alot_df, columns_to_normalize=["Corps amdt"]
     )
-    # END PRE-PROCESS FOR ALLOTMENTS
-
-    # BEGIN ALLOTMENTS
     amdt_with_allotments_df = PLFSSAllotmentPopulator.populate(
-        original_amendments_df=cleaned_original_amdt_df,
+        original_amendments_df=saved_amdt_df,
         prepared_df=prepared_for_alot_df,
     )
+    # amdt_with_allotments_df.to_excel(f"{DATA_FOLDER}/amdt_with_allotments_df.xlsx")
     # END ALLOTMENTS
 
     # BEGIN ATTRIBUTION
+    mappings_file = f"{DATA_FOLDER}/mappings_attributions_aug_9.xlsx"
     amdt_with_attribution_df = amdt_with_allotments_df.copy()
-    amdt_with_attribution_df["Corps amdt"] = amdt_with_allotments_df[
-        "Corps amdt orig"
+
+    amdt_with_attribution_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=amdt_with_attribution_df,
+        columns_to_clear=["Affectation (email)", "Affectation (nom)"],
+    )
+    # For this task, the normalization is slightly different than the one currently applied to
+    # Corps amdt so I am taking the original text and normalizing it
+    amdt_with_attribution_df["Corps amdt"] = preprocessed_original_amdt_df[
+        "Corps amdt"
     ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
-    result_df = amdt_with_attribution_df
 
     attribution_mappings_excel = pd.read_excel(mappings_file, sheet_name=None)
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
@@ -119,12 +125,67 @@ def main():
         max_code_length=max_code_length,
     )
     amdt_with_attribution_df = attributor.populate()
+    # amdt_with_attribution_df.to_excel(f"{DATA_FOLDER}/amdt_with_attribution_df.xlsx")
     result_df = amdt_with_attribution_df
+
     # END ATTRIBUTION
 
-    result_df.to_excel(OUTPUT_FILE)
+    # BEGIN SIMILARITY SEARCH
+    old_amendments_df = PLFSSPreProcessor.load_plfss_json(
+        input_files=[
+            (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
+            (f"{DATA_FOLDER}/PLFSS_2022.json", 2022),
+            (f"{DATA_FOLDER}/PLFSS_2021.json", 2021),
+        ]
+    )
+    old_amendments_df = SimilarityHandler.preprocess_for_similarity(
+        amendments_df=old_amendments_df, acronym_mapping=acronym_mapping
+    )
+
+    new_amendments_df = amdt_with_attribution_df
+
+    saved_new_amendments_df = new_amendments_df.copy()
+    saved_new_amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=saved_new_amendments_df, columns_to_clear=["Réponse", "Sort"]
+    )
+
+    new_amendments_df = PLFSSPreProcessor.normalize_plfss(
+        amendments_df=new_amendments_df,
+        columns_to_normalize=["Exposé amdt", "Objet amdt"],
+    )
+
+    new_amendments_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
+        amendments_df=new_amendments_df,
+        columns_to_filter_with=["Exposé amdt", "Corps amdt"],
+    )
+    new_amendments_df = PLFSSPreProcessor.handle_common_amendment_bodies(
+        amendments_df=new_amendments_df
+    )
+    new_amendments_df = PLFSSPreProcessor.handle_common_amendment_expose(
+        amendments_df=new_amendments_df
+    )
+
+    amdt_with_similarities_df = SimilarityHandler.populate_similarities(
+        preprocessed_old_amendments_df=old_amendments_df,
+        preprocessed_new_amendments_df=new_amendments_df,
+        original_new_amendments_df=saved_new_amendments_df,
+    )
+    result_df = amdt_with_similarities_df
+    # END SIMILARITY SEARCH
+
+    result_df.to_excel(f"{OUTPUT_FILE}.xlsx")
     logging.info(
-        f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}"
+        f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}.xlsx"
+    )
+    result_df.to_csv(
+        f"{OUTPUT_FILE}.csv",
+        sep=";",
+        encoding="utf-8-sig",
+        index=False,
+    )
+
+    logging.info(
+        f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}.csv"
     )
 
 

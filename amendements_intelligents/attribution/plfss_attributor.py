@@ -131,21 +131,14 @@ class PLFSSAttributor:
             .reset_index()
         )
 
-    def integrate_code_article_matches_into_amendments(
-        self, grouped_matching_df: pd.DataFrame
-    ) -> pd.DataFrame:
-        """Update amendments DataFrame with matching codes and articles."""
-        updated_df = self.amendments_df.set_index(["Num amdt", "Lecture"])
-        updated_df["Affectation (nom)"] = grouped_matching_df.set_index(
-            ["Num amdt", "Lecture"]
-        )["Affectation (nom)"]
-        return updated_df.reset_index()
-
     def match_keywords_to_amendments(self, threshold: int = 75) -> pd.DataFrame:
         """Find keyword matches for the amendments."""
         matcher = AttributionMatcher()
         keywords = set(self.keywords_df["Mots clés"].dropna())
         keyword_matches = self.parallel_keyword_matching(keywords, matcher, threshold)
+        if not keyword_matches:
+            return pd.DataFrame()
+
         return pd.DataFrame(keyword_matches).merge(
             self.keywords_df, left_on="Keyword", right_on="Mots clés"
         )
@@ -169,30 +162,32 @@ class PLFSSAttributor:
             self.best_matches_per_amdt
         )
         grouped_matching_df = self.aggregate_matches_by_amendment(matching_rows_df)
-        amendments_df = self.integrate_code_article_matches_into_amendments(
-            grouped_matching_df
-        )
+        amendments_df = self.amendments_df.set_index(["Num amdt", "Lecture"])
+        if not grouped_matching_df.empty:
+            amendments_df["Affectation (nom)"] = grouped_matching_df.set_index(
+                ["Num amdt", "Lecture"]
+            )["Affectation (nom)"]
+            amendments_df["Affectation (nom)"] = amendments_df[
+                "Affectation (nom)"
+            ].str.split(",")
+        amendments_df.reset_index(inplace=True)
 
         matched_count = len(self.best_matches_per_amdt)
-        unmatched_count = len(self.amendments_df) - matched_count
+        unmatched_count = len(amendments_df) - matched_count
         logging.info(f"# matched amendments: {matched_count}")
         logging.info(f"# amendments without a match: {unmatched_count}")
 
         # Step 2: Match keywords to amendments
         keyword_matches_df = self.match_keywords_to_amendments(threshold=95)
-        keyword_matches_df.set_index(["Num amdt", "Lecture"], inplace=True)
-        keyword_matches_df.sort_index(inplace=True)
-        amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
+        if not keyword_matches_df.empty:
+            keyword_matches_df.set_index(["Num amdt", "Lecture"], inplace=True)
+            keyword_matches_df.sort_index(inplace=True)
+            amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
 
-        amendments_df["Affectation (nom)"] = amendments_df[
-            "Affectation (nom)"
-        ].str.split(",")
-
-        amendments_df["Affectation (nom)"] = amendments_df.apply(
-            PLFSSAttributor.update_affectation_row,
-            axis=1,
-            keyword_matches_df=keyword_matches_df,
-        )
-
-        amendments_df.reset_index(inplace=True)
+            amendments_df["Affectation (nom)"] = amendments_df.apply(
+                PLFSSAttributor.update_affectation_row,
+                axis=1,
+                keyword_matches_df=keyword_matches_df,
+            )
+            amendments_df.reset_index(inplace=True)
         return amendments_df

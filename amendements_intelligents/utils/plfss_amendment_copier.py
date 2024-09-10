@@ -62,7 +62,7 @@ class SimilarAmendmentCopier:
                 Lecture : {matching_lecture}
                 Organe : {matching_organe}
                 Colonne similaire : {column_used_for_comparison}
-                """)
+                """).strip()
 
                 # Check and copy the "Sort" value if it contains "Irrecevable"
                 old_sort_value = matching_amendment["Sort"].values[0]
