@@ -16,7 +16,7 @@ def test_integration_attribute_amendments():
     mappings_file = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
 
     amendments_df = PLFSSPreProcessor.load_plfss_excel(input_file=test_file)
-    amendments_df["Objet"] = None
+    amendments_df["Objet amdt"] = None
     amendments_df["Exposé amdt"] = None
     amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
         amendments_df=amendments_df

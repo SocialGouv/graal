@@ -15,7 +15,7 @@ class AmendmentSummarizer:
         self,
         amendments_df: pd.DataFrame,
         api_client: LLMAPIClient,
-        summary_column: str = "Objet",
+        summary_column: str = "Objet amdt",
         max_retries: int = 3,  # Maximum number of retries
         base_linear_backoff_sec: int = 10,  # Base backoff time in seconds
     ):

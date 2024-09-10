@@ -40,7 +40,8 @@ class SimilarityHandler:
             amendments_df=amendments_df
         )
         amendments_df = PLFSSPreProcessor.normalize_plfss(
-            amendments_df=amendments_df, columns_to_normalize=["Exposé amdt", "Objet"]
+            amendments_df=amendments_df,
+            columns_to_normalize=["Exposé amdt", "Objet amdt"],
         )
 
         return amendments_df
@@ -74,7 +75,7 @@ class SimilarityHandler:
             normalize_text("supprimer l'article"),
         )
         filtered_old_amendments_df = filtered_old_amendments_df[
-            ~filtered_old_amendments_df["Objet"].str.startswith(
+            ~filtered_old_amendments_df["Objet amdt"].str.startswith(
                 objet_prefixes_for_removal
             )
         ]
@@ -86,10 +87,10 @@ class SimilarityHandler:
             default_threshold_ratio=0.95,
         )
         similarity_evaluator_object.prefilter_similar_docs(
-            column_used_for_similarity="Objet", threshold=0.95
+            column_used_for_similarity="Objet amdt", threshold=0.95
         )
         closest_amdts_object = similarity_evaluator_object.find_best_matches(
-            column_used_for_similarity="Objet"
+            column_used_for_similarity="Objet amdt"
         )
 
         # Merge closest_amdts_expose and closest_amdts_object together but prioritize expose as it is more important
@@ -122,7 +123,7 @@ def main():
         "Num amdt",
         "Lecture",
         "Commentaires",
-        "Objet",
+        "Objet amdt",
         "Exposé amdt",
         "Corps amdt",
         "Réponse",

@@ -74,7 +74,7 @@ class PLFSSPreProcessor:
             "corps": "Corps amdt",
             "expose": "Exposé amdt",
             "num": "Num amdt",
-            "objet": "Objet",
+            "objet": "Objet amdt",
             "organe": "Organe",
             "reponse": "Réponse",
             "sort": "Sort",

@@ -23,7 +23,7 @@ class AmendmentSummaryPopulator:
         acronym_mapping: dict[str, str],
         amendments_df: pd.DataFrame,
         llm_api_client: LLMAPIClient,
-        summary_column: str = "Objet",
+        summary_column: str = "Objet amdt",
     ):
         self.acronym_mapping = acronym_mapping
         self.amendments_df = amendments_df
@@ -102,7 +102,7 @@ def main():
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
-        summary_column="Objet",
+        summary_column="Objet amdt",
     )
 
     amdt_summary_populator.preprocess()

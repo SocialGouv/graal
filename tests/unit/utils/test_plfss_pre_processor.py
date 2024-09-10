@@ -205,7 +205,7 @@ def test_clean_up_original_amendments():
             "legislature": [1, 2],
             "Lecture": ["A 1", "B 2"],
             "Num amdt": [1, 2],
-            "Objet": ["Objet 1", "Objet 2"],
+            "Objet amdt": ["Objet 1", "Objet 2"],
             "Sort": ["Sort 1", "Sort 2"],
             "Réponse": ["Réponse 1", "Réponse 2"],
             "Num article": ["Article 1", "Article 2"],
@@ -233,7 +233,7 @@ def test_clear_columns_to_be_overridden():
         {
             "Corps amdt": ["Body 1", "Body 2"],
             "Exposé amdt": ["Expose 1", "Expose 2"],
-            "Objet": ["Objet 1", "Objet 2"],
+            "Objet amdt": ["Objet 1", "Objet 2"],
             "Affectation (email)": ["email 1", "email 2"],
             "Affectation (nom)": ["nom 1", "nom 2"],
             "Allotissement": [2, 1],
@@ -243,7 +243,7 @@ def test_clear_columns_to_be_overridden():
         {
             "Corps amdt": ["Body 1", "Body 2"],
             "Exposé amdt": ["Expose 1", "Expose 2"],
-            "Objet": ["Objet 1", "Objet 2"],
+            "Objet amdt": ["Objet 1", "Objet 2"],
             "Affectation (email)": [None, None],
             "Affectation (nom)": [None, None],
             "Allotissement": [None, None],

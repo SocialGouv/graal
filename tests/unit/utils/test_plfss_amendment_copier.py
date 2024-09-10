@@ -20,7 +20,7 @@ def sample_data():
             "Num amdt": [1, 2, 3],
             "amdt_idx": [1, 2, 3],
             "Lecture": ["A", "B", "C"],
-            "Objet": ["Objet 1", "Objet 2", "Objet 3"],
+            "Objet amdt": ["Objet 1", "Objet 2", "Objet 3"],
             "Organe": ["Organe 1", "Organe 2", "Organe 3"],
             "Réponse": ["Response 1", "Response 2", "Response 3"],
             "Corps amdt orig": ["Corps 1", "Corps 2", "Corps 3"],
@@ -68,31 +68,40 @@ def test_copy_matches_to_plfss_df(sample_data):
     result_df = copier.copy_matches_to_plfss_df(target_df)
 
     assert result_df.loc[0, "Réponse"] == "Response 1"
-    assert result_df.loc[0, "Commentaires"] == textwrap.dedent("""
+    assert (
+        result_df.loc[0, "Commentaires"]
+        == textwrap.dedent("""
         Réponse copiée du PLFSS 2022
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1
         Colonne similaire : Exposé amdt
-        """)
+        """).strip()
+    )
     assert result_df.loc[0, "Sort"] == ""
 
     assert result_df.loc[1, "Réponse"] == "Response 2"
-    assert result_df.loc[1, "Commentaires"] == textwrap.dedent("""
+    assert (
+        result_df.loc[1, "Commentaires"]
+        == textwrap.dedent("""
         Réponse copiée du PLFSS 2021
         Numéro d'amendement : 2
         Lecture : B
         Organe : Organe 2
         Colonne similaire : Exposé amdt
-        """)
+        """).strip()
+    )
     assert result_df.loc[1, "Sort"] == "Irrecevable 123"
 
     assert result_df.loc[2, "Réponse"] == "Response 3"
-    assert result_df.loc[2, "Commentaires"] == textwrap.dedent("""
+    assert (
+        result_df.loc[2, "Commentaires"]
+        == textwrap.dedent("""
         Réponse copiée du PLFSS 2020
         Numéro d'amendement : 3
         Lecture : C
         Organe : Organe 3
         Colonne similaire : Exposé amdt
-        """)
+        """).strip()
+    )
     assert result_df.loc[2, "Sort"] == ""

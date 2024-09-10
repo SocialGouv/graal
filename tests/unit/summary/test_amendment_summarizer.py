@@ -27,22 +27,22 @@ def sample_amendments_df():
         "amdt_idx": [0, 1, 2, 3],
     }
     df = pd.DataFrame(data)
-    df["Objet"] = ""
+    df["Objet amdt"] = ""
     return df
 
 
 def test_process_amendments(mock_llm_client, sample_amendments_df):
     processor = AmendmentSummarizer(
-        sample_amendments_df, mock_llm_client, summary_column="Objet"
+        sample_amendments_df, mock_llm_client, summary_column="Objet amdt"
     )
     processor.summarize(start_index=0, stop_index=3, max_concurrent=1)
 
     assert mock_llm_client.generate_summary.call_count == 2
 
-    assert sample_amendments_df.loc[0, "Objet"] == "mock_summary"
-    assert sample_amendments_df.loc[1, "Objet"] == "mock_summary"
-    assert sample_amendments_df.loc[2, "Objet"] == "Supprimer cet article"
-    assert sample_amendments_df.loc[3, "Objet"] == "Supprimer cet article"
+    assert sample_amendments_df.loc[0, "Objet amdt"] == "mock_summary"
+    assert sample_amendments_df.loc[1, "Objet amdt"] == "mock_summary"
+    assert sample_amendments_df.loc[2, "Objet amdt"] == "Supprimer cet article"
+    assert sample_amendments_df.loc[3, "Objet amdt"] == "Supprimer cet article"
 
 
 def test_process_amendments_with_custom_summary_column(
@@ -63,32 +63,32 @@ def test_process_amendments_with_custom_summary_column(
 
 def test_process_amendments_with_low_stop_index(mock_llm_client, sample_amendments_df):
     processor = AmendmentSummarizer(
-        sample_amendments_df, mock_llm_client, summary_column="Objet"
+        sample_amendments_df, mock_llm_client, summary_column="Objet amdt"
     )
     processor.summarize(start_index=0, stop_index=2, max_concurrent=1)
 
     assert mock_llm_client.generate_summary.call_count == 2
 
-    assert sample_amendments_df.loc[0, "Objet"] == "mock_summary"
-    assert sample_amendments_df.loc[1, "Objet"] == "mock_summary"
-    assert sample_amendments_df.loc[2, "Objet"] == "Supprimer cet article"
-    assert sample_amendments_df.loc[3, "Objet"] == ""
+    assert sample_amendments_df.loc[0, "Objet amdt"] == "mock_summary"
+    assert sample_amendments_df.loc[1, "Objet amdt"] == "mock_summary"
+    assert sample_amendments_df.loc[2, "Objet amdt"] == "Supprimer cet article"
+    assert sample_amendments_df.loc[3, "Objet amdt"] == ""
 
 
 def test_process_amendments_with_high_start_index(
     mock_llm_client, sample_amendments_df
 ):
     processor = AmendmentSummarizer(
-        sample_amendments_df, mock_llm_client, summary_column="Objet"
+        sample_amendments_df, mock_llm_client, summary_column="Objet amdt"
     )
     processor.summarize(start_index=5, stop_index=3, max_concurrent=1)
 
     assert mock_llm_client.generate_summary.call_count == 0
 
-    assert sample_amendments_df.loc[0, "Objet"] == ""
-    assert sample_amendments_df.loc[1, "Objet"] == ""
-    assert sample_amendments_df.loc[2, "Objet"] == ""
-    assert sample_amendments_df.loc[3, "Objet"] == ""
+    assert sample_amendments_df.loc[0, "Objet amdt"] == ""
+    assert sample_amendments_df.loc[1, "Objet amdt"] == ""
+    assert sample_amendments_df.loc[2, "Objet amdt"] == ""
+    assert sample_amendments_df.loc[3, "Objet amdt"] == ""
 
 
 def test_process_amendments_with_invalid_rows(mock_llm_client):
@@ -99,17 +99,17 @@ def test_process_amendments_with_invalid_rows(mock_llm_client):
         "amdt_idx": [0, 1, 2, 3],
     }
     df = pd.DataFrame(data)
-    df["Objet"] = ""
+    df["Objet amdt"] = ""
 
-    processor = AmendmentSummarizer(df, mock_llm_client, summary_column="Objet")
+    processor = AmendmentSummarizer(df, mock_llm_client, summary_column="Objet amdt")
     processor.summarize(start_index=0, stop_index=3, max_concurrent=1)
 
     assert mock_llm_client.generate_summary.call_count == 1
 
-    assert df.loc[0, "Objet"] == ""
-    assert df.loc[1, "Objet"] == "mock_summary"
-    assert df.loc[2, "Objet"] == ""
-    assert df.loc[3, "Objet"] == ""
+    assert df.loc[0, "Objet amdt"] == ""
+    assert df.loc[1, "Objet amdt"] == "mock_summary"
+    assert df.loc[2, "Objet amdt"] == ""
+    assert df.loc[3, "Objet amdt"] == ""
 
 
 def test_retry_logic(mock_llm_client, sample_amendments_df):
@@ -122,21 +122,24 @@ def test_retry_logic(mock_llm_client, sample_amendments_df):
         processor = AmendmentSummarizer(
             sample_amendments_df,
             mock_llm_client,
-            summary_column="Objet",
+            summary_column="Objet amdt",
             max_retries=1,
             base_linear_backoff_sec=10,
         )
         processor.summarize(start_index=0, stop_index=0, max_concurrent=1)
 
         assert mock_llm_client.generate_summary.call_count == 2
-        assert sample_amendments_df.loc[0, "Objet"] == "mock_summary"
+        assert sample_amendments_df.loc[0, "Objet amdt"] == "mock_summary"
         assert mock_sleep.call_count == 1
         assert mock_sleep.call_args[0][0] == 10
 
 
 def test_retry_task(mock_llm_client, sample_amendments_df):
     processor = AmendmentSummarizer(
-        sample_amendments_df, mock_llm_client, summary_column="Objet", max_retries=1
+        sample_amendments_df,
+        mock_llm_client,
+        summary_column="Objet amdt",
+        max_retries=1,
     )
     executor = Mock()
     futures_to_index = {}
