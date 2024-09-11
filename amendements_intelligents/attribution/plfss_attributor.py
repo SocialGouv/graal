@@ -158,6 +158,19 @@ class PLFSSAttributor:
             )
         return [match for sublist in results for match in sublist]
 
+    @staticmethod
+    def append_comment_to_amendment(
+        amendments_df: pd.DataFrame, index: int, attribution_comment: str
+    ) -> None:
+        if (
+            "Commentaires" in amendments_df.columns
+            and amendments_df.at[index, "Commentaires"]
+            and pd.notna(amendments_df.at[index, "Commentaires"])
+        ):
+            amendments_df.at[index, "Commentaires"] += "\n" + attribution_comment
+        else:
+            amendments_df.at[index, "Commentaires"] = attribution_comment
+
     def populate(self):
         # Step 1: Match codes and articles to amendments
         best_matches_per_amdt = self.match_codes_and_articles_to_amendments()
@@ -217,17 +230,11 @@ class PLFSSAttributor:
             attribution_comment = "Autres attributions possibles :\n- " + "\n- ".join(
                 removed_attributions
             )
-            if (
-                "Commentaires" in amendments_df.columns
-                and amendments_df.at[index, "Commentaires"]
-                and pd.notna(amendments_df.at[index, "Commentaires"])
-            ):
-                print(
-                    f'amendments_df.at[index, "Commentaires"] {amendments_df.at[index, "Commentaires"]}'
-                )
-                amendments_df.at[index, "Commentaires"] += "\n" + attribution_comment
-            else:
-                amendments_df.at[index, "Commentaires"] = attribution_comment
+            PLFSSAttributor.append_comment_to_amendment(
+                amendments_df=amendments_df,
+                index=index,
+                attribution_comment=attribution_comment,
+            )
 
         # Step 4: Fill in missing attributions
         missing_attributions = amendments_df[
@@ -240,6 +247,12 @@ class PLFSSAttributor:
         for index in missing_indices:
             random_attribution = np.random.choice(self.attribution_mappings_when_empty)
             amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
+            attribution_comment = "Attribution par défault"
+            PLFSSAttributor.append_comment_to_amendment(
+                amendments_df=amendments_df,
+                index=index,
+                attribution_comment=attribution_comment,
+            )
 
         # Finally, set the value of "Affectation (nom)" to the first (and only) element of the list
         amendments_df["Affectation (nom)"] = amendments_df["Affectation (nom)"].apply(
