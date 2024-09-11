@@ -51,6 +51,10 @@ def main():
         if (match := pattern.match(article)) and match.group(1)
     }
 
+    attribution_mappings_when_empty = attribution_mappings_excel[
+        "Attribution par défault"
+    ]["Prénom Nom"].tolist()
+
     attributor = PLFSSAttributor(
         amendments_df=amendments_df,
         articles_set=articles_set,
@@ -59,6 +63,7 @@ def main():
         keywords_df=keywords_df,
         latin_ordinals_set=latin_ordinals_set,
         max_code_length=max_code_length,
+        attribution_mappings_when_empty=attribution_mappings_when_empty,
     )
 
     amendments_df = attributor.populate()

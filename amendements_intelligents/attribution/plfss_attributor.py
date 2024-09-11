@@ -19,6 +19,7 @@ class PLFSSAttributor:
         keywords_df: pd.DataFrame,
         latin_ordinals_set: set[str],
         max_code_length: int,
+        attribution_mappings_when_empty: list[str],
     ):
         self.matcher = AttributionMatcher()
         self.amendments_df = amendments_df
@@ -28,10 +29,12 @@ class PLFSSAttributor:
         self.keywords_df = keywords_df
         self.latin_ordinals_set = latin_ordinals_set
         self.max_code_length = max_code_length
-        self.best_matches_per_amdt = {}
+        self.attribution_mappings_when_empty = attribution_mappings_when_empty
 
     @staticmethod
-    def update_attribution_row(row: pd.Series, keyword_matches_df: pd.DataFrame) -> str:
+    def update_with_keyword_matches(
+        row: pd.Series, keyword_matches_df: pd.DataFrame
+    ) -> list:
         attribution_names = row["Affectation (nom)"]
         keyword_attribution_names = set(
             keyword_matches_df.loc[row.name]["Affectation (nom)"]
@@ -40,17 +43,17 @@ class PLFSSAttributor:
         )
 
         if attribution_names is np.nan or len(attribution_names) == 0:
-            return ",".join(sorted(keyword_attribution_names))
+            return sorted(keyword_attribution_names)
 
         if len(attribution_names) == 1:
-            return attribution_names[0]
+            return list(attribution_names)
 
         common_names = sorted(
             set(attribution_names).intersection(keyword_attribution_names)
         )
         if not common_names:
-            return ",".join(sorted(attribution_names))
-        return ",".join(common_names)
+            return sorted(attribution_names)
+        return common_names
 
     def match_codes_and_articles_to_amendments(
         self,
@@ -127,7 +130,7 @@ class PLFSSAttributor:
         """Group matching rows by amendment and lecture."""
         return (
             matching_rows_df.groupby(["Num amdt", "Lecture"])
-            .agg({"Affectation (nom)": lambda x: ",".join(sorted(set(x)))})
+            .agg({"Affectation (nom)": lambda x: list(sorted(set(x)))})
             .reset_index()
         )
 
@@ -157,9 +160,9 @@ class PLFSSAttributor:
 
     def populate(self):
         # Step 1: Match codes and articles to amendments
-        self.best_matches_per_amdt = self.match_codes_and_articles_to_amendments()
+        best_matches_per_amdt = self.match_codes_and_articles_to_amendments()
         matching_rows_df = self.filter_matching_codes_and_articles(
-            self.best_matches_per_amdt
+            best_matches_per_amdt
         )
         grouped_matching_df = self.aggregate_matches_by_amendment(matching_rows_df)
         amendments_df = self.amendments_df.set_index(["Num amdt", "Lecture"])
@@ -169,10 +172,12 @@ class PLFSSAttributor:
             )["Affectation (nom)"]
             amendments_df["Affectation (nom)"] = amendments_df[
                 "Affectation (nom)"
-            ].str.split(",")
+            ].apply(
+                lambda x: x if isinstance(x, list) else [x] if pd.notnull(x) else []
+            )  # Ensure lists and replace nan with empty list
         amendments_df.reset_index(inplace=True)
 
-        matched_count = len(self.best_matches_per_amdt)
+        matched_count = len(best_matches_per_amdt)
         unmatched_count = len(amendments_df) - matched_count
         logging.info(f"# matched amendments: {matched_count}")
         logging.info(f"# amendments without a match: {unmatched_count}")
@@ -185,9 +190,60 @@ class PLFSSAttributor:
             amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
 
             amendments_df["Affectation (nom)"] = amendments_df.apply(
-                PLFSSAttributor.update_attribution_row,
+                PLFSSAttributor.update_with_keyword_matches,
                 axis=1,
                 keyword_matches_df=keyword_matches_df,
             )
             amendments_df.reset_index(inplace=True)
+
+        # Step 3: If multiple attributions are present, choose one attribution at random and add the ones that were removed in the "Commentaires" column
+        multiple_attributions = amendments_df[
+            amendments_df["Affectation (nom)"].apply(
+                lambda x: isinstance(x, list) and len(x) > 1
+            )
+        ]
+        multiple_indices = multiple_attributions.index
+
+        for index in multiple_indices:
+            random_attribution = np.random.choice(
+                amendments_df.at[index, "Affectation (nom)"]
+            )
+            removed_attributions = [
+                attribution
+                for attribution in amendments_df.at[index, "Affectation (nom)"]
+                if attribution != random_attribution
+            ]
+            amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
+            attribution_comment = "Autres attributions possibles :\n- " + "\n- ".join(
+                removed_attributions
+            )
+            if (
+                "Commentaires" in amendments_df.columns
+                and amendments_df.at[index, "Commentaires"]
+                and pd.notna(amendments_df.at[index, "Commentaires"])
+            ):
+                print(
+                    f'amendments_df.at[index, "Commentaires"] {amendments_df.at[index, "Commentaires"]}'
+                )
+                amendments_df.at[index, "Commentaires"] += "\n" + attribution_comment
+            else:
+                amendments_df.at[index, "Commentaires"] = attribution_comment
+
+        # Step 4: Fill in missing attributions
+        missing_attributions = amendments_df[
+            amendments_df["Affectation (nom)"].apply(
+                lambda x: isinstance(x, list) and len(x) == 0
+            )
+        ]
+        missing_indices = missing_attributions.index
+
+        for index in missing_indices:
+            random_attribution = np.random.choice(self.attribution_mappings_when_empty)
+            amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
+
+        # Finally, set the value of "Affectation (nom)" to the first (and only) element of the list
+        amendments_df["Affectation (nom)"] = amendments_df["Affectation (nom)"].apply(
+            lambda x: x[0] if isinstance(x, list) else x
+        )
+
         return amendments_df
