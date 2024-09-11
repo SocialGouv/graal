@@ -2,11 +2,14 @@ import random
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
+import httpx
 import requests
 from groq import Groq
+from openai import OpenAI
 from pydantic_core import Url
 
 from amendements_intelligents.types import (
+    APIKey,
     CredentialsPassword,
     CredentialsUsername,
     TxtContent,
@@ -105,3 +108,21 @@ class FakeLLMAPIClient(LLMAPIClient):
             ]
         )
         return summary
+
+
+class EtalabAPIClient(LLMAPIClient):
+    def __init__(self, model_name: str, base_url: httpx.URL, api_key: APIKey):
+        self.model_name = model_name
+        self.client = OpenAI(base_url=base_url, api_key=api_key)
+
+    def generate_summary(self, prompt: TxtContent) -> str:
+        data = {
+            # "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": f"{prompt}"}],
+            "stream": False,
+            "n": 1,
+        }
+
+        response = self.client.chat.completions.create(**data)
+        return response.choices[0].message.content
