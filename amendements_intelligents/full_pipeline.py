@@ -2,6 +2,7 @@ import logging
 import logging.config
 import os
 import re
+import time
 
 import pandas as pd
 
@@ -21,7 +22,11 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df"
+    OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df_2"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_aug_9.xlsx"
+    PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
+    # PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
+    ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     # MODEL_NAME = os.getenv("MODEL_NAME")
     # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
     # USER = os.getenv("USER")
@@ -32,14 +37,16 @@ def main():
     # )
     llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
-    # BEGIN LOAD AND PRE-PROCESS DATA
-    plfss_input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
-    # plfss_input_file = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
-    acronym_file = f"{DATA_FOLDER}/acronym_mapping.xlsx"
+    # llm_api_client: LLMAPIClient = EtalabAPIClient(
+    #     base_url="https://albert.api.etalab.gouv.fr/v1",
+    #     api_key=os.getenv("ETALAB_API_KEY"),
+    #     model_name="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    # )
 
+    # BEGIN LOAD AND PRE-PROCESS DATA
     preprocessor = PLFSSPreProcessor
-    amendments_df = preprocessor.load_plfss_json(input_files=[plfss_input_file])
-    acronym_mapping = preprocessor.load_acronyms_excel(acronym_file=acronym_file)
+    amendments_df = preprocessor.load_plfss_json(input_files=[PLFSS_INPUT_FILE])
+    acronym_mapping = preprocessor.load_acronyms_excel(acronym_file=ACRONYM_FILE)
 
     amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(amendments_df)
     amendments_df = PLFSSPreProcessor.replace_acronyms(
@@ -86,7 +93,6 @@ def main():
     # END ALLOTMENTS
 
     # BEGIN ATTRIBUTION
-    mappings_file = f"{DATA_FOLDER}/mappings_attributions_aug_9.xlsx"
     amdt_with_attribution_df = amdt_with_allotments_df.copy()
 
     amdt_with_attribution_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
@@ -99,7 +105,7 @@ def main():
         "Corps amdt"
     ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
 
-    attribution_mappings_excel = pd.read_excel(mappings_file, sheet_name=None)
+    attribution_mappings_excel = pd.read_excel(MAPPINGS_FILE, sheet_name=None)
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
         attribution_mappings_excel
     )
@@ -190,4 +196,7 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    end_time = time.time()
+    logging.info(f"Total execution time: {end_time - start_time} seconds")
