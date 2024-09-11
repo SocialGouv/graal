@@ -53,10 +53,15 @@ class SimilarityFinder:
             for new_idx, old_indices in self.similar_doc_indices.items()
         }
         list_lengths = [len(docs) for docs in self.similar_doc_indices.values()]
-        average_length = sum(list_lengths) / len(list_lengths)
-        logging.info(
-            f'Average number of potential matches per amendment for "{column_used_for_similarity}": {average_length}'
-        )
+        if list_lengths:
+            average_length = sum(list_lengths) / len(list_lengths)
+            logging.info(
+                f'Average number of potential matches per amendment for "{column_used_for_similarity}": {average_length}'
+            )
+        else:
+            logging.info(
+                f'Average number of potential matches per amendment for "{column_used_for_similarity}": 0'
+            )
         return self.similar_doc_indices
 
     def find_best_matches(
