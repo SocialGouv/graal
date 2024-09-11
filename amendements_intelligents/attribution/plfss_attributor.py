@@ -31,25 +31,25 @@ class PLFSSAttributor:
         self.best_matches_per_amdt = {}
 
     @staticmethod
-    def update_affectation_row(row: pd.Series, keyword_matches_df: pd.DataFrame) -> str:
-        affectation_names = row["Affectation (nom)"]
-        keyword_affectation_names = set(
+    def update_attribution_row(row: pd.Series, keyword_matches_df: pd.DataFrame) -> str:
+        attribution_names = row["Affectation (nom)"]
+        keyword_attribution_names = set(
             keyword_matches_df.loc[row.name]["Affectation (nom)"]
             if row.name in keyword_matches_df.index
             else []
         )
 
-        if affectation_names is np.nan or len(affectation_names) == 0:
-            return ",".join(sorted(keyword_affectation_names))
+        if attribution_names is np.nan or len(attribution_names) == 0:
+            return ",".join(sorted(keyword_attribution_names))
 
-        if len(affectation_names) == 1:
-            return affectation_names[0]
+        if len(attribution_names) == 1:
+            return attribution_names[0]
 
         common_names = sorted(
-            set(affectation_names).intersection(keyword_affectation_names)
+            set(attribution_names).intersection(keyword_attribution_names)
         )
         if not common_names:
-            return ",".join(sorted(affectation_names))
+            return ",".join(sorted(attribution_names))
         return ",".join(common_names)
 
     def match_codes_and_articles_to_amendments(
@@ -185,7 +185,7 @@ class PLFSSAttributor:
             amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
 
             amendments_df["Affectation (nom)"] = amendments_df.apply(
-                PLFSSAttributor.update_affectation_row,
+                PLFSSAttributor.update_attribution_row,
                 axis=1,
                 keyword_matches_df=keyword_matches_df,
             )
