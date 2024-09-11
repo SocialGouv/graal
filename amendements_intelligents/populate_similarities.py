@@ -21,9 +21,6 @@ class SimilarityHandler:
         amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
             amendments_df=amendments_df
         )
-        amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
-            amendments_df=amendments_df, columns_to_clear=["Réponse", "Sort"]
-        )
         amendments_df = PLFSSPreProcessor.replace_acronyms(
             amendments_df=amendments_df,
             acronym_mapping=acronym_mapping,
@@ -73,6 +70,7 @@ class SimilarityHandler:
             normalize_text("rédactionnel"),
             normalize_text("amendement de suppression"),
             normalize_text("supprimer l'article"),
+            normalize_text("supprimer cet article"),
         )
         filtered_old_amendments_df = filtered_old_amendments_df[
             ~filtered_old_amendments_df["Objet amdt"].str.startswith(
@@ -156,6 +154,9 @@ def main():
 
     new_amendments_df = SimilarityHandler.preprocess_for_similarity(
         amendments_df=new_amendments_df, acronym_mapping=acronym_mapping
+    )
+    new_amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=new_amendments_df, columns_to_clear=["Réponse", "Sort"]
     )
 
     new_amendments_with_copies_df = SimilarityHandler.populate_similarities(

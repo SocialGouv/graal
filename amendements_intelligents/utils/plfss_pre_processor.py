@@ -89,6 +89,7 @@ class PLFSSPreProcessor:
         amendments_df: pd.DataFrame, columns_to_clear: list[ColumnName]
     ) -> pd.DataFrame:
         for col_name in columns_to_clear:
+            logging.info(f"Clearing column {col_name}...\n")
             amendments_df[col_name] = None
 
         return amendments_df
