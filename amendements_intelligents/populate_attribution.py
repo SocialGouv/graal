@@ -1,5 +1,6 @@
 import logging
 import logging.config
+import os
 import re
 
 import pandas as pd
@@ -15,13 +16,14 @@ logging.config.fileConfig("logging.conf")
 
 
 def main():
-    amendments_file = "data/PLFSS_2024.json"
-    MAPPINGS_FILE = "data/mappings_attributions_aug_9.xlsx"
-    output_file = "data/amendments_with_keyword_and_code_art_affectation.xlsx"
+    DATA_FOLDER = os.getenv("DATA_FOLDER")
+    AMENDMENTS_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_11.xlsx"
+    OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_keyword_and_code_art_affectation.xlsx"
     YEAR = 2024
 
     amendments_df = PLFSSPreProcessor.load_plfss_json(
-        input_files=[(amendments_file, YEAR)]
+        input_files=[(AMENDMENTS_FILE, YEAR)]
     )
     amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(amendments_df)
     amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
@@ -61,9 +63,9 @@ def main():
 
     amendments_df = attributor.populate()
 
-    amendments_df.to_excel(output_file, index=False)
+    amendments_df.to_excel(OUTPUT_FILE, index=False)
     logging.info(
-        f"Saved amendment with keyword and code/article affectation to: {output_file}"
+        f"Saved amendment with keyword and code/article affectation to: {OUTPUT_FILE}"
     )
 
 

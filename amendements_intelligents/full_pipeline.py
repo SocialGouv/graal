@@ -23,7 +23,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df_2"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_aug_9.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_11.xlsx"
     PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     # PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
