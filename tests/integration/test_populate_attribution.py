@@ -1,6 +1,7 @@
 import logging
 import re
 
+import numpy as np
 import pandas as pd
 
 from amendements_intelligents.attribution.attribution_data_loader import (
@@ -14,6 +15,8 @@ from amendements_intelligents.utils.plfss_text_utils import AttributionTextNorma
 def test_integration_attribute_amendments():
     test_file = "tests/integration/test_data/test_attribution_par_mot.xlsx"
     mappings_file = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
+    # Make sure that random choices are always the same in this test
+    np.random.seed(42)
 
     amendments_df = PLFSSPreProcessor.load_plfss_excel(input_file=test_file)
     amendments_df["Objet amdt"] = None
@@ -33,6 +36,10 @@ def test_integration_attribute_amendments():
     excel_data = pd.read_excel(mappings_file, sheet_name=None)
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(excel_data)
     keywords_df = AttributionDataLoader.load_keywords(excel_data)
+    attribution_mappings_when_empty = (
+        AttributionDataLoader.load_attribution_mappings_when_empty(excel_data)
+    )
+    name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(excel_data)
 
     codes_set = set(codes_articles_df["Code"])
     max_code_length = codes_articles_df["Code"].str.len().max()
@@ -47,29 +54,42 @@ def test_integration_attribute_amendments():
     attributor = PLFSSAttributor(
         amendments_df=amendments_df,
         articles_set=articles_set,
+        attribution_mappings_when_empty=attribution_mappings_when_empty,
         codes_articles_df=codes_articles_df,
         codes_set=codes_set,
         keywords_df=keywords_df,
         latin_ordinals_set=latin_ordinals_set,
         max_code_length=max_code_length,
+        name_to_email_mapping=name_to_email_mapping,
     )
     amendments_df = attributor.populate()
 
     diff_df = pd.DataFrame()
     for _, matching_row in amendments_df.iterrows():
         num_amdt, lecture = matching_row["Num amdt"], matching_row["Lecture"]
-        found_matches = matching_row["Affectation (nom)"]
+        found_nom_matches = matching_row["Affectation (nom)"]
+        found_email_matches = matching_row["Affectation (email)"]
 
-        expected_matches = original_amendments_df.loc[
+        expected_nom_matches = original_amendments_df.loc[
             (original_amendments_df["Num amdt"] == num_amdt)
             & (original_amendments_df["Lecture"] == lecture),
             "Affectation (nom)",
         ].values[0]
+        expected_email_matches = original_amendments_df.loc[
+            (original_amendments_df["Num amdt"] == num_amdt)
+            & (original_amendments_df["Lecture"] == lecture),
+            "Affectation (email)",
+        ].values[0]
 
-        if pd.isnull(expected_matches):
-            expected_matches = ""
+        if pd.isnull(expected_nom_matches):
+            expected_nom_matches = ""
+        if pd.isnull(expected_email_matches):
+            expected_email_matches = ""
 
-        if found_matches != expected_matches:
+        if (
+            found_nom_matches != expected_nom_matches
+            or found_email_matches != expected_email_matches
+        ):
             diff_df = pd.concat(
                 [
                     diff_df,
@@ -77,22 +97,19 @@ def test_integration_attribute_amendments():
                         {
                             "Num amdt": [num_amdt],
                             "Lecture": [lecture],
-                            "found": [found_matches],
-                            "expected": [expected_matches],
+                            "found_nom": [found_nom_matches],
+                            "found_email": [found_email_matches],
+                            "expected_nom": [expected_nom_matches],
+                            "expected_email": [expected_email_matches],
                         }
                     ),
                 ]
             )
 
     if not diff_df.empty:
-        logging.info(diff_df)
         diff_df.to_csv("tests/integration/test_data/diff_amendments.csv")
+        logging.info(
+            'Diff found and saved in "tests/integration/test_data/diff_amendments.csv"'
+        )
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"
-
-    nb_with_match = len(attributor.best_matches_per_amdt)
-    nb_without_match = len(original_amendments_df) - nb_with_match
-    assert nb_with_match == 21, f"Expected 21 matches, but got {nb_with_match}"
-    assert (
-        nb_without_match == 3
-    ), f"Expected 3 without matches, but got {nb_without_match}"

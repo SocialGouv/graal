@@ -18,7 +18,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     AMENDMENTS_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_11.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_12.xlsx"
     OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_keyword_and_code_art_affectation.xlsx"
     YEAR = 2024
 
@@ -40,6 +40,14 @@ def main():
         attribution_mappings_excel
     )
     keywords_df = AttributionDataLoader.load_keywords(attribution_mappings_excel)
+    attribution_mappings_when_empty = (
+        AttributionDataLoader.load_attribution_mappings_when_empty(
+            attribution_mappings_excel
+        )
+    )
+    name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(
+        attribution_mappings_excel
+    )
 
     codes_set = set(codes_articles_df["Code"])
     max_code_length = codes_articles_df["Code"].str.len().max()
@@ -51,19 +59,16 @@ def main():
         if (match := pattern.match(article)) and match.group(1)
     }
 
-    attribution_mappings_when_empty = attribution_mappings_excel[
-        "Attribution par défault"
-    ]["Prénom Nom"].tolist()
-
     attributor = PLFSSAttributor(
         amendments_df=amendments_df,
         articles_set=articles_set,
+        attribution_mappings_when_empty=attribution_mappings_when_empty,
         codes_articles_df=codes_articles_df,
         codes_set=codes_set,
         keywords_df=keywords_df,
         latin_ordinals_set=latin_ordinals_set,
         max_code_length=max_code_length,
-        attribution_mappings_when_empty=attribution_mappings_when_empty,
+        name_to_email_mapping=name_to_email_mapping,
     )
 
     amendments_df = attributor.populate()

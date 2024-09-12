@@ -23,7 +23,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df_2"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_11.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_12.xlsx"
     PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     # PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
@@ -110,6 +110,14 @@ def main():
         attribution_mappings_excel
     )
     keywords_df = AttributionDataLoader.load_keywords(attribution_mappings_excel)
+    name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(
+        attribution_mappings_excel
+    )
+    attribution_mappings_when_empty = (
+        AttributionDataLoader.load_attribution_mappings_when_empty(
+            attribution_mappings_excel
+        )
+    )
 
     codes_set = set(codes_articles_df["Code"])
     max_code_length = codes_articles_df["Code"].str.len().max()
@@ -124,11 +132,13 @@ def main():
     attributor = PLFSSAttributor(
         amendments_df=amdt_with_attribution_df,
         articles_set=articles_set,
+        attribution_mappings_when_empty=attribution_mappings_when_empty,
         codes_articles_df=codes_articles_df,
         codes_set=codes_set,
         keywords_df=keywords_df,
         latin_ordinals_set=latin_ordinals_set,
         max_code_length=max_code_length,
+        name_to_email_mapping=name_to_email_mapping,
     )
     amdt_with_attribution_df = attributor.populate()
     # amdt_with_attribution_df.to_excel(f"{DATA_FOLDER}/amdt_with_attribution_df.xlsx")

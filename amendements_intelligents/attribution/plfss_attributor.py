@@ -14,12 +14,13 @@ class PLFSSAttributor:
         self,
         amendments_df: pd.DataFrame,
         articles_set: set[str],
+        attribution_mappings_when_empty: list[str],
         codes_articles_df: pd.DataFrame,
         codes_set: set[str],
         keywords_df: pd.DataFrame,
         latin_ordinals_set: set[str],
         max_code_length: int,
-        attribution_mappings_when_empty: list[str],
+        name_to_email_mapping: dict[str, str],
     ):
         self.matcher = AttributionMatcher()
         self.amendments_df = amendments_df
@@ -30,6 +31,7 @@ class PLFSSAttributor:
         self.latin_ordinals_set = latin_ordinals_set
         self.max_code_length = max_code_length
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
+        self.name_to_email_mapping = name_to_email_mapping
 
     @staticmethod
     def update_with_keyword_matches(
@@ -219,7 +221,7 @@ class PLFSSAttributor:
 
         for index in multiple_indices:
             random_attribution = np.random.choice(
-                amendments_df.at[index, "Affectation (nom)"]
+                amendments_df.at[index, "Affectation (nom)"],
             )
             removed_attributions = [
                 attribution
@@ -255,8 +257,12 @@ class PLFSSAttributor:
             )
 
         # Finally, set the value of "Affectation (nom)" to the first (and only) element of the list
+        # and we get the email address of the expert from self.name_to_email_mapping in "Affectation (email)"
         amendments_df["Affectation (nom)"] = amendments_df["Affectation (nom)"].apply(
             lambda x: x[0] if isinstance(x, list) else x
+        )
+        amendments_df["Affectation (email)"] = amendments_df["Affectation (nom)"].apply(
+            lambda x: self.name_to_email_mapping.get(x, "")
         )
 
         return amendments_df

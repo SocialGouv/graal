@@ -28,3 +28,19 @@ class AttributionDataLoader:
         )
         keywords_df.rename(columns={"Prénom Nom": "Affectation (nom)"}, inplace=True)
         return keywords_df
+
+    @staticmethod
+    def load_name_email_mappings(excel_data: dict) -> dict[str, str]:
+        """Load name and email mappings from the "Prénom Nom Mail" sheet."""
+        name_email_df = excel_data["Prénom Nom Mail"]
+        name_email_mappings = dict(
+            zip(name_email_df["Prénom Nom"], name_email_df["Mail"])
+        )
+        return name_email_mappings
+
+    @staticmethod
+    def load_attribution_mappings_when_empty(excel_data: dict) -> list[str]:
+        attribution_mappings_when_empty = excel_data["Attribution par défault"][
+            "Prénom Nom"
+        ].tolist()
+        return attribution_mappings_when_empty
