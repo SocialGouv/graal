@@ -12,6 +12,7 @@ from amendements_intelligents.attribution.attribution_data_loader import (
 from amendements_intelligents.attribution.attribution_populator import (
     AttributionPopulator,
 )
+from amendements_intelligents.opinion.opinion_populator import OpinionPopulator
 from amendements_intelligents.populate_allotments import AllotmentPopulator
 from amendements_intelligents.populate_similarities import SimilarityPopulator
 from amendements_intelligents.populate_summaries import SummaryPopulator
@@ -122,6 +123,9 @@ def main():
             attribution_mappings_excel
         )
     )
+    group_to_default_opinion = AttributionDataLoader.load_group_to_default_opinion(
+        attribution_mappings_excel
+    )
 
     codes_set = set(codes_articles_df["Code"])
     max_code_length = codes_articles_df["Code"].str.len().max()
@@ -192,6 +196,16 @@ def main():
     )
     result_df = amdt_with_similarities_df
     # END SIMILARITY SEARCH
+
+    # BEGIN DEFAULT OPINION
+    opinion_populator = OpinionPopulator(
+        amendments_df=amdt_with_similarities_df,
+        group_to_default_opinion=group_to_default_opinion,
+    )
+
+    amdt_with_opinions_df = opinion_populator.populate()
+    result_df = amdt_with_opinions_df
+    # END DEFAULT OPINION
 
     result_df.to_excel(f"{OUTPUT_FILE}.xlsx")
     logging.info(
