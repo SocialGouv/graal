@@ -9,13 +9,15 @@ import pandas as pd
 from amendements_intelligents.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from amendements_intelligents.attribution.plfss_attributor import PLFSSAttributor
-from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
-from amendements_intelligents.populate_similarities import SimilarityHandler
-from amendements_intelligents.populate_summaries import AmendmentSummaryPopulator
+from amendements_intelligents.attribution.attribution_populator import (
+    AttributionPopulator,
+)
+from amendements_intelligents.populate_allotments import AllotmentPopulator
+from amendements_intelligents.populate_similarities import SimilarityPopulator
+from amendements_intelligents.populate_summaries import SummaryPopulator
 from amendements_intelligents.summary.llm_clients import FakeLLMAPIClient, LLMAPIClient
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
-from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
+from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
 
@@ -24,8 +26,8 @@ def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_df_2"
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_12.xlsx"
-    PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
-    # PLFSS_INPUT_FILE = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
+    INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
+    # INPUT_FILE = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     # MODEL_NAME = os.getenv("MODEL_NAME")
     # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
@@ -44,12 +46,14 @@ def main():
     # )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
-    preprocessor = PLFSSPreProcessor
-    amendments_df = preprocessor.load_plfss_json(input_files=[PLFSS_INPUT_FILE])
+    preprocessor = AmendmentPreProcessor
+    amendments_df = preprocessor.load_amendments_json(input_files=[INPUT_FILE])
     acronym_mapping = preprocessor.load_acronyms_excel(acronym_file=ACRONYM_FILE)
 
-    amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(amendments_df)
-    amendments_df = PLFSSPreProcessor.replace_acronyms(
+    amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
+        amendments_df
+    )
+    amendments_df = AmendmentPreProcessor.replace_acronyms(
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
         columns_to_normalize=["Exposé amdt", "Corps amdt"],
@@ -58,34 +62,34 @@ def main():
     # END LOAD AND PRE-PROCESS DATA
 
     # BEGIN SUMMARY GENERATION
-    amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+    amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df, columns_to_clear=["Objet amdt"]
     )
-    amdt_summary_populator = AmendmentSummaryPopulator(
+    amdt_summary_populator = SummaryPopulator(
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
         summary_column="Objet amdt",
     )
-    amdt_with_summaries_df = amdt_summary_populator.populate_summaries()
+    amdt_with_summaries_df = amdt_summary_populator.populate()
     # amdt_with_summaries_df.to_excel(f"{DATA_FOLDER}/amdt_with_summaries_df.xlsx")
     # END SUMMARY GENERATION
 
     # BEGIN ALLOTMENTS
     saved_amdt_df = amdt_with_summaries_df.copy()
-    prepared_for_alot_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+    prepared_for_alot_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amdt_with_summaries_df, columns_to_clear=["Allotissement"]
     )
-    prepared_for_alot_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
+    prepared_for_alot_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
         amendments_df=prepared_for_alot_df, columns_to_filter_with=["Corps amdt"]
     )
-    prepared_for_alot_df = PLFSSPreProcessor.handle_common_amendment_bodies(
+    prepared_for_alot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
         amendments_df=prepared_for_alot_df
     )
-    prepared_for_alot_df = PLFSSPreProcessor.normalize_plfss(
+    prepared_for_alot_df = AmendmentPreProcessor.normalize_amendments(
         amendments_df=prepared_for_alot_df, columns_to_normalize=["Corps amdt"]
     )
-    amdt_with_allotments_df = PLFSSAllotmentPopulator.populate(
+    amdt_with_allotments_df = AllotmentPopulator.populate(
         original_amendments_df=saved_amdt_df,
         prepared_df=prepared_for_alot_df,
     )
@@ -95,7 +99,7 @@ def main():
     # BEGIN ATTRIBUTION
     amdt_with_attribution_df = amdt_with_allotments_df.copy()
 
-    amdt_with_attribution_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+    amdt_with_attribution_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amdt_with_attribution_df,
         columns_to_clear=["Affectation (email)", "Affectation (nom)"],
     )
@@ -129,7 +133,7 @@ def main():
         if (match := pattern.match(article)) and match.group(1)
     }
 
-    attributor = PLFSSAttributor(
+    attributor = AttributionPopulator(
         amendments_df=amdt_with_attribution_df,
         articles_set=articles_set,
         attribution_mappings_when_empty=attribution_mappings_when_empty,
@@ -147,41 +151,41 @@ def main():
     # END ATTRIBUTION
 
     # BEGIN SIMILARITY SEARCH
-    old_amendments_df = PLFSSPreProcessor.load_plfss_json(
+    old_amendments_df = AmendmentPreProcessor.load_amendments_json(
         input_files=[
             (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
             (f"{DATA_FOLDER}/PLFSS_2022.json", 2022),
             (f"{DATA_FOLDER}/PLFSS_2021.json", 2021),
         ]
     )
-    old_amendments_df = SimilarityHandler.preprocess_for_similarity(
+    old_amendments_df = SimilarityPopulator.preprocess_for_similarity(
         amendments_df=old_amendments_df, acronym_mapping=acronym_mapping
     )
 
     new_amendments_df = amdt_with_attribution_df
 
     saved_new_amendments_df = new_amendments_df.copy()
-    saved_new_amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+    saved_new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=saved_new_amendments_df, columns_to_clear=["Réponse", "Sort"]
     )
 
-    new_amendments_df = PLFSSPreProcessor.normalize_plfss(
+    new_amendments_df = AmendmentPreProcessor.normalize_amendments(
         amendments_df=new_amendments_df,
         columns_to_normalize=["Exposé amdt", "Objet amdt"],
     )
 
-    new_amendments_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
+    new_amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
         amendments_df=new_amendments_df,
         columns_to_filter_with=["Exposé amdt", "Corps amdt"],
     )
-    new_amendments_df = PLFSSPreProcessor.handle_common_amendment_bodies(
+    new_amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
         amendments_df=new_amendments_df
     )
-    new_amendments_df = PLFSSPreProcessor.handle_common_amendment_expose(
+    new_amendments_df = AmendmentPreProcessor.handle_common_amendment_expose(
         amendments_df=new_amendments_df
     )
 
-    amdt_with_similarities_df = SimilarityHandler.populate_similarities(
+    amdt_with_similarities_df = SimilarityPopulator.populate(
         preprocessed_old_amendments_df=old_amendments_df,
         preprocessed_new_amendments_df=new_amendments_df,
         original_new_amendments_df=saved_new_amendments_df,
@@ -208,5 +212,9 @@ def main():
 if __name__ == "__main__":
     start_time = time.time()
     main()
+    end_time = time.time()
+    logging.info(f"Total execution time: {end_time - start_time} seconds")
+    end_time = time.time()
+    logging.info(f"Total execution time: {end_time - start_time} seconds")
     end_time = time.time()
     logging.info(f"Total execution time: {end_time - start_time} seconds")

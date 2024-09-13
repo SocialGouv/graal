@@ -3,8 +3,8 @@ import textwrap
 import pandas as pd
 
 
-class SimilarAmendmentCopier:
-    # TODO: Get rid of this class, we could simply make `copy_matches_to_plfss_df` into a staticmethod in SimilarityHandler
+class AmendmentCopier:
+    # TODO: Get rid of this class, we could simply make `copy_matches_to_amendments_df` into a staticmethod in SimilarityHandler
     def __init__(
         self,
         new_amendments_df: pd.DataFrame,
@@ -15,7 +15,7 @@ class SimilarAmendmentCopier:
         self.old_amendments_df = old_amendments_df
         self.closest_amdts = closest_amdts
 
-    def copy_matches_to_plfss_df(self, target_df: pd.DataFrame) -> pd.DataFrame:
+    def copy_matches_to_amendments_df(self, target_df: pd.DataFrame) -> pd.DataFrame:
         # Iterate over the closest documents
         for new_amdt_idx, closest_doc in self.closest_amdts.items():
             # Retrieve the amendment number and lecture from the new amendments
@@ -56,6 +56,7 @@ class SimilarAmendmentCopier:
                 matching_year = -closest_doc["best_matching_comparison_value"]
 
                 # Update target DataFrame with the matched details
+                # TODO: Make "Réponse copiée du PLFSS" a variable because it's not always going to be coming from a PLFSS
                 target_df.loc[new_amendment_mask, "Commentaires"] = textwrap.dedent(f"""
                 Réponse copiée du PLFSS {matching_year}
                 Numéro d'amendement : {matching_num_amdt}

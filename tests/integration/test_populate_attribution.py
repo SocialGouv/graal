@@ -7,9 +7,11 @@ import pandas as pd
 from amendements_intelligents.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from amendements_intelligents.attribution.plfss_attributor import PLFSSAttributor
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
-from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
+from amendements_intelligents.attribution.attribution_populator import (
+    AttributionPopulator,
+)
+from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
 
 def test_integration_attribute_amendments():
@@ -18,14 +20,14 @@ def test_integration_attribute_amendments():
     # Make sure that random choices are always the same in this test
     np.random.seed(42)
 
-    amendments_df = PLFSSPreProcessor.load_plfss_excel(input_file=test_file)
+    amendments_df = AmendmentPreProcessor.load_amendments_excel(input_file=test_file)
     amendments_df["Objet amdt"] = None
     amendments_df["Exposé amdt"] = None
-    amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
+    amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=amendments_df
     )
     original_amendments_df = amendments_df.copy()
-    amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+    amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df,
         columns_to_clear=["Affectation (email)", "Affectation (nom)"],
     )
@@ -51,7 +53,7 @@ def test_integration_attribute_amendments():
         if (match := pattern.match(article)) and match.group(1)
     }
 
-    attributor = PLFSSAttributor(
+    attributor = AttributionPopulator(
         amendments_df=amendments_df,
         articles_set=articles_set,
         attribution_mappings_when_empty=attribution_mappings_when_empty,
@@ -111,5 +113,9 @@ def test_integration_attribute_amendments():
         logging.info(
             'Diff found and saved in "tests/integration/test_data/diff_amendments.csv"'
         )
+
+    assert diff_df.empty, f"Differences found: {len(diff_df)}"
+
+    assert diff_df.empty, f"Differences found: {len(diff_df)}"
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"

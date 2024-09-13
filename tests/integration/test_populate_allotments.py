@@ -2,15 +2,15 @@ import logging
 
 import pandas as pd
 
-from amendements_intelligents.populate_allotments import PLFSSAllotmentPopulator
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
-from amendements_intelligents.utils.plfss_sheet_data_loader import PLFSSSheetDataLoader
+from amendements_intelligents.populate_allotments import AllotmentPopulator
+from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from amendements_intelligents.utils.sheet_data_loader import SheetDataLoader
 
 
 def load_test_file_to_compare(
     excel_test_file_path: str, sheet_name: str
 ) -> pd.DataFrame:
-    data_extractor = PLFSSSheetDataLoader(excel_test_file_path)
+    data_extractor = SheetDataLoader(excel_test_file_path)
     return data_extractor.extract_sheet_data(sheet_name)
 
 
@@ -27,22 +27,22 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     test_df["Réponse"] = None
     test_df["Lecture"] = "test_lecture"
 
-    # Process the data frame as if it were a real PLFSS
+    # Process the data frame as if it were a real lecture
     original_amendments_df = test_df.copy()
     original_amendments_df["Allotissement"] = None
     prepared_df = original_amendments_df.copy()
 
-    prepared_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
+    prepared_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
         amendments_df=prepared_df, columns_to_filter_with=["Corps amdt"]
     )
-    prepared_df = PLFSSPreProcessor.handle_common_amendment_bodies(
+    prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
         amendments_df=prepared_df
     )
-    prepared_df = PLFSSPreProcessor.normalize_plfss(
+    prepared_df = AmendmentPreProcessor.normalize_amendments(
         amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
     )
 
-    alloted_amendments_df = PLFSSAllotmentPopulator.populate(
+    alloted_amendments_df = AllotmentPopulator.populate(
         original_amendments_df=original_amendments_df, prepared_df=prepared_df
     )
 

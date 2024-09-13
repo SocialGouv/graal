@@ -6,37 +6,37 @@ import time
 import pandas as pd
 
 from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
-from amendements_intelligents.utils.plfss_amendment_copier import SimilarAmendmentCopier
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
-from amendements_intelligents.utils.plfss_text_utils import normalize_text
+from amendements_intelligents.utils.amendment_copier import AmendmentCopier
+from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from amendements_intelligents.utils.text_utils import normalize_text
 
 logging.config.fileConfig("logging.conf")
 
 
-class SimilarityHandler:
+class SimilarityPopulator:
     @staticmethod
     def preprocess_for_similarity(
         amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
     ) -> pd.DataFrame:
-        amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
+        amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
             amendments_df=amendments_df
         )
-        amendments_df = PLFSSPreProcessor.replace_acronyms(
+        amendments_df = AmendmentPreProcessor.replace_acronyms(
             amendments_df=amendments_df,
             acronym_mapping=acronym_mapping,
             columns_to_normalize=["Exposé amdt"],
         )
-        amendments_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
+        amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
             amendments_df=amendments_df,
             columns_to_filter_with=["Exposé amdt", "Corps amdt"],
         )
-        amendments_df = PLFSSPreProcessor.handle_common_amendment_bodies(
+        amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=amendments_df
         )
-        amendments_df = PLFSSPreProcessor.handle_common_amendment_expose(
+        amendments_df = AmendmentPreProcessor.handle_common_amendment_expose(
             amendments_df=amendments_df
         )
-        amendments_df = PLFSSPreProcessor.normalize_plfss(
+        amendments_df = AmendmentPreProcessor.normalize_amendments(
             amendments_df=amendments_df,
             columns_to_normalize=["Exposé amdt", "Objet amdt"],
         )
@@ -44,7 +44,7 @@ class SimilarityHandler:
         return amendments_df
 
     @staticmethod
-    def populate_similarities(
+    def populate(
         preprocessed_old_amendments_df: pd.DataFrame,
         preprocessed_new_amendments_df: pd.DataFrame,
         original_new_amendments_df: pd.DataFrame,
@@ -100,12 +100,12 @@ class SimilarityHandler:
         logging.info(f"Total number of matches after merge: {len(closest_amdts)}")
 
         # Copy matched amendments to new_amendments_df
-        amendment_copier = SimilarAmendmentCopier(
+        amendment_copier = AmendmentCopier(
             new_amendments_df=preprocessed_new_amendments_df,
             old_amendments_df=preprocessed_old_amendments_df,
             closest_amdts=closest_amdts,
         )
-        new_amendments_with_copies_df = amendment_copier.copy_matches_to_plfss_df(
+        new_amendments_with_copies_df = amendment_copier.copy_matches_to_amendments_df(
             target_df=original_new_amendments_df
         )
 
@@ -127,39 +127,39 @@ def main():
         "Réponse",
         "Sort",
     ]
-    acronym_mapping = PLFSSPreProcessor.load_acronyms_excel(
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         f"{DATA_FOLDER}/acronym_mapping.xlsx"
     )
-    old_amendments_df = PLFSSPreProcessor.load_plfss_json(
+    old_amendments_df = AmendmentPreProcessor.load_amendments_json(
         input_files=[
             (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
             (f"{DATA_FOLDER}/PLFSS_2022.json", 2022),
             (f"{DATA_FOLDER}/PLFSS_2021.json", 2021),
         ]
     )
-    new_amendments_df = PLFSSPreProcessor.load_plfss_json(
+    new_amendments_df = AmendmentPreProcessor.load_amendments_json(
         input_files=[(f"{DATA_FOLDER}/PLFSS_2024.json", 2024)]
     )
     original_new_amendments_df = new_amendments_df.copy()
-    original_new_amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
+    original_new_amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=original_new_amendments_df
     )
-    original_new_amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+    original_new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=original_new_amendments_df, columns_to_clear=["Réponse", "Sort"]
     )
 
-    old_amendments_df = SimilarityHandler.preprocess_for_similarity(
+    old_amendments_df = SimilarityPopulator.preprocess_for_similarity(
         amendments_df=old_amendments_df, acronym_mapping=acronym_mapping
     )
 
-    new_amendments_df = SimilarityHandler.preprocess_for_similarity(
+    new_amendments_df = SimilarityPopulator.preprocess_for_similarity(
         amendments_df=new_amendments_df, acronym_mapping=acronym_mapping
     )
-    new_amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+    new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=new_amendments_df, columns_to_clear=["Réponse", "Sort"]
     )
 
-    new_amendments_with_copies_df = SimilarityHandler.populate_similarities(
+    new_amendments_with_copies_df = SimilarityPopulator.populate(
         preprocessed_old_amendments_df=old_amendments_df,
         preprocessed_new_amendments_df=new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,

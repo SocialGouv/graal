@@ -1,6 +1,6 @@
 import pandas as pd
 
-from amendements_intelligents.utils.plfss_text_utils import AttributionTextNormalizer
+from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
 
 class AttributionDataLoader:
@@ -44,3 +44,12 @@ class AttributionDataLoader:
             "Prénom Nom"
         ].tolist()
         return attribution_mappings_when_empty
+
+    @staticmethod
+    def load_group_to_default_opinion(excel_data: dict) -> dict[str, str]:
+        """Load group to default opinion mappings from the "Groupe Opinion" sheet."""
+        group_opinion_df = excel_data["Groupe avis défaut"]
+        group_to_default_opinion = dict(
+            zip(group_opinion_df["Groupe"], group_opinion_df["Avis par défaut"])
+        )
+        return group_to_default_opinion

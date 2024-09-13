@@ -3,7 +3,7 @@ import pandas as pd
 from amendements_intelligents.types import IntIndex
 
 
-class PLFSSAllotmentUpdater:
+class AllotmentUpdater:
     def __init__(
         self,
         original_amendments_df: pd.DataFrame,

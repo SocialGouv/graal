@@ -109,7 +109,7 @@ class SimilarityFinder:
             doc_info["column_used_for_comparison"] = column_used_for_similarity
 
         logging.info(
-            f"Found matches in previous PLFSS for {len(closest_docs)} amendments"
+            f"Found matches in previous lectures for {len(closest_docs)} amendments"
         )
         return closest_docs
 

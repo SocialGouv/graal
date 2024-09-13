@@ -1,7 +1,10 @@
 import logging
 
+import numpy as np
 import pandas as pd
+from numpy import ndarray
 from rapidfuzz.distance import DamerauLevenshtein
+from scipy.sparse import spmatrix
 from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -9,16 +12,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 from amendements_intelligents.types import IntIndex
 
 
-class PLFSSClusterFinder:
+class AmendmentsClusterFinder:
     """Find clusters of similar amendments using DBSCAN on TF-IDF vectors"""
 
     def __init__(self, amendments_df: pd.DataFrame):
         self.amendments_df = amendments_df.copy()
         self.vectorizer = TfidfVectorizer()
-        self.vectors_per_lecture = {}
-        self.distance_matrix_per_lecture = {}
-        self.tfidf_clusters_per_lecture = {}
-        self.final_clusters_per_lecture = {}
+        self.vectors_per_lecture: dict[str, spmatrix] = {}
+        self.distance_matrix_per_lecture: dict[str, ndarray] = {}
+        self.tfidf_clusters_per_lecture: dict[str, list[list[IntIndex]]] = {}
+        self.final_clusters_per_lecture: dict[str, list[list[IntIndex]]] = {}
 
     def _vectorize_data(self) -> None:
         """Convert strings to TF-IDF vectors for all Corps amdt"""
@@ -101,7 +104,7 @@ class PLFSSClusterFinder:
                     "amdt_idx"
                 ].tolist()
                 n = len(strings)
-                damerau_distance_matrix = [[0] * n for _ in range(n)]
+                damerau_distance_matrix = np.zeros((n, n))
 
                 for i in range(n):
                     for j in range(i + 1, n):
@@ -117,7 +120,7 @@ class PLFSSClusterFinder:
                 refined_cluster_labels = dbscan.fit_predict(damerau_distance_matrix)
 
                 # Extract refined clusters
-                refined_clustered_strings = {}
+                refined_clustered_strings: dict[int, list[IntIndex]] = {}
                 for idx, label in enumerate(refined_cluster_labels):
                     if label == -1:  # Ignore noise points
                         continue

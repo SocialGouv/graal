@@ -9,7 +9,7 @@ import pandas as pd
 from amendements_intelligents.attribution.attribution_matcher import AttributionMatcher
 
 
-class PLFSSAttributor:
+class AttributionPopulator:
     def __init__(
         self,
         amendments_df: pd.DataFrame,
@@ -205,7 +205,7 @@ class PLFSSAttributor:
             amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
 
             amendments_df["Affectation (nom)"] = amendments_df.apply(
-                PLFSSAttributor.update_with_keyword_matches,
+                AttributionPopulator.update_with_keyword_matches,
                 axis=1,
                 keyword_matches_df=keyword_matches_df,
             )
@@ -232,7 +232,7 @@ class PLFSSAttributor:
             attribution_comment = "Autres attributions possibles :\n- " + "\n- ".join(
                 removed_attributions
             )
-            PLFSSAttributor.append_comment_to_amendment(
+            AttributionPopulator.append_comment_to_amendment(
                 amendments_df=amendments_df,
                 index=index,
                 attribution_comment=attribution_comment,
@@ -250,7 +250,7 @@ class PLFSSAttributor:
             random_attribution = np.random.choice(self.attribution_mappings_when_empty)
             amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
             attribution_comment = "Attribution par défault"
-            PLFSSAttributor.append_comment_to_amendment(
+            AttributionPopulator.append_comment_to_amendment(
                 amendments_df=amendments_df,
                 index=index,
                 attribution_comment=attribution_comment,

@@ -8,12 +8,12 @@ import pandas as pd
 
 from amendements_intelligents.summary.amendment_summarizer import AmendmentSummarizer
 from amendements_intelligents.summary.llm_clients import FakeLLMAPIClient, LLMAPIClient
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
+from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 
 
-class AmendmentSummaryPopulator:
+class SummaryPopulator:
     def __init__(
         self,
         acronym_mapping: dict[str, str],
@@ -27,21 +27,21 @@ class AmendmentSummaryPopulator:
         self.summary_column = summary_column
 
     def preprocess(self) -> pd.DataFrame:
-        self.amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
+        self.amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
             self.amendments_df
         )
-        self.amendments_df = PLFSSPreProcessor.replace_acronyms(
+        self.amendments_df = AmendmentPreProcessor.replace_acronyms(
             amendments_df=self.amendments_df,
             acronym_mapping=self.acronym_mapping,
             columns_to_normalize=["Exposé amdt", "Corps amdt"],
         )
-        self.amendments_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        self.amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
             amendments_df=self.amendments_df, columns_to_clear=[self.summary_column]
         )
         self.amendments_df[self.summary_column] = ""
         return self.amendments_df
 
-    def populate_summaries(
+    def populate(
         self,
         start_index: Optional[int] = None,
         stop_index: Optional[int] = None,
@@ -88,13 +88,15 @@ def main():
     # llm_api_client: LLMAPIClient = GroqAPIClient()
     llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
-    plfss_input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
+    input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     acronym_file = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
-    amendments_df = PLFSSPreProcessor.load_plfss_json(input_files=[plfss_input_file])
-    acronym_mapping = PLFSSPreProcessor.load_acronyms_excel(acronym_file=acronym_file)
+    amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[input_file])
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
+        acronym_file=acronym_file
+    )
 
-    amdt_summary_populator = AmendmentSummaryPopulator(
+    amdt_summary_populator = SummaryPopulator(
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
@@ -103,7 +105,7 @@ def main():
 
     amdt_summary_populator.preprocess()
 
-    amdt_with_summaries_df = amdt_summary_populator.populate_summaries(max_concurrent=2)
+    amdt_with_summaries_df = amdt_summary_populator.populate(max_concurrent=2)
 
     amdt_with_summaries_df.to_excel(
         "data/amendments_with_summary_local.xlsx", index=False

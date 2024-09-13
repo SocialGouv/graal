@@ -5,15 +5,15 @@ import pandas as pd
 from pydantic import FilePath
 
 from amendements_intelligents.types import ColumnName
-from amendements_intelligents.utils.plfss_text_utils import (
+from amendements_intelligents.utils.text_utils import (
     extract_plain_text_from_html,
     normalize_text,
 )
 
 
-class PLFSSPreProcessor:
+class AmendmentPreProcessor:
     @staticmethod
-    def load_plfss_json(input_files: list[tuple[FilePath, int]]) -> pd.DataFrame:
+    def load_amendments_json(input_files: list[tuple[FilePath, int]]) -> pd.DataFrame:
         dfs = []
         for file_name, year in input_files:
             with open(file_name, "r", encoding="utf-8-sig") as f:
@@ -24,7 +24,7 @@ class PLFSSPreProcessor:
 
         original_amendments_df = pd.concat(dfs, ignore_index=True)
         original_amendments_df["amdt_idx"] = range(len(original_amendments_df))
-        return PLFSSPreProcessor.clean_up_json_columns(original_amendments_df)
+        return AmendmentPreProcessor.clean_up_json_columns(original_amendments_df)
 
     @staticmethod
     def load_acronyms_excel(acronym_file: FilePath) -> dict[str, str]:
@@ -33,7 +33,7 @@ class PLFSSPreProcessor:
         return acronym_mapping
 
     @staticmethod
-    def load_plfss_excel(input_file: FilePath) -> pd.DataFrame:
+    def load_amendments_excel(input_file: FilePath) -> pd.DataFrame:
         return pd.read_excel(input_file)
 
     @staticmethod
@@ -74,6 +74,7 @@ class PLFSSPreProcessor:
             "computed_batch": "Allotissement",
             "corps": "Corps amdt",
             "expose": "Exposé amdt",
+            "groupe": "Groupe",
             "num": "Num amdt",
             "objet": "Objet amdt",
             "organe": "Organe",
@@ -197,7 +198,7 @@ class PLFSSPreProcessor:
         return amendments_df
 
     @staticmethod
-    def normalize_plfss(
+    def normalize_amendments(
         amendments_df: pd.DataFrame, columns_to_normalize: list[ColumnName]
     ) -> pd.DataFrame:
         for column in columns_to_normalize:

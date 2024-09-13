@@ -3,7 +3,7 @@ import textwrap
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.plfss_amendment_copier import SimilarAmendmentCopier
+from amendements_intelligents.utils.amendment_copier import AmendmentCopier
 
 
 @pytest.fixture
@@ -62,10 +62,10 @@ def sample_data():
     return new_amendments_df, old_amendments_df, closest_docs, target_df
 
 
-def test_copy_matches_to_plfss_df(sample_data):
+def test_copy_matches_to_amendments_df(sample_data):
     new_amendments_df, old_amendments_df, closest_docs, target_df = sample_data
-    copier = SimilarAmendmentCopier(new_amendments_df, old_amendments_df, closest_docs)
-    result_df = copier.copy_matches_to_plfss_df(target_df)
+    copier = AmendmentCopier(new_amendments_df, old_amendments_df, closest_docs)
+    result_df = copier.copy_matches_to_amendments_df(target_df)
 
     assert result_df.loc[0, "Réponse"] == "Response 1"
     assert (

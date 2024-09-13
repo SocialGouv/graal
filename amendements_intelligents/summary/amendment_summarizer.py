@@ -7,7 +7,7 @@ import pandas as pd
 from amendements_intelligents.summary.llm_clients import LLMAPIClient
 from amendements_intelligents.summary.summary_prompt_builder import SummaryPromptBuilder
 from amendements_intelligents.types import IntIndex
-from amendements_intelligents.utils.plfss_text_utils import SummaryTextNormalizer
+from amendements_intelligents.utils.text_utils import SummaryTextNormalizer
 
 
 class AmendmentSummarizer:

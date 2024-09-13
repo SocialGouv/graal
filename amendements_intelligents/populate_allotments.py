@@ -5,19 +5,19 @@ import time
 
 import pandas as pd
 
-from amendements_intelligents.clustering.cluster_finder import PLFSSClusterFinder
-from amendements_intelligents.utils.plfss_allotment_updater import PLFSSAllotmentUpdater
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
+from amendements_intelligents.clustering.cluster_finder import AmendmentsClusterFinder
+from amendements_intelligents.utils.allotment_updater import AllotmentUpdater
+from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 
 
-class PLFSSAllotmentPopulator:
+class AllotmentPopulator:
     @staticmethod
     def preprocess_json_amendments(
         amendments_df: pd.DataFrame,
     ) -> pd.DataFrame:
-        amendments_df = PLFSSPreProcessor.remap_columns_in_json_amendments(
+        amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
             amendments_df=amendments_df
         )
 
@@ -27,21 +27,21 @@ class PLFSSAllotmentPopulator:
     def preprocess_amendments(
         amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
     ) -> pd.DataFrame:
-        prepared_df = PLFSSPreProcessor.clear_columns_to_be_overridden(
+        prepared_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
             amendments_df=amendments_df, columns_to_clear=["Allotissement"]
         )
-        prepared_df = PLFSSPreProcessor.replace_acronyms(
+        prepared_df = AmendmentPreProcessor.replace_acronyms(
             amendments_df=prepared_df,
             acronym_mapping=acronym_mapping,
             columns_to_normalize=["Corps amdt"],
         )
-        prepared_df = PLFSSPreProcessor.remove_empty_rows_for_given_columns(
+        prepared_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
             amendments_df=prepared_df, columns_to_filter_with=["Corps amdt"]
         )
-        prepared_df = PLFSSPreProcessor.handle_common_amendment_bodies(
+        prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=prepared_df
         )
-        prepared_df = PLFSSPreProcessor.normalize_plfss(
+        prepared_df = AmendmentPreProcessor.normalize_amendments(
             amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
         )
 
@@ -52,12 +52,12 @@ class PLFSSAllotmentPopulator:
         original_amendments_df: pd.DataFrame, prepared_df: pd.DataFrame
     ) -> pd.DataFrame:
         # Clustering
-        cluster_finder = PLFSSClusterFinder(amendments_df=prepared_df)
+        cluster_finder = AmendmentsClusterFinder(amendments_df=prepared_df)
         cluster_finder.find_similarity_clusters(eps=0.0001)
         final_clusters = cluster_finder.refine_clusters_with_distance(threshold=0.0001)
 
         # Result processing
-        allotment_updater = PLFSSAllotmentUpdater(
+        allotment_updater = AllotmentUpdater(
             original_amendments_df=original_amendments_df,
             work_amendments_df=prepared_df,
             final_clusters=final_clusters,
@@ -82,18 +82,20 @@ def main():
         "Exposé amdt",
     ]
 
-    amendments_df = PLFSSPreProcessor.load_plfss_json(input_files=[(INPUT_FILE, YEAR)])
-    acronym_mapping = PLFSSPreProcessor.load_acronyms_excel(
+    amendments_df = AmendmentPreProcessor.load_amendments_json(
+        input_files=[(INPUT_FILE, YEAR)]
+    )
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         acronym_file=f"{DATA_FOLDER}/acronym_mapping.xlsx"
     )
-    original_amendments_df = PLFSSAllotmentPopulator.preprocess_json_amendments(
+    original_amendments_df = AllotmentPopulator.preprocess_json_amendments(
         amendments_df=amendments_df
     )
-    prepared_df = PLFSSAllotmentPopulator.preprocess_amendments(
+    prepared_df = AllotmentPopulator.preprocess_amendments(
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
     )
-    amdt_with_allotments_df = PLFSSAllotmentPopulator.populate(
+    amdt_with_allotments_df = AllotmentPopulator.populate(
         original_amendments_df=original_amendments_df, prepared_df=prepared_df
     )
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.plfss_pre_processor import PLFSSPreProcessor
+from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 
 def test_replace_common_amendment_bodies():
@@ -27,9 +27,9 @@ def test_replace_common_amendment_bodies():
             ],
         }
     )
-    plfss_processor = PLFSSPreProcessor
+    amendments_processor = AmendmentPreProcessor
 
-    preprocessed_amendments_df = plfss_processor.handle_common_amendment_bodies(df)
+    preprocessed_amendments_df = amendments_processor.handle_common_amendment_bodies(df)
 
     expected_processed_legistique = [
         "Supprimer cet article. Article 1",
@@ -63,7 +63,7 @@ def test_remove_useless_amendments():
             ],
         }
     )
-    processor = PLFSSPreProcessor
+    processor = AmendmentPreProcessor
     result_df = processor.remove_empty_rows_for_given_columns(
         amendments_df=df, columns_to_filter_with=["Corps amdt"]
     )
@@ -81,7 +81,7 @@ def test_remove_useless_amendments():
     )
 
 
-def test_normalize_plfss():
+def test_normalize_amendments():
     df = pd.DataFrame(
         {
             "test1": [
@@ -117,9 +117,9 @@ def test_normalize_plfss():
         }
     )
 
-    plfss_processor = PLFSSPreProcessor
+    amendment_processor = AmendmentPreProcessor
 
-    normalized_df = plfss_processor.normalize_plfss(
+    normalized_df = amendment_processor.normalize_amendments(
         amendments_df=df, columns_to_normalize=["test1"]
     )
 
@@ -177,13 +177,15 @@ def test_normalize_plfss():
     ],
 )
 def test_handle_common_amendment_expose(input_df, expected_df):
-    plfss_processor = PLFSSPreProcessor
-    result_df = plfss_processor.handle_common_amendment_expose(amendments_df=input_df)
+    amendment_processor = AmendmentPreProcessor
+    result_df = amendment_processor.handle_common_amendment_expose(
+        amendments_df=input_df
+    )
     pd.testing.assert_frame_equal(result_df, expected_df)
 
 
 def test_clean_up_original_amendments():
-    plfss_processor = PLFSSPreProcessor
+    amendment_processor = AmendmentPreProcessor
     original_amendments_df = pd.DataFrame(
         {
             "chambre": ["A", "B"],
@@ -215,10 +217,10 @@ def test_clean_up_original_amendments():
         }
     )
 
-    result_amendments_df = plfss_processor.clean_up_json_columns(
+    result_amendments_df = amendment_processor.clean_up_json_columns(
         amendements_df=original_amendments_df
     )
-    result_amendments_df = plfss_processor.remap_columns_in_json_amendments(
+    result_amendments_df = amendment_processor.remap_columns_in_json_amendments(
         amendments_df=result_amendments_df
     )
 
@@ -250,8 +252,8 @@ def test_clear_columns_to_be_overridden():
         }
     )
 
-    plfss_processor = PLFSSPreProcessor
-    prepared_df = plfss_processor.clear_columns_to_be_overridden(
+    amendment_processor = AmendmentPreProcessor
+    prepared_df = amendment_processor.clear_columns_to_be_overridden(
         df,
         columns_to_clear=["Allotissement", "Affectation (email)", "Affectation (nom)"],
     )
@@ -365,9 +367,9 @@ def test_clear_columns_to_be_overridden():
     ],
 )
 def test_replace_acronyms(input_df, acronym_mapping, columns_to_normalize, expected_df):
-    plfss_processor = PLFSSPreProcessor
+    amendment_processor = AmendmentPreProcessor
 
-    result_df = plfss_processor.replace_acronyms(
+    result_df = amendment_processor.replace_acronyms(
         amendments_df=input_df,
         acronym_mapping=acronym_mapping,
         columns_to_normalize=columns_to_normalize,

@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.plfss_allotment_updater import PLFSSAllotmentUpdater
+from amendements_intelligents.utils.allotment_updater import AllotmentUpdater
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def test_update_allotissement(amendments_df, preprocessed_amendments_df):
     }
     expected_amendments_df = pd.DataFrame(expected_amendments_data)
 
-    updater = PLFSSAllotmentUpdater(
+    updater = AllotmentUpdater(
         amendments_df, preprocessed_amendments_df, final_clusters
     )
     result_df = updater.update_allotissement()
@@ -51,7 +51,7 @@ def test_update_allotissement(amendments_df, preprocessed_amendments_df):
 def test_empty_clusters(amendments_df, preprocessed_amendments_df):
     final_clusters = {}
 
-    updater = PLFSSAllotmentUpdater(
+    updater = AllotmentUpdater(
         amendments_df, preprocessed_amendments_df, final_clusters
     )
     result_df = updater.update_allotissement()
@@ -72,7 +72,7 @@ def test_single_entry_cluster(amendments_df, preprocessed_amendments_df):
     }
     expected_amendments_df = pd.DataFrame(expected_amendments_data)
 
-    updater = PLFSSAllotmentUpdater(
+    updater = AllotmentUpdater(
         amendments_df, preprocessed_amendments_df, final_clusters
     )
     result_df = updater.update_allotissement()
@@ -93,7 +93,7 @@ def test_multiple_clusters_same_lecture(amendments_df, preprocessed_amendments_d
     }
     expected_amendments_df = pd.DataFrame(expected_amendments_data)
 
-    updater = PLFSSAllotmentUpdater(
+    updater = AllotmentUpdater(
         amendments_df, preprocessed_amendments_df, final_clusters
     )
     result_df = updater.update_allotissement()
