@@ -2,6 +2,7 @@ import logging
 import logging.config
 import os
 import re
+import time
 
 import pandas as pd
 
@@ -83,9 +84,5 @@ def main():
     )
 
 
-if __name__ == "__main__":
-    main()
-if __name__ == "__main__":
-    main()
 if __name__ == "__main__":
     main()

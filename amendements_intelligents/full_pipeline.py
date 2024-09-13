@@ -214,7 +214,3 @@ if __name__ == "__main__":
     main()
     end_time = time.time()
     logging.info(f"Total execution time: {end_time - start_time} seconds")
-    end_time = time.time()
-    logging.info(f"Total execution time: {end_time - start_time} seconds")
-    end_time = time.time()
-    logging.info(f"Total execution time: {end_time - start_time} seconds")
