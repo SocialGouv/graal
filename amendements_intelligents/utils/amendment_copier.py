@@ -57,13 +57,20 @@ class AmendmentCopier:
 
                 # Update target DataFrame with the matched details
                 # TODO: Make "Réponse copiée du PLFSS" a variable because it's not always going to be coming from a PLFSS
-                target_df.loc[new_amendment_mask, "Commentaires"] = textwrap.dedent(f"""
+                if pd.notna(
+                    target_df.loc[new_amendment_mask, "Commentaires"].values[0]
+                ):
+                    target_df.loc[new_amendment_mask, "Commentaires"] += "\n"
+
+                target_df.loc[new_amendment_mask, "Commentaires"] += (
+                    textwrap.dedent(f"""
                 Réponse copiée du PLFSS {matching_year}
                 Numéro d'amendement : {matching_num_amdt}
                 Lecture : {matching_lecture}
                 Organe : {matching_organe}
                 Colonne similaire : {column_used_for_comparison}
                 """).strip()
+                )
 
                 # Check and copy the "Sort" value if it contains "Irrecevable"
                 old_sort_value = matching_amendment["Sort"].values[0]
