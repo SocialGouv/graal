@@ -140,7 +140,9 @@ class AttributionPopulator:
         """Find keyword matches for the amendments."""
         matcher = AttributionMatcher()
         keywords = set(self.keywords_df["Mots clés"].dropna())
-        keyword_matches = self.parallel_keyword_matching(keywords, matcher, threshold)
+        keyword_matches = self.parallel_keyword_fuzzy_matching(
+            keywords, matcher, threshold
+        )
         if not keyword_matches:
             return pd.DataFrame()
 
@@ -148,7 +150,7 @@ class AttributionPopulator:
             self.keywords_df, left_on="Keyword", right_on="Mots clés"
         )
 
-    def parallel_keyword_matching(
+    def parallel_keyword_fuzzy_matching(
         self, keywords: set[str], matcher: AttributionMatcher, threshold: int
     ) -> list[dict[str, str]]:
         """Parallel fuzzy matching of keywords."""
@@ -193,7 +195,7 @@ class AttributionPopulator:
 
             # Append the resulting "Affectation (nom)" to "Commentaires"
             amendments_df["Commentaires"] = amendments_df.apply(
-                lambda row: f"Après affectation par articles : {', '.join(row['Affectation (nom)'])}\n"
+                lambda row: f"Affectations possibles après affectation par articles : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
                 else row.get("Commentaires", ""),
                 axis=1,
@@ -201,7 +203,7 @@ class AttributionPopulator:
         amendments_df.reset_index(inplace=True)
 
         # Step 2: Match keywords to amendments
-        keyword_matches_df = self.match_keywords_to_amendments(threshold=95)
+        keyword_matches_df = self.match_keywords_to_amendments(threshold=99)
         if not keyword_matches_df.empty:
             keyword_matches_df.set_index(["Num amdt", "Lecture"], inplace=True)
             keyword_matches_df.sort_index(inplace=True)
@@ -213,7 +215,7 @@ class AttributionPopulator:
                 keyword_matches_df=keyword_matches_df,
             )
             amendments_df["Commentaires"] += amendments_df.apply(
-                lambda row: f"Après affectation par mots clés : {', '.join(row['Affectation (nom)'])}\n"
+                lambda row: f"Affectations possibles après affectation par mots clés : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
                 else row.get("Commentaires", ""),
                 axis=1,
