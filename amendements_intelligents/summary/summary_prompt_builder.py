@@ -13,7 +13,7 @@ Contexte : Tu es un juriste spécialisé dans le droit de la sécurité sociale 
 
 Instruction: Résume l'amendement en français en une phrase courte (de 8 à 18 mots). Le résumé doit être concis, neutre, commencer par un verbe à l'infinitif, inclure les taux pour la clareté (mais pas d'autres chiffres), ne pas inventer de chiffres qui ne figurent pas dans l'amendement, ne pas utiliser d'adjectifs. Exclus les justifications de l'amendement. Ne répète pas le contexte. Utilise des acronymes, sans les expliciter. Si l'amendement concerne un rapport, commence ta réponse par "Remettre un rapport". N'ajoute pas de notes expliquant le résumé. Ne soit pas trop technique.
 
-Aide-toi du corps de l'amendement qui sera fourni pour extraire des informations pertinentes mais le contenu de l'amendement est le plus important.
+Aide-toi du corps de l'amendement qui sera fourni pour extraire des informations pertinentes mais l'exposé de l'amendement est le plus important.
 
 Exemples :
 
@@ -30,12 +30,6 @@ Demande de rapport du Gouvernement au Parlement sur le financement de la sécuri
 
 Résumé :
 Remettre un rapport au Parlement sur le financement de la sécurité sociale à Mayotte et la convergence des cotisations sociales.
-
-- Exposé de l'amendement :
-L’article 23 du projet de loi de financement de la sécurité sociale pour 2024 porte une réforme importante tendant à inscrire dans le droit commun un grand nombre de dispositifs expérimentaux lancés sur le fondement de l’article L. 162-31-1 du code de la sécurité sociale (dit « article 51 »).Cet élan d’innovations organisationnelles mérite d’être soutenu, la FHP SMR portant elle-même un tel projet au niveau national intitulé « inspir’action » et visant les patients atteints de BPCO. Pour autant, l’objectif doit viser à améliorer les parcours de certains patients, en recourant de façon graduée et complémentaire aux différents acteurs de l’offre de soins, afin de leur apporter une pertinence de prise en charge en lien avec leurs besoins. Il ne saurait aboutir à déstabiliser l’offre de soins participant déjà à la prise en charge de ces mêmes patients, et notamment les soins médicaux et de réadaptation spécialisés dans les actions coordonnées de prévention autour d’une équipe pluridisciplinaire, et entrainer in fine une perte de chance pour le patient.C’est donc la complémentarité entre l’offre de soins territoriale existante et le dispositif expérimental en voie de pérennisation, qui doit être recherchée dans chaque territoire. C’est pourquoi le présent amendement proposer de mieux coordonner les différents acteurs autour de ces parcours et de renforcer les équilibres locaux de chaque filière d’offre de soins régionale.
-
-Résumé :
-Prendre en compte l’organisation territoriale de l’offre de soins dans chaque région dans le déploiement des parcours coordonnés renforcés
 
 Voici l'amendement que tu dois résumer :
 
