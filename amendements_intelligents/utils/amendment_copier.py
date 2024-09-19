@@ -57,9 +57,7 @@ class AmendmentCopier:
 
                 # Update target DataFrame with the matched details
                 # TODO: Make "Réponse copiée du PLFSS" a variable because it's not always going to be coming from a PLFSS
-                if pd.notna(
-                    target_df.loc[new_amendment_mask, "Commentaires"].values[0]
-                ):
+                if len(target_df.loc[new_amendment_mask, "Commentaires"].values[0]) > 0:
                     target_df.loc[new_amendment_mask, "Commentaires"] += "\n"
 
                 target_df.loc[new_amendment_mask, "Commentaires"] += (
