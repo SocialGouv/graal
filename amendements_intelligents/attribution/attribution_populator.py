@@ -192,11 +192,6 @@ class AttributionPopulator:
             )  # Ensure lists and replace nan with empty list
         amendments_df.reset_index(inplace=True)
 
-        matched_count = len(best_matches_per_amdt)
-        unmatched_count = len(amendments_df) - matched_count
-        logging.info(f"# matched amendments: {matched_count}")
-        logging.info(f"# amendments without a match: {unmatched_count}")
-
         # Step 2: Match keywords to amendments
         keyword_matches_df = self.match_keywords_to_amendments(threshold=95)
         if not keyword_matches_df.empty:
@@ -239,30 +234,35 @@ class AttributionPopulator:
             )
 
         # Step 4: Fill in missing attributions
-        missing_attributions = amendments_df[
-            amendments_df["Affectation (nom)"].apply(
-                lambda x: isinstance(x, list) and len(x) == 0
-            )
-        ]
-        missing_indices = missing_attributions.index
+        # missing_attributions = amendments_df[
+        #     amendments_df["Affectation (nom)"].apply(
+        #         lambda x: isinstance(x, list) and len(x) == 0
+        #     )
+        # ]
+        # missing_indices = missing_attributions.index
 
-        for index in missing_indices:
-            random_attribution = np.random.choice(self.attribution_mappings_when_empty)
-            amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
-            attribution_comment = "Attribution par défault"
-            AttributionPopulator.append_comment_to_amendment(
-                amendments_df=amendments_df,
-                index=index,
-                attribution_comment=attribution_comment,
-            )
+        # for index in missing_indices:
+        #     random_attribution = np.random.choice(self.attribution_mappings_when_empty)
+        #     amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
+        #     attribution_comment = "Attribution par défault"
+        #     AttributionPopulator.append_comment_to_amendment(
+        #         amendments_df=amendments_df,
+        #         index=index,
+        #         attribution_comment=attribution_comment,
+        #     )
 
         # Finally, set the value of "Affectation (nom)" to the first (and only) element of the list
         # and we get the email address of the expert from self.name_to_email_mapping in "Affectation (email)"
         amendments_df["Affectation (nom)"] = amendments_df["Affectation (nom)"].apply(
-            lambda x: x[0] if isinstance(x, list) else x
+            lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
         )
         amendments_df["Affectation (email)"] = amendments_df["Affectation (nom)"].apply(
             lambda x: self.name_to_email_mapping.get(x, "")
+        )
+
+        non_empty_email_count = amendments_df["Affectation (email)"].str.len().gt(0).sum()
+        logging.info(
+            f"Number of rows with non-empty 'Affectation (email)': {non_empty_email_count}"
         )
 
         return amendments_df

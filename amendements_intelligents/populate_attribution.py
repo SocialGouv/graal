@@ -2,7 +2,6 @@ import logging
 import logging.config
 import os
 import re
-import time
 
 import pandas as pd
 
@@ -21,7 +20,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     AMENDMENTS_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_12.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_17.xlsx"
     OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_keyword_and_code_art_affectation.xlsx"
     YEAR = 2024
 
@@ -78,7 +77,16 @@ def main():
 
     amendments_df = attributor.populate()
 
-    amendments_df.to_excel(OUTPUT_FILE, index=False)
+    amendments_df[
+        [
+            "Num amdt",
+            "Affectation (nom)",
+            "Affectation (email)",
+            "Exposé amdt",
+            "Corps amdt",
+            "Commentaires"
+        ]
+    ].to_excel(OUTPUT_FILE, index=False)
     logging.info(
         f"Saved amendment with keyword and code/article affectation to: {OUTPUT_FILE}"
     )
