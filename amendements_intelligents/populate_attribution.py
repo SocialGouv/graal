@@ -45,7 +45,7 @@ def main():
     )
     keywords_df = AttributionDataLoader.load_keywords(attribution_mappings_excel)
     attribution_mappings_when_empty = (
-        AttributionDataLoader.load_attribution_mappings_when_empty(
+        AttributionDataLoader.load_default_attribution_mappings(
             attribution_mappings_excel
         )
     )
@@ -84,7 +84,7 @@ def main():
             "Affectation (email)",
             "Exposé amdt",
             "Corps amdt",
-            "Commentaires"
+            "Commentaires",
         ]
     ].to_excel(OUTPUT_FILE, index=False)
     logging.info(

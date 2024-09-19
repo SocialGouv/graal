@@ -39,7 +39,8 @@ class AttributionDataLoader:
         return name_email_mappings
 
     @staticmethod
-    def load_attribution_mappings_when_empty(excel_data: dict) -> list[str]:
+    def load_default_attribution_mappings(excel_data: dict) -> list[str]:
+        """Load default attribution mappings from the "Attribution par défault" sheet. Used when no other attribution is found."""
         attribution_mappings_when_empty = excel_data["Attribution par défault"][
             "Prénom Nom"
         ].tolist()
@@ -47,7 +48,7 @@ class AttributionDataLoader:
 
     @staticmethod
     def load_group_to_default_opinion(excel_data: dict) -> dict[str, str]:
-        """Load group to default opinion mappings from the "Groupe Opinion" sheet."""
+        """Load group -> default opinion mappings from the "Groupe Opinion" sheet."""
         group_opinion_df = excel_data["Groupe avis défaut"]
         group_to_default_opinion = dict(
             zip(group_opinion_df["Groupe"], group_opinion_df["Avis par défaut"])

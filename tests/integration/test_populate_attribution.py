@@ -39,7 +39,7 @@ def test_integration_attribute_amendments():
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(excel_data)
     keywords_df = AttributionDataLoader.load_keywords(excel_data)
     attribution_mappings_when_empty = (
-        AttributionDataLoader.load_attribution_mappings_when_empty(excel_data)
+        AttributionDataLoader.load_default_attribution_mappings(excel_data)
     )
     name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(excel_data)
 

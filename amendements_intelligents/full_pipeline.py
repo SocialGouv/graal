@@ -119,7 +119,7 @@ def main():
         attribution_mappings_excel
     )
     attribution_mappings_when_empty = (
-        AttributionDataLoader.load_attribution_mappings_when_empty(
+        AttributionDataLoader.load_default_attribution_mappings(
             attribution_mappings_excel
         )
     )
