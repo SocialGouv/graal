@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Set
+from typing import Optional, Set
 
 from rapidfuzz import fuzz
 
@@ -19,7 +19,7 @@ class AttributionMatcher:
 
     def fuzzy_match(
         self, amendment: dict, keywords: Set[str], threshold: int
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """Perform fuzzy matching of keywords against amendment text."""
         num_amdt, lecture, text = (
             amendment["Num amdt"],

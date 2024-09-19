@@ -67,7 +67,7 @@ class AttributionPopulator:
         )
         for _, row in self.amendments_df.iterrows():
             normalized_text = row["Corps amdt"]
-            # TODO: Use a unique index that we generate ourselves when loading amendments instead of the composite of num amdt and lecture which is not reliable.
+            # TODO: Use a amdt_idx instead of the composite of num amdt and lecture which is not reliable.
             num_amdt, lecture = row["Num amdt"], row["Lecture"]
 
             code_matches = re.findall(

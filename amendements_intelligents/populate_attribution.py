@@ -56,11 +56,11 @@ def main():
     codes_set = set(codes_articles_df["Code"])
     max_code_length = codes_articles_df["Code"].str.len().max()
     articles_set = set(codes_articles_df["Articles"])
-    pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
+    latin_ordinal_pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
     latin_ordinals_set = {
         match.group(1)
         for article in articles_set
-        if (match := pattern.match(article)) and match.group(1)
+        if (match := latin_ordinal_pattern.match(article)) and match.group(1)
     }
 
     attributor = AttributionPopulator(
