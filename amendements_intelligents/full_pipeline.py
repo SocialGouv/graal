@@ -25,7 +25,7 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_19_sept_15h"
+    OUTPUT_FILE = f"{DATA_FOLDER}/full_pipeline_19_sept_17h"
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_19.xlsx"
     INPUT_FILE = (f"{DATA_FOLDER}/lecture-an-16-1682-PO791932.json", 2024)
     # INPUT_FILE = (f"{DATA_FOLDER}/lecture_PLACSS_2022.json", 2022)
