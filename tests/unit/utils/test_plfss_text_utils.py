@@ -222,7 +222,7 @@ def test_normalize_text_with_special_characters():
         (
             """
             III. – Un rapport d’évaluation est
-            IV. – La perte de recettes pour l’État est co
+            IV. – La perte de recettes résultant pour l’État est co
             V. – La perte de recettes pour les organismes »
             """,
             "un rapport d'evaluation est",

@@ -140,7 +140,7 @@ def normalize_text(text: Optional[str]) -> str:
     text = re.sub(r"[^a-zA-Z0-9\s\-%]", "", text)
 
     text = remove_sentences_starting_with(
-        text, pattern=unidecode("la perte de recettes pour")
+        text, pattern=unidecode("la perte de recettes")
     )
 
     text = remove_stop_words(text)
@@ -179,7 +179,7 @@ class AttributionTextNormalizer:
         text = re.sub(r"\s+", " ", text)
         text = remove_sentences_starting_with(
             text,
-            pattern=unidecode("la perte de recettes pour"),
+            pattern=unidecode("la perte de recettes"),
             delimiter_pattern=r"(?<! art)(?<! l)\.|(\n)",
         )
 

@@ -90,7 +90,7 @@ def test_normalize_amendments():
                 """
                 Hello
 
-                la perte de recettes pour this should be removed.
+                la perte de recettes résultant pour this should be removed.
                 world.
                 """,
             ],
