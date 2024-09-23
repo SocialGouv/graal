@@ -20,13 +20,30 @@ class AttributionDataLoader:
         return codes_articles_df
 
     @staticmethod
-    def load_keywords(excel_data: dict) -> pd.DataFrame:
+    def load_keywords(
+        excel_data: dict, acronym_mapping: dict[str, str]
+    ) -> pd.DataFrame:
         """Load and normalize keywords from the data."""
         keywords_df = excel_data["Mots clés"]
+
+        # Stage 1: Replace acronyms based on the acronym_mapping
+        def replace_acronyms(text: str, mapping: dict[str, str]) -> str:
+            for key, value in mapping.items():
+                text = text.replace(key, value)
+            return text
+
+        keywords_df["Mots clés"] = keywords_df["Mots clés"].apply(
+            lambda x: replace_acronyms(str(x), acronym_mapping)
+        )
+
+        # Stage 2: Normalize the text after replacing acronyms
         keywords_df["Mots clés"] = keywords_df["Mots clés"].apply(
             lambda x: AttributionTextNormalizer.normalize_text(str(x))
         )
+
+        # Rename column
         keywords_df.rename(columns={"Prénom Nom": "Affectation (nom)"}, inplace=True)
+
         return keywords_df
 
     @staticmethod
