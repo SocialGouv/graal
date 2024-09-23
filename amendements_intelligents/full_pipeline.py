@@ -1,3 +1,19 @@
+"""
+This module serves as the main entry point for processing amendments related to
+the French legislative process. It orchestrates the loading, preprocessing,
+and analysis of amendment data, including generating summaries, allotments,
+recurring amendements detection, attributions, and opinions.
+
+Key functionalities include:
+- Loading amendments and related data from JSON and Excel files.
+- Preprocessing amendments to normalize and clean the data.
+- Generating summaries for amendments using a language model.
+- Populating allotments and attributions based on predefined mappings.
+- Performing similarity searches between new and old amendments.
+- Assigning default opinions based on group mappings.
+- Saving the processed results to Excel and CSV formats.
+"""
+
 import logging
 import logging.config
 import os
@@ -31,10 +47,6 @@ def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     OUTPUT_FILE = f"{DATA_FOLDER}/PLACSS_2025"
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_21.xlsx"
-    # INPUT_FILE = (
-    #     f"{DATA_FOLDER}/exports_lectures/PLACSS 2023/AN Commission/lecture-an-17-4-PO420120.json",
-    #     2023,
-    # )
     INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2022)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     PLFSS_FILES = [
