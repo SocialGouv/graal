@@ -175,6 +175,28 @@ class AttributionPopulator:
         else:
             amendments_df.at[index, "Commentaires"] = attribution_comment
 
+    @staticmethod
+    def calculate_ratio_of_lists(amendments_df: pd.DataFrame) -> float:
+        """Calculate the ratio of lists with more than 1 element to lists with more than 0 elements."""
+        count_lists_greater_than_1 = (
+            amendments_df["Affectation (nom)"]
+            .apply(lambda x: len(x) if isinstance(x, list) else 0)
+            .gt(1)
+            .sum()
+        )
+        count_lists_greater_than_0 = (
+            amendments_df["Affectation (nom)"]
+            .apply(lambda x: len(x) if isinstance(x, list) else 0)
+            .gt(0)
+            .sum()
+        )
+
+        return (
+            (count_lists_greater_than_1 / count_lists_greater_than_0)
+            if count_lists_greater_than_0 > 0
+            else 0
+        )
+
     def populate(self):
         # Step 1: Match codes and articles to amendments
         best_matches_per_amdt = self.match_codes_and_articles_to_amendments()
@@ -192,6 +214,11 @@ class AttributionPopulator:
             ].apply(
                 lambda x: x if isinstance(x, list) else [x] if pd.notnull(x) else []
             )  # Ensure lists and replace nan with empty list
+
+            ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
+            logging.info(
+                f"After articles, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
+            )
 
             # Append the resulting "Affectation (nom)" to "Commentaires"
             amendments_df["Commentaires"] = amendments_df.apply(
@@ -214,6 +241,12 @@ class AttributionPopulator:
                 axis=1,
                 keyword_matches_df=keyword_matches_df,
             )
+
+            ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
+            logging.info(
+                f"After keywords, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
+            )
+
             amendments_df["Commentaires"] += amendments_df.apply(
                 lambda row: f"Affectations possibles après affectation par mots clés : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
@@ -274,6 +307,11 @@ class AttributionPopulator:
         )
         amendments_df["Affectation (email)"] = amendments_df["Affectation (nom)"].apply(
             lambda x: self.name_to_email_mapping.get(x, "")
+        )
+
+        ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
+        logging.info(
+            f"At the end, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
         )
 
         non_empty_email_count = (
