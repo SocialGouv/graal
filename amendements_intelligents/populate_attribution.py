@@ -20,7 +20,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     AMENDMENTS_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_17.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_21.xlsx"
     OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_keyword_and_code_art_affectation.xlsx"
     YEAR = 2024
 
