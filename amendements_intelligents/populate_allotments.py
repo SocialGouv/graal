@@ -12,7 +12,7 @@ from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreP
 logging.config.fileConfig("logging.conf")
 
 
-class AllotmentPopulator:
+class AllotmentHandler:
     @staticmethod
     def preprocess_json_amendments(
         amendments_df: pd.DataFrame,
@@ -59,7 +59,7 @@ class AllotmentPopulator:
         # Result processing
         allotment_updater = AllotmentUpdater(
             original_amendments_df=original_amendments_df,
-            work_amendments_df=prepared_df,
+            normalized_amendments_df=prepared_df,
             final_clusters=final_clusters,
         )
         populated_df = allotment_updater.update_allotissement()
@@ -88,14 +88,14 @@ def main():
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         acronym_file=f"{DATA_FOLDER}/acronym_mapping.xlsx"
     )
-    original_amendments_df = AllotmentPopulator.preprocess_json_amendments(
+    original_amendments_df = AllotmentHandler.preprocess_json_amendments(
         amendments_df=amendments_df
     )
-    prepared_df = AllotmentPopulator.preprocess_amendments(
+    prepared_df = AllotmentHandler.preprocess_amendments(
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
     )
-    amdt_with_allotments_df = AllotmentPopulator.populate(
+    amdt_with_allotments_df = AllotmentHandler.populate(
         original_amendments_df=original_amendments_df, prepared_df=prepared_df
     )
 

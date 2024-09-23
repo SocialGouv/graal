@@ -1,6 +1,6 @@
 import pandas as pd
 
-from amendements_intelligents.opinion.opinion_populator import OpinionPopulator
+from amendements_intelligents.opinion.opinion_handler import OpinionHandler
 
 
 def test_opinion_populator():
@@ -15,7 +15,7 @@ def test_opinion_populator():
         "Group C": "Neutre",
     }
 
-    populator = OpinionPopulator(amendments_df, group_to_default_opinion)
+    populator = OpinionHandler(amendments_df, group_to_default_opinion)
     result_df = populator.populate()
 
     expected_opinions = ["Favorable", "Défavorable", "Neutre"]

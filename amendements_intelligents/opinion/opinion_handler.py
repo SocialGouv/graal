@@ -1,6 +1,7 @@
 import pandas as pd
 
-class OpinionPopulator:
+
+class OpinionHandler:
     def __init__(
         self,
         amendments_df: pd.DataFrame,
@@ -14,4 +15,5 @@ class OpinionPopulator:
             self.group_to_default_opinion
         )
 
+        return self.amendments_df
         return self.amendments_df

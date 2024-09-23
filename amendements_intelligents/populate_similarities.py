@@ -13,7 +13,7 @@ from amendements_intelligents.utils.text_utils import normalize_text
 logging.config.fileConfig("logging.conf")
 
 
-class SimilarityPopulator:
+class SimilarityHandler:
     @staticmethod
     def preprocess_for_similarity(
         amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
@@ -148,18 +148,18 @@ def main():
         amendments_df=original_new_amendments_df, columns_to_clear=["Réponse", "Sort"]
     )
 
-    old_amendments_df = SimilarityPopulator.preprocess_for_similarity(
+    old_amendments_df = SimilarityHandler.preprocess_for_similarity(
         amendments_df=old_amendments_df, acronym_mapping=acronym_mapping
     )
 
-    new_amendments_df = SimilarityPopulator.preprocess_for_similarity(
+    new_amendments_df = SimilarityHandler.preprocess_for_similarity(
         amendments_df=new_amendments_df, acronym_mapping=acronym_mapping
     )
     new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=new_amendments_df, columns_to_clear=["Réponse", "Sort"]
     )
 
-    new_amendments_with_copies_df = SimilarityPopulator.populate(
+    new_amendments_with_copies_df = SimilarityHandler.populate(
         preprocessed_old_amendments_df=old_amendments_df,
         preprocessed_new_amendments_df=new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,

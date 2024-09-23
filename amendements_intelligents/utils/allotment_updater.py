@@ -7,17 +7,17 @@ class AllotmentUpdater:
     def __init__(
         self,
         original_amendments_df: pd.DataFrame,
-        work_amendments_df: pd.DataFrame,
+        normalized_amendments_df: pd.DataFrame,
         final_clusters: dict[str, list[list[IntIndex]]],
     ) -> None:
         self.amendments_df = original_amendments_df
-        self.work_amendments_df = work_amendments_df
+        self.normalized_amendements_df = normalized_amendments_df
         self.final_clusters = final_clusters
 
     def update_allotissement(self) -> pd.DataFrame:
         for lecture, clusters in self.final_clusters.items():
-            df_group = self.work_amendments_df[
-                self.work_amendments_df["Lecture"] == lecture
+            df_group = self.normalized_amendements_df[
+                self.normalized_amendements_df["Lecture"] == lecture
             ]
             for cluster_indices in clusters:
                 # Get the Num amdt for the indices in cluster_indices based on amdt_idx

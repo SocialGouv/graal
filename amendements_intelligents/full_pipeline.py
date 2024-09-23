@@ -28,10 +28,10 @@ from amendements_intelligents.attribution.attribution_data_loader import (
 from amendements_intelligents.attribution.attribution_populator import (
     AttributionPopulator,
 )
-from amendements_intelligents.opinion.opinion_populator import OpinionPopulator
-from amendements_intelligents.populate_allotments import AllotmentPopulator
-from amendements_intelligents.populate_similarities import SimilarityPopulator
-from amendements_intelligents.populate_summaries import SummaryPopulator
+from amendements_intelligents.opinion.opinion_handler import OpinionHandler
+from amendements_intelligents.populate_allotments import AllotmentHandler
+from amendements_intelligents.populate_similarities import SimilarityHandler
+from amendements_intelligents.populate_summaries import SummaryHandler
 from amendements_intelligents.summary.llm_clients import (
     EtalabAPIClient,
     FakeLLMAPIClient,
@@ -193,7 +193,7 @@ def main():
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df, columns_to_clear=["Objet amdt"]
     )
-    amdt_summary_populator = SummaryPopulator(
+    amdt_summary_populator = SummaryHandler(
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
@@ -217,7 +217,7 @@ def main():
     prepared_for_alot_df = AmendmentPreProcessor.normalize_amendments(
         amendments_df=prepared_for_alot_df, columns_to_normalize=["Corps amdt"]
     )
-    amdt_with_allotments_df = AllotmentPopulator.populate(
+    amdt_with_allotments_df = AllotmentHandler.populate(
         original_amendments_df=saved_amdt_df,
         prepared_df=prepared_for_alot_df,
     )
@@ -287,7 +287,7 @@ def main():
     old_amendments_df = AmendmentPreProcessor.load_amendments_json(
         input_files=SIMILARITY_INPUT_FILES
     )
-    old_amendments_df = SimilarityPopulator.preprocess_for_similarity(
+    old_amendments_df = SimilarityHandler.preprocess_for_similarity(
         amendments_df=old_amendments_df, acronym_mapping=acronym_mapping
     )
 
@@ -314,7 +314,7 @@ def main():
         amendments_df=new_amendments_df
     )
 
-    amdt_with_similarities_df = SimilarityPopulator.populate(
+    amdt_with_similarities_df = SimilarityHandler.populate(
         preprocessed_old_amendments_df=old_amendments_df,
         preprocessed_new_amendments_df=new_amendments_df,
         original_new_amendments_df=saved_new_amendments_df,
@@ -323,7 +323,7 @@ def main():
     # END SIMILARITY SEARCH
 
     # BEGIN DEFAULT OPINION
-    opinion_populator = OpinionPopulator(
+    opinion_populator = OpinionHandler(
         amendments_df=amdt_with_similarities_df,
         group_to_default_opinion=group_to_default_opinion,
     )

@@ -8,7 +8,7 @@ import pandas as pd
 from amendements_intelligents.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from amendements_intelligents.opinion.opinion_populator import OpinionPopulator
+from amendements_intelligents.opinion.opinion_handler import OpinionHandler
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -31,7 +31,7 @@ def main():
         amendments_df
     )
 
-    opinion_populator = OpinionPopulator(
+    opinion_populator = OpinionHandler(
         amendments_df=amendments_df,
         group_to_default_opinion=group_to_default_opinion,
     )

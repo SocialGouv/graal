@@ -13,7 +13,7 @@ from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreP
 logging.config.fileConfig("logging.conf")
 
 
-class SummaryPopulator:
+class SummaryHandler:
     def __init__(
         self,
         acronym_mapping: dict[str, str],
@@ -96,7 +96,7 @@ def main():
         acronym_file=acronym_file
     )
 
-    amdt_summary_populator = SummaryPopulator(
+    amdt_summary_populator = SummaryHandler(
         llm_api_client=llm_api_client,
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,

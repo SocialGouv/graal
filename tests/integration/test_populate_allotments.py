@@ -2,7 +2,7 @@ import logging
 
 import pandas as pd
 
-from amendements_intelligents.populate_allotments import AllotmentPopulator
+from amendements_intelligents.populate_allotments import AllotmentHandler
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 from amendements_intelligents.utils.sheet_data_loader import SheetDataLoader
 
@@ -42,7 +42,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
     )
 
-    alloted_amendments_df = AllotmentPopulator.populate(
+    alloted_amendments_df = AllotmentHandler.populate(
         original_amendments_df=original_amendments_df, prepared_df=prepared_df
     )
 
