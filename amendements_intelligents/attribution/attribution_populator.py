@@ -285,9 +285,10 @@ class AttributionPopulator:
         # Step 4: Fill in missing attributions
         missing_attributions = amendments_df[
             amendments_df["Affectation (nom)"].apply(
-                lambda x: isinstance(x, list) and len(x) == 0
+                lambda x: (isinstance(x, list) and len(x) == 0) or x is None
             )
         ]
+
         missing_indices = missing_attributions.index
 
         for index in missing_indices:
