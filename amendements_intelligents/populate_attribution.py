@@ -22,7 +22,12 @@ def main():
     AMENDMENTS_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_21.xlsx"
     OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_keyword_and_code_art_affectation.xlsx"
+    ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     YEAR = 2024
+
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
+        acronym_file=ACRONYM_FILE
+    )
 
     amendments_df = AmendmentPreProcessor.load_amendments_json(
         input_files=[(AMENDMENTS_FILE, YEAR)]
@@ -43,7 +48,9 @@ def main():
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
         attribution_mappings_excel
     )
-    keywords_df = AttributionDataLoader.load_keywords(attribution_mappings_excel)
+    keywords_df = AttributionDataLoader.load_keywords(
+        excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
+    )
     attribution_mappings_when_empty = (
         AttributionDataLoader.load_default_attribution_mappings(
             attribution_mappings_excel

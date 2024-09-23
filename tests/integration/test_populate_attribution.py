@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 
 import numpy as np
@@ -15,16 +16,27 @@ from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
 
 def test_integration_attribute_amendments():
+    DATA_FOLDER = os.getenv("DATA_FOLDER")
     test_file = "tests/integration/test_data/test_attribution.xlsx"
     mappings_file = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
+    ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
+
     # Make sure that random choices are always the same in this test
     np.random.seed(42)
 
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
+        acronym_file=ACRONYM_FILE
+    )
     amendments_df = AmendmentPreProcessor.load_amendments_excel(input_file=test_file)
     amendments_df["Objet amdt"] = None
     amendments_df["Exposé amdt"] = None
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=amendments_df
+    )
+    amendments_df = AmendmentPreProcessor.replace_acronyms(
+        amendments_df=amendments_df,
+        acronym_mapping=acronym_mapping,
+        columns_to_normalize=["Exposé amdt", "Corps amdt"],
     )
     original_amendments_df = amendments_df.copy()
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
@@ -37,7 +49,9 @@ def test_integration_attribute_amendments():
 
     excel_data = pd.read_excel(mappings_file, sheet_name=None)
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(excel_data)
-    keywords_df = AttributionDataLoader.load_keywords(excel_data)
+    keywords_df = AttributionDataLoader.load_keywords(
+        excel_data=excel_data, acronym_mapping=acronym_mapping
+    )
     attribution_mappings_when_empty = (
         AttributionDataLoader.load_default_attribution_mappings(excel_data)
     )
@@ -118,4 +132,5 @@ def test_integration_attribute_amendments():
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"
 
+    assert diff_df.empty, f"Differences found: {len(diff_df)}"
     assert diff_df.empty, f"Differences found: {len(diff_df)}"

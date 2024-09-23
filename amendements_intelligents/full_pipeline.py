@@ -160,9 +160,10 @@ def main():
     # )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
-    preprocessor = AmendmentPreProcessor
-    amendments_df = preprocessor.load_amendments_json(input_files=[INPUT_FILE])
-    acronym_mapping = preprocessor.load_acronyms_excel(acronym_file=ACRONYM_FILE)
+    amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
+        acronym_file=ACRONYM_FILE
+    )
 
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
@@ -228,7 +229,9 @@ def main():
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
         attribution_mappings_excel
     )
-    keywords_df = AttributionDataLoader.load_keywords(attribution_mappings_excel)
+    keywords_df = AttributionDataLoader.load_keywords(
+        excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
+    )
     name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(
         attribution_mappings_excel
     )
