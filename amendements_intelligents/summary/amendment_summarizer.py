@@ -16,8 +16,8 @@ class AmendmentSummarizer:
         amendments_df: pd.DataFrame,
         api_client: LLMAPIClient,
         summary_column: str = "Objet amdt",
-        max_retries: int = 3,  # Maximum number of retries
-        base_linear_backoff_sec: int = 10,  # Base backoff time in seconds
+        max_retries: int = 3,
+        base_linear_backoff_sec: int = 10,
     ):
         self.amendments_df = amendments_df
         self.prompt_builder = SummaryPromptBuilder()
@@ -25,136 +25,128 @@ class AmendmentSummarizer:
         self.summary_column = summary_column
         self.max_retries = max_retries
         self.base_linear_backoff_sec = base_linear_backoff_sec
+        # Create a mapping from row index to amdt_idx
+        self.row_to_amdt_idx = dict(enumerate(self.amendments_df["amdt_idx"]))
+        self.amdt_idx_to_row = {v: k for k, v in self.row_to_amdt_idx.items()}
 
     def summarize(
         self,
-        start_index: int,
-        stop_index: int,
+        start_index: IntIndex,
+        stop_index: IntIndex,
         max_concurrent: int = 4,
     ) -> pd.DataFrame:
-        """
-        Process amendments in the DataFrame by generating summaries for each amendment from start_index to stop_index (included).
-        Calls to the LLM API are made concurrently using a ThreadPoolExecutor with a pool of size `max_concurrent`.
-        """
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_concurrent
         ) as executor:
-            futures_to_index: dict[concurrent.futures.Future, IntIndex] = {}
+            futures_to_amdt_idx: dict[concurrent.futures.Future, IntIndex] = {}
 
-            cur_index = start_index
-            # Submit initial batch of tasks
+            cur_row_index = start_index
             for _ in range(max_concurrent):
-                if cur_index >= self.amendments_df.shape[0] or cur_index > stop_index:
+                if (
+                    cur_row_index >= len(self.amendments_df)
+                    or cur_row_index > stop_index
+                ):
                     break
-                self._submit_task_if_valid(cur_index, futures_to_index, executor)
-                cur_index += 1
+                amdt_idx = self.row_to_amdt_idx[cur_row_index]
+                self._submit_task_if_valid(amdt_idx, futures_to_amdt_idx, executor)
+                cur_row_index += 1
 
-            # Process completed futures and submit new tasks as old ones complete
             while True:
-                if futures_to_index:
+                if futures_to_amdt_idx:
                     completed_future = next(
-                        concurrent.futures.as_completed(futures_to_index)
+                        concurrent.futures.as_completed(futures_to_amdt_idx)
                     )
                     try:
                         summary = completed_future.result(timeout=3 * 60)
                     except Exception as e:
-                        amdt_idx = futures_to_index.pop(completed_future)
-                        logging.warning(f"Error for index {amdt_idx}: {e}")
-                        retries = (
-                            completed_future.retries
-                            if hasattr(completed_future, "retries")
-                            else 0
-                        )
+                        amdt_idx = futures_to_amdt_idx.pop(completed_future)
+                        logging.warning(f"Error for amdt_idx {amdt_idx}: {e}")
+                        retries = getattr(completed_future, "retries", 0)
                         if retries < self.max_retries:
                             retries += 1
-                            backoff_time = (
-                                retries * self.base_linear_backoff_sec
-                            )  # Linear backoff
+                            backoff_time = retries * self.base_linear_backoff_sec
                             logging.warning(
-                                f"Retrying index {amdt_idx} in {backoff_time} seconds... (Retry {retries}/{self.max_retries})"
+                                f"Retrying amdt_idx {amdt_idx} in {backoff_time} seconds... (Retry {retries}/{self.max_retries})"
                             )
                             time.sleep(backoff_time)
                             self._retry_task(
-                                amdt_idx, retries, futures_to_index, executor
+                                amdt_idx, retries, futures_to_amdt_idx, executor
                             )
                         else:
                             logging.warning(
-                                f"Max retries reached for index {amdt_idx}. Skipping..."
+                                f"Max retries reached for amdt_idx {amdt_idx}. Skipping..."
                             )
                         summary = ""
                     else:
-                        amdt_idx = futures_to_index.pop(completed_future)
+                        amdt_idx = futures_to_amdt_idx.pop(completed_future)
                         if summary:
                             self.amendments_df.loc[
                                 self.amendments_df["amdt_idx"] == amdt_idx,
                                 self.summary_column,
                             ] = summary.strip()
-                        logging.info(f"COMPLETED: {amdt_idx}")
+                        logging.info(f"COMPLETED: amdt_idx {amdt_idx}")
 
-                if cur_index < self.amendments_df.shape[0] and cur_index <= stop_index:
-                    self._submit_task_if_valid(cur_index, futures_to_index, executor)
-                    cur_index += 1
+                if (
+                    cur_row_index < len(self.amendments_df)
+                    and cur_row_index <= stop_index
+                ):
+                    amdt_idx = self.row_to_amdt_idx[cur_row_index]
+                    self._submit_task_if_valid(amdt_idx, futures_to_amdt_idx, executor)
+                    cur_row_index += 1
 
-                if not futures_to_index and (
-                    cur_index >= self.amendments_df.shape[0] or cur_index > stop_index
+                if not futures_to_amdt_idx and (
+                    cur_row_index >= len(self.amendments_df)
+                    or cur_row_index > stop_index
                 ):
                     break
         return self.amendments_df
 
     def _submit_task_if_valid(
         self,
-        index: int,
-        futures_to_index: dict[concurrent.futures.Future, IntIndex],
+        amdt_idx: IntIndex,
+        futures_to_amdt_idx: dict[concurrent.futures.Future, IntIndex],
         executor: concurrent.futures.ThreadPoolExecutor,
     ) -> None:
-        """
-        Helper method to submit a task to the executor if the amendment is valid, meaning that it doesn't start with "supprimer cet article" or is not empty.
-        """
-        row = self.amendments_df[self.amendments_df["amdt_idx"] == index].iloc[0]
+        row = self.amendments_df[self.amendments_df["amdt_idx"] == amdt_idx].iloc[0]
         cleaned_explanatory_statement = SummaryTextNormalizer.normalize_text(
             row["Exposé amdt"]
         )
         cleaned_amdt_body = SummaryTextNormalizer.normalize_text(row["Corps amdt"])
 
         if cleaned_explanatory_statement != "" and cleaned_amdt_body != "":
-            # Special case if row["Corps amdt"] starts with "supprimer cet article"
             if cleaned_amdt_body.startswith("supprimer cet article"):
                 self.amendments_df.loc[
-                    self.amendments_df["amdt_idx"] == index, self.summary_column
+                    self.amendments_df["amdt_idx"] == amdt_idx, self.summary_column
                 ] = "Supprimer cet article"
-                logging.info(f'"Supprimer cet article" for amdt_index {index}')
+                logging.info(f'"Supprimer cet article" for amdt_idx {amdt_idx}')
                 future = executor.submit(lambda x: x, "Supprimer cet article")
-                futures_to_index[future] = index
+                futures_to_amdt_idx[future] = amdt_idx
                 return
 
             prompt = self.prompt_builder.build_prompt(
                 explanatory_statement=row["Exposé amdt"],
                 amdt_body=row["Corps amdt"],
             )
-            # logging.info(f"prompt {prompt}")
             future = executor.submit(self.api_client.generate_summary, prompt)
-            futures_to_index[future] = index
-            future.retries = 0  # Initialize retries count
-            logging.info(f"Submitted task for index {index}")
+            futures_to_amdt_idx[future] = amdt_idx
+            future.retries = 0
+            logging.info(f"Submitted task for amdt_idx {amdt_idx}")
 
     def _retry_task(
         self,
-        amdt_idx: int,
+        amdt_idx: IntIndex,
         retries: int,
-        futures_to_index: dict[concurrent.futures.Future, IntIndex],
+        futures_to_amdt_idx: dict[concurrent.futures.Future, IntIndex],
         executor: concurrent.futures.ThreadPoolExecutor,
     ) -> None:
-        """
-        Helper method to retry a task with a specified retry count.
-        """
         row = self.amendments_df[self.amendments_df["amdt_idx"] == amdt_idx].iloc[0]
         prompt = self.prompt_builder.build_prompt(
             explanatory_statement=row["Exposé amdt"],
             amdt_body=row["Corps amdt"],
         )
         future = executor.submit(self.api_client.generate_summary, prompt)
-        future.retries = retries  # Pass along the current retry count
-        futures_to_index[future] = amdt_idx
+        future.retries = retries
+        futures_to_amdt_idx[future] = amdt_idx
         logging.info(
-            f"Retrying task for index {amdt_idx} (Retry {retries}/{self.max_retries})"
+            f"Retrying task for amdt_idx {amdt_idx} (Retry {retries}/{self.max_retries})"
         )
