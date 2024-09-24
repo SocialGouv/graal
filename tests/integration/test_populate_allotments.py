@@ -42,19 +42,19 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         amendments_df=normalized_amdt_df, columns_to_normalize=["Corps amdt"]
     )
 
-    aloted_amdt_clusters = AllotmentHandler.get_clusters(
+    allotted_amdt_clusters = AllotmentHandler.get_clusters(
         normalized_amdt_df=normalized_amdt_df
     )
 
     normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
         normalized_amdt_df=normalized_amdt_df,
-        aloted_amdt_clusters=aloted_amdt_clusters,
+        allotted_amdt_clusters=allotted_amdt_clusters,
     )
 
     alloted_amendments_df = AllotmentHandler.populate(
         original_amendments_df=original_amendments_df,
         pipeline_result_amdt_df=normalized_amdt_df,
-        aloted_amdt_clusters=aloted_amdt_clusters,
+        allotted_amdt_clusters=allotted_amdt_clusters,
         columns_to_copy=[
             "Réponse",
             "Sort",
@@ -69,59 +69,23 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     # Now we must compare our results with the expected results (in test_df)
     merged_df = test_df.merge(
         alloted_amendments_df,
-        on=["Num article", "Num amdt"],
+        on=["amdt_idx"],
         suffixes=("_test", "_algo"),
     )
     merged_df = merged_df.drop("Corps amdt_algo", axis=1)
     merged_df = merged_df.rename(columns={"Corps amdt_test": "Corps amdt"})
 
-    # test_output_file = "tests/integration/compare_allotments_test.xlsx"
-    # not_detected_allotments = []
-    # surplus_allotments = []
-
     total_nb_matches = 0
     total_nb_test_lot = 0
-    total_nb_algo_lot = 0
     for _i, row in merged_df.iterrows():
         algo = row["Allotissement_algo"].split(",") if row["Allotissement_algo"] else []
         test = row["Allotissement_test"].split(",") if row["Allotissement_test"] else []
 
         nb_matches = len([x for x in test if x in algo])
         nb_test_lot = len(test)
-        nb_algo_lot = len(algo)
-
-        # if nb_matches != nb_test_lot:
-        #     not_detected_allotments.append(
-        #         {
-        #             "Num amdt": row["Num amdt"],
-        #             "Allotissement (Experts)": row["Allotissement_test"],
-        #             "Allotissement (Machine)": row["Allotissement_algo"],
-        #             "Num article": row["Num article"],
-        #             "Corps amdt": row["Corps amdt"],
-        #         }
-        #     )
-        # elif nb_algo_lot > nb_test_lot:
-        #     surplus_allotments.append(
-        #         {
-        #             "Num amdt": row["Num amdt"],
-        #             "Allotissement (Experts)": row["Allotissement_test"],
-        #             "Allotissement (Machine)": row["Allotissement_algo"],
-        #             "Num article": row["Num article"],
-        #             "Corps amdt": row["Corps amdt"],
-        #         }
-        #     )
 
         total_nb_matches += nb_matches
         total_nb_test_lot += nb_test_lot
-
-    # with pd.ExcelWriter(test_output_file) as writer:
-    #     logging.info(f"Saving comparison in {test_output_file}...")
-    #     pd.DataFrame(not_detected_allotments).to_excel(
-    #         writer, sheet_name="Allotissements manqués", index=False
-    #     )
-    #     pd.DataFrame(surplus_allotments).to_excel(
-    #         writer, sheet_name="Allotissements en surplus", index=False
-    #     )
 
     coverage_test_allotments = total_nb_matches / total_nb_test_lot
     logging.info(f"Total number of allotments: {total_nb_matches}")

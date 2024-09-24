@@ -50,21 +50,23 @@ class AllotmentHandler:
         normalized_amdt_df: pd.DataFrame,
     ) -> dict[str, list[list[IntIndex]]]:
         # Clustering
+        logging.info("Get clusters of similar amendments")
         cluster_finder = AmendmentsClusterFinder(amendments_df=normalized_amdt_df)
         cluster_finder.find_similarity_clusters(eps=0.0001)
-        aloted_amdt_clusters = cluster_finder.refine_clusters_with_distance(
+        allotted_amdt_clusters = cluster_finder.refine_clusters_with_distance(
             threshold=0.0001
         )
-        return aloted_amdt_clusters
+        return allotted_amdt_clusters
 
     @staticmethod
     def filter_amdts_to_keep_one_per_allotment(
         normalized_amdt_df: pd.DataFrame,
-        aloted_amdt_clusters: dict[str, list[list[IntIndex]]],
+        allotted_amdt_clusters: dict[str, list[list[IntIndex]]],
     ) -> pd.DataFrame:
+        logging.info("Keep only one amendment per allotment")
         extracted_amdt_indices = []
 
-        for clusters in aloted_amdt_clusters.values():
+        for clusters in allotted_amdt_clusters.values():
             for cluster in clusters:
                 extracted_amdt_indices.extend(cluster[1:])  # Extract the rest
 
@@ -78,11 +80,14 @@ class AllotmentHandler:
     def populate(
         original_amendments_df: pd.DataFrame,
         pipeline_result_amdt_df: pd.DataFrame,
-        aloted_amdt_clusters: dict[str, list[list[int]]],
+        allotted_amdt_clusters: dict[str, list[list[int]]],
         columns_to_copy: list[str],
     ) -> pd.DataFrame:
+        logging.info(
+            "Copying the columns from the first amendment of each allotment cluster to all the others"
+        )
         # Iterate over the clusters only once
-        for _lecture, clusters in aloted_amdt_clusters.items():
+        for _lecture, clusters in allotted_amdt_clusters.items():
             for cluster in clusters:
                 # Get the first amendment in the cluster
                 first_amdt_idx = cluster[0]

@@ -91,7 +91,7 @@ class AmendmentPreProcessor:
     ) -> pd.DataFrame:
         for col_name in columns_to_clear:
             logging.info(f"Clearing column {col_name}...\n")
-            amendments_df[col_name] = None
+            amendments_df.loc[:, col_name] = None
 
         return amendments_df
 
