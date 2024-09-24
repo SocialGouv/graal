@@ -3,67 +3,10 @@ import logging.config
 import os
 import time
 
-import pandas as pd
-
-from amendements_intelligents.clustering.cluster_finder import AmendmentsClusterFinder
-from amendements_intelligents.utils.allotment_updater import AllotmentUpdater
+from amendements_intelligents.allotment.allotment_handler import AllotmentHandler
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
-
-
-class AllotmentHandler:
-    @staticmethod
-    def preprocess_json_amendments(
-        amendments_df: pd.DataFrame,
-    ) -> pd.DataFrame:
-        amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
-            amendments_df=amendments_df
-        )
-
-        return amendments_df
-
-    @staticmethod
-    def preprocess_amendments(
-        amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
-    ) -> pd.DataFrame:
-        prepared_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-            amendments_df=amendments_df, columns_to_clear=["Allotissement"]
-        )
-        prepared_df = AmendmentPreProcessor.replace_acronyms(
-            amendments_df=prepared_df,
-            acronym_mapping=acronym_mapping,
-            columns_to_normalize=["Corps amdt"],
-        )
-        prepared_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-            amendments_df=prepared_df, columns_to_filter_with=["Corps amdt"]
-        )
-        prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-            amendments_df=prepared_df
-        )
-        prepared_df = AmendmentPreProcessor.normalize_amendments(
-            amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
-        )
-
-        return prepared_df
-
-    @staticmethod
-    def populate(
-        original_amendments_df: pd.DataFrame, prepared_df: pd.DataFrame
-    ) -> pd.DataFrame:
-        # Clustering
-        cluster_finder = AmendmentsClusterFinder(amendments_df=prepared_df)
-        cluster_finder.find_similarity_clusters(eps=0.0001)
-        final_clusters = cluster_finder.refine_clusters_with_distance(threshold=0.0001)
-
-        # Result processing
-        allotment_updater = AllotmentUpdater(
-            original_amendments_df=original_amendments_df,
-            normalized_amendments_df=prepared_df,
-            final_clusters=final_clusters,
-        )
-        populated_df = allotment_updater.update_allotissement()
-        return populated_df
 
 
 def main():
@@ -91,12 +34,25 @@ def main():
     original_amendments_df = AllotmentHandler.preprocess_json_amendments(
         amendments_df=amendments_df
     )
-    prepared_df = AllotmentHandler.preprocess_amendments(
+    normalized_amdt_df = AllotmentHandler.preprocess_amendments(
         amendments_df=amendments_df,
         acronym_mapping=acronym_mapping,
     )
+
+    allotted_amdt_clusters = AllotmentHandler.get_clusters(
+        normalized_amdt_df=normalized_amdt_df
+    )
+
+    normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
+        normalized_amdt_df=normalized_amdt_df,
+        allotted_amdt_clusters=allotted_amdt_clusters,
+    )
+
     amdt_with_allotments_df = AllotmentHandler.populate(
-        original_amendments_df=original_amendments_df, prepared_df=prepared_df
+        original_amendments_df=original_amendments_df,
+        pipeline_result_amdt_df=normalized_amdt_df,
+        allotted_amdt_clusters=allotted_amdt_clusters,
+        columns_to_copy=None,
     )
 
     amdt_with_allotments_df[COLUMNS_TO_OUTPUT].to_excel(OUTPUT_FILE, index=False)

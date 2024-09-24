@@ -45,10 +45,23 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    OUTPUT_FILE = f"{DATA_FOLDER}/PLACSS_2025"
+    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024"
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_21.xlsx"
     INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2022)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
+    COLUMNS_TO_OUTPUT_IN_EXCEL = [
+        "Num amdt",
+        "Allotissement",
+        "Objet amdt",
+        "Avis du Gouvernement",
+        "Réponse",
+        "Sort",
+        "Affectation (email)",
+        "Affectation (nom)",
+        "Commentaires",
+        "Exposé amdt",
+        "Corps amdt",
+    ]
     PLFSS_FILES = [
         (
             f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json",
@@ -64,10 +77,6 @@ def main():
         ),
         (
             f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO420120.json",
-            2021,
-        ),
-        (
-            f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-16-1682-PO791932 (2).json",
             2021,
         ),
         (
@@ -100,6 +109,10 @@ def main():
         ),
         (
             f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO420120.json",
+            2023,
+        ),
+        (
+            f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-1682-PO791932 (2).json",
             2023,
         ),
         (
@@ -155,6 +168,7 @@ def main():
     ]
 
     SIMILARITY_INPUT_FILES = PLFSS_FILES + PLACSS_FILES + LFRSS_FILES
+
     # MODEL_NAME = os.getenv("MODEL_NAME")
     # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
     # USER = os.getenv("USER")
@@ -163,6 +177,7 @@ def main():
     #     url=LLM_ENDPOINT,
     #     auth=(USER, PASSWORD),
     # )
+
     llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
     # llm_api_client: LLMAPIClient = EtalabAPIClient(
@@ -189,13 +204,46 @@ def main():
     preprocessed_original_amdt_df = amendments_df.copy()
     # END LOAD AND PRE-PROCESS DATA
 
+    # BEGIN ALLOTMENTS
+    normalized_for_allot_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=amendments_df, columns_to_clear=["Allotissement"]
+    )
+    normalized_for_allot_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+        amendments_df=normalized_for_allot_df, columns_to_filter_with=["Corps amdt"]
+    )
+    normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
+        amendments_df=normalized_for_allot_df
+    )
+    normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
+        amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
+    )
+    allotted_amdt_clusters = AllotmentHandler.get_clusters(
+        normalized_amdt_df=normalized_for_allot_df
+    )
+
+    logging.info(
+        f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
+    )
+
+    filtered_by_allot_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
+        normalized_amdt_df=normalized_for_allot_df,
+        allotted_amdt_clusters=allotted_amdt_clusters,
+    )
+
+    logging.info(
+        f"Number of amendments left after removing extra allotted amendements : {len(filtered_by_allot_df)}"
+    )
+
+    # amdt_with_allotments_df.to_excel(f"{DATA_FOLDER}/amdt_with_allotments_df.xlsx")
+    # END ALLOTMENTS
+
     # BEGIN SUMMARY GENERATION
-    amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=amendments_df, columns_to_clear=["Objet amdt"]
+    amdt_with_summaries_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=filtered_by_allot_df, columns_to_clear=["Objet amdt"]
     )
     amdt_summary_populator = SummaryHandler(
         llm_api_client=llm_api_client,
-        amendments_df=amendments_df,
+        amendments_df=amdt_with_summaries_df,
         acronym_mapping=acronym_mapping,
         summary_column="Objet amdt",
     )
@@ -203,37 +251,14 @@ def main():
     # amdt_with_summaries_df.to_excel(f"{DATA_FOLDER}/amdt_with_summaries_df.xlsx")
     # END SUMMARY GENERATION
 
-    # BEGIN ALLOTMENTS
-    saved_amdt_df = amdt_with_summaries_df.copy()
-    prepared_for_alot_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=amdt_with_summaries_df, columns_to_clear=["Allotissement"]
-    )
-    prepared_for_alot_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-        amendments_df=prepared_for_alot_df, columns_to_filter_with=["Corps amdt"]
-    )
-    prepared_for_alot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-        amendments_df=prepared_for_alot_df
-    )
-    prepared_for_alot_df = AmendmentPreProcessor.normalize_amendments(
-        amendments_df=prepared_for_alot_df, columns_to_normalize=["Corps amdt"]
-    )
-    amdt_with_allotments_df = AllotmentHandler.populate(
-        original_amendments_df=saved_amdt_df,
-        prepared_df=prepared_for_alot_df,
-    )
-    # amdt_with_allotments_df.to_excel(f"{DATA_FOLDER}/amdt_with_allotments_df.xlsx")
-    # END ALLOTMENTS
-
     # BEGIN ATTRIBUTION
-    amdt_with_attribution_df = amdt_with_allotments_df.copy()
-
     amdt_with_attribution_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=amdt_with_attribution_df,
+        amendments_df=amdt_with_summaries_df,
         columns_to_clear=["Affectation (email)", "Affectation (nom)"],
     )
     # For this task, the normalization is slightly different than the one currently applied to
     # Corps amdt so I am taking the original text and normalizing it
-    amdt_with_attribution_df["Corps amdt"] = preprocessed_original_amdt_df[
+    amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
         "Corps amdt"
     ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
 
@@ -332,7 +357,25 @@ def main():
     result_df = amdt_with_opinions_df
     # END DEFAULT OPINION
 
-    result_df.to_excel(f"{OUTPUT_FILE}.xlsx")
+    # BEGIN ALIGNING ALL ALLOTED AMENDMENTS
+    amdt_with_allotments_df = AllotmentHandler.populate(
+        original_amendments_df=preprocessed_original_amdt_df,
+        pipeline_result_amdt_df=amdt_with_opinions_df,
+        allotted_amdt_clusters=allotted_amdt_clusters,
+        columns_to_copy=[
+            "Réponse",
+            "Sort",
+            "Commentaires",
+            "Objet amdt",
+            "Avis du Gouvernement",
+            "Affectation (email)",
+            "Affectation (nom)",
+        ],
+    )
+    result_df = amdt_with_allotments_df
+    # END ALIGNING ALL ALLOTED AMENDMENTS
+
+    result_df[COLUMNS_TO_OUTPUT_IN_EXCEL].to_excel(f"{OUTPUT_FILE}.xlsx")
     logging.info(
         f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}.xlsx"
     )
