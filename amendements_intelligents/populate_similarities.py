@@ -78,32 +78,11 @@ class SimilarityHandler:
             )
         ]
 
-        # Perform similarity evaluation for Objet
-        similarity_evaluator_object = SimilarityFinder(
-            old_amendments_df=filtered_old_amendments_df,
-            new_amendments_df=preprocessed_new_amendments_df,
-            default_threshold_ratio=0.95,
-        )
-        similarity_evaluator_object.prefilter_similar_docs(
-            column_used_for_similarity="Objet amdt", threshold=0.95
-        )
-        closest_amdts_object = similarity_evaluator_object.find_best_matches(
-            column_used_for_similarity="Objet amdt"
-        )
-
-        # Merge closest_amdts_expose and closest_amdts_object together but prioritize expose as it is more important
-        for new_amdt_idx, amdt_object_similarity_data in closest_amdts_object.items():
-            if new_amdt_idx not in closest_amdts_expose:
-                closest_amdts_expose[new_amdt_idx] = amdt_object_similarity_data
-        closest_amdts = closest_amdts_expose
-
-        logging.info(f"Total number of matches after merge: {len(closest_amdts)}")
-
         # Copy matched amendments to new_amendments_df
         amendment_copier = AmendmentCopier(
             new_amendments_df=preprocessed_new_amendments_df,
             old_amendments_df=preprocessed_old_amendments_df,
-            closest_amdts=closest_amdts,
+            closest_amdts=closest_amdts_expose,
         )
         new_amendments_with_copies_df = amendment_copier.copy_matches_to_amendments_df(
             target_df=original_new_amendments_df
