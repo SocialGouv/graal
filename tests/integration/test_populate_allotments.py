@@ -30,20 +30,40 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     # Process the data frame as if it were a real lecture
     original_amendments_df = test_df.copy()
     original_amendments_df["Allotissement"] = None
-    prepared_df = original_amendments_df.copy()
+    normalized_amdt_df = original_amendments_df.copy()
 
-    prepared_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-        amendments_df=prepared_df, columns_to_filter_with=["Corps amdt"]
+    normalized_amdt_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+        amendments_df=normalized_amdt_df, columns_to_filter_with=["Corps amdt"]
     )
-    prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-        amendments_df=prepared_df
+    normalized_amdt_df = AmendmentPreProcessor.handle_common_amendment_bodies(
+        amendments_df=normalized_amdt_df
     )
-    prepared_df = AmendmentPreProcessor.normalize_amendments(
-        amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
+    normalized_amdt_df = AmendmentPreProcessor.normalize_amendments(
+        amendments_df=normalized_amdt_df, columns_to_normalize=["Corps amdt"]
+    )
+
+    aloted_amdt_clusters = AllotmentHandler.get_clusters(
+        normalized_amdt_df=normalized_amdt_df
+    )
+
+    normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
+        normalized_amdt_df=normalized_amdt_df,
+        aloted_amdt_clusters=aloted_amdt_clusters,
     )
 
     alloted_amendments_df = AllotmentHandler.populate(
-        original_amendments_df=original_amendments_df, prepared_df=prepared_df
+        original_amendments_df=original_amendments_df,
+        pipeline_result_amdt_df=normalized_amdt_df,
+        aloted_amdt_clusters=aloted_amdt_clusters,
+        columns_to_copy=[
+            "Réponse",
+            "Sort",
+            "Commentaires",
+            "Objet amdt",
+            "Avis du Gouvernement",
+            "Affectation (email)",
+            "Affectation (nom)",
+        ],
     )
 
     # Now we must compare our results with the expected results (in test_df)
