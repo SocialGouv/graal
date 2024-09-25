@@ -1,5 +1,6 @@
 import logging
 import logging.config
+from typing import Callable
 
 import pandas as pd
 
@@ -59,16 +60,28 @@ class AllotmentHandler:
         return allotted_amdt_clusters
 
     @staticmethod
+    def default_removal_strategy_func(
+        _df: pd.DataFrame, cluster: list[IntIndex]
+    ) -> list[IntIndex]:
+        return cluster[1:]
+
+    @staticmethod
     def filter_amdts_to_keep_one_per_allotment(
         normalized_amdt_df: pd.DataFrame,
         allotted_amdt_clusters: dict[str, list[list[IntIndex]]],
+        removal_strategy_func: Callable[
+            [pd.DataFrame, list[IntIndex]], list[IntIndex]
+        ] = default_removal_strategy_func,
     ) -> pd.DataFrame:
         logging.info("Keep only one amendment per allotment")
         extracted_amdt_indices = []
 
         for clusters in allotted_amdt_clusters.values():
             for cluster in clusters:
-                extracted_amdt_indices.extend(cluster[1:])  # Extract the rest
+                amdt_indices_to_remove = removal_strategy_func(
+                    normalized_amdt_df, cluster
+                )
+                extracted_amdt_indices.extend(amdt_indices_to_remove)
 
         filtered_normalized_df = normalized_amdt_df[
             ~normalized_amdt_df["amdt_idx"].isin(extracted_amdt_indices)
