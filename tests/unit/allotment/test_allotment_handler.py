@@ -37,13 +37,14 @@ def test_populate():
     # Input: original_amendments_df
     original_amendments_df = pd.DataFrame(
         {
-            "amdt_idx": [1, 2, 3, 4, 5, 6],
-            "Num amdt": [101, 102, 103, 201, 202, 203],
-            "Allotissement": [None, None, None, None, None, None],
+            "amdt_idx": [1, 2, 3, 4, 5, 6, 7],
+            "Num amdt": [101, 102, 103, 201, 202, 203, 301],
+            "Allotissement": [None, None, None, None, None, None, None],
             "Lecture": [
                 "Lecture1",
                 "Lecture1",
                 "Lecture1",
+                "Lecture2",
                 "Lecture2",
                 "Lecture2",
                 "Lecture2",
@@ -54,12 +55,13 @@ def test_populate():
     # Input: pipeline_result_amdt_df
     pipeline_result_amdt_df = pd.DataFrame(
         {
-            "amdt_idx": [1, 2, 3, 4, 5, 6],
-            "column_to_copy": ["A", "B", "C", "D", "E", "F"],
+            "amdt_idx": [1, 2, 3, 4, 5, 6, 7],
+            "column_to_copy": ["A", "B", "C", "D", "E", "F", "G"],
             "Lecture": [
                 "Lecture1",
                 "Lecture1",
                 "Lecture1",
+                "Lecture2",
                 "Lecture2",
                 "Lecture2",
                 "Lecture2",
@@ -79,8 +81,8 @@ def test_populate():
     # Expected result: original_amendments_df after populating Allotissement and copying columns
     expected_df = pd.DataFrame(
         {
-            "amdt_idx": [1, 2, 3, 4, 5, 6],
-            "Num amdt": [101, 102, 103, 201, 202, 203],
+            "amdt_idx": [1, 2, 3, 4, 5, 6, 7],
+            "Num amdt": [101, 102, 103, 201, 202, 203, 301],
             "Allotissement": [
                 "101,102,103",
                 "101,102,103",
@@ -88,6 +90,7 @@ def test_populate():
                 "201,202,203",
                 "201,202,203",
                 "201,202,203",
+                None,
             ],
             "Lecture": [
                 "Lecture1",
@@ -96,8 +99,9 @@ def test_populate():
                 "Lecture2",
                 "Lecture2",
                 "Lecture2",
+                "Lecture2",
             ],
-            "column_to_copy": ["A", "A", "A", "D", "D", "D"],
+            "column_to_copy": ["A", "A", "A", "D", "D", "D", "G"],
         }
     )
 

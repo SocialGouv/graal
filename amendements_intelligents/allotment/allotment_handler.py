@@ -81,50 +81,49 @@ class AllotmentHandler:
         original_amendments_df: pd.DataFrame,
         pipeline_result_amdt_df: pd.DataFrame,
         allotted_amdt_clusters: dict[str, list[list[int]]],
-        columns_to_copy: list[str],
+        columns_to_copy: list[str] | None,
     ) -> pd.DataFrame:
         logging.info(
-            "Copying the columns from the first amendment of each allotment cluster to all the others"
+            "Copying columns from the first amendment of each allotment cluster to all others"
         )
-        # Iterate over the clusters only once
-        for _lecture, clusters in allotted_amdt_clusters.items():
+
+        valid_columns_to_copy = []
+        if columns_to_copy:
+            valid_columns_to_copy = [
+                col for col in columns_to_copy if col in pipeline_result_amdt_df.columns
+            ]
+            mask = original_amendments_df["amdt_idx"].isin(
+                pipeline_result_amdt_df["amdt_idx"]
+            )
+            original_amendments_df.loc[mask, valid_columns_to_copy] = (
+                pipeline_result_amdt_df.loc[
+                    pipeline_result_amdt_df["amdt_idx"].isin(
+                        original_amendments_df["amdt_idx"]
+                    ),
+                    valid_columns_to_copy,
+                ].values
+            )
+
+        for clusters in allotted_amdt_clusters.values():
             for cluster in clusters:
-                # Get the first amendment in the cluster
                 first_amdt_idx = cluster[0]
-                first_amdt_row = pipeline_result_amdt_df[
-                    pipeline_result_amdt_df["amdt_idx"] == first_amdt_idx
+                first_amdt_row = original_amendments_df[
+                    original_amendments_df["amdt_idx"] == first_amdt_idx
                 ].iloc[0]
 
-                # Get the Num amdt for all amendments in the cluster and create a string for "Allotissement"
-                cluster_num_amdt = sorted(
-                    original_amendments_df[
-                        original_amendments_df["amdt_idx"].isin(cluster)
-                    ]["Num amdt"]
-                )
+                cluster_mask = original_amendments_df["amdt_idx"].isin(cluster)
+                cluster_num_amdt = original_amendments_df.loc[
+                    cluster_mask, "Num amdt"
+                ].sort_values()
                 cluster_num_amdt_str = ",".join(map(str, cluster_num_amdt))
 
-                # Update the original_amendments_df with the Allotissement string
-                original_amendments_df.loc[
-                    original_amendments_df["amdt_idx"].isin(cluster), "Allotissement"
-                ] = cluster_num_amdt_str
+                original_amendments_df.loc[cluster_mask, "Allotissement"] = (
+                    cluster_num_amdt_str
+                )
 
-                if columns_to_copy is None:
-                    continue
-
-                # Copy in original_amendments_df the columns_to_copy from `pipeline_result_amdt_df`.
-                # The values are taken from the first amendment in the cluster (the other ones are empty)
-                for amdt_idx in cluster:
-                    existing_columns = [
-                        col
-                        for col in columns_to_copy
-                        if col in pipeline_result_amdt_df.columns
-                    ]
-
-                    if existing_columns:
-                        # Safely copy the columns from first_amdt_row
-                        original_amendments_df.loc[
-                            original_amendments_df["amdt_idx"] == amdt_idx,
-                            existing_columns,
-                        ] = first_amdt_row[existing_columns].values
+                if valid_columns_to_copy:
+                    original_amendments_df.loc[cluster_mask, valid_columns_to_copy] = (
+                        first_amdt_row[valid_columns_to_copy].values
+                    )
 
         return original_amendments_df
