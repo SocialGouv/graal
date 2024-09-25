@@ -44,7 +44,7 @@ class AttributionPopulator:
             else []
         )
 
-        if attribution_names is np.nan or len(attribution_names) == 0:
+        if not attribution_names:
             return sorted(keyword_attribution_names)
 
         if len(attribution_names) == 1:
