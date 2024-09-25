@@ -23,7 +23,7 @@ Face à la situation de détresse de nombreux agriculteurs, cet amendement vise 
 Il serait ainsi mis fin à une situation juridique instable où nombre d’agriculteurs se voient réclamés par la mutualité sociale agricole des cotisations sociales forfaitaires qu’ils ne sont pas en mesure de payer.
 
 Résumé :
-Exonérer de toute cotisation forfaitaire les exploitants agricoles bénéficiaire du revenu de solidarité active
+Exonérer de toute cotisation forfaitaire les exploitants agricoles bénéficiaires du revenu de solidarité active
 
 - Exposé de l'amendement :
 Demande de rapport du Gouvernement au Parlement sur le financement de la sécurité sociale à Mayotte et l’opportunité d’une accélération de la trajectoire de convergence des cotisations et contributions sociales.
