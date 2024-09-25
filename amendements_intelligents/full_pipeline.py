@@ -46,7 +46,7 @@ def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024_preprocessed_old_amdts"
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_21.xlsx"
-    INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2022)
+    INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
@@ -94,16 +94,26 @@ def main():
         acronym_mapping=acronym_mapping,
         columns_to_normalize=["Exposé amdt", "Corps amdt"],
     )
-    amendments_df["Commentaires"] = ""
+    amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=amendments_df,
+        columns_to_clear=[
+            "Commentaires",
+            "Allotissement",
+            "Objet amdt",
+            "Avis du Gouvernement",
+            "Réponse",
+            "Sort",
+            "Affectation (email)",
+            "Affectation (nom)",
+        ],
+    )
+
     preprocessed_original_amdt_df = amendments_df.copy()
     # END LOAD AND PRE-PROCESS DATA
 
     # BEGIN ALLOTMENTS
-    normalized_for_allot_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=amendments_df, columns_to_clear=["Allotissement"]
-    )
     normalized_for_allot_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-        amendments_df=normalized_for_allot_df, columns_to_filter_with=["Corps amdt"]
+        amendments_df=amendments_df, columns_to_filter_with=["Corps amdt"]
     )
     normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
         amendments_df=normalized_for_allot_df
@@ -132,12 +142,9 @@ def main():
     # END ALLOTMENTS
 
     # BEGIN SUMMARY GENERATION
-    amdt_with_summaries_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=filtered_by_allot_df, columns_to_clear=["Objet amdt"]
-    )
     amdt_summary_populator = SummaryHandler(
         llm_api_client=llm_api_client,
-        amendments_df=amdt_with_summaries_df,
+        amendments_df=filtered_by_allot_df,
         acronym_mapping=acronym_mapping,
         summary_column="Objet amdt",
     )
@@ -146,12 +153,9 @@ def main():
     # END SUMMARY GENERATION
 
     # BEGIN ATTRIBUTION
-    amdt_with_attribution_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=amdt_with_summaries_df,
-        columns_to_clear=["Affectation (email)", "Affectation (nom)"],
-    )
     # For this task, the normalization is slightly different than the one currently applied to
     # Corps amdt so I am taking the original text and normalizing it
+    amdt_with_attribution_df = amdt_with_summaries_df
     amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
         "Corps amdt"
     ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
@@ -208,11 +212,7 @@ def main():
     logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
 
     new_amendments_df = amdt_with_attribution_df
-
     saved_new_amendments_df = new_amendments_df.copy()
-    saved_new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=saved_new_amendments_df, columns_to_clear=["Réponse", "Sort"]
-    )
 
     new_amendments_df = AmendmentPreProcessor.normalize_amendments(
         amendments_df=new_amendments_df,
@@ -249,6 +249,7 @@ def main():
     # END DEFAULT OPINION
 
     # BEGIN ALIGNING ALL ALLOTED AMENDMENTS
+
     amdt_with_allotments_df = AllotmentHandler.populate(
         original_amendments_df=preprocessed_original_amdt_df,
         pipeline_result_amdt_df=amdt_with_opinions_df,
