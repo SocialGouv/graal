@@ -123,7 +123,7 @@ class AmendmentSummarizer:
                 futures_to_amdt_idx[future] = amdt_idx
                 return
 
-            prompt = self.prompt_builder.build_prompt(
+            prompt = self.prompt_builder.build_prompt_new(
                 explanatory_statement=row["Exposé amdt"],
                 amdt_body=row["Corps amdt"],
             )
@@ -140,7 +140,7 @@ class AmendmentSummarizer:
         executor: concurrent.futures.ThreadPoolExecutor,
     ) -> None:
         row = self.amendments_df[self.amendments_df["amdt_idx"] == amdt_idx].iloc[0]
-        prompt = self.prompt_builder.build_prompt(
+        prompt = self.prompt_builder.build_prompt_new(
             explanatory_statement=row["Exposé amdt"],
             amdt_body=row["Corps amdt"],
         )

@@ -32,7 +32,8 @@ from amendements_intelligents.opinion.opinion_handler import OpinionHandler
 from amendements_intelligents.populate_allotments import AllotmentHandler
 from amendements_intelligents.populate_similarities import SimilarityHandler
 from amendements_intelligents.populate_summaries import SummaryHandler
-from amendements_intelligents.summary.llm_clients import (  # EtalabAPIClient,
+from amendements_intelligents.summary.llm_clients import (
+    EtalabAPIClient,
     FakeLLMAPIClient,
     LLMAPIClient,
 )
@@ -44,8 +45,8 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024_preprocessed_old_amdts"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_21.xlsx"
+    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024_new_prompt_sept_26"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_26.xlsx"
     INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
@@ -72,13 +73,13 @@ def main():
     #     auth=(USER, PASSWORD),
     # )
 
-    llm_api_client: LLMAPIClient = FakeLLMAPIClient()
+    # llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
-    # llm_api_client: LLMAPIClient = EtalabAPIClient(
-    #     base_url="https://albert.api.etalab.gouv.fr/v1",
-    #     api_key=os.getenv("ETALAB_API_KEY"),
-    #     model_name="meta-llama/Meta-Llama-3.1-70B-Instruct",
-    # )
+    llm_api_client: LLMAPIClient = EtalabAPIClient(
+        base_url="https://albert.api.etalab.gouv.fr/v1",
+        api_key=os.getenv("ETALAB_API_KEY"),
+        model_name="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])

@@ -121,6 +121,7 @@ class EtalabAPIClient(LLMAPIClient):
             "model": self.model_name,
             "messages": [{"role": "user", "content": f"{prompt}"}],
             "stream": False,
+            "temperature": 0,
             "n": 1,
         }
 
