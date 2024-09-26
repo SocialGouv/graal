@@ -114,7 +114,20 @@ class AmendmentSummarizer:
         cleaned_amdt_body = SummaryTextNormalizer.normalize_text(row["Corps amdt"])
 
         if cleaned_explanatory_statement != "" and cleaned_amdt_body != "":
-            if cleaned_amdt_body.startswith("supprimer cet article"):
+            if cleaned_explanatory_statement.startswith(
+                SummaryTextNormalizer.normalize_text("Amendement rédactionnel.")
+            ):
+                self.amendments_df.loc[
+                    self.amendments_df["amdt_idx"] == amdt_idx, self.summary_column
+                ] = "Amendement rédactionnel."
+                logging.info(f'"Amendement rédactionnel." for amdt_idx {amdt_idx}')
+                future = executor.submit(lambda x: x, "Amendement rédactionnel.")
+                futures_to_amdt_idx[future] = amdt_idx
+                return
+
+            if cleaned_amdt_body.startswith(
+                SummaryTextNormalizer.normalize_text("Supprimer cet article")
+            ):
                 self.amendments_df.loc[
                     self.amendments_df["amdt_idx"] == amdt_idx, self.summary_column
                 ] = "Supprimer cet article"
