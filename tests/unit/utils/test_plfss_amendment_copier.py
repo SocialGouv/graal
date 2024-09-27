@@ -89,6 +89,7 @@ def test_copy_matches_to_amendments_df(sample_data):
         Lecture : B
         Organe : Organe 2
         Colonne similaire : Exposé amdt
+        Sort copié : Irrecevable 123
         """).strip()
     )
     assert result_df.loc[1, "Sort"] == "Irrecevable 123"

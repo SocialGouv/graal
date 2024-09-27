@@ -65,17 +65,23 @@ class AmendmentCopier:
 
                 target_df.loc[new_amendment_mask, "Commentaires"] += (
                     textwrap.dedent(f"""
-                Réponse copiée du PLFSS {matching_year}
-                Numéro d'amendement : {matching_num_amdt}
-                Lecture : {matching_lecture}
-                Organe : {matching_organe}
-                Colonne similaire : {column_used_for_comparison}
-                """).strip()
+                        Réponse copiée du PLFSS {matching_year}
+                        Numéro d'amendement : {matching_num_amdt}
+                        Lecture : {matching_lecture}
+                        Organe : {matching_organe}
+                        Colonne similaire : {column_used_for_comparison}
+                    """).strip()
                 )
 
                 # Check and copy the "Sort" value if it contains "Irrecevable"
                 old_sort_value = matching_amendment["Sort"].values[0]
                 if pd.notna(old_sort_value) and "irrecevable" in old_sort_value.lower():
                     target_df.loc[new_amendment_mask, "Sort"] = old_sort_value
+                    target_df.loc[new_amendment_mask, "Commentaires"] += "\n"
+                    target_df.loc[new_amendment_mask, "Commentaires"] += (
+                        textwrap.dedent(f"""
+                            Sort copié : {old_sort_value}
+                        """).strip()
+                    )
 
         return target_df
