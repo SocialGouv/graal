@@ -20,7 +20,7 @@ def sample_amendments_df():
         "Corps amdt": [
             "Corps 1",
             "Corps 2",
-            "Supprimer cet article",
+            "Supprimer cet article.",
             "Supprimer cet article.",
         ],
         "Num amdt": [1, 2, 3, 4],
@@ -41,8 +41,8 @@ def test_process_amendments(mock_llm_client, sample_amendments_df):
 
     assert sample_amendments_df.loc[0, "Objet amdt"] == "mock_summary"
     assert sample_amendments_df.loc[1, "Objet amdt"] == "mock_summary"
-    assert sample_amendments_df.loc[2, "Objet amdt"] == "Supprimer cet article"
-    assert sample_amendments_df.loc[3, "Objet amdt"] == "Supprimer cet article"
+    assert sample_amendments_df.loc[2, "Objet amdt"] == "Supprimer cet article."
+    assert sample_amendments_df.loc[3, "Objet amdt"] == "Supprimer cet article."
 
 
 def test_process_amendments_with_custom_summary_column(
@@ -57,8 +57,8 @@ def test_process_amendments_with_custom_summary_column(
 
     assert sample_amendments_df.loc[0, "Objet Custom"] == "mock_summary"
     assert sample_amendments_df.loc[1, "Objet Custom"] == "mock_summary"
-    assert sample_amendments_df.loc[2, "Objet Custom"] == "Supprimer cet article"
-    assert sample_amendments_df.loc[3, "Objet Custom"] == "Supprimer cet article"
+    assert sample_amendments_df.loc[2, "Objet Custom"] == "Supprimer cet article."
+    assert sample_amendments_df.loc[3, "Objet Custom"] == "Supprimer cet article."
 
 
 def test_process_amendments_with_low_stop_index(mock_llm_client, sample_amendments_df):
@@ -71,7 +71,7 @@ def test_process_amendments_with_low_stop_index(mock_llm_client, sample_amendmen
 
     assert sample_amendments_df.loc[0, "Objet amdt"] == "mock_summary"
     assert sample_amendments_df.loc[1, "Objet amdt"] == "mock_summary"
-    assert sample_amendments_df.loc[2, "Objet amdt"] == "Supprimer cet article"
+    assert sample_amendments_df.loc[2, "Objet amdt"] == "Supprimer cet article."
     assert sample_amendments_df.loc[3, "Objet amdt"] == ""
 
 
