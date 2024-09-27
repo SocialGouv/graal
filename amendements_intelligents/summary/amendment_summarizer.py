@@ -130,9 +130,9 @@ class AmendmentSummarizer:
             ):
                 self.amendments_df.loc[
                     self.amendments_df["amdt_idx"] == amdt_idx, self.summary_column
-                ] = "Supprimer cet article"
+                ] = "Supprimer cet article."
                 logging.info(f'"Supprimer cet article" for amdt_idx {amdt_idx}')
-                future = executor.submit(lambda x: x, "Supprimer cet article")
+                future = executor.submit(lambda x: x, "Supprimer cet article.")
                 futures_to_amdt_idx[future] = amdt_idx
                 return
 
