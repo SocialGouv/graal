@@ -227,7 +227,7 @@ class AttributionPopulator:
                 else row.get("Commentaires", ""),
                 axis=1,
             )
-        amendments_df.reset_index(inplace=True)
+            amendments_df.reset_index(inplace=True)
 
         # Step 2: Match keywords to amendments
         keyword_matches_df = self.match_keywords_to_amendments(threshold=99)
@@ -321,5 +321,12 @@ class AttributionPopulator:
         logging.info(
             f"Number of rows with non-empty 'Affectation (email)': {non_empty_email_count}"
         )
+
+        # Not super proud of this since I am undoing a lot of the work I did above but I can't make
+        # a pre-filtering step work for some reason so this will do (it's not a big time waste)
+        amendments_df.loc[
+            ~amendments_df["Num article"].str.startswith("Article add."),
+            ["Affectation (nom)", "Affectation (email)"],
+        ] = "", ""
 
         return amendments_df
