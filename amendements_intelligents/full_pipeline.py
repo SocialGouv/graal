@@ -268,6 +268,15 @@ def main():
     result_df = amdt_with_allotments_df
     # END ALIGNING ALL ALLOTED AMENDMENTS
 
+    # BEGIN HANDLING APPEL AMENDMENTS
+    regex_pattern = r"amendements? d.?appel"
+    mask = result_df["Exposé amdt"].apply(
+        lambda x: re.search(regex_pattern, x, re.IGNORECASE) is not None
+    ) & (result_df["Objet amdt"] != "Supprimer cet article.")
+
+    result_df.loc[mask, "Objet amdt"] = "APPEL : " + result_df.loc[mask, "Objet amdt"]
+    # END HANDLING APPEL AMENDMENTS
+
     result_df[COLUMNS_TO_OUTPUT_IN_EXCEL].to_excel(f"{OUTPUT_FILE}.xlsx")
     logging.info(
         f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}.xlsx"
