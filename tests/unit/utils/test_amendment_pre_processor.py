@@ -8,6 +8,8 @@ def test_replace_common_amendment_bodies():
     df = pd.DataFrame(
         {
             "Corps amdt": [
+                "Supprimer l'article liminaire.",
+                "supprimer l'article liminaire",
                 "Supprimer cet article.",
                 "Some other text",
                 "Supprimer l’alinéa 19.",
@@ -17,6 +19,8 @@ def test_replace_common_amendment_bodies():
                 'Long enough to stay the same, Long enough to stay the same, Long enough to stay the same, Long enough to stay the same but it contains "Supprimer les alinéas 1 à 10"',
             ],
             "Num article": [
+                "Article 1",
+                "Article 1",
                 "Article 1",
                 "Article 2",
                 "Article 3",
@@ -32,6 +36,8 @@ def test_replace_common_amendment_bodies():
     preprocessed_amendments_df = amendments_processor.handle_common_amendment_bodies(df)
 
     expected_processed_legistique = [
+        "Supprimer cet article. Article 1",
+        "Supprimer cet article. Article 1",
         "Supprimer cet article. Article 1",
         "Some other text Article 2",
         "Supprimer l’alinéa 19. Article 3",

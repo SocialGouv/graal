@@ -107,6 +107,15 @@ class AmendmentPreProcessor:
         Otherwise they are not discriminative enough.
         """
 
+        amendments_df[amdt_bodies_column] = amendments_df[
+            amdt_bodies_column
+        ].str.replace(
+            r"supprimer l'article liminaire\.?",
+            "Supprimer cet article.",
+            regex=True,
+            case=False,
+        )
+
         very_common_patterns = [
             "Supprimer cet article\\.?",
             "Supprimer l(?:'|’)alinéa \\d{1,5}\\.?",
