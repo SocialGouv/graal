@@ -56,11 +56,13 @@ def main():
         "Avis du Gouvernement",
         "Réponse",
         "Sort",
+        "Num article",
         "Affectation (email)",
         "Affectation (nom)",
         "Commentaires",
         "Exposé amdt",
         "Corps amdt",
+        "amdt_idx",
     ]
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
 
