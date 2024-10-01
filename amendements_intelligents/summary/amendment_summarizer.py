@@ -114,8 +114,16 @@ class AmendmentSummarizer:
         cleaned_amdt_body = SummaryTextNormalizer.normalize_text(row["Corps amdt"])
 
         if cleaned_explanatory_statement != "" and cleaned_amdt_body != "":
-            if cleaned_explanatory_statement.startswith(
-                SummaryTextNormalizer.normalize_text("Amendement rédactionnel.")
+            if (
+                cleaned_explanatory_statement.startswith(
+                    SummaryTextNormalizer.normalize_text("Amendement rédactionnel.")
+                )
+                or SummaryTextNormalizer.normalize_text(
+                    "correction d'erreur matérielle"
+                )
+                in cleaned_explanatory_statement
+                or SummaryTextNormalizer.normalize_text("amendement de précision")
+                in cleaned_explanatory_statement
             ):
                 self.amendments_df.loc[
                     self.amendments_df["amdt_idx"] == amdt_idx, self.summary_column

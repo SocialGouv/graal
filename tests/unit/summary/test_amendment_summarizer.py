@@ -151,3 +151,28 @@ def test_retry_task(mock_llm_client, sample_amendments_df):
     future = list(futures_to_index.keys())[0]
     assert future.retries == 1
     assert futures_to_index[future] == 0
+
+
+def test_submit_task_if_valid_with_redundant_amendment(
+    mock_llm_client, sample_amendments_df
+):
+    sample_amendments_df.loc[0, "Exposé amdt"] = "Amendement rédactionnel."
+    sample_amendments_df.loc[1, "Exposé amdt"] = (
+        "Test avec correction d'erreur matérielle au milieu."
+    )
+    sample_amendments_df.loc[2, "Exposé amdt"] = """Amendement de précision
+ 
+Les sujets environnementaux"""
+    processor = AmendmentSummarizer(
+        sample_amendments_df, mock_llm_client, summary_column="Objet amdt"
+    )
+    executor = Mock()
+    futures_to_amdt_idx = {}
+
+    processor._submit_task_if_valid(0, futures_to_amdt_idx, executor)
+    processor._submit_task_if_valid(1, futures_to_amdt_idx, executor)
+    processor._submit_task_if_valid(2, futures_to_amdt_idx, executor)
+
+    assert sample_amendments_df.loc[0, "Objet amdt"] == "Amendement rédactionnel."
+    assert sample_amendments_df.loc[1, "Objet amdt"] == "Amendement rédactionnel."
+    assert sample_amendments_df.loc[2, "Objet amdt"] == "Amendement rédactionnel."
