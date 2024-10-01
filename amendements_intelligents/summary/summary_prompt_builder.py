@@ -71,6 +71,7 @@ Le résumé doit suivre ces règles strictes :
 14. Préciser le fond de l'amendement.
 15. Préciser les conditions de les critères d'application de l'amendement.
 16. Si l'amendement concerne un rapport, commence ta réponse par "Remettre un rapport"
+17. Si l'amendement concerne une expérimentation, commence ta réponse par "Expérimenter", suivi du sujet de l'expérimentation
 
 Utilise principalement l'exposé de l'amendement pour extraire les informations pertinentes, mais tu peux également t'appuyer sur le corps de l'amendement.
 
