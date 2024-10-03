@@ -13,21 +13,25 @@ class AttributionPopulator:
     def __init__(
         self,
         amendments_df: pd.DataFrame,
-        articles_set: set[str],
         attribution_mappings_when_empty: list[str],
         codes_articles_df: pd.DataFrame,
-        codes_set: set[str],
         keywords_df: pd.DataFrame,
-        latin_ordinals_set: set[str],
-        max_code_length: int,
         name_to_email_mapping: dict[str, str],
         ignore_interstitial_amdts: bool = True,
     ):
+        max_code_length = codes_articles_df["Code"].str.len().max()
+        articles_set = set(codes_articles_df["Articles"])
+        pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
+        latin_ordinals_set = {
+            match.group(1)
+            for article in articles_set
+            if (match := pattern.match(article)) and match.group(1)
+        }
         self.matcher = AttributionMatcher()
         self.amendments_df = amendments_df
         self.articles_set = articles_set
         self.codes_articles_df = codes_articles_df
-        self.codes_set = codes_set
+        self.codes_set = set(codes_articles_df["Code"])
         self.keywords_df = keywords_df
         self.latin_ordinals_set = latin_ordinals_set
         self.max_code_length = max_code_length
@@ -39,7 +43,7 @@ class AttributionPopulator:
     def update_with_keyword_matches(
         row: pd.Series, keyword_matches_df: pd.DataFrame
     ) -> list:
-        attribution_names = row["Affectation (nom)"]
+        current_attribution_names = row["Affectation (nom)"]
         value = (
             keyword_matches_df.loc[row.name]["Affectation (nom)"]
             if row.name in keyword_matches_df.index
@@ -53,17 +57,17 @@ class AttributionPopulator:
             else value
         )
 
-        if not attribution_names:
+        if not current_attribution_names:
             return sorted(keyword_attribution_names)
 
-        if len(attribution_names) == 1:
-            return list(attribution_names)
+        if len(current_attribution_names) == 1:
+            return list(current_attribution_names)
 
         common_names = sorted(
-            set(attribution_names).intersection(keyword_attribution_names)
+            set(current_attribution_names).intersection(keyword_attribution_names)
         )
         if not common_names:
-            return sorted(attribution_names)
+            return sorted(current_attribution_names)
         return common_names
 
     def match_codes_and_articles_to_amendments(

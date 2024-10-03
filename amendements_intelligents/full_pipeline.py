@@ -182,25 +182,11 @@ def main():
         attribution_mappings_excel
     )
 
-    codes_set = set(codes_articles_df["Code"])
-    max_code_length = codes_articles_df["Code"].str.len().max()
-    articles_set = set(codes_articles_df["Articles"])
-    pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
-    latin_ordinals_set = {
-        match.group(1)
-        for article in articles_set
-        if (match := pattern.match(article)) and match.group(1)
-    }
-
     attributor = AttributionPopulator(
         amendments_df=amdt_with_attribution_df,
-        articles_set=articles_set,
         attribution_mappings_when_empty=attribution_mappings_when_empty,
         codes_articles_df=codes_articles_df,
-        codes_set=codes_set,
         keywords_df=keywords_df,
-        latin_ordinals_set=latin_ordinals_set,
-        max_code_length=max_code_length,
         name_to_email_mapping=name_to_email_mapping,
     )
     amdt_with_attribution_df = attributor.populate()
