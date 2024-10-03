@@ -40,10 +40,17 @@ class AttributionPopulator:
         row: pd.Series, keyword_matches_df: pd.DataFrame
     ) -> list:
         attribution_names = row["Affectation (nom)"]
-        keyword_attribution_names = set(
+        value = (
             keyword_matches_df.loc[row.name]["Affectation (nom)"]
             if row.name in keyword_matches_df.index
             else []
+        )
+        keyword_attribution_names = set(
+            value.values
+            if hasattr(value, "values")
+            else [value]
+            if isinstance(value, str)
+            else value
         )
 
         if not attribution_names:
@@ -200,8 +207,12 @@ class AttributionPopulator:
             best_matches_per_amdt
         )
         grouped_matching_df = self.aggregate_matches_by_amendment(matching_rows_df)
-        amendments_df = self.amendments_df.set_index("amdt_idx")
+        amendments_df = self.amendments_df
+        if "Commentaires" not in amendments_df.columns:
+            amendments_df["Commentaires"] = ""
+
         if not grouped_matching_df.empty:
+            amendments_df.set_index("amdt_idx", inplace=True)
             amendments_df["Affectation (nom)"] = grouped_matching_df.set_index(
                 "amdt_idx"
             )["Affectation (nom)"]
@@ -216,7 +227,7 @@ class AttributionPopulator:
                 f"After articles, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
             )
 
-            amendments_df["Commentaires"] = amendments_df.apply(
+            amendments_df["Commentaires"] += amendments_df.apply(
                 lambda row: f"Affectations possibles après affectation par articles : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
                 else row.get("Commentaires", ""),
@@ -321,7 +332,9 @@ class AttributionPopulator:
         # a pre-filtering step work for some reason so this will do (it's not a big time waste)
         if self.ignore_interstitial_amdts:
             amendments_df.loc[
-                ~amendments_df["Num article"].str.startswith("Article add."),
+                ~amendments_df["Num article"]
+                .str.lower()
+                .str.startswith("article add."),
                 ["Affectation (nom)", "Affectation (email)"],
             ] = "", ""
 

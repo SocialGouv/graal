@@ -82,18 +82,16 @@ def test_integration_attribute_amendments():
 
     diff_df = pd.DataFrame()
     for _, matching_row in amendments_df.iterrows():
-        num_amdt, lecture = matching_row["Num amdt"], matching_row["Lecture"]
+        amdt_idx = matching_row["amdt_idx"]
         found_nom_matches = matching_row["Affectation (nom)"]
         found_email_matches = matching_row["Affectation (email)"]
 
         expected_nom_matches = original_amendments_df.loc[
-            (original_amendments_df["Num amdt"] == num_amdt)
-            & (original_amendments_df["Lecture"] == lecture),
+            (original_amendments_df["amdt_idx"] == amdt_idx),
             "Affectation (nom)",
         ].values[0]
         expected_email_matches = original_amendments_df.loc[
-            (original_amendments_df["Num amdt"] == num_amdt)
-            & (original_amendments_df["Lecture"] == lecture),
+            (original_amendments_df["amdt_idx"] == amdt_idx),
             "Affectation (email)",
         ].values[0]
 
@@ -111,8 +109,7 @@ def test_integration_attribute_amendments():
                     diff_df,
                     pd.DataFrame(
                         {
-                            "Num amdt": [num_amdt],
-                            "Lecture": [lecture],
+                            "amdt_idx": [amdt_idx],
                             "found_nom": [found_nom_matches],
                             "found_email": [found_email_matches],
                             "expected_nom": [expected_nom_matches],
@@ -128,9 +125,4 @@ def test_integration_attribute_amendments():
             'Diff found and saved in "tests/integration/test_data/diff_amendments.csv"'
         )
 
-    assert diff_df.empty, f"Differences found: {len(diff_df)}"
-
-    assert diff_df.empty, f"Differences found: {len(diff_df)}"
-
-    assert diff_df.empty, f"Differences found: {len(diff_df)}"
     assert diff_df.empty, f"Differences found: {len(diff_df)}"

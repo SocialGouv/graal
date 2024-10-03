@@ -21,7 +21,7 @@ def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     AMENDMENTS_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_2.xlsx"
-    OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_keyword_and_code_art_affectation.xlsx"
+    OUTPUT_FILE = f"{DATA_FOLDER}/test_attrib_amdt_idx.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     YEAR = 2024
 
@@ -87,6 +87,7 @@ def main():
     amendments_df[
         [
             "Num amdt",
+            "Num article",
             "Affectation (nom)",
             "Affectation (email)",
             "Exposé amdt",
