@@ -7,21 +7,36 @@ class AttributionDataLoader:
     @staticmethod
     def load_codes_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize codes and articles from the data."""
-        codes_articles_df = excel_data["Code et Article"].copy()
-        codes_articles_df["Type"] = codes_articles_df["Type"].str.lower()
-        codes_articles_df = codes_articles_df[
-            codes_articles_df["Type"].str.contains("code", na=False)
+        return AttributionDataLoader.load_articles_by_type(excel_data, "code")
+
+    @staticmethod
+    def load_laws_and_articles(excel_data: dict) -> pd.DataFrame:
+        """Load and normalize laws and articles from the data."""
+        return AttributionDataLoader.load_articles_by_type(excel_data, "loi")
+
+    @staticmethod
+    def load_ordonnances_and_articles(excel_data: dict) -> pd.DataFrame:
+        """Load and normalize ordonnances and articles from the data."""
+        return AttributionDataLoader.load_articles_by_type(excel_data, "ordonnance")
+
+    @staticmethod
+    def load_articles_by_type(excel_data: dict, article_type: str) -> pd.DataFrame:
+        """Load and normalize articles by type from the data."""
+        articles_df = excel_data["Code et Article"].copy()
+        articles_df["Type"] = articles_df["Type"].str.lower()
+        articles_df = articles_df[
+            articles_df["Type"].str.contains(article_type, na=False)
         ]
-        codes_articles_df.loc[:, "Articles"] = codes_articles_df["Articles"].apply(
+        articles_df.loc[:, "Articles"] = articles_df["Articles"].apply(
             lambda x: AttributionTextNormalizer.normalize_text(str(x))
         )
-        codes_articles_df.loc[:, "Valeur"] = codes_articles_df["Valeur"].apply(
+        articles_df.loc[:, "Valeur"] = articles_df["Valeur"].apply(
             lambda x: AttributionTextNormalizer.normalize_text(str(x))
         )
-        codes_articles_df.rename(
+        articles_df.rename(
             columns={"Prénom Nom": "Affectation (nom)", "Valeur": "value"}, inplace=True
         )
-        return codes_articles_df
+        return articles_df
 
     @staticmethod
     def load_keywords(
