@@ -21,13 +21,8 @@ class AttributionMatcher:
         self, amendment: dict, keywords: Set[str], threshold: int
     ) -> list[dict[str, str]]:
         """Perform fuzzy matching of keywords against amendment text."""
-        num_amdt, lecture, text = (
-            amendment["Num amdt"],
-            amendment["Lecture"],
-            amendment["Corps amdt"],
-        )
         return [
-            {"Num amdt": num_amdt, "Lecture": lecture, "Keyword": keyword}
+            {"amdt_idx": amendment["amdt_idx"], "Keyword": keyword}
             for keyword in keywords
-            if fuzz.partial_ratio(keyword, text) >= threshold
+            if fuzz.partial_ratio(keyword, amendment["Corps amdt"]) >= threshold
         ]

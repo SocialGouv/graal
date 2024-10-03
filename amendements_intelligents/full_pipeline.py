@@ -46,7 +46,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024_new_prompt_sept_26"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_sept_26.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_2.xlsx"
     INPUT_FILE = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [

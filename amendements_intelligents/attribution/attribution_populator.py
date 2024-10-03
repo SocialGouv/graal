@@ -1,7 +1,7 @@
 import logging
 import re
 from multiprocessing import Pool, cpu_count
-from typing import Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -61,7 +61,7 @@ class AttributionPopulator:
 
     def match_codes_and_articles_to_amendments(
         self,
-    ) -> dict[Tuple[str, str], dict[str, set[str]]]:
+    ) -> dict[str, dict[str, set[str]]]:
         """Find the best matching codes and articles for each amendment."""
         matches_per_amdt = {}
         possible_ordinals_pattern = "|".join(
@@ -69,8 +69,7 @@ class AttributionPopulator:
         )
         for _, row in self.amendments_df.iterrows():
             normalized_text = row["Corps amdt"]
-            # TODO: Use a amdt_idx instead of the composite of num amdt and lecture which is not reliable.
-            num_amdt, lecture = row["Num amdt"], row["Lecture"]
+            amdt_idx = row["amdt_idx"]
 
             code_matches = re.findall(
                 rf"code [\w']+(?:\s[\w']{{1,{self.max_code_length}}})*", normalized_text
@@ -87,7 +86,7 @@ class AttributionPopulator:
             matched_articles = article_matches.intersection(self.articles_set)
 
             if matched_codes and matched_articles:
-                matches_per_amdt[(num_amdt, lecture)] = {
+                matches_per_amdt[amdt_idx] = {
                     "matching_codes": matched_codes,
                     "matching_articles": matched_articles,
                 }
@@ -95,34 +94,29 @@ class AttributionPopulator:
         return matches_per_amdt
 
     def filter_matching_codes_and_articles(
-        self, matches_per_amdt: dict[Tuple[str, str], dict[str, set[str]]]
+        self, matches_per_amdt: dict[str, dict[str, set[str]]]
     ) -> pd.DataFrame:
         """Retrieve rows from the codes and articles DataFrame that match the amendments."""
         matching_rows_df = pd.DataFrame(
             columns=[
                 "Affectation (nom)",
                 "Articles",
-                "Value",
+                "Code",
                 "Corps amdt",
-                "Num amdt",
-                "Lecture",
-                "Bureau",
+                "amdt_idx",
             ]
         )
 
-        for (num_amdt, lecture), matches in matches_per_amdt.items():
+        for amdt_idx, matches in matches_per_amdt.items():
             matched_rows = self.codes_articles_df[
-                self.codes_articles_df["Value"].isin(matches["matching_codes"])
+                self.codes_articles_df["Code"].isin(matches["matching_codes"])
                 & self.codes_articles_df["Articles"].isin(matches["matching_articles"])
             ].copy()
 
             if not matched_rows.empty:
-                matched_rows["Num amdt"] = num_amdt
-                matched_rows["Lecture"] = lecture
+                matched_rows["amdt_idx"] = amdt_idx
                 matched_rows["Corps amdt"] = self.amendments_df.loc[
-                    (self.amendments_df["Num amdt"] == num_amdt)
-                    & (self.amendments_df["Lecture"] == lecture),
-                    "Corps amdt",
+                    self.amendments_df["amdt_idx"] == amdt_idx, "Corps amdt"
                 ].values[0]
                 matching_rows_df = pd.concat([matching_rows_df, matched_rows])
 
@@ -131,9 +125,9 @@ class AttributionPopulator:
     def aggregate_matches_by_amendment(
         self, matching_rows_df: pd.DataFrame
     ) -> pd.DataFrame:
-        """Group matching rows by amendment and lecture."""
+        """Group matching rows by amendment index."""
         return (
-            matching_rows_df.groupby(["Num amdt", "Lecture"])
+            matching_rows_df.groupby("amdt_idx")
             .agg({"Affectation (nom)": lambda x: list(sorted(set(x)))})
             .reset_index()
         )
@@ -154,7 +148,7 @@ class AttributionPopulator:
 
     def parallel_keyword_fuzzy_matching(
         self, keywords: set[str], matcher: AttributionMatcher, threshold: int
-    ) -> list[dict[str, str]]:
+    ) -> list[dict[str, Any]]:
         """Parallel fuzzy matching of keywords."""
         amendments = self.amendments_df.to_dict(orient="records")
         with Pool(cpu_count()) as pool:
@@ -206,23 +200,22 @@ class AttributionPopulator:
             best_matches_per_amdt
         )
         grouped_matching_df = self.aggregate_matches_by_amendment(matching_rows_df)
-        amendments_df = self.amendments_df.set_index(["Num amdt", "Lecture"])
+        amendments_df = self.amendments_df.set_index("amdt_idx")
         if not grouped_matching_df.empty:
             amendments_df["Affectation (nom)"] = grouped_matching_df.set_index(
-                ["Num amdt", "Lecture"]
+                "amdt_idx"
             )["Affectation (nom)"]
             amendments_df["Affectation (nom)"] = amendments_df[
                 "Affectation (nom)"
             ].apply(
                 lambda x: x if isinstance(x, list) else [x] if pd.notnull(x) else []
-            )  # Ensure lists and replace nan with empty list
+            )
 
             ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
             logging.info(
                 f"After articles, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
             )
 
-            # Append the resulting "Affectation (nom)" to "Commentaires"
             amendments_df["Commentaires"] = amendments_df.apply(
                 lambda row: f"Affectations possibles après affectation par articles : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
@@ -234,9 +227,9 @@ class AttributionPopulator:
         # Step 2: Match keywords to amendments
         keyword_matches_df = self.match_keywords_to_amendments(threshold=99)
         if not keyword_matches_df.empty:
-            keyword_matches_df.set_index(["Num amdt", "Lecture"], inplace=True)
+            keyword_matches_df.set_index("amdt_idx", inplace=True)
             keyword_matches_df.sort_index(inplace=True)
-            amendments_df.set_index(["Num amdt", "Lecture"], inplace=True)
+            amendments_df.set_index("amdt_idx", inplace=True)
 
             amendments_df["Affectation (nom)"] = amendments_df.apply(
                 AttributionPopulator.update_with_keyword_matches,
