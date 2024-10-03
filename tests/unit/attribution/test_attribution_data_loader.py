@@ -12,9 +12,10 @@ def excel_data():
     return {
         "Code et Article": pd.DataFrame(
             {
-                "Prénom Nom": ["John Doe", "Jane Smith"],
-                "Articles": ["Article 1", "Article 2"],
-                "Code": ["Code 1", "Code 2"],
+                "Prénom Nom": ["John Doe", "Jane Smith", "John Doe", "Bob Smith"],
+                "Articles": ["Article 1", "Article 2", "Article 3", "Article 1"],
+                "Type": ["code", "Code", "loi", "ordonnance"],
+                "Valeur": ["Code 1", "Code 2", "Loi 1", "Ordonnance 1"],
             }
         ),
         "Mots clés": pd.DataFrame(
@@ -50,7 +51,8 @@ def test_load_codes_and_articles(excel_data, mocker):
         {
             "Affectation (nom)": ["John Doe", "Jane Smith"],
             "Articles": ["article 1", "article 2"],
-            "Code": ["code 1", "code 2"],
+            "Type": ["code", "code"],
+            "value": ["code 1", "code 2"],
         }
     )
     pd.testing.assert_frame_equal(result, expected)

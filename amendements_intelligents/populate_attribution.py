@@ -19,9 +19,9 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    AMENDMENTS_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_2.xlsx"
-    OUTPUT_FILE = f"{DATA_FOLDER}/test_attrib_amdt_idx.xlsx"
+    AMENDMENTS_FILE = f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_new_format.xlsx"
+    OUTPUT_FILE = f"{DATA_FOLDER}/test_attributions_new_format.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     YEAR = 2024
 
@@ -72,12 +72,16 @@ def main():
 
     amendments_df[
         [
+            "amdt_idx",
             "Num amdt",
             "Num article",
-            "Affectation (nom)",
-            "Affectation (email)",
-            "Exposé amdt",
+            "auteur",
+            "Groupe",
             "Corps amdt",
+            "Exposé amdt",
+            "Objet amdt",
+            "Affectation (email)",
+            "Affectation (nom)",
             "Commentaires",
         ]
     ].to_excel(OUTPUT_FILE, index=False)

@@ -19,7 +19,7 @@ class AttributionPopulator:
         name_to_email_mapping: dict[str, str],
         ignore_interstitial_amdts: bool = True,
     ):
-        max_code_length = codes_articles_df["Code"].str.len().max()
+        max_code_length = codes_articles_df["value"].str.len().max()
         articles_set = set(codes_articles_df["Articles"])
         pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
         latin_ordinals_set = {
@@ -31,7 +31,7 @@ class AttributionPopulator:
         self.amendments_df = amendments_df
         self.articles_set = articles_set
         self.codes_articles_df = codes_articles_df
-        self.codes_set = set(codes_articles_df["Code"])
+        self.codes_set = set(codes_articles_df["value"])
         self.keywords_df = keywords_df
         self.latin_ordinals_set = latin_ordinals_set
         self.max_code_length = max_code_length
@@ -112,7 +112,7 @@ class AttributionPopulator:
             columns=[
                 "Affectation (nom)",
                 "Articles",
-                "Code",
+                "value",
                 "Corps amdt",
                 "amdt_idx",
             ]
@@ -120,7 +120,7 @@ class AttributionPopulator:
 
         for amdt_idx, matches in matches_per_amdt.items():
             matched_rows = self.codes_articles_df[
-                self.codes_articles_df["Code"].isin(matches["matching_codes"])
+                self.codes_articles_df["value"].isin(matches["matching_codes"])
                 & self.codes_articles_df["Articles"].isin(matches["matching_articles"])
             ].copy()
 

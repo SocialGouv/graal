@@ -7,15 +7,19 @@ class AttributionDataLoader:
     @staticmethod
     def load_codes_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize codes and articles from the data."""
-        codes_articles_df = excel_data["Code et Article"]
+        codes_articles_df = excel_data["Code et Article"].copy()
+        codes_articles_df["Type"] = codes_articles_df["Type"].str.lower()
+        codes_articles_df = codes_articles_df[
+            codes_articles_df["Type"].str.contains("code", na=False)
+        ]
+        codes_articles_df.loc[:, "Articles"] = codes_articles_df["Articles"].apply(
+            lambda x: AttributionTextNormalizer.normalize_text(str(x))
+        )
+        codes_articles_df.loc[:, "Valeur"] = codes_articles_df["Valeur"].apply(
+            lambda x: AttributionTextNormalizer.normalize_text(str(x))
+        )
         codes_articles_df.rename(
-            columns={"Prénom Nom": "Affectation (nom)"}, inplace=True
-        )
-        codes_articles_df["Articles"] = codes_articles_df["Articles"].apply(
-            lambda x: AttributionTextNormalizer.normalize_text(str(x))
-        )
-        codes_articles_df["Code"] = codes_articles_df["Code"].apply(
-            lambda x: AttributionTextNormalizer.normalize_text(str(x))
+            columns={"Prénom Nom": "Affectation (nom)", "Valeur": "value"}, inplace=True
         )
         return codes_articles_df
 

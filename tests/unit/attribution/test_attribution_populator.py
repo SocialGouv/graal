@@ -35,7 +35,7 @@ def sample_amendments_df():
 def sample_codes_articles_df():
     return pd.DataFrame(
         {
-            "Code": ["civil", "penal", "rural"],
+            "value": ["civil", "penal", "rural"],
             "Articles": ["1234", "42", "567"],
             "Affectation (nom)": ["Expert1", "Expert2", "Expert3"],
         }
