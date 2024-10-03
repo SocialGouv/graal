@@ -1,5 +1,6 @@
 import logging
 import re
+from heapq import merge
 from multiprocessing import Pool, cpu_count
 from typing import Any
 
@@ -15,12 +16,25 @@ class AttributionPopulator:
         amendments_df: pd.DataFrame,
         attribution_mappings_when_empty: list[str],
         codes_articles_df: pd.DataFrame,
+        laws_articles_df: pd.DataFrame,
+        ordonnances_articles_df: pd.DataFrame,
         keywords_df: pd.DataFrame,
         name_to_email_mapping: dict[str, str],
         ignore_interstitial_amdts: bool = True,
     ):
-        max_code_length = codes_articles_df["value"].str.len().max()
-        articles_set = set(codes_articles_df["Articles"])
+        codes_set = set(codes_articles_df["value"])
+        max_code_length = max((len(code) for code in codes_set), default=2)
+        laws_set = set(laws_articles_df["value"])
+        max_law_length = max((len(law) for law in laws_set), default=2)
+        ordonnances_set = set(ordonnances_articles_df["value"])
+        max_ordonnance_length = max(
+            (len(ordonnance) for ordonnance in ordonnances_set), default=2
+        )
+        articles_set = (
+            set(codes_articles_df["Articles"])
+            .union(set(laws_articles_df["Articles"]))
+            .union(set(ordonnances_articles_df["Articles"]))
+        )
         pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
         latin_ordinals_set = {
             match.group(1)
@@ -31,10 +45,16 @@ class AttributionPopulator:
         self.amendments_df = amendments_df
         self.articles_set = articles_set
         self.codes_articles_df = codes_articles_df
-        self.codes_set = set(codes_articles_df["value"])
+        self.laws_articles_df = laws_articles_df
+        self.ordonnances_articles_df = ordonnances_articles_df
+        self.codes_set = codes_set
+        self.laws_set = laws_set
+        self.ordonnances_set = ordonnances_set
         self.keywords_df = keywords_df
         self.latin_ordinals_set = latin_ordinals_set
         self.max_code_length = max_code_length
+        self.max_law_length = max_law_length
+        self.max_ordonnance_length = max_ordonnance_length
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
         self.name_to_email_mapping = name_to_email_mapping
         self.ignore_interstitial_amdts = ignore_interstitial_amdts
@@ -70,41 +90,77 @@ class AttributionPopulator:
             return sorted(current_attribution_names)
         return common_names
 
-    def match_codes_and_articles_to_amendments(
-        self,
+    def match_entities_and_articles_to_amendments(
+        self, entity_type: str, entity_set: set[str], max_entity_length: int
     ) -> dict[str, dict[str, set[str]]]:
-        """Find the best matching codes and articles for each amendment."""
+        """Find the best matching entities (codes or laws) and articles for each amendment."""
         matches_per_amdt = {}
         possible_ordinals_pattern = "|".join(
             sorted(self.latin_ordinals_set, reverse=True)
         )
+
+        patterns = {
+            "code": rf"code [\w']+(?:\s[\w']{{1,{max_entity_length}}})+",
+            "law": rf"loi n.\s?[\w\s\-]{{1,{max_entity_length}}}",
+            "ordonnance": rf"ordonnance n.\s?[\w\s\-]{{1,{max_entity_length}}}",
+        }
+        entity_pattern = patterns.get(entity_type, "")
+
         for _, row in self.amendments_df.iterrows():
             normalized_text = row["Corps amdt"]
             amdt_idx = row["amdt_idx"]
 
-            code_matches = re.findall(
-                rf"code [\w']+(?:\s[\w']{{1,{self.max_code_length}}})*", normalized_text
-            )
-            matched_codes = {
-                self.matcher.find_best_match(match, self.codes_set, threshold=60)
-                for match in code_matches
+            entity_matches = re.findall(entity_pattern, normalized_text)
+            matched_entities = {
+                self.matcher.find_best_match(match, entity_set, threshold=60)
+                for match in entity_matches
                 if match is not None
             }
-            matched_codes = {code for code in matched_codes if code is not None}
+            matched_entities = {
+                entity for entity in matched_entities if entity is not None
+            }
 
-            article_pattern = rf"(?:(?:l\.|articles?|Art\.))+(?: et |\s?(\d+(?:-\d+)*(?:\s?(?:{possible_ordinals_pattern}))?))+"
+            article_pattern = rf"(?:(?:l\.|articles?|art))+(?: et |\s?(\d+(?:-\d+)*(?:\s?(?:{possible_ordinals_pattern}))?))+"
             article_matches = set(re.findall(article_pattern, normalized_text))
-            matched_articles = article_matches.intersection(self.articles_set)
+            matched_articles = {
+                article.strip() for article in article_matches
+            }.intersection(self.articles_set)
 
-            if matched_codes and matched_articles:
+            if matched_entities and matched_articles:
                 matches_per_amdt[amdt_idx] = {
-                    "matching_codes": matched_codes,
+                    "matching_entities": matched_entities,
                     "matching_articles": matched_articles,
                 }
 
         return matches_per_amdt
 
-    def filter_matching_codes_and_articles(
+    def match_codes_and_articles_to_amendments(self) -> dict[str, dict[str, set[str]]]:
+        """Find the best matching codes and articles for each amendment."""
+        return self.match_entities_and_articles_to_amendments(
+            entity_type="code",
+            entity_set=self.codes_set,
+            max_entity_length=self.max_code_length,
+        )
+
+    def match_laws_and_articles_to_amendments(self) -> dict[str, dict[str, set[str]]]:
+        """Find the best matching laws and articles for each amendment."""
+        return self.match_entities_and_articles_to_amendments(
+            entity_type="law",
+            entity_set=self.laws_set,
+            max_entity_length=self.max_law_length,
+        )
+
+    def match_ordonnances_and_articles_to_amendments(
+        self,
+    ) -> dict[str, dict[str, set[str]]]:
+        """Find the best matching ordonnances and articles for each amendment."""
+        return self.match_entities_and_articles_to_amendments(
+            entity_type="ordonnance",
+            entity_set=self.ordonnances_set,
+            max_entity_length=self.max_ordonnance_length,
+        )
+
+    def filter_matching_entities_and_articles(
         self, matches_per_amdt: dict[str, dict[str, set[str]]]
     ) -> pd.DataFrame:
         """Retrieve rows from the codes and articles DataFrame that match the amendments."""
@@ -119,10 +175,22 @@ class AttributionPopulator:
         )
 
         for amdt_idx, matches in matches_per_amdt.items():
-            matched_rows = self.codes_articles_df[
-                self.codes_articles_df["value"].isin(matches["matching_codes"])
+            matched_codes = self.codes_articles_df[
+                self.codes_articles_df["value"].isin(matches["matching_entities"])
                 & self.codes_articles_df["Articles"].isin(matches["matching_articles"])
             ].copy()
+            matched_laws = self.laws_articles_df[
+                self.laws_articles_df["value"].isin(matches["matching_entities"])
+                & self.laws_articles_df["Articles"].isin(matches["matching_articles"])
+            ].copy()
+            matched_ordonnances = self.ordonnances_articles_df[
+                self.ordonnances_articles_df["value"].isin(matches["matching_entities"])
+                & self.ordonnances_articles_df["Articles"].isin(
+                    matches["matching_articles"]
+                )
+            ].copy()
+
+            matched_rows = pd.concat([matched_codes, matched_laws, matched_ordonnances])
 
             if not matched_rows.empty:
                 matched_rows["amdt_idx"] = amdt_idx
@@ -206,8 +274,17 @@ class AttributionPopulator:
 
     def populate(self):
         # Step 1: Match codes and articles to amendments
-        best_matches_per_amdt = self.match_codes_and_articles_to_amendments()
-        matching_rows_df = self.filter_matching_codes_and_articles(
+        best_code_matches_per_amdt = self.match_codes_and_articles_to_amendments()
+        best_law_matches_per_amdt = self.match_laws_and_articles_to_amendments()
+        best_ordonnance_matches_per_amdt = (
+            self.match_ordonnances_and_articles_to_amendments()
+        )
+        best_matches_per_amdt = {
+            **best_code_matches_per_amdt,
+            **best_law_matches_per_amdt,
+            **best_ordonnance_matches_per_amdt,
+        }
+        matching_rows_df = self.filter_matching_entities_and_articles(
             best_matches_per_amdt
         )
         grouped_matching_df = self.aggregate_matches_by_amendment(matching_rows_df)

@@ -20,7 +20,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     AMENDMENTS_FILE = f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_new_format.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_3.xlsx"
     OUTPUT_FILE = f"{DATA_FOLDER}/test_attributions_new_format.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     YEAR = 2024
@@ -48,6 +48,12 @@ def main():
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
         attribution_mappings_excel
     )
+    laws_articles_df = AttributionDataLoader.load_laws_and_articles(
+        attribution_mappings_excel
+    )
+    ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
+        attribution_mappings_excel
+    )
     keywords_df = AttributionDataLoader.load_keywords(
         excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
     )
@@ -64,6 +70,8 @@ def main():
         amendments_df=amendments_df,
         attribution_mappings_when_empty=attribution_mappings_when_empty,
         codes_articles_df=codes_articles_df,
+        laws_articles_df=laws_articles_df,
+        ordonnances_articles_df=ordonnances_articles_df,
         keywords_df=keywords_df,
         name_to_email_mapping=name_to_email_mapping,
     )

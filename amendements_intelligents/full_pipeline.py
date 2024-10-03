@@ -167,6 +167,12 @@ def main():
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
         attribution_mappings_excel
     )
+    laws_articles_df = AttributionDataLoader.load_laws_and_articles(
+        attribution_mappings_excel
+    )
+    ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
+        attribution_mappings_excel
+    )
     keywords_df = AttributionDataLoader.load_keywords(
         excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
     )
@@ -186,6 +192,8 @@ def main():
         amendments_df=amdt_with_attribution_df,
         attribution_mappings_when_empty=attribution_mappings_when_empty,
         codes_articles_df=codes_articles_df,
+        laws_articles_df=laws_articles_df,
+        ordonnances_articles_df=ordonnances_articles_df,
         keywords_df=keywords_df,
         name_to_email_mapping=name_to_email_mapping,
     )

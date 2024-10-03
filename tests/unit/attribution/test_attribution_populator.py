@@ -13,7 +13,7 @@ from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 def sample_amendments_df():
     return pd.DataFrame(
         {
-            "amdt_idx": [1, 2, 3, 4],
+            "amdt_idx": [1, 2, 3, 4, 5, 6, 7, 8, 9],
             "Corps amdt": [
                 AttributionTextNormalizer.normalize_text(
                     "Modification du code civil article l. 1234"
@@ -25,19 +25,73 @@ def sample_amendments_df():
                     "Simple texte sans code ni article"
                 ),
                 AttributionTextNormalizer.normalize_text("Code rural article L. 567"),
+                AttributionTextNormalizer.normalize_text(
+                    "art. 32 de la loi nº 96-50 du 24 janvier 1996 de l'infini et l'au-delà"
+                ),
+                AttributionTextNormalizer.normalize_text(
+                    "article l. 321 de la loi nº 97-30 du 15 février 1997 de la blabla"
+                ),
+                AttributionTextNormalizer.normalize_text(
+                    "article 56 de la loi nº 98-45 du 12 mars 1998 du machin bidule"
+                ),
+                AttributionTextNormalizer.normalize_text(
+                    "article 12 de la loi nº 99-60 du 20 avril 1999 bob"
+                ),
+                AttributionTextNormalizer.normalize_text(
+                    "article 20 de l'ordonnance nº 100-60 du 20 avril 1999 bla"
+                ),
             ],
-            "Num article": ["Article 1", "Article add. 2", "Article 3", "Article 4"],
+            "Num article": [
+                "Article 1",
+                "Article add. 2",
+                "Article 3",
+                "Article 4",
+                "Article add. 1",
+                "Article add. 1",
+                "Article add. 2",
+                "Article add. 4",
+                "Article add. 5",
+            ],
         }
     )
 
 
 @pytest.fixture
-def sample_codes_articles_df():
+def codes_articles_df():
     return pd.DataFrame(
         {
             "value": ["civil", "penal", "rural"],
             "Articles": ["1234", "42", "567"],
             "Affectation (nom)": ["Expert1", "Expert2", "Expert3"],
+        }
+    )
+
+
+@pytest.fixture
+def laws_articles_df():
+    return pd.DataFrame(
+        {
+            "value": [
+                "96-50 du 24 janvier 1996",
+                "97-30 du 15 février 1997",
+                "98-45 du 12 mars 1998",
+                "99-60 du 20 avril 1999",
+            ],
+            "Articles": ["32", "321", "56", "12"],
+            "Affectation (nom)": ["Expert1", "Expert2", "Expert3", "Expert1"],
+        }
+    )
+
+
+@pytest.fixture
+def ordonnances_articles_df():
+    return pd.DataFrame(
+        {
+            "value": [
+                "100-60 du 20 avril 1999",
+            ],
+            "Articles": ["20"],
+            "Affectation (nom)": ["Expert1"],
         }
     )
 
@@ -54,12 +108,18 @@ def sample_keywords_df():
 
 @pytest.fixture
 def attribution_populator(
-    sample_amendments_df, sample_codes_articles_df, sample_keywords_df
+    sample_amendments_df,
+    codes_articles_df,
+    laws_articles_df,
+    ordonnances_articles_df,
+    sample_keywords_df,
 ):
     return AttributionPopulator(
         amendments_df=sample_amendments_df,
         attribution_mappings_when_empty=["DefaultExpert"],
-        codes_articles_df=sample_codes_articles_df,
+        codes_articles_df=codes_articles_df,
+        laws_articles_df=laws_articles_df,
+        ordonnances_articles_df=ordonnances_articles_df,
         keywords_df=sample_keywords_df,
         name_to_email_mapping={
             "Expert1": "expert1@example.com",
@@ -75,26 +135,58 @@ def test_match_codes_and_articles_to_amendments(attribution_populator):
     matches = attribution_populator.match_codes_and_articles_to_amendments()
 
     assert len(matches) == 3
-    assert matches[1]["matching_codes"] == {"civil"}
+    assert matches[1]["matching_entities"] == {"civil"}
     assert matches[1]["matching_articles"] == {"1234"}
-    assert matches[2]["matching_codes"] == {"penal"}
+    assert matches[2]["matching_entities"] == {"penal"}
     assert matches[2]["matching_articles"] == {"42"}
-    assert matches[4]["matching_codes"] == {"rural"}
+    assert matches[4]["matching_entities"] == {"rural"}
     assert matches[4]["matching_articles"] == {"567"}
 
 
-def test_filter_matching_codes_and_articles(attribution_populator):
-    matches = attribution_populator.match_codes_and_articles_to_amendments()
-    matching_rows = attribution_populator.filter_matching_codes_and_articles(matches)
+def test_match_laws_and_articles_to_amendments(attribution_populator):
+    matches = attribution_populator.match_laws_and_articles_to_amendments()
 
-    assert len(matching_rows) == 3
+    assert len(matches) == 4
+    assert matches[5]["matching_entities"] == {"96-50 du 24 janvier 1996"}
+    assert matches[5]["matching_articles"] == {"32"}
+    assert matches[6]["matching_entities"] == {"97-30 du 15 février 1997"}
+    assert matches[6]["matching_articles"] == {"321"}
+    assert matches[7]["matching_entities"] == {"98-45 du 12 mars 1998"}
+    assert matches[7]["matching_articles"] == {"56"}
+    assert matches[8]["matching_entities"] == {"99-60 du 20 avril 1999"}
+    assert matches[8]["matching_articles"] == {"12"}
+
+
+def test_match_ordonnances_and_articles_to_amendments(attribution_populator):
+    matches = attribution_populator.match_ordonnances_and_articles_to_amendments()
+
+    assert len(matches) == 1
+    assert matches[9]["matching_entities"] == {"100-60 du 20 avril 1999"}
+    assert matches[9]["matching_articles"] == {"20"}
+
+
+def test_filter_matching_entities_and_articles(attribution_populator):
+    code_matches = attribution_populator.match_codes_and_articles_to_amendments()
+    law_matches = attribution_populator.match_laws_and_articles_to_amendments()
+    ordonnance_matches = (
+        attribution_populator.match_ordonnances_and_articles_to_amendments()
+    )
+
+    matches = {
+        **code_matches,
+        **law_matches,
+        **ordonnance_matches,
+    }
+    matching_rows = attribution_populator.filter_matching_entities_and_articles(matches)
+
+    assert len(matching_rows) == 8
     assert "Affectation (nom)" in matching_rows.columns
     assert "amdt_idx" in matching_rows.columns
 
 
 def test_aggregate_matches_by_amendment(attribution_populator):
     matches = attribution_populator.match_codes_and_articles_to_amendments()
-    matching_rows = attribution_populator.filter_matching_codes_and_articles(matches)
+    matching_rows = attribution_populator.filter_matching_entities_and_articles(matches)
     aggregated = attribution_populator.aggregate_matches_by_amendment(matching_rows)
 
     assert len(aggregated) == 3
@@ -145,7 +237,7 @@ def test_calculate_ratio_of_lists():
 def test_populate_end_to_end(attribution_populator):
     result_df = attribution_populator.populate()
 
-    assert len(result_df) == 4
+    assert len(result_df) == 9
     assert "Affectation (nom)" in result_df.columns
     assert "Affectation (email)" in result_df.columns
     assert "Commentaires" in result_df.columns

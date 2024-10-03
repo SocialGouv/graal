@@ -51,6 +51,10 @@ def test_integration_attribute_amendments():
 
     excel_data = pd.read_excel(mappings_file, sheet_name=None)
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(excel_data)
+    laws_articles_df = AttributionDataLoader.load_laws_and_articles(excel_data)
+    ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
+        excel_data
+    )
     keywords_df = AttributionDataLoader.load_keywords(
         excel_data=excel_data, acronym_mapping=acronym_mapping
     )
@@ -63,6 +67,8 @@ def test_integration_attribute_amendments():
         amendments_df=amendments_df,
         attribution_mappings_when_empty=attribution_mappings_when_empty,
         codes_articles_df=codes_articles_df,
+        laws_articles_df=laws_articles_df,
+        ordonnances_articles_df=ordonnances_articles_df,
         keywords_df=keywords_df,
         name_to_email_mapping=name_to_email_mapping,
     )
