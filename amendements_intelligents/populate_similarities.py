@@ -63,21 +63,6 @@ class SimilarityHandler:
             column_used_for_similarity="Exposé amdt"
         )
 
-        # For object comparison, we remove the redactionnel and suppression amendments
-        filtered_old_amendments_df = preprocessed_old_amendments_df.copy()
-        objet_prefixes_for_removal = (
-            normalize_text("amendement rédactionnel"),
-            normalize_text("rédactionnel"),
-            normalize_text("amendement de suppression"),
-            normalize_text("supprimer l'article"),
-            normalize_text("supprimer cet article"),
-        )
-        filtered_old_amendments_df = filtered_old_amendments_df[
-            ~filtered_old_amendments_df["Objet amdt"].str.startswith(
-                objet_prefixes_for_removal
-            )
-        ]
-
         # Copy matched amendments to new_amendments_df
         amendment_copier = AmendmentCopier(
             new_amendments_df=preprocessed_new_amendments_df,
