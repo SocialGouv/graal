@@ -7,7 +7,11 @@ from typing import Optional
 import pandas as pd
 
 from amendements_intelligents.summary.amendment_summarizer import AmendmentSummarizer
-from amendements_intelligents.summary.llm_clients import FakeLLMAPIClient, LLMAPIClient
+from amendements_intelligents.summary.llm_clients import (
+    EtalabAPIClient,
+    FakeLLMAPIClient,
+    LLMAPIClient,
+)
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -86,6 +90,12 @@ def main():
     # )
     # llm_api_client: LLMAPIClient = VllmAPIClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
     # llm_api_client: LLMAPIClient = GroqAPIClient()
+
+    # llm_api_client: LLMAPIClient = EtalabAPIClient(
+    #     base_url="https://albert.api.etalab.gouv.fr/v1",
+    #     api_key=os.getenv("ETALAB_API_KEY"),
+    #     model_name="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    # )
     llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
     input_file = (f"{DATA_FOLDER}/PLFSS_2024.json", 2024)
