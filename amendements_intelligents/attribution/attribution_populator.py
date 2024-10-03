@@ -21,6 +21,7 @@ class AttributionPopulator:
         latin_ordinals_set: set[str],
         max_code_length: int,
         name_to_email_mapping: dict[str, str],
+        ignore_interstitial_amdts: bool = True,
     ):
         self.matcher = AttributionMatcher()
         self.amendments_df = amendments_df
@@ -32,6 +33,7 @@ class AttributionPopulator:
         self.max_code_length = max_code_length
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
         self.name_to_email_mapping = name_to_email_mapping
+        self.ignore_interstitial_amdts = ignore_interstitial_amdts
 
     @staticmethod
     def update_with_keyword_matches(
@@ -100,7 +102,7 @@ class AttributionPopulator:
             columns=[
                 "Affectation (nom)",
                 "Articles",
-                "Code",
+                "Value",
                 "Corps amdt",
                 "Num amdt",
                 "Lecture",
@@ -110,7 +112,7 @@ class AttributionPopulator:
 
         for (num_amdt, lecture), matches in matches_per_amdt.items():
             matched_rows = self.codes_articles_df[
-                self.codes_articles_df["Code"].isin(matches["matching_codes"])
+                self.codes_articles_df["Value"].isin(matches["matching_codes"])
                 & self.codes_articles_df["Articles"].isin(matches["matching_articles"])
             ].copy()
 
@@ -324,9 +326,10 @@ class AttributionPopulator:
 
         # Not super proud of this since I am undoing a lot of the work I did above but I can't make
         # a pre-filtering step work for some reason so this will do (it's not a big time waste)
-        amendments_df.loc[
-            ~amendments_df["Num article"].str.startswith("Article add."),
-            ["Affectation (nom)", "Affectation (email)"],
-        ] = "", ""
+        if self.ignore_interstitial_amdts:
+            amendments_df.loc[
+                ~amendments_df["Num article"].str.startswith("Article add."),
+                ["Affectation (nom)", "Affectation (email)"],
+            ] = "", ""
 
         return amendments_df
