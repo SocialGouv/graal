@@ -1,6 +1,5 @@
 import logging
 import re
-from heapq import merge
 from multiprocessing import Pool, cpu_count
 from typing import Any
 
@@ -20,7 +19,7 @@ class AttributionPopulator:
         ordonnances_articles_df: pd.DataFrame,
         keywords_df: pd.DataFrame,
         name_to_email_mapping: dict[str, str],
-        ignore_interstitial_amdts: bool = True,
+        ignore_non_interstitial_amdts: bool = True,
     ):
         codes_set = set(codes_articles_df["value"])
         max_code_length = max((len(code) for code in codes_set), default=2)
@@ -57,7 +56,7 @@ class AttributionPopulator:
         self.max_ordonnance_length = max_ordonnance_length
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
         self.name_to_email_mapping = name_to_email_mapping
-        self.ignore_interstitial_amdts = ignore_interstitial_amdts
+        self.ignore_non_interstitial_amdts = ignore_non_interstitial_amdts
 
     @staticmethod
     def update_with_keyword_matches(
@@ -273,6 +272,16 @@ class AttributionPopulator:
         )
 
     def populate(self):
+        # Step 0: Filter out amendments that should be ignored based on "Num article"
+        if self.ignore_non_interstitial_amdts:
+            relevant_amendments_df = self.amendments_df[
+                self.amendments_df["Num article"]
+                .str.lower()
+                .str.startswith("article add.")
+            ].copy()
+        else:
+            relevant_amendments_df = self.amendments_df.copy()
+
         # Step 1: Match codes and articles to amendments
         best_code_matches_per_amdt = self.match_codes_and_articles_to_amendments()
         best_law_matches_per_amdt = self.match_laws_and_articles_to_amendments()
@@ -288,63 +297,66 @@ class AttributionPopulator:
             best_matches_per_amdt
         )
         grouped_matching_df = self.aggregate_matches_by_amendment(matching_rows_df)
-        amendments_df = self.amendments_df
-        if "Commentaires" not in amendments_df.columns:
-            amendments_df["Commentaires"] = ""
 
+        # Working on the filtered amendments DataFrame
+        relevant_amendments_df["Commentaires"] = ""
         if not grouped_matching_df.empty:
-            amendments_df.set_index("amdt_idx", inplace=True)
-            amendments_df["Affectation (nom)"] = grouped_matching_df.set_index(
+            relevant_amendments_df.set_index("amdt_idx", inplace=True)
+            relevant_amendments_df["Affectation (nom)"] = grouped_matching_df.set_index(
                 "amdt_idx"
             )["Affectation (nom)"]
-            amendments_df["Affectation (nom)"] = amendments_df[
+            relevant_amendments_df["Affectation (nom)"] = relevant_amendments_df[
                 "Affectation (nom)"
             ].apply(
                 lambda x: x if isinstance(x, list) else [x] if pd.notnull(x) else []
             )
 
-            ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
+            ratio = AttributionPopulator.calculate_ratio_of_lists(
+                relevant_amendments_df
+            )
             logging.info(
                 f"After articles, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
             )
 
-            amendments_df["Commentaires"] += amendments_df.apply(
+            relevant_amendments_df["Commentaires"] += relevant_amendments_df.apply(
                 lambda row: f"Affectations possibles après affectation par articles : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
                 else row.get("Commentaires", ""),
                 axis=1,
             )
-            amendments_df.reset_index(inplace=True)
+            relevant_amendments_df.reset_index(inplace=True)
 
         # Step 2: Match keywords to amendments
         keyword_matches_df = self.match_keywords_to_amendments(threshold=99)
         if not keyword_matches_df.empty:
             keyword_matches_df.set_index("amdt_idx", inplace=True)
             keyword_matches_df.sort_index(inplace=True)
-            amendments_df.set_index("amdt_idx", inplace=True)
+            relevant_amendments_df.set_index("amdt_idx", inplace=True)
 
-            amendments_df["Affectation (nom)"] = amendments_df.apply(
+            relevant_amendments_df["Affectation (nom)"] = relevant_amendments_df.apply(
                 AttributionPopulator.update_with_keyword_matches,
                 axis=1,
                 keyword_matches_df=keyword_matches_df,
             )
 
-            ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
+            ratio = AttributionPopulator.calculate_ratio_of_lists(
+                relevant_amendments_df
+            )
             logging.info(
                 f"After keywords, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
             )
 
-            amendments_df["Commentaires"] += amendments_df.apply(
+            relevant_amendments_df["Commentaires"] += relevant_amendments_df.apply(
                 lambda row: f"Affectations possibles après affectation par mots clés : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
                 else row.get("Commentaires", ""),
                 axis=1,
             )
-            amendments_df.reset_index(inplace=True)
+            relevant_amendments_df.reset_index(inplace=True)
 
-        # Step 3: If multiple attributions are present, choose one attribution at random and add the ones that were removed in the "Commentaires" column
-        multiple_attributions = amendments_df[
-            amendments_df["Affectation (nom)"].apply(
+        # Step 3: Handle multiple attributions and random selections
+        multiple_attributions = relevant_amendments_df[
+            relevant_amendments_df["Affectation (nom)"].apply(
                 lambda x: isinstance(x, list) and len(x) > 1
             )
         ]
@@ -352,71 +364,58 @@ class AttributionPopulator:
 
         for index in multiple_indices:
             random_attribution = np.random.choice(
-                amendments_df.at[index, "Affectation (nom)"],
+                relevant_amendments_df.at[index, "Affectation (nom)"],
             )
             removed_attributions = [
                 attribution
-                for attribution in amendments_df.at[index, "Affectation (nom)"]
+                for attribution in relevant_amendments_df.at[index, "Affectation (nom)"]
                 if attribution != random_attribution
             ]
-            amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
+            relevant_amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
             attribution_comment = "Autres attributions possibles :\n- " + "\n- ".join(
                 removed_attributions
             )
             AttributionPopulator.append_comment_to_amendment(
-                amendments_df=amendments_df,
+                amendments_df=relevant_amendments_df,
                 index=index,
                 attribution_comment=attribution_comment,
             )
 
-        # Step 4: Fill in missing attributions
-        missing_attributions = amendments_df[
-            amendments_df["Affectation (nom)"].apply(
+        # Step 4: Handle missing attributions
+        missing_attributions = relevant_amendments_df[
+            relevant_amendments_df["Affectation (nom)"].apply(
                 lambda x: (isinstance(x, list) and len(x) == 0) or x is None
             )
         ]
-
         missing_indices = missing_attributions.index
 
         for index in missing_indices:
             random_attribution = np.random.choice(self.attribution_mappings_when_empty)
-            amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
+            relevant_amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
             attribution_comment = "Attribution par défault"
             AttributionPopulator.append_comment_to_amendment(
-                amendments_df=amendments_df,
+                amendments_df=relevant_amendments_df,
                 index=index,
                 attribution_comment=attribution_comment,
             )
 
-        # Finally, set the value of "Affectation (nom)" to the first (and only) element of the list
-        # and we get the email address of the expert from self.name_to_email_mapping in "Affectation (email)"
-        amendments_df.loc[:, "Affectation (nom)"] = amendments_df[
+        # Set the value of "Affectation (nom)" and populate emails
+        relevant_amendments_df["Affectation (nom)"] = relevant_amendments_df[
             "Affectation (nom)"
         ].apply(lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None)
-        amendments_df.loc[:, "Affectation (email)"] = amendments_df[
+        relevant_amendments_df["Affectation (email)"] = relevant_amendments_df[
             "Affectation (nom)"
         ].apply(lambda x: self.name_to_email_mapping.get(x, ""))
 
-        ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
-        logging.info(
-            f"At the end, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
-        )
+        # Ensure 'amdt_idx' is set as the index for both DataFrames
+        relevant_amendments_df.set_index("amdt_idx", inplace=True)
+        self.amendments_df.set_index("amdt_idx", inplace=True)
 
-        non_empty_email_count = (
-            amendments_df["Affectation (email)"].str.len().gt(0).sum()
-        )
-        logging.info(
-            f"Number of rows with non-empty 'Affectation (email)': {non_empty_email_count}"
-        )
+        # Merge the relevant amendments back into the original DataFrame
+        # Use `combine_first` to overwrite existing rows in `self.amendments_df` with `relevant_amendments_df`
+        self.amendments_df = self.amendments_df.combine_first(relevant_amendments_df)
 
-        # Not super proud of this since I am undoing a lot of the work I did above but I can't make
-        # a pre-filtering step work for some reason so this will do (it's not a big time waste)
-        if self.ignore_interstitial_amdts:
-            amendments_df.loc[
-                ~amendments_df["Num article"]
-                .str.lower()
-                .str.startswith("article add."),
-                ["Affectation (nom)", "Affectation (email)"],
-            ] = "", ""
+        # Reset the index to have 'amdt_idx' as a regular column, if needed
+        self.amendments_df.reset_index(inplace=True)
 
-        return amendments_df
+        return self.amendments_df

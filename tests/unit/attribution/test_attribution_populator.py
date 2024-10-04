@@ -127,7 +127,7 @@ def attribution_populator(
             "Expert3": "expert3@example.com",
             "DefaultExpert": "default@example.com",
         },
-        ignore_interstitial_amdts=False,
+        ignore_non_interstitial_amdts=False,
     )
 
 
@@ -241,14 +241,6 @@ def test_populate_end_to_end(attribution_populator):
     assert "Affectation (nom)" in result_df.columns
     assert "Affectation (email)" in result_df.columns
     assert "Commentaires" in result_df.columns
-
-    non_interstitial_rows = result_df[
-        ~result_df["Num article"].str.startswith("Article add.")
-    ]
-
-    if attribution_populator.ignore_interstitial_amdts:
-        assert all(non_interstitial_rows["Affectation (nom)"] == "")
-        assert all(non_interstitial_rows["Affectation (email)"] == "")
 
 
 @pytest.mark.parametrize(

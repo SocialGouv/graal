@@ -1,7 +1,6 @@
 import logging
 import logging.config
 import os
-import re
 
 import pandas as pd
 
@@ -73,6 +72,7 @@ def main():
         ordonnances_articles_df=ordonnances_articles_df,
         keywords_df=keywords_df,
         name_to_email_mapping=name_to_email_mapping,
+        ignore_non_interstitial_amdts=False,
     )
 
     amendments_df = attributor.populate()
