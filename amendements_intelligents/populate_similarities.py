@@ -8,7 +8,6 @@ import pandas as pd
 from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
 from amendements_intelligents.utils.amendment_copier import AmendmentCopier
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
-from amendements_intelligents.utils.text_utils import normalize_text
 
 logging.config.fileConfig("logging.conf")
 
@@ -38,7 +37,7 @@ class SimilarityHandler:
         )
         amendments_df = AmendmentPreProcessor.normalize_amendments(
             amendments_df=amendments_df,
-            columns_to_normalize=["Exposé amdt", "Objet amdt"],
+            columns_to_normalize=["Exposé amdt"],
         )
 
         return amendments_df
@@ -96,20 +95,21 @@ def main():
     )
     old_amendments_df = AmendmentPreProcessor.load_amendments_json(
         input_files=[
-            (f"{DATA_FOLDER}/PLFSS_2023.json", 2023),
-            (f"{DATA_FOLDER}/PLFSS_2022.json", 2022),
-            (f"{DATA_FOLDER}/PLFSS_2021.json", 2021),
+            f"{DATA_FOLDER}/PLFSS_2023.json",
+            f"{DATA_FOLDER}/PLFSS_2022.json",
+            f"{DATA_FOLDER}/PLFSS_2021.json",
         ]
     )
     new_amendments_df = AmendmentPreProcessor.load_amendments_json(
-        input_files=[(f"{DATA_FOLDER}/PLFSS_2024.json", 2024)]
+        input_files=[f"{DATA_FOLDER}/PLFSS_2024.json"]
     )
     original_new_amendments_df = new_amendments_df.copy()
     original_new_amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=original_new_amendments_df
     )
     original_new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=original_new_amendments_df, columns_to_clear=["Réponse", "Sort"]
+        amendments_df=original_new_amendments_df,
+        columns_to_clear=["Réponse", "Sort", "Commentaires"],
     )
 
     old_amendments_df = SimilarityHandler.preprocess_for_similarity(
@@ -120,7 +120,8 @@ def main():
         amendments_df=new_amendments_df, acronym_mapping=acronym_mapping
     )
     new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=new_amendments_df, columns_to_clear=["Réponse", "Sort"]
+        amendments_df=new_amendments_df,
+        columns_to_clear=["Réponse", "Sort", "Commentaires"],
     )
 
     new_amendments_with_copies_df = SimilarityHandler.populate(

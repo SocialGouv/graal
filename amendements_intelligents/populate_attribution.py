@@ -23,14 +23,13 @@ def main():
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_3.xlsx"
     OUTPUT_FILE = f"{DATA_FOLDER}/test_attributions_new_format.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
-    YEAR = 2024
 
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         acronym_file=ACRONYM_FILE
     )
 
     amendments_df = AmendmentPreProcessor.load_amendments_json(
-        input_files=[(AMENDMENTS_FILE, YEAR)]
+        input_files=[AMENDMENTS_FILE]
     )
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df

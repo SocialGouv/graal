@@ -33,18 +33,18 @@ def sample_data():
         97: {
             "best_matching_doc_amdt_idx": 1,
             "best_matching_doc_lecture": "A",
-            "best_matching_comparison_value": -2022,
+            "best_matching_comparison_value": -1640995200,  # 2022
             "column_used_for_comparison": "Exposé amdt",
         },
         98: {
             "best_matching_doc_amdt_idx": 2,
             "best_matching_doc_lecture": "B",
-            "best_matching_comparison_value": -2021,
+            "best_matching_comparison_value": -1609459200,  # 2021
             "column_used_for_comparison": "Exposé amdt",
         },
         99: {
             "best_matching_doc_amdt_idx": 3,
-            "best_matching_comparison_value": -2020,
+            "best_matching_comparison_value": -1577836800,  # 2020
             "column_used_for_comparison": "Exposé amdt",
         },
     }

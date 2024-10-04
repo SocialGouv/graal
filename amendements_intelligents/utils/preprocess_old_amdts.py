@@ -3,7 +3,6 @@ import logging.config
 import os
 import pickle
 import time
-from typing import List, Tuple
 
 import pandas as pd
 from pydantic import FilePath
@@ -21,102 +20,41 @@ OUTPUT_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
 ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
 PLFSS_FILES = [
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json",
-        2021,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3551-PO717460.json",
-        2021,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO717460.json",
-        2021,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO420120.json",
-        2021,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-118-PO78718.json",
-        2022,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-189-PO78718.json",
-        2022,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4685-PO717460.json",
-        2022,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4523-PO717460.json",
-        2022,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-698-PO717460.json",
-        2022,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-senat-2022-2023-96-PO78718.json",
-        2023,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO791932.json",
-        2023,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO420120.json",
-        2023,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-1682-PO791932 (2).json",
-        2023,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-480-PO791932.json",
-        2023,
-    ),
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3551-PO717460.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO717460.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO420120.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-118-PO78718.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-189-PO78718.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4685-PO717460.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4523-PO717460.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-senat-2022-2023-96-PO78718.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO791932.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO420120.json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-1682-PO791932 (2).json",
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-480-PO791932.json",
 ]
 
 PLACSS_FILES = [
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLACSS 22/AN Séance 1ère lecture/lecture-an-16-1268-PO791932.json",
-        2022,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/PLACSS 22/Sénat Séance 1ère lecture/lecture-senat-2022-2023-705-PO78718.json",
-        2022,
-    ),
+    f"{DATA_FOLDER}/exports_lectures/PLACSS 22/AN Séance 1ère lecture/lecture-an-16-1268-PO791932.json",
+    f"{DATA_FOLDER}/exports_lectures/PLACSS 22/Sénat Séance 1ère lecture/lecture-senat-2022-2023-705-PO78718.json",
 ]
 
 LFRSS_FILES = [
-    (
-        f"{DATA_FOLDER}/exports_lectures/PPL LIOT 2023 abrogation réforme des retraites/Séance AN/lecture-an-16-1299-PO791932.json",
-        2023,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO791932.json",
-        2023,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO420120.json",
-        2023,
-    ),
-    (
-        f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-senat-2022-2023-368-PO78718.json",
-        2023,
-    ),
+    f"{DATA_FOLDER}/exports_lectures/PPL LIOT 2023 abrogation réforme des retraites/Séance AN/lecture-an-16-1299-PO791932.json",
+    f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO791932.json",
+    f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO420120.json",
+    f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-senat-2022-2023-368-PO78718.json",
 ]
 
 SIMILARITY_INPUT_FILES = PLFSS_FILES + PLACSS_FILES + LFRSS_FILES
 
 
 def remove_oldest_and_without_response(
-    df: pd.DataFrame, cluster: List[IntIndex]
-) -> List[IntIndex]:
+    df: pd.DataFrame, cluster: list[IntIndex]
+) -> list[IntIndex]:
     filtered_df = df[df["amdt_idx"].isin(cluster)].sort_values(
-        by=["Year", "Réponse"],
+        by=["timestamp", "Réponse"],
         ascending=[False, False],
         key=lambda x: x if x.name != "Réponse" else x.str.len(),
     )
@@ -124,7 +62,7 @@ def remove_oldest_and_without_response(
 
 
 def load_and_preprocess_amendments(
-    input_files: List[Tuple[FilePath, int]], acronym_file: FilePath
+    input_files: list[FilePath], acronym_file: FilePath
 ) -> pd.DataFrame:
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(acronym_file)
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files)

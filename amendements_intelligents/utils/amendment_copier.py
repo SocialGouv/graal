@@ -1,4 +1,5 @@
 import textwrap
+from datetime import datetime
 
 import pandas as pd
 
@@ -53,7 +54,8 @@ class AmendmentCopier:
                 matching_num_amdt = matching_amendment["Num amdt"].values[0]
                 matching_lecture = matching_amendment["Lecture"].values[0]
                 matching_organe = matching_amendment["Organe"].values[0]
-                matching_year = -closest_doc["best_matching_comparison_value"]
+                matching_timestamp = -closest_doc["best_matching_comparison_value"]
+                matching_year = datetime.fromtimestamp(matching_timestamp).year
 
                 # Update target DataFrame with the matched details
                 # TODO: Make "Réponse copiée du PLFSS" a variable because it's not always going to be coming from a PLFSS

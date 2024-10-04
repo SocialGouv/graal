@@ -390,12 +390,12 @@ class AttributionPopulator:
 
         # Finally, set the value of "Affectation (nom)" to the first (and only) element of the list
         # and we get the email address of the expert from self.name_to_email_mapping in "Affectation (email)"
-        amendments_df["Affectation (nom)"] = amendments_df["Affectation (nom)"].apply(
-            lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
-        )
-        amendments_df["Affectation (email)"] = amendments_df["Affectation (nom)"].apply(
-            lambda x: self.name_to_email_mapping.get(x, "")
-        )
+        amendments_df.loc[:, "Affectation (nom)"] = amendments_df[
+            "Affectation (nom)"
+        ].apply(lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None)
+        amendments_df.loc[:, "Affectation (email)"] = amendments_df[
+            "Affectation (nom)"
+        ].apply(lambda x: self.name_to_email_mapping.get(x, ""))
 
         ratio = AttributionPopulator.calculate_ratio_of_lists(amendments_df)
         logging.info(

@@ -13,7 +13,6 @@ def main():
     start_time = time.time()
     DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
     INPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
-    YEAR = 2024
     OUTPUT_FILE = f"{DATA_FOLDER}/amendments_with_allotments_refactor.xlsx"
     COLUMNS_TO_OUTPUT = [
         "Lecture",
@@ -25,9 +24,7 @@ def main():
         "Exposé amdt",
     ]
 
-    amendments_df = AmendmentPreProcessor.load_amendments_json(
-        input_files=[(INPUT_FILE, YEAR)]
-    )
+    amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         acronym_file=f"{DATA_FOLDER}/acronym_mapping.xlsx"
     )

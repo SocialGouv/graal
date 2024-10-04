@@ -9,7 +9,7 @@ def test_remove_oldest_and_without_response():
     # Create a sample DataFrame
     data = {
         "amdt_idx": [1, 2, 3, 4, 5],
-        "Year": [2020, 2021, 2019, 2021, 2020],
+        "timestamp": [2020, 2021, 2019, 2021, 2020],
         "Réponse": [
             "Short",
             "Medium length",

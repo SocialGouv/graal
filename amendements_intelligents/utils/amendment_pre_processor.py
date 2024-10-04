@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 
 import pandas as pd
 from pydantic import FilePath
@@ -13,13 +14,17 @@ from amendements_intelligents.utils.text_utils import (
 
 class AmendmentPreProcessor:
     @staticmethod
-    def load_amendments_json(input_files: list[tuple[FilePath, int]]) -> pd.DataFrame:
+    def load_amendments_json(input_files: list[FilePath]) -> pd.DataFrame:
         dfs = []
-        for file_name, year in input_files:
+        for file_name in input_files:
             with open(file_name, "r", encoding="utf-8-sig") as f:
                 data = json.load(f)
             df = pd.DataFrame(data["amendements"])
-            df["Year"] = year
+            df["timestamp"] = df["date_derniere_modif"].apply(
+                lambda x: int(datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f").timestamp())
+                if x not in [None, ""]
+                else 0
+            )
             dfs.append(df)
 
         original_amendments_df = pd.concat(dfs, ignore_index=True)

@@ -80,10 +80,10 @@ class SimilarityFinder:
                 )
             },
             "comparison_value": {
-                old_amdt_idx: -old_amdt_year
-                for old_amdt_idx, old_amdt_year in zip(
+                old_amdt_idx: -old_amdt_date
+                for old_amdt_idx, old_amdt_date in zip(
                     self.old_amendments_df["amdt_idx"],
-                    self.old_amendments_df["Year"],
+                    self.old_amendments_df["timestamp"],
                 )
             },
         }
