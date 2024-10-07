@@ -13,7 +13,8 @@ build/
 .coverage*
 *.info
 coverage.json
-diff_amendments.csv
+diff_attribution.csv
+diff_similarity.csv
 grouped_matching.csv
 
 *_vector_db

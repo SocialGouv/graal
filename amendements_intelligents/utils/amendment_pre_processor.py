@@ -27,9 +27,9 @@ class AmendmentPreProcessor:
             )
             dfs.append(df)
 
-        original_amendments_df = pd.concat(dfs, ignore_index=True)
-        original_amendments_df["amdt_idx"] = range(len(original_amendments_df))
-        return AmendmentPreProcessor.clean_up_json_columns(original_amendments_df)
+        amendments_df = pd.concat(dfs, ignore_index=True)
+        amendments_df["amdt_idx"] = range(len(amendments_df))
+        return AmendmentPreProcessor.clean_up_json_columns(amendments_df)
 
     @staticmethod
     def load_acronyms_excel(acronym_file: FilePath) -> dict[str, str]:

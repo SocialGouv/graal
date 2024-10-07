@@ -114,9 +114,9 @@ def test_integration_attribute_amendments():
             )
 
     if not diff_df.empty:
-        diff_df.to_csv("tests/integration/test_data/diff_amendments.csv")
+        diff_df.to_csv("tests/integration/test_data/diff_attribution.csv")
         logging.info(
-            'Diff found and saved in "tests/integration/test_data/diff_amendments.csv"'
+            'Diff found and saved in "tests/integration/test_data/diff_attribution.csv"'
         )
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"
