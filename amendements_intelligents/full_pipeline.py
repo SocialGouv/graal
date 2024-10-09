@@ -45,8 +45,8 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024_new_format"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_new_format.xlsx"
+    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024_oct_8"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_8.xlsx"
     INPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
@@ -167,12 +167,14 @@ def main():
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
         attribution_mappings_excel
     )
+    codes_articles_df = pd.DataFrame()
     laws_articles_df = AttributionDataLoader.load_laws_and_articles(
         attribution_mappings_excel
     )
     ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
         attribution_mappings_excel
     )
+    ordonnances_articles_df = pd.DataFrame()
     keywords_df = AttributionDataLoader.load_keywords(
         excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
     )

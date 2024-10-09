@@ -60,7 +60,11 @@ def sample_amendments_df():
 def codes_articles_df():
     return pd.DataFrame(
         {
-            "value": ["civil", "penal", "rural"],
+            "value": [
+                AttributionTextNormalizer.normalize_text("civil"),
+                AttributionTextNormalizer.normalize_text("penal"),
+                AttributionTextNormalizer.normalize_text("rural"),
+            ],
             "Articles": ["1234", "42", "567"],
             "Affectation (nom)": ["Expert1", "Expert2", "Expert3"],
         }
@@ -72,10 +76,10 @@ def laws_articles_df():
     return pd.DataFrame(
         {
             "value": [
-                "96-50 du 24 janvier 1996",
-                "97-30 du 15 février 1997",
-                "98-45 du 12 mars 1998",
-                "99-60 du 20 avril 1999",
+                AttributionTextNormalizer.normalize_text("96-50 du 24 janvier 1996"),
+                AttributionTextNormalizer.normalize_text("97-30 du 15 février 1997"),
+                AttributionTextNormalizer.normalize_text("98-45 du 12 mars 1998"),
+                AttributionTextNormalizer.normalize_text("99-60 du 20 avril 1999"),
             ],
             "Articles": ["32", "321", "56", "12"],
             "Affectation (nom)": ["Expert1", "Expert2", "Expert3", "Expert1"],
@@ -88,7 +92,7 @@ def ordonnances_articles_df():
     return pd.DataFrame(
         {
             "value": [
-                "100-60 du 20 avril 1999",
+                AttributionTextNormalizer.normalize_text("100-60 du 20 avril 1999"),
             ],
             "Articles": ["20"],
             "Affectation (nom)": ["Expert1"],
@@ -149,7 +153,7 @@ def test_match_laws_and_articles_to_amendments(attribution_populator):
     assert len(matches) == 4
     assert matches[5]["matching_entities"] == {"96-50 du 24 janvier 1996"}
     assert matches[5]["matching_articles"] == {"32"}
-    assert matches[6]["matching_entities"] == {"97-30 du 15 février 1997"}
+    assert matches[6]["matching_entities"] == {"97-30 du 15 fevrier 1997"}
     assert matches[6]["matching_articles"] == {"321"}
     assert matches[7]["matching_entities"] == {"98-45 du 12 mars 1998"}
     assert matches[7]["matching_articles"] == {"56"}

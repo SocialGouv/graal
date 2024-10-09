@@ -1,7 +1,7 @@
 import logging
 import re
 from multiprocessing import Pool, cpu_count
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -19,20 +19,32 @@ class AttributionPopulator:
         ordonnances_articles_df: pd.DataFrame,
         keywords_df: pd.DataFrame,
         name_to_email_mapping: dict[str, str],
-        ignore_non_interstitial_amdts: bool = True,
+        ignore_non_interstitial_amdts: bool = False,
     ):
-        codes_set = set(codes_articles_df["value"])
-        max_code_length = max((len(code) for code in codes_set), default=2)
-        laws_set = set(laws_articles_df["value"])
-        max_law_length = max((len(law) for law in laws_set), default=2)
-        ordonnances_set = set(ordonnances_articles_df["value"])
-        max_ordonnance_length = max(
-            (len(ordonnance) for ordonnance in ordonnances_set), default=2
+        # Initialize sets and max lengths for codes, laws, and ordonnances
+        codes_set = (
+            set(codes_articles_df["value"])
+            if codes_articles_df is not None and not codes_articles_df.empty
+            else set()
         )
-        articles_set = (
-            set(codes_articles_df["Articles"])
-            .union(set(laws_articles_df["Articles"]))
-            .union(set(ordonnances_articles_df["Articles"]))
+        max_code_length = max((len(code) for code in codes_set), default=2)
+
+        laws_set = (
+            set(laws_articles_df["value"])
+            if laws_articles_df is not None and not laws_articles_df.empty
+            else set()
+        )
+
+        ordonnances_set = (
+            set(ordonnances_articles_df["value"])
+            if ordonnances_articles_df is not None and not ordonnances_articles_df.empty
+            else set()
+        )
+
+        # Combine articles from all sources
+        articles_set = set(codes_articles_df["Articles"]).union(
+            set(laws_articles_df["Articles"]),
+            set(ordonnances_articles_df["Articles"]),
         )
         pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
         latin_ordinals_set = {
@@ -52,8 +64,6 @@ class AttributionPopulator:
         self.keywords_df = keywords_df
         self.latin_ordinals_set = latin_ordinals_set
         self.max_code_length = max_code_length
-        self.max_law_length = max_law_length
-        self.max_ordonnance_length = max_ordonnance_length
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
         self.name_to_email_mapping = name_to_email_mapping
         self.ignore_non_interstitial_amdts = ignore_non_interstitial_amdts
@@ -90,7 +100,10 @@ class AttributionPopulator:
         return common_names
 
     def match_entities_and_articles_to_amendments(
-        self, entity_type: str, entity_set: set[str], max_entity_length: int
+        self,
+        entity_type: str,
+        entity_set: set[str],
+        max_entity_length: Optional[int] = None,
     ) -> dict[str, dict[str, set[str]]]:
         """Find the best matching entities (codes or laws) and articles for each amendment."""
         matches_per_amdt = {}
@@ -98,20 +111,44 @@ class AttributionPopulator:
             sorted(self.latin_ordinals_set, reverse=True)
         )
 
-        patterns = {
-            "code": rf"code [\w']+(?:\s[\w']{{1,{max_entity_length}}})+",
-            "law": rf"loi n.\s?[\w\s\-]{{1,{max_entity_length}}}",
-            "ordonnance": rf"ordonnance n.\s?[\w\s\-]{{1,{max_entity_length}}}",
+        entity_to_match_threshold = {
+            "code": 60,
+            "law": 99,
+            "ordonnance": 99,
         }
-        entity_pattern = patterns.get(entity_type, "")
+
+        # List of patterns for each entity type
+        patterns = {
+            # TODO: I can do better for code matches. I could simply have a pattern that looks like "|".join(entity_set) and remove max_entity_length which sucks
+            "code": [rf"code ([\w']+(?:\s[\w']{{1,{max_entity_length}}})+)"],
+            "law": [
+                r"\sloi\s(?:n.?(?:deg)?\s?)((?:(?:\d+-\d+)\s+)?du\s+(?:\d+\s\w+\s\d{4}))",
+                r"\sloi\s(du\s+(?:\d+\s\w+\s\d{4}))",
+            ],
+            "ordonnance": [
+                r"ordonnance\s(?:n.?(?:deg)?\s?)((?:(?:\d+-\d+)\s+)?du\s+(?:\d+\s\w+\s\d{4}))"
+            ],
+        }
+        entity_patterns = patterns.get(entity_type, [])
 
         for _, row in self.amendments_df.iterrows():
             normalized_text = row["Corps amdt"]
             amdt_idx = row["amdt_idx"]
 
-            entity_matches = re.findall(entity_pattern, normalized_text)
+            # Collect all entity matches for the given entity type
+            entity_matches = set()
+            for entity_pattern in entity_patterns:
+                matches = re.findall(entity_pattern, normalized_text)
+                if matches:
+                    entity_matches.update(matches)
+            if not entity_matches:
+                continue
+
+            # Filter matched entities based on the threshold
             matched_entities = {
-                self.matcher.find_best_match(match, entity_set, threshold=60)
+                self.matcher.find_best_match(
+                    match, entity_set, threshold=entity_to_match_threshold[entity_type]
+                )
                 for match in entity_matches
                 if match is not None
             }
@@ -146,7 +183,6 @@ class AttributionPopulator:
         return self.match_entities_and_articles_to_amendments(
             entity_type="law",
             entity_set=self.laws_set,
-            max_entity_length=self.max_law_length,
         )
 
     def match_ordonnances_and_articles_to_amendments(
@@ -156,7 +192,6 @@ class AttributionPopulator:
         return self.match_entities_and_articles_to_amendments(
             entity_type="ordonnance",
             entity_set=self.ordonnances_set,
-            max_entity_length=self.max_ordonnance_length,
         )
 
     def filter_matching_entities_and_articles(
