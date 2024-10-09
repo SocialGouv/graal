@@ -1,4 +1,5 @@
-from typing import Any, TypedDict, Union
+from enum import Enum
+from typing import Any, Union
 
 Vector = Union[list[float], list[int]]
 Embedding = Vector
@@ -18,7 +19,8 @@ Prompt = str
 TxtContent = str
 
 
-class ExpertMetadata(TypedDict):
-    expertise_desc: ExpertiseDesc
-    # I would like `experts_as_str` to be a list but the VectorDB we are using does not support it
-    experts_as_str: str
+# List of patterns for each entity type
+class EntityType(Enum):
+    CODE = "code"
+    LAW = "law"
+    ORDONNANCE = "ordonnance"
