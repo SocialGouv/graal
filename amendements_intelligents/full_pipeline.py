@@ -66,21 +66,12 @@ def main():
     ]
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
 
-    # MODEL_NAME = os.getenv("MODEL_NAME")
-    # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
-    # USER = os.getenv("USER")
-    # PASSWORD = os.getenv("PASSWORD")
-    # llm_api_client: LLMAPIClient = LLMInferenceAPIClient(
-    #     url=LLM_ENDPOINT,
-    #     auth=(USER, PASSWORD),
-    # )
-
     llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
     # llm_api_client: LLMAPIClient = EtalabAPIClient(
-    #     base_url="https://albert.api.etalab.gouv.fr/v1",
+    #     base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
     #     api_key=os.getenv("ETALAB_API_KEY"),
-    #     model_name="meta-llama/Meta-Llama-3.1-70B-Instruct",
+    #     model_name=os.getenv("ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"),
     # )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
