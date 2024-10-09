@@ -1,4 +1,8 @@
-data
+data/*
+!data/PLFSS_2024.json
+!data/exports_lectures/
+data/exports_lectures/*
+!data/exports_lectures/PLFSS\ 2023/
 .envrc
 
 # Python specific
