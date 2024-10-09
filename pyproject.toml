@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "amendements-intelligents"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 authors = ["Victor DEGLIAME <victor.degliame@gmail.com>"]
 readme = "README.md"
