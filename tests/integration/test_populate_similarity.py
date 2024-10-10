@@ -20,6 +20,7 @@ def set_timestamps(df):
 
 
 def test_integration_similarity():
+    ACRONYM_FILE = "tests/integration/test_data/acronym_mapping.xlsx"
     file_path = "tests/integration/test_data/test_populate_similarities.xlsx"
 
     old_amendments_df = pd.read_excel(file_path, sheet_name="vieux amendements")
@@ -32,11 +33,7 @@ def test_integration_similarity():
 
     expected_result_df = new_amendments_df.copy()
 
-    DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
-
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
-        Path(DATA_FOLDER) / "acronym_mapping.xlsx"
-    )
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(ACRONYM_FILE)
 
     preprocessed_old_amendments_df = SimilarityHandler.preprocess_for_similarity(
         old_amendments_df, acronym_mapping

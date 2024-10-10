@@ -15,8 +15,11 @@ def load_test_file_to_compare(
 
 
 def test_populate_allotments_ratio_matching_allotments() -> None:
+    ACRONYM_FILE = "tests/integration/test_data/acronym_mapping.xlsx"
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(ACRONYM_FILE)
+
     test_df = load_test_file_to_compare(
-        "tests/integration/test_data/test_populate_allotments_sep3.xlsx", "test1"
+        "tests/integration/test_data/test_populate_allotments.xlsx", "test1"
     )
 
     test_df["Allotissement"] = test_df["Allotissement"].apply(
@@ -34,6 +37,11 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
 
     normalized_amdt_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
         amendments_df=normalized_amdt_df, columns_to_filter_with=["Corps amdt"]
+    )
+    normalized_amdt_df = AmendmentPreProcessor.replace_acronyms(
+        amendments_df=normalized_amdt_df,
+        acronym_mapping=acronym_mapping,
+        columns_to_normalize=["Exposé amdt", "Corps amdt"],
     )
     normalized_amdt_df = AmendmentPreProcessor.handle_common_amendment_bodies(
         amendments_df=normalized_amdt_df
@@ -83,6 +91,10 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
 
         nb_matches = len([x for x in test if x in algo])
         nb_test_lot = len(test)
+        if nb_matches != nb_test_lot:
+            print(
+                f"Row {_i} has different nb_matches and nb_test_lot: {nb_matches} vs {nb_test_lot}"
+            )
 
         total_nb_matches += nb_matches
         total_nb_test_lot += nb_test_lot
