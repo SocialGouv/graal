@@ -22,5 +22,5 @@ TxtContent = str
 # List of patterns for each entity type
 class EntityType(Enum):
     CODE = "code"
-    LAW = "law"
+    LAW = "loi"
     ORDONNANCE = "ordonnance"

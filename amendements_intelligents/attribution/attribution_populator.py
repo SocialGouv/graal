@@ -46,25 +46,38 @@ class AttributionPopulator:
             set(laws_articles_df["Articles"]),
             set(ordonnances_articles_df["Articles"]),
         )
-        pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
-        latin_ordinals_set = {
-            match.group(1)
-            for article in articles_set
-            if (match := pattern.match(article)) and match.group(1)
-        }
+        articles_set.remove("nan")
 
         self.patterns = {
             EntityType.CODE.value: [
-                rf"code\s(?:general\sdes|des|du|de|de\sla|d')?\s?((?:{'|'.join(codes_set)}))"
+                re.compile(
+                    rf"code\s(?:general\sdes|des|du|de|de\sla|d')?\s?((?:{'|'.join(codes_set)}))"
+                )
             ],
             EntityType.LAW.value: [
-                r"\sloi\s(?:n.?(?:deg)?\s?)((?:(?:\d+-\d+)\s+)?du\s+(?:\d+\s\w+\s\d{4}))",
-                r"\sloi\s(du\s+(?:\d+\s\w+\s\d{4}))",
+                re.compile(
+                    r"\sloi\s(?:n.?(?:deg)?\s?)((?:(?:\d+-\d+)\s+)?du\s+(?:\d+\s\w+\s\d{4}))"
+                ),
+                re.compile(r"\sloi\s(du\s+(?:\d+\s\w+\s\d{4}))"),
             ],
             EntityType.ORDONNANCE.value: [
-                r"ordonnance\s(?:n.?(?:deg)?\s?)((?:(?:\d+-\d+)\s+)?du\s+(?:\d+\s\w+\s\d{4}))"
+                re.compile(
+                    r"ordonnance\s(?:n.?(?:deg)?\s?)((?:(?:\d+-\d+)\s+)?du\s+(?:\d+\s\w+\s\d{4}))"
+                )
             ],
         }
+
+        latin_ordinal_pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
+        latin_ordinals_set = {
+            match.group(1)
+            for article in articles_set
+            if (match := latin_ordinal_pattern.match(article)) and match.group(1)
+        }
+        possible_ordinals_pattern = "|".join(sorted(latin_ordinals_set, reverse=True))
+        self.article_pattern = re.compile(
+            rf"(?:(?:l\.|articles?|art))(?:\set\s|\s?(\d+(?:-\d+)*(?:\s?(?:{possible_ordinals_pattern}))?))+"
+        )
+
         self.matcher = AttributionMatcher()
         self.amendments_df = amendments_df
         self.articles_set = articles_set
@@ -75,7 +88,6 @@ class AttributionPopulator:
         self.laws_set = laws_set
         self.ordonnances_set = ordonnances_set
         self.keywords_df = keywords_df
-        self.latin_ordinals_set = latin_ordinals_set
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
         self.name_to_email_mapping = name_to_email_mapping
         self.ignore_non_interstitial_amdts = ignore_non_interstitial_amdts
@@ -117,9 +129,6 @@ class AttributionPopulator:
     ) -> dict[str, dict[str, set[str]]]:
         """Find the best matching entities (codes or laws) and articles for each amendment."""
         matches_per_amdt = {}
-        possible_ordinals_pattern = "|".join(
-            sorted(self.latin_ordinals_set, reverse=True)
-        )
 
         for _, row in self.amendments_df.iterrows():
             normalized_text = row["Corps amdt"]
@@ -134,8 +143,7 @@ class AttributionPopulator:
             if not matched_entities:
                 continue
 
-            article_pattern = rf"(?:(?:l\.|articles?|art))+(?: et |\s?(\d+(?:-\d+)*(?:\s?(?:{possible_ordinals_pattern}))?))+"
-            article_matches = set(re.findall(article_pattern, normalized_text))
+            article_matches = set(re.findall(self.article_pattern, normalized_text))
             matched_articles = {
                 article.strip() for article in article_matches
             }.intersection(self.articles_set)
