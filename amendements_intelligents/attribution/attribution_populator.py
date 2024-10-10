@@ -46,7 +46,7 @@ class AttributionPopulator:
             set(laws_articles_df["Articles"]),
             set(ordonnances_articles_df["Articles"]),
         )
-        articles_set.remove("nan")
+        articles_set.discard("nan")
 
         self.patterns = {
             EntityType.CODE.value: [
