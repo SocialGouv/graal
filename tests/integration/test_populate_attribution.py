@@ -19,7 +19,7 @@ def test_integration_attribute_amendments():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     test_file = "tests/integration/test_data/test_attribution.xlsx"
     mappings_file = (
-        "tests/integration/test_data/mappings_attributions_for_tests_new_format.xlsx"
+        "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
     )
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
@@ -30,6 +30,7 @@ def test_integration_attribute_amendments():
         acronym_file=ACRONYM_FILE
     )
     amendments_df = AmendmentPreProcessor.load_amendments_excel(input_file=test_file)
+    # amendments_df = amendments_df[amendments_df["amdt_idx"] == 24]
     amendments_df["Objet amdt"] = None
     amendments_df["Exposé amdt"] = None
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
