@@ -1,6 +1,7 @@
 import logging
 
 import pandas as pd
+from pydantic import FilePath
 
 from amendements_intelligents.populate_allotments import AllotmentHandler
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
@@ -15,7 +16,7 @@ def load_test_file_to_compare(
 
 
 def test_populate_allotments_ratio_matching_allotments() -> None:
-    ACRONYM_FILE = "tests/integration/test_data/acronym_mapping.xlsx"
+    ACRONYM_FILE = FilePath("tests/integration/test_data/acronym_mapping.xlsx")
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(ACRONYM_FILE)
 
     test_df = load_test_file_to_compare(
