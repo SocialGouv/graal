@@ -1,5 +1,6 @@
 import pandas as pd
 
+from amendements_intelligents.types import EntityType
 from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
 
@@ -7,17 +8,23 @@ class AttributionDataLoader:
     @staticmethod
     def load_codes_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize codes and articles from the data."""
-        return AttributionDataLoader.load_articles_by_type(excel_data, "code")
+        return AttributionDataLoader.load_articles_by_type(
+            excel_data, EntityType.CODE.value
+        )
 
     @staticmethod
     def load_laws_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize laws and articles from the data."""
-        return AttributionDataLoader.load_articles_by_type(excel_data, "loi")
+        return AttributionDataLoader.load_articles_by_type(
+            excel_data, EntityType.LAW.value
+        )
 
     @staticmethod
     def load_ordonnances_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize ordonnances and articles from the data."""
-        return AttributionDataLoader.load_articles_by_type(excel_data, "ordonnance")
+        return AttributionDataLoader.load_articles_by_type(
+            excel_data, EntityType.ORDONNANCE.value
+        )
 
     @staticmethod
     def load_articles_by_type(excel_data: dict, article_type: str) -> pd.DataFrame:

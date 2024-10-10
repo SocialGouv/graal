@@ -158,14 +158,12 @@ def main():
     codes_articles_df = AttributionDataLoader.load_codes_and_articles(
         attribution_mappings_excel
     )
-    codes_articles_df = pd.DataFrame()
     laws_articles_df = AttributionDataLoader.load_laws_and_articles(
         attribution_mappings_excel
     )
     ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
         attribution_mappings_excel
     )
-    ordonnances_articles_df = pd.DataFrame()
     keywords_df = AttributionDataLoader.load_keywords(
         excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
     )
@@ -239,7 +237,6 @@ def main():
     # END DEFAULT OPINION
 
     # BEGIN ALIGNING ALL ALLOTED AMENDMENTS
-
     amdt_with_allotments_df = AllotmentHandler.populate(
         original_amendments_df=preprocessed_original_amdt_df,
         pipeline_result_amdt_df=amdt_with_opinions_df,
