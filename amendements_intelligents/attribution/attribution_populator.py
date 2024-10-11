@@ -108,7 +108,7 @@ class AttributionPopulator:
             else [keyword_attribution]
             if isinstance(keyword_attribution, str)
             else []
-            if pd.isna(keyword_attribution)
+            if isinstance(keyword_attribution, float)
             else keyword_attribution
         )
 
