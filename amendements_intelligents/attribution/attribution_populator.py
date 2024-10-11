@@ -97,17 +97,19 @@ class AttributionPopulator:
         row: pd.Series, keyword_matches_df: pd.DataFrame
     ) -> list:
         current_attribution_names = row["Affectation (nom)"]
-        value = (
+        keyword_attribution = (
             keyword_matches_df.loc[row.name]["Affectation (nom)"]
             if row.name in keyword_matches_df.index
             else []
         )
         keyword_attribution_names = set(
-            value.values
-            if hasattr(value, "values")
-            else [value]
-            if isinstance(value, str)
-            else value
+            keyword_attribution.values
+            if hasattr(keyword_attribution, "values")
+            else [keyword_attribution]
+            if isinstance(keyword_attribution, str)
+            else []
+            if pd.isna(keyword_attribution)
+            else keyword_attribution
         )
 
         if not current_attribution_names:
