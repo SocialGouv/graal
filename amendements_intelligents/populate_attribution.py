@@ -19,8 +19,8 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     AMENDMENTS_FILE = f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_3.xlsx"
-    OUTPUT_FILE = f"{DATA_FOLDER}/test_attributions_new_format.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_11.xlsx"
+    OUTPUT_FILE = f"{DATA_FOLDER}/test_attributions_oct_11.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
