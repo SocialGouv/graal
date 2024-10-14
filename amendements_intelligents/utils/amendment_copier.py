@@ -1,7 +1,11 @@
+import logging
+import logging.config
 import textwrap
 from datetime import datetime
 
 import pandas as pd
+
+logging.config.fileConfig("logging.conf")
 
 
 class AmendmentCopier:
@@ -21,18 +25,6 @@ class AmendmentCopier:
         for new_amdt_idx, closest_doc in self.closest_amdts.items():
             # Retrieve the amendment number and lecture from the new amendments
             new_amendment_mask = self.new_amendments_df["amdt_idx"] == new_amdt_idx
-            new_amendment_numero = self.new_amendments_df.loc[
-                new_amendment_mask, "Num amdt"
-            ].values[0]
-
-            new_amendment_lecture = self.new_amendments_df.loc[new_amendment_mask][
-                "Lecture"
-            ].values[0]
-
-            # Create a mask for the target DataFrame to find the matching rows
-            new_amendment_mask = (target_df["Num amdt"] == new_amendment_numero) & (
-                target_df["Lecture"] == new_amendment_lecture
-            )
 
             # Get the best match details
             best_matching_doc_amdt_idx = closest_doc["best_matching_doc_amdt_idx"]
@@ -64,6 +56,8 @@ class AmendmentCopier:
                 ].values[0]
                 if current_comments:
                     target_df.loc[new_amendment_mask, "Commentaires"] += "\n"
+                else:
+                    target_df.loc[new_amendment_mask, "Commentaires"] = ""
 
                 target_df.loc[new_amendment_mask, "Commentaires"] += (
                     textwrap.dedent(f"""
