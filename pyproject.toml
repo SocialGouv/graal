@@ -33,6 +33,7 @@ pytest-xdist = "^3.6.1"
 tabulate = "^0.9.0"
 openai = "^1.44.1"
 pytest-mock = "^3.14.0"
+colorlog = "^6.8.2"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -58,11 +59,14 @@ include_namespace_packages = true
 testpaths = ["tests"]
 norecursedirs = ["dist", "build", "dev", "typings"]
 addopts = [
-  "-n 4",
-  "--cov=amendements_intelligents",
-  "--cov-report=lcov:lcov.info",
-  "--cov-report=json:coverage.json",
-  "--cov-report=",
+    "-n 4",
+    "--cov=amendements_intelligents",
+    "--cov-report=lcov:lcov.info",
+    "--cov-report=json:coverage.json",
+    "--cov-report=",
+    "--capture=no",
+    "--log-cli-level=INFO",
+    "--color=yes",
 ]
 
 [tool.pylint]
