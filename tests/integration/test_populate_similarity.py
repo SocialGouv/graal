@@ -1,7 +1,5 @@
 import logging
-import os
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
 
@@ -29,7 +27,17 @@ def test_integration_similarity():
 
     new_amendments_df = pd.read_excel(file_path, sheet_name="nouveaux amendements")
     new_amendments_df["amdt_idx"] = range(len(new_amendments_df))
+    # For debugging purposes, we can keep only one amendment
+    # AMDT_IDX_TO_KEEP = 8
+    # new_amendments_df = new_amendments_df[
+    #     new_amendments_df["amdt_idx"] == AMDT_IDX_TO_KEEP
+    # ]
     original_new_amendments_df = new_amendments_df.copy()
+
+    original_new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
+        amendments_df=original_new_amendments_df,
+        columns_to_clear=["Réponse", "Sort", "Commentaires"],
+    )
 
     expected_result_df = new_amendments_df.copy()
 
@@ -59,29 +67,29 @@ def test_integration_similarity():
     # COMPUTE THE DIFFERENCE
 
     diff_df = pd.DataFrame()
+
+    def get_expected_value(df, amdt_idx, column):
+        value = df.loc[df["amdt_idx"] == amdt_idx, column].values[0]
+        return "" if pd.isnull(value) else value
+
     for _, row in new_amendments_with_copies_df.iterrows():
         amdt_idx = row["amdt_idx"]
-        found_response_matches = row["Réponse"]
-        found_sort_matches = row["Sort"]
+        found_values = {
+            "Réponse": row["Réponse"] if not pd.isnull(row["Réponse"]) else "",
+            "Sort": row["Sort"] if not pd.isnull(row["Sort"]) else "",
+            "Commentaires": row["Commentaires"]
+            if not pd.isnull(row["Commentaires"])
+            else "",
+        }
 
-        expected_response_matches = expected_result_df.loc[
-            (expected_result_df["amdt_idx"] == amdt_idx),
-            "Réponse",
-        ].values[0]
+        expected_values = {
+            column: get_expected_value(expected_result_df, amdt_idx, column)
+            for column in ["Réponse", "Sort", "Commentaires"]
+        }
 
-        expected_sort_matches = expected_result_df.loc[
-            (expected_result_df["amdt_idx"] == amdt_idx),
-            "Sort",
-        ].values[0]
-
-        if pd.isnull(expected_response_matches):
-            expected_response_matches = ""
-        if pd.isnull(expected_sort_matches):
-            expected_sort_matches = ""
-
-        if (
-            found_response_matches != expected_response_matches
-            or found_sort_matches != expected_sort_matches
+        if any(
+            found_values[col] != expected_values[col]
+            for col in ["Réponse", "Sort", "Commentaires"]
         ):
             diff_df = pd.concat(
                 [
@@ -89,14 +97,26 @@ def test_integration_similarity():
                     pd.DataFrame(
                         {
                             "amdt_idx": [amdt_idx],
-                            "found_response": [found_response_matches],
-                            "expected_response": [expected_response_matches],
-                            "found_sort": [found_sort_matches],
-                            "expected_sort": [expected_sort_matches],
+                            **{
+                                f"found_{col.lower()}": [found_values[col]]
+                                for col in found_values
+                            },
+                            **{
+                                f"expected_{col.lower()}": [expected_values[col]]
+                                for col in expected_values
+                            },
                         }
                     ),
                 ]
             )
+            for col in ["Réponse", "Sort", "Commentaires"]:
+                if found_values[col] != expected_values[col]:
+                    num_amdt = new_amendments_with_copies_df.loc[
+                        new_amendments_with_copies_df["amdt_idx"] == amdt_idx
+                    ]["Num amdt"].values[0]
+                    logging.warning(
+                        f"Difference found in column '{col}' for amdt_idx {amdt_idx} (Num amdt: {num_amdt}):\nFound '{col}': {found_values[col]}\nExpected '{col}': {expected_values[col]}"
+                    )
 
     if not diff_df.empty:
         diff_df.to_csv("tests/integration/test_data/diff_similarity.csv")
