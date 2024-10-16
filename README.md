@@ -107,6 +107,16 @@ To run the full pipeline:
 python amendements_intelligents/full_pipeline.py
 ```
 
+### Merge Amendment DataFrames
+
+The [amendements_intelligents/utils/merge_amdt_df_into_another.py](amendements_intelligents/utils/merge_amdt_df_into_another.py) script enables us to seamlessly merge an existing CSV file of amendments that have already been processed in Signale with newly processed amendments from the pipeline. This script is particularly useful if any issues occur within the full pipeline, resulting in agents beginning work on amendments directly in Signale. Once the pipeline is repaired, we generate a new CSV for import into Signale. However, without this script, that import would overwrite prior work—a situation we aim to avoid.
+
+To use this script, update file paths in the script and run the following command:
+
+```bash
+python amendements_intelligents/utils/merge_amdt_df_into_another.py
+```
+
 ## Tests
 
 ### Running Tests
