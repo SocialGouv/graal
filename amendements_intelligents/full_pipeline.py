@@ -45,10 +45,12 @@ logging.config.fileConfig("logging.conf")
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024_oct_11"
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_11.xlsx"
-    INPUT_FILE = f"{DATA_FOLDER}/PLFSS_2024.json"
+
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_17.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
+    INPUT_FILE = f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json"
+    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2025_oct_17"
+
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Allotissement",
@@ -66,13 +68,15 @@ def main():
     ]
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
 
-    llm_api_client: LLMAPIClient = FakeLLMAPIClient()
+    # llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
-    # llm_api_client: LLMAPIClient = EtalabAPIClient(
-    #     base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
-    #     api_key=os.getenv("ETALAB_API_KEY"),
-    #     model_name=os.getenv("ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"),
-    # )
+    llm_api_client: LLMAPIClient = EtalabAPIClient(
+        base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
+        api_key=os.getenv("ETALAB_API_KEY"),
+        model_name=os.getenv(
+            "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+        ),
+    )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
@@ -263,7 +267,8 @@ def main():
     result_df.loc[mask, "Objet amdt"] = "APPEL : " + result_df.loc[mask, "Objet amdt"]
     # END HANDLING APPEL AMENDMENTS
 
-    result_df[COLUMNS_TO_OUTPUT_IN_EXCEL].to_excel(f"{OUTPUT_FILE}.xlsx")
+    result_df.to_excel(f"{OUTPUT_FILE}.xlsx")
+    # result_df[COLUMNS_TO_OUTPUT_IN_EXCEL].to_excel(f"{OUTPUT_FILE}.xlsx")
     logging.info(
         f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}.xlsx"
     )
