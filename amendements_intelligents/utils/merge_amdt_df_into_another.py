@@ -19,23 +19,21 @@ logging.config.fileConfig("logging.conf")
 if __name__ == "__main__":
     DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
 
-    df_to_merge_in = AmendmentPreProcessor.load_amendments_json(
+    df_to_keep = AmendmentPreProcessor.load_amendments_json(
         input_files=[
             FilePath(
                 f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json"
             )
         ]
     )
-    df_to_merge_in = AmendmentPreProcessor.remap_columns_in_json_amendments(
-        df_to_merge_in
-    )
+    df_to_keep = AmendmentPreProcessor.remap_columns_in_json_amendments(df_to_keep)
 
     df_to_overwrite = pd.read_csv(
         f"{DATA_FOLDER}/PLFSS_2025_oct_17.csv", delimiter=";", encoding="utf-8-sig"
     )
 
     # Set the "Allotissement" column in df_to_merge_in to the corresponding "Allotissement" in df_to_overwrite because that is the one column we want to keep
-    df_to_merge_in = df_to_merge_in.merge(
+    df_to_keep = df_to_keep.merge(
         df_to_overwrite[["Num amdt", "Organe", "Lecture", "Allotissement"]],
         on=["Num amdt", "Organe", "Lecture"],
         how="left",
@@ -43,19 +41,31 @@ if __name__ == "__main__":
     )
 
     # Update the "Allotissement" column in df_to_merge_in
-    df_to_merge_in["Allotissement"] = df_to_merge_in["Allotissement_overwrite"]
+    df_to_keep["Allotissement"] = df_to_keep["Allotissement_overwrite"]
 
     # Drop the temporary "Allotissement_overwrite" column
-    df_to_merge_in.drop(columns=["Allotissement_overwrite"], inplace=True)
+    df_to_keep.drop(columns=["Allotissement_overwrite"], inplace=True)
 
     # Merge the dataframes on the specified primary keys
     merged_df = pd.merge(
         df_to_overwrite,
-        df_to_merge_in,
+        df_to_keep,
         on=["Num amdt", "Organe", "Lecture"],
         how="right",
         suffixes=("_overwrite", ""),
     )
+
+    # Only overwrite if the value in the cell of df_to_keep is not "", not NaN, and not None
+    for column in df_to_keep.columns:
+        if column not in ["Num amdt", "Organe", "Lecture"]:
+            overwrite_column = f"{column}_overwrite"
+            # Pass `column` and `overwrite_column` as default arguments to the lambda function
+            merged_df[column] = merged_df.apply(
+                lambda row, col=column, overwrite_col=overwrite_column: row[col]
+                if pd.notna(row[col]) and row[col] != "" and row[col] is not None
+                else row[overwrite_col],
+                axis=1,
+            )
 
     # Drop the columns with the '_overwrite' suffix
     columns_to_drop = [col for col in merged_df.columns if col.endswith("_overwrite")]
