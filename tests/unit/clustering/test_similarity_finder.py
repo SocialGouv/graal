@@ -27,8 +27,10 @@ def test_prefilter_similar_docs():
             "amdt_idx": [5, 6, 7, 8],
         }
     )
-    similarity_finder = SimilarityFinder(old_amendments_df, new_amendments_df)
-    similar_doc_indices = similarity_finder.prefilter_similar_docs()
+    similarity_finder = SimilarityFinder(
+        old_amendments_df, new_amendments_df, default_threshold_ratio=0.7
+    )
+    similar_doc_indices = similarity_finder.prefilter_similar_docs(threshold=0.7)
     assert similar_doc_indices == {5: [3], 6: [1], 8: [1]}
 
 
