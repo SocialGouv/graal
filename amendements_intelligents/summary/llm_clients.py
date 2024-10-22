@@ -1,3 +1,4 @@
+import json
 import random
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
@@ -20,6 +21,30 @@ class LLMAPIClient(ABC):
     @abstractmethod
     def generate_summary(self, prompt):
         pass
+
+
+class OllamaAPIClient(LLMAPIClient):
+    def __init__(self, endpoint: str, model_name: str):
+        self.endpoint = endpoint
+        self.model_name = model_name
+
+    def generate_summary(self, prompt: TxtContent) -> str:
+        url = self.endpoint
+
+        headers = {"Content-Type": "application/json"}
+
+        data = {
+            "model": self.model_name,
+            "prompt": prompt,
+            "stream": False,
+            "temperature": 0,
+        }
+
+        response = requests.post(url, json=data, headers=headers, timeout=3 * 60)
+        if response.status_code == 200:
+            return json.loads(response.text)["response"].strip()
+        else:
+            return f"Failed to get a response. Status code: {response.status_code}"
 
 
 class VllmAPIClient(LLMAPIClient):
