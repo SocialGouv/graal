@@ -99,6 +99,7 @@ def test_normalize_amendments():
                 Hello
 
                 la perte de recettes résultant pour this should be removed.
+                La charge pour l’État et les collectivités territoriales est compensée awdoij wd po.
                 world.
                 """,
             ],

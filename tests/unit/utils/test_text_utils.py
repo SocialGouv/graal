@@ -186,6 +186,7 @@ def test_replace_french_numbers(input_phrase, expected_output):
             III. – Un rapport d’évaluation est
             IV. – La perte de recettes pour l’État est co
             V. – La perte de recettes pour les organismes. »
+            V. – La charge pour l’État et les collectivités territoriales est compensée pour les organismes. »
             """,
             "rapport evaluation",
         ),
@@ -224,6 +225,7 @@ def test_normalize_text_with_special_characters():
             III. – Un rapport d’évaluation est
             IV. – La perte de recettes résultant pour l’État est co
             V. – La perte de recettes pour les organismes »
+            V. – La charge pour l’État et les collectivités territoriales est compensée par xxx »
             """,
             "un rapport d'evaluation est",
         ),

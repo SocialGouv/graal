@@ -110,12 +110,16 @@ def remove_small_roman_numerals(text: str) -> str:
 
 
 def remove_sentences_starting_with(
-    text: str, pattern: str, delimiter_pattern: str = r"\.|\n"
+    text: str, patterns: list[str], delimiter_pattern: str = r"\.|\n"
 ) -> str:
     filtered_sentences = [
         sentence.strip()
         for sentence in re.split(delimiter_pattern, text)
-        if sentence and not sentence.strip().lower().startswith(pattern.strip().lower())
+        if sentence
+        and not any(
+            sentence.strip().lower().startswith(pattern.strip().lower())
+            for pattern in patterns
+        )
     ]
     return " ".join(sentence for sentence in filtered_sentences if sentence != "")
 
@@ -140,7 +144,13 @@ def normalize_text(text: Optional[str]) -> str:
     text = re.sub(r"[^a-zA-Z0-9\s\-%]", "", text)
 
     text = remove_sentences_starting_with(
-        text, pattern=unidecode("la perte de recettes")
+        text,
+        patterns=[
+            unidecode("la perte de recettes"),
+            unidecode(
+                "la charge pour l état et les collectivités territoriales est compensée"
+            ),
+        ],
     )
 
     text = remove_stop_words(text)
@@ -179,7 +189,12 @@ class AttributionTextNormalizer:
         text = re.sub(r"\s+", " ", text)
         text = remove_sentences_starting_with(
             text,
-            pattern=unidecode("la perte de recettes"),
+            patterns=[
+                unidecode("la perte de recettes"),
+                unidecode(
+                    "la charge pour l’état et les collectivités territoriales est compensée"
+                ),
+            ],
             delimiter_pattern=r"(?<! art)(?<! l)\.|(\n)",
         )
 
