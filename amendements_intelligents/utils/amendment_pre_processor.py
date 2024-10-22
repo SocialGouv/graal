@@ -1,6 +1,7 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any, Optional
 
 import pandas as pd
 from pydantic import FilePath
@@ -14,20 +15,36 @@ from amendements_intelligents.utils.text_utils import (
 
 class AmendmentPreProcessor:
     @staticmethod
-    def load_amendments_json(input_files: list[FilePath]) -> pd.DataFrame:
-        dfs = []
+    def load_amendments_json(
+        input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
+    ) -> pd.DataFrame:
+        df_accumulator = []
+        # Initialize default_timestamp before the loop to avoid warnings
+        default_timestamp = 0
         for file_name in input_files:
             with open(file_name, "r", encoding="utf-8-sig") as f:
                 data = json.load(f)
             df = pd.DataFrame(data["amendements"])
-            df["timestamp"] = df["date_derniere_modif"].apply(
-                lambda x: int(datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f").timestamp())
-                if x not in [None, ""]
-                else 0
-            )
-            dfs.append(df)
 
-        amendments_df = pd.concat(dfs, ignore_index=True)
+            # Assign default_timestamp within the loop explicitly as a local variable
+            if file_config:
+                default_timestamp = file_config[file_name]["default_timestamp"]
+            else:
+                default_timestamp = 0
+
+            df["timestamp"] = df["date_derniere_modif"].apply(
+                lambda x: int(
+                    datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f")
+                    .replace(tzinfo=timezone.utc)
+                    .timestamp()
+                )
+                if x not in [None, ""]
+                else default_timestamp
+            )
+
+            df_accumulator.append(df)
+
+        amendments_df = pd.concat(df_accumulator, ignore_index=True)
         amendments_df["amdt_idx"] = range(len(amendments_df))
         return AmendmentPreProcessor.clean_up_json_columns(amendments_df)
 
@@ -174,7 +191,7 @@ class AmendmentPreProcessor:
         )
 
         # Also append 'Num article' to small amendment bodies
-        mask = mask | (amendments_df[expose_column].str.len() < 25)
+        mask = mask | (amendments_df[expose_column].str.len() < 50)
         logging.info(
             f'Concatenating "{amdt_bodies_column}" to "{expose_column}" in {mask.sum()} amendements to get better clusters...\n'
         )
