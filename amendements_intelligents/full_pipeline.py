@@ -36,6 +36,8 @@ from amendements_intelligents.summary.llm_clients import (
     EtalabAPIClient,
     FakeLLMAPIClient,
     LLMAPIClient,
+    OllamaAPIClient,
+    VllmAPIClient,
 )
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
@@ -46,37 +48,51 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
 
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_17.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_21.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
-    INPUT_FILE = f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json"
-    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_2025_oct_17"
+    # INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
+    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO420120.json"
+    # OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_com_fin_2025_oct_21"
+    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_perf_test_2025_oct_21"
 
-    COLUMNS_TO_OUTPUT_IN_EXCEL = [
-        "Num amdt",
-        "Allotissement",
-        "Objet amdt",
-        "Avis du Gouvernement",
-        "Réponse",
-        "Sort",
-        "Num article",
-        "Affectation (email)",
-        "Affectation (nom)",
-        "Commentaires",
-        "Exposé amdt",
-        "Corps amdt",
-        "amdt_idx",
-    ]
+    # COLUMNS_TO_OUTPUT_IN_EXCEL = [
+    #     "Num amdt",
+    #     "Allotissement",
+    #     "Objet amdt",
+    #     "Avis du Gouvernement",
+    #     "Réponse",
+    #     "Sort",
+    #     "Num article",
+    #     "Affectation (email)",
+    #     "Affectation (nom)",
+    #     "Commentaires",
+    #     "Exposé amdt",
+    #     "Corps amdt",
+    #     "amdt_idx",
+    # ]
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
 
-    # llm_api_client: LLMAPIClient = FakeLLMAPIClient()
+    llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
-    llm_api_client: LLMAPIClient = EtalabAPIClient(
-        base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
-        api_key=os.getenv("ETALAB_API_KEY"),
-        model_name=os.getenv(
-            "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
-        ),
-    )
+    # llm_api_client = VllmAPIClient(
+    #     model_name="/run/model/Meta-Llama-3.1-70B-Instruct",
+    #     vllm_endpoint=VLLM_ENDPOINT,
+    #     password=PASSWORD,
+    #     user=USER,
+    # )
+
+    # llm_api_client = OllamaAPIClient(
+    #     endpoint=OLLAMA_ENDPOINT,
+    #     model_name="llama3.1:70b",
+    # )
+
+    # llm_api_client: LLMAPIClient = EtalabAPIClient(
+    #     base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
+    #     api_key=os.getenv("ETALAB_API_KEY"),
+    #     model_name=os.getenv(
+    #         "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    #     ),
+    # )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
