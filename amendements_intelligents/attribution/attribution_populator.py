@@ -411,7 +411,7 @@ class AttributionPopulator:
         for index in missing_indices:
             random_attribution = np.random.choice(self.attribution_mappings_when_empty)
             relevant_amendments_df.at[index, "Affectation (nom)"] = [random_attribution]
-            attribution_comment = "Attribution par défault"
+            attribution_comment = "Attribution par défaut"
             AttributionPopulator.append_comment_to_amendment(
                 amendments_df=relevant_amendments_df,
                 index=index,

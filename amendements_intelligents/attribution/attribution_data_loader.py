@@ -83,8 +83,8 @@ class AttributionDataLoader:
 
     @staticmethod
     def load_default_attribution_mappings(excel_data: dict) -> list[str]:
-        """Load default attribution mappings from the "Attribution par défault" sheet. Used when no other attribution is found."""
-        attribution_mappings_when_empty = excel_data["Attribution par défault"][
+        """Load default attribution mappings from the "Attribution par défaut" sheet. Used when no other attribution is found."""
+        attribution_mappings_when_empty = excel_data["Attribution par défaut"][
             "Prénom Nom"
         ].tolist()
         return attribution_mappings_when_empty

@@ -30,7 +30,7 @@ def excel_data():
                 "Mail": ["john.doe@example.com", "jane.smith@example.com"],
             }
         ),
-        "Attribution par défault": pd.DataFrame(
+        "Attribution par défaut": pd.DataFrame(
             {"Prénom Nom": ["John Doe", "Jane Smith"]}
         ),
         "Groupe avis défaut": pd.DataFrame(
