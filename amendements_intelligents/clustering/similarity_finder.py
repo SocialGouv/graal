@@ -15,7 +15,7 @@ class SimilarityFinder:
         self,
         old_amendments_df: pd.DataFrame,
         new_amendments_df: pd.DataFrame,
-        default_threshold_ratio: float = 0.75,
+        default_threshold_ratio: float = 0.60,
         threshold_ratio_mappings: Optional[dict[str, float]] = None,
     ):
         self.old_amendments_df = old_amendments_df
@@ -27,7 +27,7 @@ class SimilarityFinder:
         )
 
     def prefilter_similar_docs(
-        self, column_used_for_similarity: str = "Exposé amdt", threshold=0.7
+        self, column_used_for_similarity: str = "Exposé amdt", threshold=0.60
     ) -> dict[IntIndex, list[IntIndex]]:
         """
         Pre-filters similar documents based on a TF-IDF comparison of the `column_used_for_similarity` in the old and new amendments.

@@ -52,11 +52,11 @@ class SimilarityHandler:
         similarity_evaluator_expose = SimilarityFinder(
             old_amendments_df=preprocessed_old_amendments_df,
             new_amendments_df=preprocessed_new_amendments_df,
-            default_threshold_ratio=0.75,
+            default_threshold_ratio=0.6,
             threshold_ratio_mappings={"amendement redactionnel": 0.95},
         )
         similarity_evaluator_expose.prefilter_similar_docs(
-            column_used_for_similarity="Exposé amdt", threshold=0.7
+            column_used_for_similarity="Exposé amdt", threshold=0.6
         )
         closest_amdts_expose = similarity_evaluator_expose.find_best_matches(
             column_used_for_similarity="Exposé amdt"
@@ -77,31 +77,27 @@ class SimilarityHandler:
 
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
-    OUTPUT_FILE = (
-        f"{DATA_FOLDER}/amendments_with_similarity_2024_with_summary_comparison.xlsx"
-    )
+    PRE_PROCESSED_OLD_AMENDMENTS_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
+    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO420120.json"
+    OUTPUT_FILE = f"{DATA_FOLDER}/test_recurrence_similarité.xlsx"
     COLUMNS_TO_OUTPUT = [
         "Num amdt",
         "Lecture",
         "Commentaires",
+        "Réponse",
+        "Sort",
         "Objet amdt",
         "Exposé amdt",
         "Corps amdt",
-        "Réponse",
-        "Sort",
     ]
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         f"{DATA_FOLDER}/acronym_mapping.xlsx"
     )
-    old_amendments_df = AmendmentPreProcessor.load_amendments_json(
-        input_files=[
-            f"{DATA_FOLDER}/PLFSS_2023.json",
-            f"{DATA_FOLDER}/PLFSS_2022.json",
-            f"{DATA_FOLDER}/PLFSS_2021.json",
-        ]
-    )
+    old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)
+
+    logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
     new_amendments_df = AmendmentPreProcessor.load_amendments_json(
-        input_files=[f"{DATA_FOLDER}/PLFSS_2024.json"]
+        input_files=[INPUT_FILE]
     )
     original_new_amendments_df = new_amendments_df.copy()
     original_new_amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
