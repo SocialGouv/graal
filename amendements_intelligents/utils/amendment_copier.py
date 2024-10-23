@@ -23,7 +23,6 @@ class AmendmentCopier:
     def copy_matches_to_amendments_df(self, target_df: pd.DataFrame) -> pd.DataFrame:
         # Iterate over the closest documents
         for new_amdt_idx, closest_doc in self.closest_amdts.items():
-            # Retrieve the amendment number and lecture from the new amendments
             new_amendment_mask = self.new_amendments_df["amdt_idx"] == new_amdt_idx
 
             # Get the best match details

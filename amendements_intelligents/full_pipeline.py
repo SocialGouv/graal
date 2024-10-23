@@ -28,6 +28,9 @@ from amendements_intelligents.attribution.attribution_data_loader import (
 from amendements_intelligents.attribution.attribution_populator import (
     AttributionPopulator,
 )
+from amendements_intelligents.clustering.inadmissible_amdt_handler import (
+    InadmissibleAmendmentHandler,
+)
 from amendements_intelligents.opinion.opinion_handler import OpinionHandler
 from amendements_intelligents.populate_allotments import AllotmentHandler
 from amendements_intelligents.populate_similarities import SimilarityHandler
@@ -50,26 +53,29 @@ def main():
 
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_21.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
+    PREPROCESSED_INADMISSIBLE_FILE = (
+        f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
+    )
     # INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
     INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO420120.json"
-    # OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_com_fin_2025_oct_21"
-    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_perf_test_2025_oct_21"
+    # OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_com_fin_2025_oct_23"
+    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_inadmissible_test_oct_23"
 
-    # COLUMNS_TO_OUTPUT_IN_EXCEL = [
-    #     "Num amdt",
-    #     "Allotissement",
-    #     "Objet amdt",
-    #     "Avis du Gouvernement",
-    #     "Réponse",
-    #     "Sort",
-    #     "Num article",
-    #     "Affectation (email)",
-    #     "Affectation (nom)",
-    #     "Commentaires",
-    #     "Exposé amdt",
-    #     "Corps amdt",
-    #     "amdt_idx",
-    # ]
+    COLUMNS_TO_OUTPUT_IN_EXCEL = [
+        "Num amdt",
+        "Sort",
+        "Commentaires",
+        "Allotissement",
+        "Objet amdt",
+        "Avis du Gouvernement",
+        "Réponse",
+        "Num article",
+        "Affectation (email)",
+        "Affectation (nom)",
+        "Exposé amdt",
+        "Corps amdt",
+        "amdt_idx",
+    ]
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
 
     llm_api_client: LLMAPIClient = FakeLLMAPIClient()
@@ -283,11 +289,18 @@ def main():
     result_df.loc[mask, "Objet amdt"] = "APPEL : " + result_df.loc[mask, "Objet amdt"]
     # END HANDLING APPEL AMENDMENTS
 
-    result_df.to_excel(f"{OUTPUT_FILE}.xlsx")
-    # result_df[COLUMNS_TO_OUTPUT_IN_EXCEL].to_excel(f"{OUTPUT_FILE}.xlsx")
-    logging.info(
-        f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}.xlsx"
+    # BEGIN HANDLING INADMISSIBLE AMENDMENTS
+    inadmissible_amdt_handler = InadmissibleAmendmentHandler(
+        preprocessed_inadmissible_file=PREPROCESSED_INADMISSIBLE_FILE
     )
+    amdts_with_inadmissible_df = inadmissible_amdt_handler.process(
+        amendments_df=result_df
+    )
+    result_df = amdts_with_inadmissible_df
+    # END HANDLING INADMISSIBLE AMENDMENTS
+
+    result_df.to_excel(f"{OUTPUT_FILE}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL)
+    logging.info(f"Saved processed amendments to: {OUTPUT_FILE}.xlsx")
     result_df.to_csv(
         f"{OUTPUT_FILE}.csv",
         sep=";",
@@ -295,9 +308,7 @@ def main():
         index=False,
     )
 
-    logging.info(
-        f"Saved amendment with attribution, allotments and object to: {OUTPUT_FILE}.csv"
-    )
+    logging.info(f"Saved processed amendments to: {OUTPUT_FILE}.csv")
 
 
 if __name__ == "__main__":
