@@ -24,23 +24,28 @@ class LLMAPIClient(ABC):
 
 
 class OllamaAPIClient(LLMAPIClient):
-    def __init__(self, endpoint: str, model_name: str):
-        self.endpoint = endpoint
+    def __init__(self, model_name: str, endpoint: Url, user: str, password: str):
         self.model_name = model_name
+        self.endpoint = endpoint
+        self.user = user
+        self.password = password
 
     def generate_summary(self, prompt: TxtContent) -> str:
         url = self.endpoint
 
         headers = {"Content-Type": "application/json"}
+        auth = (self.user, self.password)
 
         data = {
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
-            "temperature": 0,
+            "options": {"temperature": 0},
         }
 
-        response = requests.post(url, json=data, headers=headers, timeout=3 * 60)
+        response = requests.post(
+            url, json=data, headers=headers, auth=auth, timeout=3 * 60
+        )
         if response.status_code == 200:
             return json.loads(response.text)["response"].strip()
         else:
@@ -86,7 +91,8 @@ class GroqAPIClient(LLMAPIClient):
             temperature=0,
         )
 
-        return completion.choices[0].message.content.strip()
+        content = completion.choices[0].message.content
+        return content.strip() if content else ""
 
 
 class LLMInferenceAPIClient(LLMAPIClient):
@@ -142,7 +148,6 @@ class EtalabAPIClient(LLMAPIClient):
 
     def generate_summary(self, prompt: TxtContent) -> str:
         data = {
-            # "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
             "model": self.model_name,
             "messages": [{"role": "user", "content": f"{prompt}"}],
             "stream": False,
