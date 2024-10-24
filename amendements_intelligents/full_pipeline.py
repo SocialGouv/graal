@@ -42,6 +42,9 @@ from amendements_intelligents.summary.llm_clients import (
     OllamaAPIClient,
     VllmAPIClient,
 )
+from amendements_intelligents.summary.summary_generation_load_balancer import (
+    SummaryGenerationLoadBalancer,
+)
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
@@ -80,7 +83,7 @@ def main():
         "amdt_idx",
     ]
 
-    # llm_api_client: LLMAPIClient = FakeLLMAPIClient()
+    # fake_llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
     # llm_api_client = VllmAPIClient(
     #     model_name="/run/model/Meta-Llama-3.1-70B-Instruct",
@@ -93,20 +96,24 @@ def main():
     OLLAMA_PASSWORD = os.getenv("OLLAMA_PASSWORD")
     OLLAMA_ENDPOINT = os.getenv("OLLAMA_ENDPOINT")
     OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME")
-    llm_api_client = OllamaAPIClient(
+    ollama_api_client = OllamaAPIClient(
         endpoint=OLLAMA_ENDPOINT,
         model_name=OLLAMA_MODEL_NAME,
         user=OLLAMA_USER,
         password=OLLAMA_PASSWORD,
     )
 
-    # llm_api_client: LLMAPIClient = EtalabAPIClient(
-    #     base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
-    #     api_key=os.getenv("ETALAB_API_KEY"),
-    #     model_name=os.getenv(
-    #         "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
-    #     ),
-    # )
+    albert_api_client: LLMAPIClient = EtalabAPIClient(
+        base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
+        api_key=os.getenv("ETALAB_API_KEY"),
+        model_name=os.getenv(
+            "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+        ),
+    )
+
+    summary_gen_load_balancer = SummaryGenerationLoadBalancer(
+        clients=[albert_api_client, ollama_api_client]
+    )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
@@ -171,7 +178,7 @@ def main():
 
     # BEGIN SUMMARY GENERATION
     amdt_summary_populator = SummaryHandler(
-        llm_api_client=llm_api_client,
+        summary_gen_load_balancer=summary_gen_load_balancer,
         amendments_df=filtered_by_allot_df,
         acronym_mapping=acronym_mapping,
         summary_column="Objet amdt",

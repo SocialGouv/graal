@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
@@ -25,12 +26,16 @@ class LLMAPIClient(ABC):
 
 class OllamaAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, endpoint: Url, user: str, password: str):
+        self.name = "Ollama_" + "".join(
+            random.choices("abcdefghijklmnopqrstuvwxyz", k=5)
+        )
         self.model_name = model_name
         self.endpoint = endpoint
         self.user = user
         self.password = password
 
     def generate_summary(self, prompt: TxtContent) -> str:
+        logging.info(f"Client generating: {self.name}")
         url = self.endpoint
 
         headers = {"Content-Type": "application/json"}
@@ -147,6 +152,7 @@ class EtalabAPIClient(LLMAPIClient):
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
     def generate_summary(self, prompt: TxtContent) -> str:
+        logging.info("Albert generating")
         data = {
             "model": self.model_name,
             "messages": [{"role": "user", "content": f"{prompt}"}],
