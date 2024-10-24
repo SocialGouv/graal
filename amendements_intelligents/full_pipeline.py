@@ -56,10 +56,13 @@ def main():
     PREPROCESSED_INADMISSIBLE_FILE = (
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
-    # INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
+    PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
+        f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
+    )
     INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO420120.json"
-    # OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_com_fin_2025_oct_23"
-    OUTPUT_FILE = f"{DATA_FOLDER}/PLFSS_inadmissible_test_oct_23"
+
+    # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_processing_result"
 
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
@@ -76,9 +79,8 @@ def main():
         "Corps amdt",
         "amdt_idx",
     ]
-    PRE_PROCESSED_OLD_AMENDMENTS_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
 
-    llm_api_client: LLMAPIClient = FakeLLMAPIClient()
+    # llm_api_client: LLMAPIClient = FakeLLMAPIClient()
 
     # llm_api_client = VllmAPIClient(
     #     model_name="/run/model/Meta-Llama-3.1-70B-Instruct",
@@ -87,10 +89,16 @@ def main():
     #     user=USER,
     # )
 
-    # llm_api_client = OllamaAPIClient(
-    #     endpoint=OLLAMA_ENDPOINT,
-    #     model_name="llama3.1:70b",
-    # )
+    OLLAMA_USER = os.getenv("OLLAMA_USER")
+    OLLAMA_PASSWORD = os.getenv("OLLAMA_PASSWORD")
+    OLLAMA_ENDPOINT = os.getenv("OLLAMA_ENDPOINT")
+    OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME")
+    llm_api_client = OllamaAPIClient(
+        endpoint=OLLAMA_ENDPOINT,
+        model_name=OLLAMA_MODEL_NAME,
+        user=OLLAMA_USER,
+        password=OLLAMA_PASSWORD,
+    )
 
     # llm_api_client: LLMAPIClient = EtalabAPIClient(
     #     base_url=os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"),
@@ -299,16 +307,16 @@ def main():
     result_df = amdts_with_inadmissible_df
     # END HANDLING INADMISSIBLE AMENDMENTS
 
-    result_df.to_excel(f"{OUTPUT_FILE}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL)
-    logging.info(f"Saved processed amendments to: {OUTPUT_FILE}.xlsx")
+    result_df.to_excel(f"{OUTPUT_FILE_PREFIX}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL)
+    logging.info(f"Saved processed amendments to: {OUTPUT_FILE_PREFIX}.xlsx")
     result_df.to_csv(
-        f"{OUTPUT_FILE}.csv",
+        f"{OUTPUT_FILE_PREFIX}.csv",
         sep=";",
         encoding="utf-8-sig",
         index=False,
     )
 
-    logging.info(f"Saved processed amendments to: {OUTPUT_FILE}.csv")
+    logging.info(f"Saved processed amendments to: {OUTPUT_FILE_PREFIX}.csv")
 
 
 if __name__ == "__main__":

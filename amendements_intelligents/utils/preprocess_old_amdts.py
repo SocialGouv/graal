@@ -18,7 +18,7 @@ logging.config.fileConfig("logging.conf")
 logger = logging.getLogger(__name__)
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
-OUTPUT_FILE = f"{DATA_FOLDER}/pre_processed_old_amdts.pkl"
+OUTPUT_FILE = f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
 ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
 PLFSS_FILE_CONFIG = {

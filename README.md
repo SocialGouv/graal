@@ -46,11 +46,20 @@ This project comes with `PLFSS_2024.json` and `exports_lectures/PLFSS 2023`.
 Set up the following environment variables:
 
 ```bash
-# Folder where your data (like the PLFSS JSON extract) can be found
+# Folder where your data can be found
 export DATA_FOLDER="data"
-export ETALAB_API_KEY="my_key"
+
+# Work with Albert API
+export ETALAB_API_KEY=<albert_api_token>
 export ETALAB_BASE_URL="https://albert.api.etalab.gouv.fr/v1"
 export ETALAB_MODEL_NAME="meta-llama/Meta-Llama-3.1-70B-Instruct"
+
+# Work with Ollama on OVH
+export OLLAMA_ENDPOINT=https://<ip_address>.nip.io/api/generate
+export OLLAMA_USER=<user>
+export OLLAMA_PASSWORD=<password>
+export OLLAMA_MODEL_NAME="llama3.1:70b"
+
 ```
 
 ## Scripts
