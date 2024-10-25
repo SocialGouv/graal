@@ -52,11 +52,11 @@ class SimilarityHandler:
         similarity_evaluator_expose = SimilarityFinder(
             old_amendments_df=preprocessed_old_amendments_df,
             new_amendments_df=preprocessed_new_amendments_df,
-            default_threshold_ratio=0.6,
+            default_threshold_ratio=0.4,
             threshold_ratio_mappings={"amendement redactionnel": 0.95},
         )
         similarity_evaluator_expose.prefilter_similar_docs(
-            column_used_for_similarity="Exposé amdt", threshold=0.6
+            column_used_for_similarity="Exposé amdt", threshold=0.4
         )
         closest_amdts_expose = similarity_evaluator_expose.find_best_matches(
             column_used_for_similarity="Exposé amdt"
