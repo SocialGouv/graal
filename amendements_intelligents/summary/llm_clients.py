@@ -45,7 +45,7 @@ class OllamaAPIClient(LLMAPIClient):
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
-            "options": {"temperature": 0},
+            "temperature": 0,
         }
 
         response = requests.post(
