@@ -61,7 +61,9 @@ class SummaryHandler:
         )
 
         start_index = 0 if start_index is None else start_index
-        stop_index = self.amendments_df.shape[0] if stop_index is None else stop_index
+        stop_index = (
+            self.amendments_df.shape[0] - 1 if stop_index is None else stop_index
+        )
         logging.info(
             f"Starting to generate summaries for {stop_index - start_index + 1} amendments..."
         )
