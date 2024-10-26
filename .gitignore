@@ -4,6 +4,7 @@ data/*
 data/exports_lectures/*
 !data/exports_lectures/PLFSS\ 2023/
 .envrc
+.env
 
 # Python specific
 *.pyc
