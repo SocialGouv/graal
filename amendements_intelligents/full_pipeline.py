@@ -54,7 +54,7 @@ logging.config.fileConfig("logging.conf")
 def main():
     DATA_FOLDER = os.getenv("DATA_FOLDER")
 
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_21.xlsx"
+    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_25.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
     PREPROCESSED_INADMISSIBLE_FILE = (
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
@@ -311,13 +311,13 @@ def main():
     # END HANDLING APPEL AMENDMENTS
 
     # BEGIN HANDLING INADMISSIBLE AMENDMENTS
-    inadmissible_amdt_handler = InadmissibleAmendmentHandler(
-        preprocessed_inadmissible_file=PREPROCESSED_INADMISSIBLE_FILE
-    )
-    amdts_with_inadmissible_df = inadmissible_amdt_handler.process(
-        amendments_df=result_df
-    )
-    result_df = amdts_with_inadmissible_df
+    # inadmissible_amdt_handler = InadmissibleAmendmentHandler(
+    #     preprocessed_inadmissible_file=PREPROCESSED_INADMISSIBLE_FILE
+    # )
+    # amdts_with_inadmissible_df = inadmissible_amdt_handler.process(
+    #     amendments_df=result_df
+    # )
+    # result_df = amdts_with_inadmissible_df
     # END HANDLING INADMISSIBLE AMENDMENTS
 
     result_df.to_excel(f"{OUTPUT_FILE_PREFIX}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL)
