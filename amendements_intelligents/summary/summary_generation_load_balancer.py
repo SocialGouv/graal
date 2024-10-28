@@ -11,6 +11,7 @@ class SummaryGenerationLoadBalancer:
         for client in clients:
             self.client_pool.put(client)
         self.max_retries = max_retries
+        self.summary_count = 0  # Initialize summary count
 
     def _obtain_client(self) -> LLMAPIClient:
         return self.client_pool.get()
@@ -25,6 +26,9 @@ class SummaryGenerationLoadBalancer:
             try:
                 result = client.generate_summary(prompt)
                 self._put_client_back(client)
+                self.summary_count += 1  # Increment summary count
+                if self.summary_count % 10 == 0:
+                    print(f"Summaries generated: {self.summary_count}")
                 return result
             except (ConnectionError, TimeoutError) as e:
                 print(f"Error with client {client}: {e}")

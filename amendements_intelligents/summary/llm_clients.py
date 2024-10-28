@@ -35,7 +35,7 @@ class OllamaAPIClient(LLMAPIClient):
         self.password = password
 
     def generate_summary(self, prompt: TxtContent) -> str:
-        logging.info(f"Client generating: {self.name}")
+        logging.info(f"{self.name} is generating a summary")
         url = self.endpoint
 
         headers = {"Content-Type": "application/json"}
@@ -45,7 +45,9 @@ class OllamaAPIClient(LLMAPIClient):
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
-            "temperature": 0,
+            "options": {
+                "temperature": 0,
+            },
         }
 
         response = requests.post(
@@ -148,11 +150,15 @@ class FakeLLMAPIClient(LLMAPIClient):
 
 class EtalabAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, base_url: httpx.URL, api_key: APIKey):
+        self.name = "Albert_" + "".join(
+            random.choices("abcdefghijklmnopqrstuvwxyz", k=5)
+        )
         self.model_name = model_name
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
     def generate_summary(self, prompt: TxtContent) -> str:
-        logging.info("Albert generating")
+        logging.info(f"{self.name} is generating a summary")
+
         data = {
             "model": self.model_name,
             "messages": [{"role": "user", "content": f"{prompt}"}],
