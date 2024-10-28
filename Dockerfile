@@ -1,4 +1,3 @@
-# FROM python:3.11-slim
 FROM pytorch/pytorch:2.5.0-cuda12.4-cudnn9-runtime
 
 WORKDIR /app
@@ -12,4 +11,6 @@ RUN poetry run python -c "import nltk; nltk.download('punkt_tab'); nltk.download
 
 COPY . .
 
-CMD ["python", "amendements_intelligents/full_pipeline.py"]
+ENV PYTHONPATH="/app"
+
+CMD ["poetry", "run", "python", "/app/amendements_intelligents/full_pipeline.py"]

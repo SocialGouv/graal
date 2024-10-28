@@ -4,8 +4,7 @@ tests
 .env
 
 .gitignore
+.dockerignore
 Dockerfile
 makefile
-__pycache__
-
-docker run --env-file .env -v "$(pwd)/data":/app/data smart-amendments
+**/__pycache__
