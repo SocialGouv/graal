@@ -126,6 +126,18 @@ To use this script, update file paths in the script and run the following comman
 python amendements_intelligents/utils/merge_amdt_df_into_another.py
 ```
 
+## Run through Docker
+
+Build image:
+```shell
+docker build -t smart-amendments .
+```
+
+Run full pipepline:
+```shell
+docker run --env-file .env -v "$(pwd)/data":/app/data smart-amendments
+```
+
 ## Tests
 
 ### Running Tests
