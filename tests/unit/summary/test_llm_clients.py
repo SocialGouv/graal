@@ -55,7 +55,7 @@ def test_generate_summary(vllm_client):
                 "temperature": 0,
             },
             auth=("test-user", "test-password"),
-            timeout=180,
+            timeout=3,
         )
         assert summary == expected_summary
 
@@ -98,7 +98,7 @@ def test_llm_inference_api_client_generate_summary(llm_inference_client):
             json={"prompts": [prompt]},
             headers={"Content-Type": "application/json"},
             auth=("fake_user", "fake_password"),
-            timeout=180,
+            timeout=3,
         )
         assert summary == expected_summary
 
@@ -117,6 +117,6 @@ def test_llm_inference_api_client_generate_summary_failure(llm_inference_client)
             json={"prompts": [prompt]},
             headers={"Content-Type": "application/json"},
             auth=("fake_user", "fake_password"),
-            timeout=180,
+            timeout=3,
         )
         assert summary == "Failed to get a response. Status code: 500"
