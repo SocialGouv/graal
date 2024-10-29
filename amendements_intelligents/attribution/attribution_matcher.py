@@ -1,28 +1,26 @@
-from typing import Optional, Set
-
-from rapidfuzz import fuzz
+from typing import Set
 
 
 class AttributionMatcher:
-    def find_best_match(
-        self, target_text: str, candidates: Set[str], threshold: int
-    ) -> Optional[str]:
-        """Find the best matching string in a set based on a similarity threshold."""
-        best_match = max(
-            candidates,
-            key=lambda candidate: fuzz.partial_ratio(target_text, candidate),
-            default=None,
-        )
-        if best_match and fuzz.partial_ratio(target_text, best_match) > threshold:
-            return best_match
-        return None
-
-    def fuzzy_match(
-        self, amendment: dict, keywords: Set[str], threshold: int
-    ) -> list[dict[str, str]]:
+    @staticmethod
+    def fuzzy_match(amendment: dict, keywords: Set[str]) -> list[dict[str, str]]:
         """Perform fuzzy matching of keywords against amendment text."""
-        return [
-            {"amdt_idx": amendment["amdt_idx"], "Keyword": keyword}
-            for keyword in keywords
-            if fuzz.partial_ratio(keyword, amendment["Corps amdt"]) >= threshold
-        ]
+        amdt_words = amendment["Corps amdt"].split()
+        results = []
+        for keyword in keywords:
+            keyword_words = keyword.split()
+            for word in keyword_words:
+                # As soon as a word matches, make sure all the following words match, in order. If all of them do then record it.
+                start_indexes = [i for i, w in enumerate(amdt_words) if w == word]
+                for start_idx in start_indexes:
+                    if start_idx != -1:
+                        end_idx = start_idx + len(keyword_words)
+                        if amdt_words[start_idx:end_idx] == keyword_words:
+                            results.append(
+                                {
+                                    "amdt_idx": amendment["amdt_idx"],
+                                    "keyword": keyword,
+                                }
+                            )
+                            break
+        return results
