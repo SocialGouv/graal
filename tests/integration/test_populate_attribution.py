@@ -16,7 +16,7 @@ from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
 
 def test_integration_attribute_amendments():
-    test_file = "tests/integration/test_data/test_attribution.xlsx"
+    test_file = "tests/integration/test_data/test_populate_attribution.xlsx"
     mappings_file = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
     ACRONYM_FILE = "tests/integration/test_data/acronym_mapping.xlsx"
 
