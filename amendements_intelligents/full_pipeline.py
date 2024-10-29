@@ -36,7 +36,7 @@ from amendements_intelligents.populate_allotments import AllotmentHandler
 from amendements_intelligents.populate_similarities import SimilarityHandler
 from amendements_intelligents.populate_summaries import SummaryHandler
 from amendements_intelligents.summary.llm_clients import (
-    EtalabAPIClient,
+    AlbertAPIClient,
     FakeLLMAPIClient,
     LLMAPIClient,
     OllamaAPIClient,
@@ -62,7 +62,7 @@ def main():
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO420120.json"
+    INPUT_FILE = f"{DATA_FOLDER}/input_ppl/lecture-an-17-475-PO838901.json"
 
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_processing_result"
@@ -108,7 +108,7 @@ def main():
         llm_api_clients.append(ollama_api_client)
 
     for _ in range(6):
-        albert_api_client: LLMAPIClient = EtalabAPIClient(
+        albert_api_client: LLMAPIClient = AlbertAPIClient(
             base_url=os.getenv(
                 "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
             ),

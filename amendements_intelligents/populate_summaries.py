@@ -8,7 +8,7 @@ import pandas as pd
 
 from amendements_intelligents.summary.amendment_summarizer import AmendmentSummarizer
 from amendements_intelligents.summary.llm_clients import (
-    EtalabAPIClient,
+    AlbertAPIClient,
     FakeLLMAPIClient,
     LLMAPIClient,
     OllamaAPIClient,
@@ -97,7 +97,7 @@ def main():
     # llm_api_client: LLMAPIClient = VllmAPIClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
     # llm_api_client: LLMAPIClient = GroqAPIClient()
 
-    albert_api_client: LLMAPIClient = EtalabAPIClient(
+    albert_api_client: LLMAPIClient = AlbertAPIClient(
         base_url="https://albert.api.etalab.gouv.fr/v1",
         api_key=os.getenv("ETALAB_API_KEY"),
         model_name="meta-llama/Meta-Llama-3.1-70B-Instruct",
