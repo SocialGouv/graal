@@ -56,9 +56,9 @@ def main():
 
     MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_25.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
-    PREPROCESSED_INADMISSIBLE_FILE = (
-        f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
-    )
+    # PREPROCESSED_INADMISSIBLE_FILE = (
+    #     f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
+    # )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
