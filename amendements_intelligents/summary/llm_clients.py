@@ -19,6 +19,11 @@ from amendements_intelligents.types import (
 
 
 class LLMAPIClient(ABC):
+    def __init__(self, prefix: str = ""):
+        self.name = f"{prefix}_" + "".join(
+            random.choices("abcdefghijklmnopqrstuvwxyz", k=5)
+        )
+
     @abstractmethod
     def generate_summary(self, prompt):
         pass
@@ -26,9 +31,7 @@ class LLMAPIClient(ABC):
 
 class OllamaAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, endpoint: Url, user: str, password: str):
-        self.name = "Ollama_" + "".join(
-            random.choices("abcdefghijklmnopqrstuvwxyz", k=5)
-        )
+        super().__init__(prefix="ollama")
         self.model_name = model_name
         self.endpoint = endpoint
         self.user = user
@@ -50,9 +53,7 @@ class OllamaAPIClient(LLMAPIClient):
             },
         }
 
-        response = requests.post(
-            url, json=data, headers=headers, auth=auth, timeout=3 * 60
-        )
+        response = requests.post(url, json=data, headers=headers, auth=auth, timeout=3)
         if response.status_code == 200:
             return json.loads(response.text)["response"].strip()
         else:
@@ -61,6 +62,7 @@ class OllamaAPIClient(LLMAPIClient):
 
 class VllmAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, vllm_endpoint: Url, user: str, password: str):
+        super().__init__(prefix="vllm")
         self.model_name = model_name
         self.vllm_endpoint = vllm_endpoint
         self.user = user
@@ -78,15 +80,14 @@ class VllmAPIClient(LLMAPIClient):
             "temperature": 0,
         }
 
-        response = requests.post(
-            url, headers=headers, json=data, auth=auth, timeout=3 * 60
-        )
+        response = requests.post(url, headers=headers, json=data, auth=auth, timeout=3)
         summary = response.json()["choices"][0]["text"].strip()
         return summary
 
 
 class GroqAPIClient(LLMAPIClient):
     def __init__(self, model_name: str = "llama-3.1-70b-versatile") -> None:
+        super().__init__(prefix="groq")
         self.client = Groq()
         self.model_name = model_name
 
@@ -113,6 +114,7 @@ class LLMInferenceAPIClient(LLMAPIClient):
         url: str,
         auth: Optional[Tuple[CredentialsUsername, CredentialsPassword]] = None,
     ):
+        super().__init__(prefix="llm_inference")
         self.url = url
         self.auth = auth
 
@@ -123,7 +125,7 @@ class LLMInferenceAPIClient(LLMAPIClient):
         payload = {"prompts": [prompt]}
 
         response = requests.post(
-            self.url, json=payload, headers=headers, auth=self.auth, timeout=3 * 60
+            self.url, json=payload, headers=headers, auth=self.auth, timeout=3
         )
 
         # Check if the request was successful
@@ -136,7 +138,10 @@ class LLMInferenceAPIClient(LLMAPIClient):
 
 
 class FakeLLMAPIClient(LLMAPIClient):
-    def generate_summary(self, prompt: TxtContent) -> str:
+    def __init__(self):
+        super().__init__(prefix="fake")
+
+    def generate_summary(self, _prompt: TxtContent) -> str:
         # Generate a random summary
         summary = random.choice(
             [
@@ -148,11 +153,9 @@ class FakeLLMAPIClient(LLMAPIClient):
         return summary
 
 
-class EtalabAPIClient(LLMAPIClient):
+class AlbertAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, base_url: httpx.URL, api_key: APIKey):
-        self.name = "Albert_" + "".join(
-            random.choices("abcdefghijklmnopqrstuvwxyz", k=5)
-        )
+        super().__init__(prefix="albert")
         self.model_name = model_name
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
