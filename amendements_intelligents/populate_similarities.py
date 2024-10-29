@@ -56,7 +56,7 @@ class SimilarityHandler:
             threshold_ratio_mappings={"amendement redactionnel": 0.95},
         )
         similarity_evaluator_expose.prefilter_similar_docs(
-            column_used_for_similarity="Exposé amdt", threshold=0.4
+            column_used_for_similarity="Exposé amdt", threshold=0.2
         )
         closest_amdts_expose = similarity_evaluator_expose.find_best_matches(
             column_used_for_similarity="Exposé amdt"
