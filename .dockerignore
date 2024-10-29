@@ -1,0 +1,10 @@
+data
+tests
+.envrc
+.env
+
+.gitignore
+.dockerignore
+Dockerfile
+makefile
+**/__pycache__
