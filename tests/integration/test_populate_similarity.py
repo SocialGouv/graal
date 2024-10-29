@@ -27,11 +27,6 @@ def test_integration_similarity():
 
     new_amendments_df = pd.read_excel(file_path, sheet_name="nouveaux amendements")
     new_amendments_df["amdt_idx"] = range(len(new_amendments_df))
-    # For debugging purposes, we can keep only one amendment
-    # AMDT_IDX_TO_KEEP = 8
-    # new_amendments_df = new_amendments_df[
-    #     new_amendments_df["amdt_idx"] == AMDT_IDX_TO_KEEP
-    # ]
     original_new_amendments_df = new_amendments_df.copy()
 
     original_new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
@@ -74,16 +69,17 @@ def test_integration_similarity():
 
     for _, row in new_amendments_with_copies_df.iterrows():
         amdt_idx = row["amdt_idx"]
+
         found_values = {
-            "Réponse": row["Réponse"] if not pd.isnull(row["Réponse"]) else "",
-            "Sort": row["Sort"] if not pd.isnull(row["Sort"]) else "",
-            "Commentaires": row["Commentaires"]
+            "Réponse": row["Réponse"].strip() if not pd.isnull(row["Réponse"]) else "",
+            "Sort": row["Sort"].strip() if not pd.isnull(row["Sort"]) else "",
+            "Commentaires": row["Commentaires"].strip()
             if not pd.isnull(row["Commentaires"])
             else "",
         }
 
         expected_values = {
-            column: get_expected_value(expected_result_df, amdt_idx, column)
+            column: get_expected_value(expected_result_df, amdt_idx, column).strip()
             for column in ["Réponse", "Sort", "Commentaires"]
         }
 
@@ -131,7 +127,7 @@ def test_integration_similarity():
             else 0
         )
 
-        logging.info(f"Number of differing rows: {num_diff_rows}")
-        logging.info(f"Percentage of differing rows: {percentage_diff:.2f}%")
+        logging.warning(f"Number of differing rows: {num_diff_rows}")
+        logging.warning(f"Percentage of differing rows: {percentage_diff:.2f}%")
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"
