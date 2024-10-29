@@ -1,3 +1,4 @@
+import logging
 import queue
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
@@ -30,10 +31,16 @@ class SummaryGenerationLoadBalancer:
                 if self.summary_count % 10 == 0:
                     print(f"Summaries generated: {self.summary_count}")
                 return result
-            except (ConnectionError, TimeoutError) as e:
-                print(f"Error with client {client}: {e}")
+            except Exception as e:
+                logging.error(f"Error with client {client.name}: {e}")
                 retries += 1
-                self._put_client_back(client)
+                if retries < self.max_retries:
+                    self._put_client_back(client)
+                else:
+                    logging.warning(
+                        f"Removing client {client} from pool after {self.max_retries} retries."
+                    )
+                    retries = 0
         return "All clients failed after retries."
 
     def generate_summaries_concurrent(self, prompts: List[str]) -> List[str]:

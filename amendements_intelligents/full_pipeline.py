@@ -84,7 +84,11 @@ def main():
     ]
 
     llm_api_clients = []
-    # fake_llm_api_client: LLMAPIClient = FakeLLMAPIClient()
+    # for _ in range(3):
+    #     # This is a bit useless but we at least make sure that the concurrent requests with mutliple
+    #     # clients are working
+    #     fake_llm_api_client: LLMAPIClient = FakeLLMAPIClient()
+    #     llm_api_clients.append(fake_llm_api_client)
 
     # llm_api_client = VllmAPIClient(
     #     model_name="/run/model/Meta-Llama-3.1-70B-Instruct",
