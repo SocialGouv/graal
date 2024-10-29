@@ -14,13 +14,14 @@ from amendements_intelligents.summary.summary_generation_load_balancer import (
 @pytest.fixture
 def mock_client():
     client = Mock(spec=LLMAPIClient)
+    client.name = "mock_client"
     client.generate_summary.side_effect = lambda _: "mock_summary"
     return client
 
 
 @pytest.fixture
 def load_balancer(mock_client):
-    return SummaryGenerationLoadBalancer(clients=[mock_client])
+    return SummaryGenerationLoadBalancer(clients=[mock_client], queue_timeout=3.0)
 
 
 @pytest.fixture
@@ -60,8 +61,6 @@ def test_process_amendments_with_custom_summary_column(
         sample_amendments_df, load_balancer, summary_column="Objet Custom"
     )
     summarizer.summarize(start_index=0, stop_index=3)
-
-    logging.info(sample_amendments_df)
 
     assert sample_amendments_df.loc[0, "Objet Custom"] == "mock_summary"
     assert sample_amendments_df.loc[1, "Objet Custom"] == "mock_summary"
