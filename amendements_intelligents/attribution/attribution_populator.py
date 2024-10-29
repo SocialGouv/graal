@@ -229,29 +229,26 @@ class AttributionPopulator:
             .reset_index()
         )
 
-    def match_keywords_to_amendments(self, threshold: int = 75) -> pd.DataFrame:
+    def match_keywords_to_amendments(self) -> pd.DataFrame:
         """Find keyword matches for the amendments."""
-        matcher = AttributionMatcher()
         keywords = set(self.keywords_df["Mots clés"].dropna())
-        keyword_matches = self.parallel_keyword_fuzzy_matching(
-            keywords, matcher, threshold
-        )
+        keyword_matches = self.parallel_keyword_fuzzy_matching(keywords)
         if not keyword_matches:
             return pd.DataFrame()
 
         return pd.DataFrame(keyword_matches).merge(
-            self.keywords_df, left_on="Keyword", right_on="Mots clés"
+            self.keywords_df, left_on="keyword", right_on="Mots clés"
         )
 
     def parallel_keyword_fuzzy_matching(
-        self, keywords: set[str], matcher: AttributionMatcher, threshold: int
+        self, keywords: set[str]
     ) -> list[dict[str, Any]]:
         """Parallel fuzzy matching of keywords."""
         amendments = self.amendments_df.to_dict(orient="records")
         with Pool(cpu_count()) as pool:
             results = pool.starmap(
-                matcher.fuzzy_match,
-                [(amendment, keywords, threshold) for amendment in amendments],
+                AttributionMatcher.fuzzy_match,
+                [(amendment, keywords) for amendment in amendments],
             )
         return [match for sublist in results for match in sublist]
 
@@ -346,7 +343,7 @@ class AttributionPopulator:
             relevant_amendments_df.reset_index(inplace=True)
 
         # Step 2: Match keywords to amendments
-        keyword_matches_df = self.match_keywords_to_amendments(threshold=99)
+        keyword_matches_df = self.match_keywords_to_amendments()
         if not keyword_matches_df.empty:
             keyword_matches_df.set_index("amdt_idx", inplace=True)
             keyword_matches_df.sort_index(inplace=True)

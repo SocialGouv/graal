@@ -219,15 +219,13 @@ def test_update_with_keyword_matches(input_row, expected):
 @patch("amendements_intelligents.attribution.attribution_populator.Pool")
 def test_parallel_keyword_fuzzy_matching(mock_pool, attribution_populator):
     mock_pool_instance = Mock()
-    mock_pool_instance.starmap.return_value = [[{"Keyword": "civil", "amdt_idx": "1"}]]
+    mock_pool_instance.starmap.return_value = [[{"keyword": "civil", "amdt_idx": "1"}]]
     mock_pool.return_value.__enter__.return_value = mock_pool_instance
 
-    results = attribution_populator.parallel_keyword_fuzzy_matching(
-        keywords={"civil"}, matcher=Mock(), threshold=75
-    )
+    results = attribution_populator.parallel_keyword_fuzzy_matching(keywords={"civil"})
 
     assert len(results) == 1
-    assert results[0]["Keyword"] == "civil"
+    assert results[0]["keyword"] == "civil"
 
 
 def test_calculate_ratio_of_lists():
