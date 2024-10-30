@@ -123,7 +123,9 @@ def main():
         )
         llm_api_clients.append(albert_api_client)
 
-    summary_gen_load_balancer = SummaryGenerationLoadBalancer(clients=llm_api_clients)
+    summary_gen_load_balancer = SummaryGenerationLoadBalancer(
+        clients=llm_api_clients, queue_timeout=4
+    )
 
     # BEGIN LOAD AND PRE-PROCESS DATA
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])

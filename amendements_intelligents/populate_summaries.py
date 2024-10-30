@@ -117,7 +117,7 @@ def main():
         password=OLLAMA_PASSWORD,
     )
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
-        clients=[albert_api_client, ollama_api_client]
+        clients=[albert_api_client, ollama_api_client], queue_timeout=4
     )
 
     INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
