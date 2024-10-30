@@ -22,11 +22,13 @@ def test_integration_similarity():
     file_path = "tests/integration/test_data/test_populate_similarities.xlsx"
 
     old_amendments_df = pd.read_excel(file_path, sheet_name="vieux amendements")
+    # old_amendments_df = old_amendments_df[old_amendments_df["Num amdt"].isin([3, 4])]
     old_amendments_df["amdt_idx"] = range(len(old_amendments_df))
     set_timestamps(old_amendments_df)
 
     new_amendments_df = pd.read_excel(file_path, sheet_name="nouveaux amendements")
     new_amendments_df["amdt_idx"] = range(len(new_amendments_df))
+    # new_amendments_df = new_amendments_df[new_amendments_df["amdt_idx"] == 14]
     original_new_amendments_df = new_amendments_df.copy()
 
     original_new_amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
@@ -115,10 +117,6 @@ def test_integration_similarity():
                     )
 
     if not diff_df.empty:
-        diff_df.to_csv("tests/integration/test_data/diff_similarity.csv")
-        logging.info(
-            'Diff found and saved in "tests/integration/test_data/diff_similarity.csv"'
-        )
         num_diff_rows = diff_df.shape[0]
         total_expected_rows = expected_result_df.shape[0]
         percentage_diff = (
