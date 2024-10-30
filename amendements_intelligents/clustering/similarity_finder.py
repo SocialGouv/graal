@@ -86,6 +86,13 @@ class SimilarityFinder:
                     self.old_amendments_df["timestamp"],
                 )
             },
+            "response": {
+                old_amdt_idx: old_amdt_response
+                for old_amdt_idx, old_amdt_response in zip(
+                    self.old_amendments_df["amdt_idx"],
+                    self.old_amendments_df["Réponse"],
+                )
+            },
         }
         new_amdt_data = {
             "text": {
@@ -151,6 +158,7 @@ class SimilarityFinder:
         threshold_ratio_mappings: dict[str, float],
     ) -> dict[IntIndex, dict[str, Any]]:
         old_amdt_data_texts = old_amdt_data["text"]
+        old_amdt_data_responses = old_amdt_data["response"]
         old_amdt_data_comparison_values = old_amdt_data["comparison_value"]
         new_amdt_data_texts = new_amdt_data["text"]
 
@@ -160,28 +168,25 @@ class SimilarityFinder:
             new_amdt_data_text = new_amdt_data_texts[new_amdt_idx]
 
             best_doc_amdt_idx = None
-            min_distance = float("inf")
             min_comparison_value = float("inf")
+            best_similarity_ratio = 0.0
+            best_response_length = 0
             for old_amdt_data_idx in old_amdt_data_indices:
-                # The min_comparison_value is the most important filter so if we don't improve on it,
-                # we can simply skip
                 comparison_value = old_amdt_data_comparison_values[old_amdt_data_idx]
-
-                if comparison_value > min_comparison_value:
-                    continue
 
                 distance = DamerauLevenshtein.distance(
                     new_amdt_data_text, old_amdt_data_texts[old_amdt_data_idx]
                 )
-                if distance < min_distance:
-                    min_distance = distance
-                    best_doc_amdt_idx = old_amdt_data_idx
-                    min_comparison_value = comparison_value
 
-            if best_doc_amdt_idx is not None:
-                best_doc_text = old_amdt_data_texts[best_doc_amdt_idx]
-                best_doc_length = len(best_doc_text)
-                similarity_ratio = (best_doc_length - min_distance) / best_doc_length
+                current_response_length = (
+                    len(old_amdt_data_responses[old_amdt_data_idx])
+                    if pd.notna(old_amdt_data_responses[old_amdt_data_idx])
+                    else 0
+                )
+
+                cur_doc_text = old_amdt_data_texts[old_amdt_data_idx]
+                cur_text_length = len(cur_doc_text)
+                cur_similarity_ratio = (cur_text_length - distance) / cur_text_length
 
                 threshold_ratio = default_threshold_ratio
                 for key in threshold_ratio_mappings:
@@ -189,11 +194,20 @@ class SimilarityFinder:
                         threshold_ratio = threshold_ratio_mappings[key]
                         break
 
-                if similarity_ratio >= threshold_ratio:
-                    closest_docs[new_amdt_idx] = {
-                        "best_matching_comparison_value": min_comparison_value,
-                        "best_matching_doc_amdt_idx": best_doc_amdt_idx,
-                        "best_matching_doc_length": best_doc_length,
-                        "similarity_ratio": similarity_ratio,
-                    }
+                # We want to prioritize responses that are not empty while still meeting the similarity ratio threshold
+                if cur_similarity_ratio >= threshold_ratio:
+                    if (
+                        best_response_length == 0 and current_response_length > 0
+                    ) or min_comparison_value > comparison_value:
+                        best_response_length = current_response_length
+                        best_doc_amdt_idx = old_amdt_data_idx
+                        min_comparison_value = comparison_value
+                        best_similarity_ratio = cur_similarity_ratio
+
+            if best_doc_amdt_idx is not None:
+                closest_docs[new_amdt_idx] = {
+                    "best_matching_comparison_value": min_comparison_value,
+                    "best_matching_doc_amdt_idx": best_doc_amdt_idx,
+                    "similarity_ratio": best_similarity_ratio,
+                }
         return closest_docs
