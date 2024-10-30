@@ -43,10 +43,16 @@ def test_find_best_matches():
                 "Cet amendement aborde le ABC et le DEF",
                 "Un amendement qui n'a rien à voir",
             ],
-            "timestamp": [3000, 2021, 2021, 2021],
+            "timestamp": [3000, 1, 1, 1],
             "Num amdt": [1, 2, 3, 4],
             "Lecture": [1, 2, 3, 4],
             "amdt_idx": [1, 2, 3, 4],
+            "Réponse": [
+                "Response 1",
+                "Response text",
+                "Response 3",
+                "Another response",
+            ],
         }
     )
     new_amendments_df = pd.DataFrame(
@@ -57,7 +63,7 @@ def test_find_best_matches():
                 "no match",
                 "Cet amendement aborde le DEF",
             ],
-            "timestamp": [2023, 2023, 2023, 2023],
+            "timestamp": [3, 3, 3, 3],
             "Num amdt": [5, 6, 7, 8],
             "Lecture": [5, 6, 7, 8],
             "amdt_idx": [5, 6, 7, 8],
@@ -75,7 +81,6 @@ def test_find_best_matches():
     assert closest_docs == {
         6: {
             "best_matching_comparison_value": -3000,
-            "best_matching_doc_length": 38,
             "similarity_ratio": 1.0,
             "best_matching_doc_amdt_idx": 1,
             "column_used_for_comparison": "Exposé amdt",
@@ -84,7 +89,6 @@ def test_find_best_matches():
             "best_matching_comparison_value": -3000,
             "best_matching_doc_amdt_idx": 1,
             "similarity_ratio": 0.7368421052631579,
-            "best_matching_doc_length": 38,
             "column_used_for_comparison": "Exposé amdt",
         },
     }
@@ -97,19 +101,20 @@ def test_find_best_matches_missing_df():
 
 
 def test_find_best_matching_docs():
-    new_amdt_data = {
-        "text": {
-            97: "Cet amendement aborde le ABC",
-            98: "Cet amendement aborde le DEF",
-        }
-    }
     old_amdt_data = {
         "text": {
             1: "Cet amendement aborde le ABC",
             2: "Cet amendement aborde le DEF",
             3: "Cet amendement aborde le GHIJKLM",  # Between 0.75 and 0.9 similarity with amdt 1
         },
-        "comparison_value": {1: -2021, 2: -2022, 3: -2023},
+        "comparison_value": {1: -1, 2: -2, 3: -3},
+        "response": {1: "Response 1", 2: "Response 2", 3: "Response 3"},
+    }
+    new_amdt_data = {
+        "text": {
+            97: "Cet amendement aborde le ABC",
+            98: "Cet amendement aborde le DEF",
+        }
     }
     default_threshold_ratio = 0.75
     threshold_ratio_mappings = {"Cet amendement aborde le": 0.9}
@@ -117,9 +122,53 @@ def test_find_best_matching_docs():
 
     expected_output = {
         97: {
-            "best_matching_comparison_value": -2021,
+            "best_matching_comparison_value": -1,
             "best_matching_doc_amdt_idx": 1,
-            "best_matching_doc_length": 28,
+            "similarity_ratio": 1.0,
+        },
+    }
+
+    closest_docs = SimilarityFinder.find_best_matching_docs(
+        similar_doc_indices=similar_doc_indices,
+        new_amdt_data=new_amdt_data,
+        old_amdt_data=old_amdt_data,
+        default_threshold_ratio=default_threshold_ratio,
+        threshold_ratio_mappings=threshold_ratio_mappings,
+    )
+
+    assert closest_docs == expected_output
+
+
+def test_find_best_matching_docs_with_preference_for_non_empty_responses():
+    old_amdt_data = {
+        "text": {
+            1: "Cet amendement aborde le ABC",
+            2: "Cet amendement aborde le DEF",
+            3: "Cet amendement aborde le GHIJKLM",
+            4: "Cet amendement aborde le AB",  # Slightly worse than 1 but with non-empty response
+        },
+        "comparison_value": {1: -1, 2: -2, 3: -3, 4: -1},
+        "response": {1: "", 2: "", 3: "", 4: "Non-empty response"},
+    }
+    new_amdt_data = {
+        "text": {
+            97: "Cet amendement aborde le ABC",
+            98: "Cet amendement aborde le DEF",
+        }
+    }
+    default_threshold_ratio = 0.75
+    threshold_ratio_mappings = {"Cet amendement aborde le": 0.9}
+    similar_doc_indices = {97: [1, 4], 98: [2]}
+
+    expected_output = {
+        97: {
+            "best_matching_comparison_value": -1,
+            "best_matching_doc_amdt_idx": 4,
+            "similarity_ratio": 0.9629629629629629,
+        },
+        98: {
+            "best_matching_comparison_value": -2,
+            "best_matching_doc_amdt_idx": 2,
             "similarity_ratio": 1.0,
         },
     }
