@@ -69,9 +69,9 @@ Le résumé doit suivre ces règles strictes :
 12. Faire apparaître toutes les étapes proposées (exemple : "Réduire le taux de cotisations d'assurance maladie de 4 points à 1,6 SMIC puis de 2 points à compter de 2025.").
 13. Exclure les justifications de l'amendement.
 14. Préciser le fond de l'amendement.
-15. Préciser les conditions de les critères d'application de l'amendement.
-16. Si l'amendement concerne un rapport, commence ta réponse par "Remettre un rapport"
-17. Si l'amendement concerne une expérimentation, commence ta réponse par "Expérimenter", suivi du sujet de l'expérimentation
+15. Préciser les critères d'application de l'amendement.
+16. Si l'amendement concerne un rapport, commence ta réponse par "Remettre un rapport".
+17. Si l'amendement concerne une expérimentation, commence ta réponse par "Expérimenter", suivi du sujet de l'expérimentation.
 
 Utilise principalement l'exposé de l'amendement pour extraire les informations pertinentes, mais tu peux également t'appuyer sur le corps de l'amendement.
 
