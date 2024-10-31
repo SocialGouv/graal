@@ -13,8 +13,9 @@ class SummaryGenerationLoadBalancer:
         queue_timeout: float,
         max_retries: int = 3,
     ):
+        self.clients = clients
         self.client_pool: queue.Queue[LLMAPIClient] = queue.Queue()
-        for client in clients:
+        for client in self.clients:
             self.client_pool.put(client)
         self.max_retries = max_retries
         self.summary_count = 0  # Initialize summary count
@@ -36,7 +37,6 @@ class SummaryGenerationLoadBalancer:
         while retries < self.max_retries:
             try:
                 client = self._obtain_client()
-                logging.warning(f"Using client {client.name}")
             except TimeoutError as e:
                 logging.error(e)
                 raise TimeoutError(
@@ -57,7 +57,7 @@ class SummaryGenerationLoadBalancer:
         raise RuntimeError("All llm clients failed after retries.")
 
     def generate_summaries_concurrent(self, prompts: List[str]) -> List[str]:
-        with ThreadPoolExecutor(max_workers=len(prompts)) as executor:
+        with ThreadPoolExecutor(max_workers=len(self.clients)) as executor:
             futures = [
                 executor.submit(self.generate_summary, prompt) for prompt in prompts
             ]

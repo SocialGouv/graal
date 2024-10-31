@@ -43,7 +43,7 @@ class AmendmentSummarizer:
                 self._store_summary(amdt_idx, predefined_summary)
             else:
                 if row["Exposé amdt"] and row["Corps amdt"]:
-                    prompt = self.prompt_builder.build_prompt_new(
+                    prompt = self.prompt_builder.build_prompt(
                         explanatory_statement=row["Exposé amdt"],
                         amdt_body=row["Corps amdt"],
                     )

@@ -168,7 +168,7 @@ class AlbertAPIClient(LLMAPIClient):
             "stream": False,
             "temperature": 0,
             "n": 1,
-            "timeout": 3,
+            "timeout": 5,
         }
 
         response = self.client.chat.completions.create(**data)
