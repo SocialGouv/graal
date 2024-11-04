@@ -1,11 +1,15 @@
 from typing import Set
 
+from amendements_intelligents.types import ColumnName
+
 
 class AttributionMatcher:
     @staticmethod
-    def fuzzy_match(amendment: dict, keywords: Set[str]) -> list[dict[str, str]]:
+    def fuzzy_match(
+        amendment: dict, column_name_to_match: ColumnName, keywords: Set[str]
+    ) -> list[dict[str, str]]:
         """Perform fuzzy matching of keywords against amendment text."""
-        amdt_words = amendment["Corps amdt"].split()
+        amdt_words = amendment[column_name_to_match].split()
         results = []
         for keyword in keywords:
             keyword_words = keyword.split()
