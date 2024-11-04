@@ -1,6 +1,4 @@
 import logging
-import os
-import re
 
 import numpy as np
 import pandas as pd
@@ -28,8 +26,6 @@ def test_integration_attribute_amendments():
     )
     amendments_df = AmendmentPreProcessor.load_amendments_excel(input_file=test_file)
     # amendments_df = amendments_df[amendments_df["amdt_idx"] == 24]
-    amendments_df["Objet amdt"] = None
-    amendments_df["Exposé amdt"] = None
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=amendments_df
     )
@@ -44,6 +40,9 @@ def test_integration_attribute_amendments():
         columns_to_clear=["Affectation (email)", "Affectation (nom)"],
     )
     amendments_df["Corps amdt"] = original_amendments_df["Corps amdt"].apply(
+        lambda x: AttributionTextNormalizer.normalize_text(str(x))
+    )
+    amendments_df["Exposé amdt"] = original_amendments_df["Exposé amdt"].apply(
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
     )
 
