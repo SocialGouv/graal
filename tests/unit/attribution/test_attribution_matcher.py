@@ -8,7 +8,9 @@ def test_fuzzy_match():
     }
     keywords = {"sample", "text", "example", "extra spaces too", "montant m"}
 
-    result = AttributionMatcher.fuzzy_match(amendment, keywords)
+    result = AttributionMatcher.fuzzy_match(
+        amendment, column_name_to_match="Corps amdt", keywords=keywords
+    )
     expected = [
         {"amdt_idx": 1, "keyword": "sample"},
         {"amdt_idx": 1, "keyword": "text"},
@@ -27,5 +29,7 @@ def test_fuzzy_match_no_keywords():
     }
     keywords = {"example", "test", "montant m"}
 
-    result = AttributionMatcher.fuzzy_match(amendment, keywords)
+    result = AttributionMatcher.fuzzy_match(
+        amendment, column_name_to_match="Corps amdt", keywords=keywords
+    )
     assert not result
