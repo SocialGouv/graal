@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from amendements_intelligents.attribution.attribution_matcher import AttributionMatcher
-from amendements_intelligents.types import EntityType
+from amendements_intelligents.types import ColumnName, EntityType
 
 
 class AttributionPopulator:
@@ -42,10 +42,13 @@ class AttributionPopulator:
         )
 
         # Combine articles from all sources
-        articles_set = set(codes_articles_df["Articles"]).union(
-            set(laws_articles_df["Articles"]),
-            set(ordonnances_articles_df["Articles"]),
-        )
+        articles_set = set()
+        if "Articles" in codes_articles_df.columns:
+            articles_set.update(codes_articles_df["Articles"])
+        if "Articles" in laws_articles_df.columns:
+            articles_set.update(laws_articles_df["Articles"])
+        if "Articles" in ordonnances_articles_df.columns:
+            articles_set.update(ordonnances_articles_df["Articles"])
         articles_set.discard("nan")
 
         self.patterns = {
@@ -118,22 +121,23 @@ class AttributionPopulator:
         if len(current_attribution_names) == 1:
             return list(current_attribution_names)
 
-        common_names = sorted(
+        intersecting_names = sorted(
             set(current_attribution_names).intersection(keyword_attribution_names)
         )
-        if not common_names:
+        if not intersecting_names:
             return sorted(current_attribution_names)
-        return common_names
+        return intersecting_names
 
     def match_entities_and_articles_to_amendments(
         self,
-        entity_patterns: list[str],
+        column_name_to_match: ColumnName,
+        entity_patterns: list[re.Pattern[str]],
     ) -> dict[str, dict[str, set[str]]]:
         """Find the best matching entities (codes or laws) and articles for each amendment."""
         matches_per_amdt = {}
 
         for _, row in self.amendments_df.iterrows():
-            normalized_text = row["Corps amdt"]
+            normalized_text = row[column_name_to_match]
             amdt_idx = row["amdt_idx"]
 
             # Collect all entity matches for the given entity type
@@ -158,23 +162,30 @@ class AttributionPopulator:
 
         return matches_per_amdt
 
-    def match_codes_and_articles_to_amendments(self) -> dict[str, dict[str, set[str]]]:
+    def match_codes_and_articles_to_amendments(
+        self, column_name_to_match: ColumnName
+    ) -> dict[str, dict[str, set[str]]]:
         """Find the best matching codes and articles for each amendment."""
         return self.match_entities_and_articles_to_amendments(
+            column_name_to_match=column_name_to_match,
             entity_patterns=self.patterns.get(EntityType.CODE.value, []),
         )
 
-    def match_laws_and_articles_to_amendments(self) -> dict[str, dict[str, set[str]]]:
+    def match_laws_and_articles_to_amendments(
+        self, column_name_to_match: ColumnName
+    ) -> dict[str, dict[str, set[str]]]:
         """Find the best matching laws and articles for each amendment."""
         return self.match_entities_and_articles_to_amendments(
+            column_name_to_match=column_name_to_match,
             entity_patterns=self.patterns.get(EntityType.LAW.value, []),
         )
 
     def match_ordonnances_and_articles_to_amendments(
-        self,
+        self, column_name_to_match: ColumnName
     ) -> dict[str, dict[str, set[str]]]:
         """Find the best matching ordonnances and articles for each amendment."""
         return self.match_entities_and_articles_to_amendments(
+            column_name_to_match=column_name_to_match,
             entity_patterns=self.patterns.get(EntityType.ORDONNANCE.value, []),
         )
 
@@ -193,20 +204,38 @@ class AttributionPopulator:
         )
 
         for amdt_idx, matches in matches_per_amdt.items():
-            matched_codes = self.codes_articles_df[
-                self.codes_articles_df["value"].isin(matches["matching_entities"])
-                & self.codes_articles_df["Articles"].isin(matches["matching_articles"])
-            ].copy()
-            matched_laws = self.laws_articles_df[
-                self.laws_articles_df["value"].isin(matches["matching_entities"])
-                & self.laws_articles_df["Articles"].isin(matches["matching_articles"])
-            ].copy()
-            matched_ordonnances = self.ordonnances_articles_df[
-                self.ordonnances_articles_df["value"].isin(matches["matching_entities"])
-                & self.ordonnances_articles_df["Articles"].isin(
-                    matches["matching_articles"]
-                )
-            ].copy()
+            matched_codes = (
+                self.codes_articles_df[
+                    self.codes_articles_df["value"].isin(matches["matching_entities"])
+                    & self.codes_articles_df["Articles"].isin(
+                        matches["matching_articles"]
+                    )
+                ].copy()
+                if "value" in self.codes_articles_df.columns
+                else pd.DataFrame()
+            )
+            matched_laws = (
+                self.laws_articles_df[
+                    self.laws_articles_df["value"].isin(matches["matching_entities"])
+                    & self.laws_articles_df["Articles"].isin(
+                        matches["matching_articles"]
+                    )
+                ].copy()
+                if "value" in self.laws_articles_df.columns
+                else pd.DataFrame()
+            )
+            matched_ordonnances = (
+                self.ordonnances_articles_df[
+                    self.ordonnances_articles_df["value"].isin(
+                        matches["matching_entities"]
+                    )
+                    & self.ordonnances_articles_df["Articles"].isin(
+                        matches["matching_articles"]
+                    )
+                ].copy()
+                if "value" in self.ordonnances_articles_df.columns
+                else pd.DataFrame()
+            )
 
             matched_rows = pd.concat([matched_codes, matched_laws, matched_ordonnances])
 
@@ -229,10 +258,14 @@ class AttributionPopulator:
             .reset_index()
         )
 
-    def match_keywords_to_amendments(self) -> pd.DataFrame:
+    def match_keywords_to_amendments(
+        self, column_name_to_match: ColumnName
+    ) -> pd.DataFrame:
         """Find keyword matches for the amendments."""
         keywords = set(self.keywords_df["Mots clés"].dropna())
-        keyword_matches = self.parallel_keyword_fuzzy_matching(keywords)
+        keyword_matches = self.parallel_keyword_fuzzy_matching(
+            column_name_to_match, keywords
+        )
         if not keyword_matches:
             return pd.DataFrame()
 
@@ -241,14 +274,17 @@ class AttributionPopulator:
         )
 
     def parallel_keyword_fuzzy_matching(
-        self, keywords: set[str]
+        self, column_name_to_match: ColumnName, keywords: set[str]
     ) -> list[dict[str, Any]]:
         """Parallel fuzzy matching of keywords."""
         amendments = self.amendments_df.to_dict(orient="records")
         with Pool(cpu_count()) as pool:
             results = pool.starmap(
                 AttributionMatcher.fuzzy_match,
-                [(amendment, keywords) for amendment in amendments],
+                [
+                    (amendment, column_name_to_match, keywords)
+                    for amendment in amendments
+                ],
             )
         return [match for sublist in results for match in sublist]
 
@@ -299,10 +335,16 @@ class AttributionPopulator:
             relevant_amendments_df = self.amendments_df.copy()
 
         # Step 1: Match codes and articles to amendments
-        best_code_matches_per_amdt = self.match_codes_and_articles_to_amendments()
-        best_law_matches_per_amdt = self.match_laws_and_articles_to_amendments()
+        best_code_matches_per_amdt = self.match_codes_and_articles_to_amendments(
+            column_name_to_match="Corps amdt"
+        )
+        best_law_matches_per_amdt = self.match_laws_and_articles_to_amendments(
+            column_name_to_match="Corps amdt"
+        )
         best_ordonnance_matches_per_amdt = (
-            self.match_ordonnances_and_articles_to_amendments()
+            self.match_ordonnances_and_articles_to_amendments(
+                column_name_to_match="Corps amdt"
+            )
         )
         best_matches_per_amdt = {
             **best_code_matches_per_amdt,
@@ -342,33 +384,31 @@ class AttributionPopulator:
             )
             relevant_amendments_df.reset_index(inplace=True)
 
-        # Step 2: Match keywords to amendments
-        keyword_matches_df = self.match_keywords_to_amendments()
-        if not keyword_matches_df.empty:
-            keyword_matches_df.set_index("amdt_idx", inplace=True)
-            keyword_matches_df.sort_index(inplace=True)
-            relevant_amendments_df.set_index("amdt_idx", inplace=True)
+        # Step 2: Match keywords to amendments on both "Corps amdt" and "Exposé amdt" columns
+        for column_name in ["Corps amdt", "Exposé amdt"]:
+            keyword_matches_df = self.match_keywords_to_amendments(
+                column_name_to_match=column_name
+            )
+            if not keyword_matches_df.empty:
+                keyword_matches_df.set_index("amdt_idx", inplace=True)
+                keyword_matches_df.sort_index(inplace=True)
+                relevant_amendments_df.set_index("amdt_idx", inplace=True)
 
-            relevant_amendments_df["Affectation (nom)"] = relevant_amendments_df.apply(
-                AttributionPopulator.update_with_keyword_matches,
-                axis=1,
-                keyword_matches_df=keyword_matches_df,
-            )
+                relevant_amendments_df["Affectation (nom)"] = (
+                    relevant_amendments_df.apply(
+                        AttributionPopulator.update_with_keyword_matches,
+                        axis=1,
+                        keyword_matches_df=keyword_matches_df,
+                    )
+                )
 
-            ratio = AttributionPopulator.calculate_ratio_of_lists(
-                relevant_amendments_df
-            )
-            logging.info(
-                f"After keywords, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
-            )
-
-            relevant_amendments_df["Commentaires"] += relevant_amendments_df.apply(
-                lambda row: f"Affectations possibles après affectation par mots clés : {', '.join(row['Affectation (nom)'])}\n"
-                if row["Affectation (nom)"]
-                else row.get("Commentaires", ""),
-                axis=1,
-            )
-            relevant_amendments_df.reset_index(inplace=True)
+                relevant_amendments_df["Commentaires"] += relevant_amendments_df.apply(
+                    lambda row: f"Affectations possibles après affectation par mots clés dans '{column_name}' : {', '.join(row['Affectation (nom)'])}\n"
+                    if row["Affectation (nom)"]
+                    else row.get("Commentaires", ""),
+                    axis=1,
+                )
+                relevant_amendments_df.reset_index(inplace=True)
 
         # Step 3: Handle multiple attributions and random selections
         multiple_attributions = relevant_amendments_df[
