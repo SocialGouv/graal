@@ -53,7 +53,7 @@ class OllamaAPIClient(LLMAPIClient):
             },
         }
 
-        response = requests.post(url, json=data, headers=headers, auth=auth, timeout=3)
+        response = requests.post(url, json=data, headers=headers, auth=auth, timeout=10)
         if response.status_code == 200:
             return json.loads(response.text)["response"].strip()
         else:
@@ -80,7 +80,7 @@ class VllmAPIClient(LLMAPIClient):
             "temperature": 0,
         }
 
-        response = requests.post(url, headers=headers, json=data, auth=auth, timeout=3)
+        response = requests.post(url, headers=headers, json=data, auth=auth, timeout=10)
         summary = response.json()["choices"][0]["text"].strip()
         return summary
 
@@ -125,7 +125,7 @@ class LLMInferenceAPIClient(LLMAPIClient):
         payload = {"prompts": [prompt]}
 
         response = requests.post(
-            self.url, json=payload, headers=headers, auth=self.auth, timeout=3
+            self.url, json=payload, headers=headers, auth=self.auth, timeout=10
         )
 
         # Check if the request was successful
@@ -168,7 +168,7 @@ class AlbertAPIClient(LLMAPIClient):
             "stream": False,
             "temperature": 0,
             "n": 1,
-            "timeout": 5,
+            "timeout": 10,
         }
 
         response = self.client.chat.completions.create(**data)
