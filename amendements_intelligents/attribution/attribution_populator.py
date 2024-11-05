@@ -369,13 +369,6 @@ class AttributionPopulator:
                 lambda x: x if isinstance(x, list) else [x] if pd.notnull(x) else []
             )
 
-            ratio = AttributionPopulator.calculate_ratio_of_lists(
-                relevant_amendments_df
-            )
-            logging.info(
-                f"After articles, ratio of lists > 1 vs lists > 0 in 'Affectation (nom)': {ratio:.2f}"
-            )
-
             relevant_amendments_df["Commentaires"] += relevant_amendments_df.apply(
                 lambda row: f"Affectations possibles après affectation par articles : {', '.join(row['Affectation (nom)'])}\n"
                 if row["Affectation (nom)"]
