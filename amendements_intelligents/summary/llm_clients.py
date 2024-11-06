@@ -30,12 +30,20 @@ class LLMAPIClient(ABC):
 
 
 class OllamaAPIClient(LLMAPIClient):
-    def __init__(self, model_name: str, endpoint: Url, user: str, password: str):
+    def __init__(
+        self,
+        model_name: str,
+        endpoint: Url,
+        user: str,
+        password: str,
+        timeout: int = 10,
+    ):
         super().__init__(prefix="ollama")
         self.model_name = model_name
         self.endpoint = endpoint
         self.user = user
         self.password = password
+        self.timeout = timeout
 
     def generate_summary(self, prompt: TxtContent) -> str:
         logging.info(f"{self.name} is generating a summary")
@@ -48,12 +56,16 @@ class OllamaAPIClient(LLMAPIClient):
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
+            # TODO: Figure out which one is the temperature param for Ollama
+            "temperature": 0,
             "options": {
                 "temperature": 0,
             },
         }
 
-        response = requests.post(url, json=data, headers=headers, auth=auth, timeout=10)
+        response = requests.post(
+            url, json=data, headers=headers, auth=auth, timeout=self.timeout
+        )
         if response.status_code == 200:
             return json.loads(response.text)["response"].strip()
         else:
