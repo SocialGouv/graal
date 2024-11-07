@@ -23,7 +23,7 @@ class AmendmentCopier:
     def copy_matches_to_amendments_df(self, target_df: pd.DataFrame) -> pd.DataFrame:
         # Iterate over the closest documents
         for new_amdt_idx, closest_doc in self.closest_amdts.items():
-            new_amendment_mask = self.new_amendments_df["amdt_idx"] == new_amdt_idx
+            amdt_idx_mask = target_df["amdt_idx"] == new_amdt_idx
 
             # Get the best match details
             best_matching_doc_amdt_idx = closest_doc["best_matching_doc_amdt_idx"]
@@ -37,7 +37,7 @@ class AmendmentCopier:
 
             if not matching_amendment.empty:
                 # Copy the response if available
-                target_df.loc[new_amendment_mask, "Réponse"] = matching_amendment[
+                target_df.loc[amdt_idx_mask.values, "Réponse"] = matching_amendment[
                     "Réponse"
                 ].values[0]
 
@@ -50,33 +50,29 @@ class AmendmentCopier:
 
                 # Update target DataFrame with the matched details
                 # TODO: Make "Réponse copiée du PLFSS" a variable because it's not always going to be coming from a PLFSS
-                current_comments = target_df.loc[
-                    new_amendment_mask, "Commentaires"
-                ].values[0]
+                current_comments = target_df.loc[amdt_idx_mask, "Commentaires"].values[
+                    0
+                ]
                 if current_comments:
-                    target_df.loc[new_amendment_mask, "Commentaires"] += "\n"
+                    target_df.loc[amdt_idx_mask, "Commentaires"] += "\n"
                 else:
-                    target_df.loc[new_amendment_mask, "Commentaires"] = ""
+                    target_df.loc[amdt_idx_mask, "Commentaires"] = ""
 
-                target_df.loc[new_amendment_mask, "Commentaires"] += (
-                    textwrap.dedent(f"""
+                target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
                         Réponse copiée du PLFSS {matching_year}
                         Numéro d'amendement : {matching_num_amdt}
                         Lecture : {matching_lecture}
                         Organe : {matching_organe}
                         Colonne similaire : {column_used_for_comparison}
                     """).strip()
-                )
 
                 # Check and copy the "Sort" value if it contains "Irrecevable"
                 old_sort_value = matching_amendment["Sort"].values[0]
                 if pd.notna(old_sort_value) and "irrecevable" in old_sort_value.lower():
-                    target_df.loc[new_amendment_mask, "Sort"] = old_sort_value
-                    target_df.loc[new_amendment_mask, "Commentaires"] += "\n"
-                    target_df.loc[new_amendment_mask, "Commentaires"] += (
-                        textwrap.dedent(f"""
+                    target_df.loc[amdt_idx_mask, "Sort"] = old_sort_value
+                    target_df.loc[amdt_idx_mask, "Commentaires"] += "\n"
+                    target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
                             Sort copié : {old_sort_value}
                         """).strip()
-                    )
 
         return target_df
