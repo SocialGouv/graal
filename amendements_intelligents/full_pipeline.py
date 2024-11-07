@@ -84,7 +84,12 @@ def parse_arguments():
     parser.add_argument(
         "--no-value-overwrite",
         action="store_true",
-        help="Disable overwritting values that are already present in the input amendments.",
+        help="Disable overwriting values that are already present in the input amendments.",
+    )
+    parser.add_argument(
+        "--already_processed_amdt_nums_path",
+        type=str,
+        help="Path to a file containing amendment numbers that have already been processed.",
     )
     return parser.parse_args()
 
@@ -198,6 +203,12 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         amendments_df
     )
     original_amdt_df = amendments_df.copy()
+
+    if args.already_processed_amdt_nums_path:
+        with open(args.already_processed_amdt_nums_path, "r", encoding="UTF-8") as file:
+            amdt_nums = {int(line.strip()) for line in file}
+        amendments_df = amendments_df[~amendments_df["Num amdt"].isin(amdt_nums)]
+        print(f"Ignoring num amdts: {amdt_nums}")
 
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         acronym_file=ACRONYM_FILE
