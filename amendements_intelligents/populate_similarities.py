@@ -47,16 +47,18 @@ class SimilarityHandler:
         preprocessed_old_amendments_df: pd.DataFrame,
         preprocessed_new_amendments_df: pd.DataFrame,
         original_new_amendments_df: pd.DataFrame,
+        clustering_threshold: float = 0.4,
+        exact_match_threshold_ratio: float = 0.4,
     ) -> pd.DataFrame:
         # Perform similarity evaluation for Exposé amdt
         similarity_evaluator_expose = SimilarityFinder(
             old_amendments_df=preprocessed_old_amendments_df,
             new_amendments_df=preprocessed_new_amendments_df,
-            default_threshold_ratio=0.4,
+            exact_match_threshold_ratio=exact_match_threshold_ratio,
             threshold_ratio_mappings={"amendement redactionnel": 0.95},
         )
         similarity_evaluator_expose.prefilter_similar_docs(
-            column_used_for_similarity="Exposé amdt", threshold=0.4
+            column_used_for_similarity="Exposé amdt", threshold=clustering_threshold
         )
         closest_amdts_expose = similarity_evaluator_expose.find_best_matches(
             column_used_for_similarity="Exposé amdt"

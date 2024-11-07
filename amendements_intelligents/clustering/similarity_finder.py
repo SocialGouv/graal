@@ -15,13 +15,15 @@ class SimilarityFinder:
         self,
         old_amendments_df: pd.DataFrame,
         new_amendments_df: pd.DataFrame,
-        default_threshold_ratio: float = 0.60,
+        exact_match_threshold_ratio: float = 0.60,
         threshold_ratio_mappings: Optional[dict[str, float]] = None,
     ):
         self.old_amendments_df = old_amendments_df
         self.new_amendments_df = new_amendments_df
         self.similar_doc_indices: dict[IntIndex, list[IntIndex]] = {}
-        self.default_threshold_ratio = default_threshold_ratio
+        self.default_texact_match_threshold_ratioreshold_ratio = (
+            exact_match_threshold_ratio
+        )
         self.threshold_ratio_mappings = (
             threshold_ratio_mappings if threshold_ratio_mappings is not None else {}
         )
@@ -108,7 +110,7 @@ class SimilarityFinder:
             similar_doc_indices=self.similar_doc_indices,
             new_amdt_data=new_amdt_data,
             old_amdt_data=old_amdt_data,
-            default_threshold_ratio=self.default_threshold_ratio,
+            exact_match_threshold_ratio=self.default_texact_match_threshold_ratioreshold_ratio,
             threshold_ratio_mappings=self.threshold_ratio_mappings,
         )
 
@@ -154,7 +156,7 @@ class SimilarityFinder:
         similar_doc_indices: dict[IntIndex, list[IntIndex]],
         new_amdt_data: dict,
         old_amdt_data: dict,
-        default_threshold_ratio: float,
+        exact_match_threshold_ratio: float,
         threshold_ratio_mappings: dict[str, float],
     ) -> dict[IntIndex, dict[str, Any]]:
         old_amdt_data_texts = old_amdt_data["text"]
@@ -188,7 +190,7 @@ class SimilarityFinder:
                 cur_text_length = len(cur_doc_text)
                 cur_similarity_ratio = (cur_text_length - distance) / cur_text_length
 
-                threshold_ratio = default_threshold_ratio
+                threshold_ratio = exact_match_threshold_ratio
                 for key in threshold_ratio_mappings:
                     if new_amdt_data_text.startswith(key):
                         threshold_ratio = threshold_ratio_mappings[key]

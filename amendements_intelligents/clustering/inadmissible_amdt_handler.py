@@ -24,7 +24,7 @@ class InadmissibleAmendmentHandler:
         similarity_evaluator_expose = SimilarityFinder(
             old_amendments_df=filtered_amendments_df,
             new_amendments_df=amendments_df,
-            default_threshold_ratio=0.95,
+            exact_match_threshold_ratio=0.95,
             threshold_ratio_mappings={"amendement redactionnel": 0.95},
         )
         similarity_evaluator_expose.prefilter_similar_docs(
