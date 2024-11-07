@@ -46,6 +46,7 @@ from amendements_intelligents.summary.llm_clients import (
 from amendements_intelligents.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
+from amendements_intelligents.types import ColumnsToWorkOn
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
@@ -80,7 +81,52 @@ def parse_arguments():
         action="store_true",
         help="Enable handling inadmissible amendments section.",
     )
+    parser.add_argument(
+        "--no-value-overwrite",
+        action="store_true",
+        help="Disable overwritting values that are already present in the input amendments.",
+    )
     return parser.parse_args()
+
+
+def derive_columns_to_work_on_from_anebaled_features(
+    args: argparse.Namespace,
+) -> ColumnsToWorkOn:
+    columns_to_clear = set(["Commentaires"])
+    columns_to_preserve = set()
+    if args.allotments:
+        columns_to_clear.update(["Allotissement"])
+
+    if args.summary_generation:
+        columns_to_preserve.update(["Objet amdt"])
+        columns_to_clear.update(["Objet amdt"])
+
+    if args.attribution:
+        columns_to_preserve.update(
+            [
+                "Affectation (email)",
+                "Affectation (nom)",
+            ]
+        )
+        columns_to_clear.update(["Affectation (email)", "Affectation (nom)"])
+
+    if args.similarity_search:
+        columns_to_preserve.update(
+            [
+                "Sort",
+                "Réponse",
+            ]
+        )
+        columns_to_clear.update(["Sort", "Réponse"])
+
+    if args.default_opinion:
+        columns_to_preserve.update(["Avis du Gouvernement"])
+        columns_to_clear.update(["Avis du Gouvernement"])
+
+    columns_to_work_on = ColumnsToWorkOn(
+        to_preserve_orig_value=columns_to_preserve, to_clear=columns_to_clear
+    )
+    return columns_to_work_on
 
 
 def run_processing_pipeline(args: argparse.Namespace) -> None:
@@ -93,7 +139,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
+    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/test_no_overwrite.json"
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_processing_result"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
@@ -112,6 +158,8 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         "Corps amdt",
         "amdt_idx",
     ]
+
+    columns_to_work_on = derive_columns_to_work_on_from_anebaled_features(args)
 
     attribution_mappings_excel = pd.read_excel(
         ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
@@ -146,11 +194,13 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     intermediate_amdts_df = None
 
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
-        acronym_file=ACRONYM_FILE
-    )
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
+    )
+    original_amdt_df = amendments_df.copy()
+
+    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
+        acronym_file=ACRONYM_FILE
     )
     amendments_df = AmendmentPreProcessor.replace_acronyms(
         amendments_df=amendments_df,
@@ -159,16 +209,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df,
-        columns_to_clear=[
-            "Commentaires",
-            "Allotissement",
-            "Objet amdt",
-            "Avis du Gouvernement",
-            "Réponse",
-            "Sort",
-            "Affectation (email)",
-            "Affectation (nom)",
-        ],
+        columns_to_clear=columns_to_work_on["to_clear"],
     )
     intermediate_amdts_df = amendments_df
     preprocessed_original_amdt_df = amendments_df.copy()
@@ -305,6 +346,20 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         intermediate_amdts_df = inadmissible_amdt_handler.process(
             amendments_df=intermediate_amdts_df
         )
+
+    if args.no_value_overwrite:
+        for column in columns_to_work_on["to_preserve_orig_value"]:
+            intermediate_amdts_df[column] = intermediate_amdts_df.apply(
+                lambda row, col=column: (
+                    original_value := original_amdt_df.loc[
+                        original_amdt_df["amdt_idx"] == row["amdt_idx"], col
+                    ].values[0],
+                    original_value
+                    if pd.notna(original_value) and original_value not in [None, ""]
+                    else row[col],
+                )[1],
+                axis=1,
+            )
 
     intermediate_amdts_df.to_excel(
         f"{OUTPUT_FILE_PREFIX}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL
