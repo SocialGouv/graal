@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 from amendements_intelligents.summary.llm_clients import LLMAPIClient
+from amendements_intelligents.summary.summary_prompt_builder import SummaryPromptBuilder
 
 
 class SummaryGenerationLoadBalancer:
@@ -62,4 +63,26 @@ class SummaryGenerationLoadBalancer:
                 executor.submit(self.generate_summary, prompt) for prompt in prompts
             ]
             results = [future.result() for future in futures]
+        return results
+
+    def rerun_long_results(self, results, max_words=25):
+        # Detect results that have more than 20 words and note their indices
+        indices_to_rerun = []
+        for i, result in enumerate(results):
+            if len(result.split()) > max_words:
+                indices_to_rerun.append(i)
+
+        # Build new prompts for the results that need to be re-ran
+        new_prompts = [
+            SummaryPromptBuilder.build_prompt_summarize_again(results[i])
+            for i in indices_to_rerun
+        ]
+
+        # Generate new summaries for the new prompts
+        new_results = self.generate_summaries_concurrent(new_prompts)
+
+        # Replace the results at the right index
+        for idx, new_result in zip(indices_to_rerun, new_results):
+            results[idx] = new_result
+
         return results

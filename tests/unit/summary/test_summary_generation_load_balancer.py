@@ -80,3 +80,17 @@ def test_generate_summary_logging(mock_clients, caplog):
         with pytest.raises(RuntimeError):
             load_balancer.generate_summary("Test prompt")
     assert "Error with client Client 1: Error" in caplog.text
+
+
+def test_rerun_long_results(mock_clients):
+    load_balancer = SummaryGenerationLoadBalancer(clients=mock_clients, queue_timeout=1)
+    results = [
+        "Short summary",
+        "This is a very long summary that exceeds the word limit",
+    ]
+    expected_results = ["Short summary", "Summary 1"]
+
+    new_results = load_balancer.rerun_long_results(results, max_words=5)
+
+    assert new_results == expected_results
+    assert load_balancer.summary_count == 1
