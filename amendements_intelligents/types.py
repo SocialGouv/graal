@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Union
+from typing import Any, TypedDict, Union
 
 Vector = Union[list[float], list[int]]
 Embedding = Vector
@@ -17,6 +17,11 @@ IntIndex = int
 Metadata = Union[str, int, float]
 Prompt = str
 TxtContent = str
+
+
+class ColumnsToWorkOn(TypedDict):
+    to_preserve_orig_value: set[str]
+    to_clear: set[str]
 
 
 # List of patterns for each entity type
