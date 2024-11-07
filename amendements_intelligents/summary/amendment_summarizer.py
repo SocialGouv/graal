@@ -54,6 +54,9 @@ class AmendmentSummarizer:
             summaries = self.summary_gen_load_balancer.generate_summaries_concurrent(
                 prompts
             )
+            summaries = self.summary_gen_load_balancer.rerun_long_results(
+                summaries, max_words=25
+            )
             for amdt_idx, summary in zip(amdt_indices, summaries):
                 self._store_summary(amdt_idx, summary.strip())
 
