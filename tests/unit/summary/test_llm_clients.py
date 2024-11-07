@@ -23,11 +23,6 @@ def vllm_client():
 
 
 @pytest.fixture
-def groq_client():
-    return GroqAPIClient()
-
-
-@pytest.fixture
 def llm_inference_client():
     return LLMInferenceAPIClient(
         url="https://test-inference-api/v1/generate",
@@ -56,29 +51,6 @@ def test_generate_summary(vllm_client):
             },
             auth=("test-user", "test-password"),
             timeout=10,
-        )
-        assert summary == expected_summary
-
-
-def test_groq_api_client_generate_summary(groq_client):
-    prompt = TxtContent("This is a test prompt.")
-    expected_summary = "This is a test summary."
-
-    # Mock the Groq client and its response
-    with patch.object(
-        groq_client.client.chat.completions,
-        "create",
-        return_value=MagicMock(
-            choices=[MagicMock(message=MagicMock(content=expected_summary))]
-        ),
-    ) as mock_create:
-        summary = groq_client.generate_summary(prompt)
-
-        mock_create.assert_called_once_with(
-            model=groq_client.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1024,
-            temperature=0,
         )
         assert summary == expected_summary
 

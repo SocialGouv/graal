@@ -6,7 +6,6 @@ from typing import Optional, Tuple
 
 import httpx
 import requests
-from groq import Groq
 from openai import OpenAI
 from pydantic_core import Url
 
@@ -95,24 +94,6 @@ class VllmAPIClient(LLMAPIClient):
         response = requests.post(url, headers=headers, json=data, auth=auth, timeout=10)
         summary = response.json()["choices"][0]["text"].strip()
         return summary
-
-
-class GroqAPIClient(LLMAPIClient):
-    def __init__(self, model_name: str = "llama-3.1-70b-versatile") -> None:
-        super().__init__(prefix="groq")
-        self.client = Groq()
-        self.model_name = model_name
-
-    def generate_summary(self, prompt: TxtContent) -> str:
-        completion = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1024,
-            temperature=0,
-        )
-
-        content = completion.choices[0].message.content
-        return content.strip() if content else ""
 
 
 class LLMInferenceAPIClient(LLMAPIClient):
