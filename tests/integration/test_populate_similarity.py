@@ -59,6 +59,7 @@ def test_integration_similarity():
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,
+        clustering_threshold=0.2,
     )
 
     # COMPUTE THE DIFFERENCE

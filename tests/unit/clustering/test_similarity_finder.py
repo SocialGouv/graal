@@ -28,7 +28,7 @@ def test_prefilter_similar_docs():
         }
     )
     similarity_finder = SimilarityFinder(
-        old_amendments_df, new_amendments_df, default_threshold_ratio=0.7
+        old_amendments_df, new_amendments_df, exact_match_threshold_ratio=0.7
     )
     similar_doc_indices = similarity_finder.prefilter_similar_docs(threshold=0.7)
     assert similar_doc_indices == {5: [3], 6: [1], 8: [1]}
@@ -72,7 +72,7 @@ def test_find_best_matches():
     similarity_finder = SimilarityFinder(
         old_amendments_df=old_amendments_df,
         new_amendments_df=new_amendments_df,
-        default_threshold_ratio=0.7,
+        exact_match_threshold_ratio=0.7,
     )
     similarity_finder.prefilter_similar_docs()
     closest_docs = similarity_finder.find_best_matches(
@@ -132,7 +132,7 @@ def test_find_best_matching_docs():
         similar_doc_indices=similar_doc_indices,
         new_amdt_data=new_amdt_data,
         old_amdt_data=old_amdt_data,
-        default_threshold_ratio=default_threshold_ratio,
+        exact_match_threshold_ratio=default_threshold_ratio,
         threshold_ratio_mappings=threshold_ratio_mappings,
     )
 
@@ -177,7 +177,7 @@ def test_find_best_matching_docs_with_preference_for_non_empty_responses():
         similar_doc_indices=similar_doc_indices,
         new_amdt_data=new_amdt_data,
         old_amdt_data=old_amdt_data,
-        default_threshold_ratio=default_threshold_ratio,
+        exact_match_threshold_ratio=default_threshold_ratio,
         threshold_ratio_mappings=threshold_ratio_mappings,
     )
 
