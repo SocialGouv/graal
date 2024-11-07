@@ -10,3 +10,6 @@ integration_test:
 install:
 	poetry install
 	poetry run python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
+
+run:
+	python amendements_intelligents/full_pipeline.py --allotments --summary-generation --attribution --similarity-search --default-opinion

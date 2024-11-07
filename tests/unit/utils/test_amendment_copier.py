@@ -51,6 +51,7 @@ def sample_data():
     target_df = pd.DataFrame(
         {
             "Num amdt": [1, 2, 3],
+            "amdt_idx": [97, 98, 99],
             "Lecture": ["A", "B", "C"],
             "Réponse": ["", "", ""],
             "Commentaires": ["", "", ""],

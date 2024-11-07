@@ -14,6 +14,7 @@ Key functionalities include:
 - Saving the processed results to Excel and CSV formats.
 """
 
+import argparse
 import logging
 import logging.config
 import os
@@ -51,68 +52,83 @@ from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 logging.config.fileConfig("logging.conf")
 
 
-def main():
-    DATA_FOLDER = os.getenv("DATA_FOLDER")
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description="Process amendments related to the French legislative process."
+    )
+    parser.add_argument(
+        "--allotments", action="store_true", help="Enable allotments section."
+    )
+    parser.add_argument(
+        "--summary-generation",
+        action="store_true",
+        help="Enable summary generation section.",
+    )
+    parser.add_argument(
+        "--attribution", action="store_true", help="Enable attribution section."
+    )
+    parser.add_argument(
+        "--similarity-search",
+        action="store_true",
+        help="Enable similarity search section.",
+    )
+    parser.add_argument(
+        "--default-opinion", action="store_true", help="Enable default opinion section."
+    )
+    parser.add_argument(
+        "--handle-inadmissible-amendments",
+        action="store_true",
+        help="Enable handling inadmissible amendments section.",
+    )
+    return parser.parse_args()
 
-    MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_25.xlsx"
+
+def run_processing_pipeline(args: argparse.Namespace) -> None:
+    DATA_FOLDER = os.getenv("DATA_FOLDER")
+    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_25.xlsx"
     ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
-    # PREPROCESSED_INADMISSIBLE_FILE = (
-    #     f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
-    # )
+    PREPROCESSED_INADMISSIBLE_FILE = (
+        f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
+    )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = f"{DATA_FOLDER}/input_ppl/lecture-an-17-475-PO838901.json"
-
+    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_processing_result"
-
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
-        "Sort",
         "Commentaires",
         "Allotissement",
         "Objet amdt",
-        "Avis du Gouvernement",
+        "Sort",
         "Réponse",
-        "Num article",
         "Affectation (email)",
         "Affectation (nom)",
+        "Avis du Gouvernement",
+        "Groupe",
+        "Num article",
         "Exposé amdt",
         "Corps amdt",
         "amdt_idx",
     ]
 
+    attribution_mappings_excel = pd.read_excel(
+        ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
+    )
+
     llm_api_clients = []
-    # for _ in range(3):
-    #     # This is a bit useless but we at least make sure that the concurrent requests with mutliple
-    #     # clients are working
-    #     fake_llm_api_client: LLMAPIClient = FakeLLMAPIClient()
-    #     llm_api_clients.append(fake_llm_api_client)
-
-    # llm_api_client = VllmAPIClient(
-    #     model_name="/run/model/Meta-Llama-3.1-70B-Instruct",
-    #     vllm_endpoint=VLLM_ENDPOINT,
-    #     password=PASSWORD,
-    #     user=USER,
-    # )
-
-    OLLAMA_USER = os.getenv("OLLAMA_USER")
-    OLLAMA_PASSWORD = os.getenv("OLLAMA_PASSWORD")
-    OLLAMA_ENDPOINT = os.getenv("OLLAMA_ENDPOINT")
-    OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME")
-
-    for _ in range(10):
-        ollama_api_client = OllamaAPIClient(
-            endpoint=OLLAMA_ENDPOINT,
-            model_name=OLLAMA_MODEL_NAME,
-            user=OLLAMA_USER,
-            password=OLLAMA_PASSWORD,
-        )
-        llm_api_clients.append(ollama_api_client)
+    # for _ in range(10):
+    #     ollama_api_client = OllamaAPIClient(
+    #         endpoint=os.getenv("OLLAMA_ENDPOINT"),
+    #         model_name=os.getenv("OLLAMA_MODEL_NAME"),
+    #         user=os.getenv("OLLAMA_USER"),
+    #         password=os.getenv("OLLAMA_PASSWORD"),
+    #     )
+    #     llm_api_clients.append(ollama_api_client)
 
     for _ in range(6):
-        albert_api_client: LLMAPIClient = AlbertAPIClient(
+        albert_api_client = AlbertAPIClient(
             base_url=os.getenv(
                 "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
             ),
@@ -127,12 +143,12 @@ def main():
         clients=llm_api_clients, queue_timeout=4
     )
 
-    # BEGIN LOAD AND PRE-PROCESS DATA
+    intermediate_amdts_df = None
+
     amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         acronym_file=ACRONYM_FILE
     )
-
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
@@ -154,192 +170,156 @@ def main():
             "Affectation (nom)",
         ],
     )
-
+    intermediate_amdts_df = amendments_df
     preprocessed_original_amdt_df = amendments_df.copy()
-    # END LOAD AND PRE-PROCESS DATA
 
-    # BEGIN ALLOTMENTS
-    normalized_for_allot_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-        amendments_df=amendments_df, columns_to_filter_with=["Corps amdt"]
-    )
-    normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-        amendments_df=normalized_for_allot_df
-    )
-    normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
-        amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
-    )
-    allotted_amdt_clusters = AllotmentHandler.get_clusters(
-        normalized_amdt_df=normalized_for_allot_df
-    )
-
-    logging.info(
-        f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
-    )
-
-    filtered_by_allot_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
-        normalized_amdt_df=normalized_for_allot_df,
-        allotted_amdt_clusters=allotted_amdt_clusters,
-    )
-
-    logging.info(
-        f"Number of amendments left after removing extra allotted amendements : {len(filtered_by_allot_df)}"
-    )
-
-    # amdt_with_allotments_df.to_excel(f"{DATA_FOLDER}/amdt_with_allotments_df.xlsx")
-    # END ALLOTMENTS
-
-    # BEGIN SUMMARY GENERATION
-    amdt_summary_populator = SummaryHandler(
-        summary_gen_load_balancer=summary_gen_load_balancer,
-        amendments_df=filtered_by_allot_df,
-        acronym_mapping=acronym_mapping,
-        summary_column="Objet amdt",
-    )
-    amdt_with_summaries_df = amdt_summary_populator.populate()
-    # amdt_with_summaries_df.to_excel(f"{DATA_FOLDER}/amdt_with_summaries_df.xlsx")
-    # END SUMMARY GENERATION
-
-    # BEGIN ATTRIBUTION
-    # For this task, the normalization is slightly different than the one currently applied to
-    # Corps amdt so I am taking the original text and normalizing it
-    amdt_with_attribution_df = amdt_with_summaries_df
-    amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
-        "Corps amdt"
-    ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
-
-    attribution_mappings_excel = pd.read_excel(MAPPINGS_FILE, sheet_name=None)
-    codes_articles_df = AttributionDataLoader.load_codes_and_articles(
-        attribution_mappings_excel
-    )
-    laws_articles_df = AttributionDataLoader.load_laws_and_articles(
-        attribution_mappings_excel
-    )
-    ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
-        attribution_mappings_excel
-    )
-    keywords_df = AttributionDataLoader.load_keywords(
-        excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
-    )
-    name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(
-        attribution_mappings_excel
-    )
-    attribution_mappings_when_empty = (
-        AttributionDataLoader.load_default_attribution_mappings(
-            attribution_mappings_excel
+    if args.allotments:
+        normalized_for_allot_df = (
+            AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+                amendments_df=intermediate_amdts_df,
+                columns_to_filter_with=["Corps amdt"],
+            )
         )
+        normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
+            amendments_df=normalized_for_allot_df
+        )
+        normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
+            amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
+        )
+        allotted_amdt_clusters = AllotmentHandler.get_clusters(
+            normalized_amdt_df=normalized_for_allot_df
+        )
+        logging.info(
+            f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
+        )
+
+        intermediate_amdts_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
+            normalized_amdt_df=normalized_for_allot_df,
+            allotted_amdt_clusters=allotted_amdt_clusters,
+        )
+
+        logging.info(
+            f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
+        )
+
+    if args.summary_generation:
+        amdt_summary_populator = SummaryHandler(
+            summary_gen_load_balancer=summary_gen_load_balancer,
+            amendments_df=intermediate_amdts_df,
+            acronym_mapping=acronym_mapping,
+            summary_column="Objet amdt",
+        )
+        intermediate_amdts_df = amdt_summary_populator.populate()
+
+    if args.attribution:
+        amdt_with_attribution_df = intermediate_amdts_df
+        amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
+            "Corps amdt"
+        ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
+
+        attributor = AttributionPopulator(
+            amendments_df=amdt_with_attribution_df,
+            attribution_mappings_when_empty=AttributionDataLoader.load_default_attribution_mappings(
+                attribution_mappings_excel
+            ),
+            codes_articles_df=AttributionDataLoader.load_codes_and_articles(
+                attribution_mappings_excel
+            ),
+            laws_articles_df=AttributionDataLoader.load_laws_and_articles(
+                attribution_mappings_excel
+            ),
+            ordonnances_articles_df=AttributionDataLoader.load_ordonnances_and_articles(
+                attribution_mappings_excel
+            ),
+            keywords_df=AttributionDataLoader.load_keywords(
+                excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
+            ),
+            name_to_email_mapping=AttributionDataLoader.load_name_email_mappings(
+                attribution_mappings_excel
+            ),
+        )
+        intermediate_amdts_df = attributor.populate()
+
+    if args.similarity_search:
+        old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)
+        logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
+        new_amendments_df = intermediate_amdts_df
+        saved_new_amendments_df = new_amendments_df.copy()
+        new_amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+            amendments_df=new_amendments_df,
+            columns_to_filter_with=["Exposé amdt", "Corps amdt"],
+        )
+        new_amendments_df = AmendmentPreProcessor.normalize_amendments(
+            new_amendments_df, columns_to_normalize=["Exposé amdt"]
+        )
+        new_amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
+            amendments_df=new_amendments_df
+        )
+        new_amendments_df = AmendmentPreProcessor.handle_common_amendment_expose(
+            amendments_df=new_amendments_df
+        )
+        intermediate_amdts_df = SimilarityHandler.populate(
+            preprocessed_old_amendments_df=old_amendments_df,
+            preprocessed_new_amendments_df=new_amendments_df,
+            original_new_amendments_df=saved_new_amendments_df,
+        )
+
+    if args.default_opinion:
+        opinion_populator = OpinionHandler(
+            amendments_df=intermediate_amdts_df,
+            group_to_default_opinion=AttributionDataLoader.load_group_to_default_opinion(
+                attribution_mappings_excel
+            ),
+        )
+        intermediate_amdts_df = opinion_populator.populate()
+
+    if args.allotments:
+        intermediate_amdts_df = AllotmentHandler.populate(
+            original_amendments_df=preprocessed_original_amdt_df,
+            pipeline_result_amdt_df=intermediate_amdts_df,
+            allotted_amdt_clusters=allotted_amdt_clusters,
+            columns_to_copy=[
+                "Réponse",
+                "Sort",
+                "Commentaires",
+                "Objet amdt",
+                "Avis du Gouvernement",
+                "Affectation (email)",
+                "Affectation (nom)",
+            ],
+        )
+
+    if args.summary_generation:
+        regex_pattern = r"amendements? d.?appel"
+        mask = intermediate_amdts_df["Exposé amdt"].apply(
+            lambda x: re.search(regex_pattern, x, re.IGNORECASE) is not None
+        ) & (intermediate_amdts_df["Objet amdt"] != "Supprimer cet article.")
+        intermediate_amdts_df.loc[mask, "Objet amdt"] = (
+            "APPEL : " + intermediate_amdts_df.loc[mask, "Objet amdt"]
+        )
+
+    if args.handle_inadmissible_amendments:
+        inadmissible_amdt_handler = InadmissibleAmendmentHandler(
+            preprocessed_inadmissible_file=PREPROCESSED_INADMISSIBLE_FILE
+        )
+        intermediate_amdts_df = inadmissible_amdt_handler.process(
+            amendments_df=intermediate_amdts_df
+        )
+
+    intermediate_amdts_df.to_excel(
+        f"{OUTPUT_FILE_PREFIX}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL
     )
-    group_to_default_opinion = AttributionDataLoader.load_group_to_default_opinion(
-        attribution_mappings_excel
+    intermediate_amdts_df.to_csv(
+        f"{OUTPUT_FILE_PREFIX}.csv", sep=";", encoding="utf-8-sig", index=False
     )
-
-    attributor = AttributionPopulator(
-        amendments_df=amdt_with_attribution_df,
-        attribution_mappings_when_empty=attribution_mappings_when_empty,
-        codes_articles_df=codes_articles_df,
-        laws_articles_df=laws_articles_df,
-        ordonnances_articles_df=ordonnances_articles_df,
-        keywords_df=keywords_df,
-        name_to_email_mapping=name_to_email_mapping,
+    logging.info(
+        f"Saved processed amendments to: {OUTPUT_FILE_PREFIX}.xlsx and {OUTPUT_FILE_PREFIX}.csv"
     )
-    amdt_with_attribution_df = attributor.populate()
-    # amdt_with_attribution_df.to_excel(f"{DATA_FOLDER}/amdt_with_attribution_df.xlsx")
-    result_df = amdt_with_attribution_df
-
-    # END ATTRIBUTION
-
-    # BEGIN SIMILARITY SEARCH
-    old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)
-
-    logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
-
-    new_amendments_df = amdt_with_attribution_df
-    saved_new_amendments_df = new_amendments_df.copy()
-
-    new_amendments_df = AmendmentPreProcessor.normalize_amendments(
-        amendments_df=new_amendments_df,
-        columns_to_normalize=["Exposé amdt"],
-    )
-
-    new_amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-        amendments_df=new_amendments_df,
-        columns_to_filter_with=["Exposé amdt", "Corps amdt"],
-    )
-    new_amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-        amendments_df=new_amendments_df
-    )
-    new_amendments_df = AmendmentPreProcessor.handle_common_amendment_expose(
-        amendments_df=new_amendments_df
-    )
-
-    amdt_with_similarities_df = SimilarityHandler.populate(
-        preprocessed_old_amendments_df=old_amendments_df,
-        preprocessed_new_amendments_df=new_amendments_df,
-        original_new_amendments_df=saved_new_amendments_df,
-    )
-    result_df = amdt_with_similarities_df
-    # END SIMILARITY SEARCH
-
-    # BEGIN DEFAULT OPINION
-    opinion_populator = OpinionHandler(
-        amendments_df=amdt_with_similarities_df,
-        group_to_default_opinion=group_to_default_opinion,
-    )
-
-    amdt_with_opinions_df = opinion_populator.populate()
-    result_df = amdt_with_opinions_df
-    # END DEFAULT OPINION
-
-    # BEGIN ALIGNING ALL ALLOTED AMENDMENTS
-    amdt_with_allotments_df = AllotmentHandler.populate(
-        original_amendments_df=preprocessed_original_amdt_df,
-        pipeline_result_amdt_df=amdt_with_opinions_df,
-        allotted_amdt_clusters=allotted_amdt_clusters,
-        columns_to_copy=[
-            "Réponse",
-            "Sort",
-            "Commentaires",
-            "Objet amdt",
-            "Avis du Gouvernement",
-            "Affectation (email)",
-            "Affectation (nom)",
-        ],
-    )
-    result_df = amdt_with_allotments_df
-    # END ALIGNING ALL ALLOTED AMENDMENTS
-
-    # BEGIN HANDLING APPEL AMENDMENTS
-    regex_pattern = r"amendements? d.?appel"
-    mask = result_df["Exposé amdt"].apply(
-        lambda x: re.search(regex_pattern, x, re.IGNORECASE) is not None
-    ) & (result_df["Objet amdt"] != "Supprimer cet article.")
-
-    result_df.loc[mask, "Objet amdt"] = "APPEL : " + result_df.loc[mask, "Objet amdt"]
-    # END HANDLING APPEL AMENDMENTS
-
-    # BEGIN HANDLING INADMISSIBLE AMENDMENTS
-    # inadmissible_amdt_handler = InadmissibleAmendmentHandler(
-    #     preprocessed_inadmissible_file=PREPROCESSED_INADMISSIBLE_FILE
-    # )
-    # amdts_with_inadmissible_df = inadmissible_amdt_handler.process(
-    #     amendments_df=result_df
-    # )
-    # result_df = amdts_with_inadmissible_df
-    # END HANDLING INADMISSIBLE AMENDMENTS
-
-    result_df.to_excel(f"{OUTPUT_FILE_PREFIX}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL)
-    logging.info(f"Saved processed amendments to: {OUTPUT_FILE_PREFIX}.xlsx")
-    result_df.to_csv(
-        f"{OUTPUT_FILE_PREFIX}.csv",
-        sep=";",
-        encoding="utf-8-sig",
-        index=False,
-    )
-
-    logging.info(f"Saved processed amendments to: {OUTPUT_FILE_PREFIX}.csv")
 
 
 if __name__ == "__main__":
     start_time = time.time()
-    main()
+    args = parse_arguments()
+    run_processing_pipeline(args)
     end_time = time.time()
     logging.info(f"Total execution time: {end_time - start_time} seconds")
