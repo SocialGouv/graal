@@ -216,22 +216,52 @@ def test_aggregate_matches_by_amendment():
 
 
 @pytest.mark.parametrize(
-    "input_row,expected",
+    "input_row,keyword_matches_df,expected_row",
     [
-        (pd.Series({"Affectation (nom)": None}, name=0), ["Expert1", "Expert2"]),
-        (pd.Series({"Affectation (nom)": ["Expert1"]}, name=0), ["Expert1"]),
-        (pd.Series({"Affectation (nom)": ["Expert1", "Expert3"]}, name=0), ["Expert1"]),
-        (pd.Series({"Affectation (nom)": ["Expert3"]}, name=0), ["Expert3"]),
+        (
+            pd.Series({"Affectation (nom)": None, "Commentaires": ""}, name=0),
+            pd.DataFrame({"Affectation (nom)": [["Expert1", "Expert2"]]}, index=[0]),
+            pd.Series(
+                {
+                    "Affectation (nom)": ["Expert1", "Expert2"],
+                    "Commentaires": "Affectations possibles après affectation par mots clés dans 'Expose amdt' : Expert1, Expert2\n",
+                }
+            ),
+        ),
+        (
+            pd.Series(
+                {"Affectation (nom)": ["Expert1"], "Commentaires": "Unchanged"}, name=0
+            ),
+            pd.DataFrame({"Affectation (nom)": [["Expert1", "Expert2"]]}, index=[0]),
+            pd.Series({"Affectation (nom)": ["Expert1"], "Commentaires": "Unchanged"}),
+        ),
+        (
+            pd.Series(
+                {"Affectation (nom)": ["Expert1", "Expert3"], "Commentaires": ""},
+                name=0,
+            ),
+            pd.DataFrame({"Affectation (nom)": [["Expert1", "Expert2"]]}, index=[0]),
+            pd.Series(
+                {
+                    "Affectation (nom)": ["Expert1"],
+                    "Commentaires": "Affectations possibles après affectation par mots clés dans 'Expose amdt' : Expert1\n",
+                }
+            ),
+        ),
+        (
+            pd.Series(
+                {"Affectation (nom)": ["Expert3"], "Commentaires": "Unchanged"}, name=0
+            ),
+            pd.DataFrame({"Affectation (nom)": [["Expert1", "Expert2"]]}, index=[0]),
+            pd.Series({"Affectation (nom)": ["Expert3"], "Commentaires": "Unchanged"}),
+        ),
     ],
 )
-def test_update_with_keyword_matches(input_row, expected):
-    keyword_matches_df = pd.DataFrame(
-        {"Affectation (nom)": [["Expert1", "Expert2"]]}, index=[0]
-    )
+def test_update_with_keyword_matches(input_row, keyword_matches_df, expected_row):
     result = AttributionPopulator.update_with_keyword_matches(
-        input_row, keyword_matches_df
+        input_row, keyword_matches_df, "Expose amdt"
     )
-    assert result == expected
+    assert result.equals(expected_row)
 
 
 @patch("amendements_intelligents.attribution.attribution_populator.Pool")

@@ -159,7 +159,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = f"{DATA_FOLDER}/input_plf/lecture-an-17-324-2-PO420120.json"
+    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_mission_sante_nov_8_2024"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
@@ -195,19 +195,19 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #     )
     #     llm_api_clients.append(ollama_api_client)
 
-    for _ in range(6):
-        albert_api_client = AlbertAPIClient(
-            base_url=os.getenv(
-                "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
-            ),
-            api_key=os.getenv("ETALAB_API_KEY"),
-            model_name=os.getenv(
-                "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
-            ),
-        )
-        llm_api_clients.append(albert_api_client)
+    # for _ in range(6):
+    #     albert_api_client = AlbertAPIClient(
+    #         base_url=os.getenv(
+    #             "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
+    #         ),
+    #         api_key=os.getenv("ETALAB_API_KEY"),
+    #         model_name=os.getenv(
+    #             "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    #         ),
+    #     )
+    #     llm_api_clients.append(albert_api_client)
 
-    # llm_api_clients.append(FakeLLMAPIClient())
+    llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
         clients=llm_api_clients, queue_timeout=4
     )
