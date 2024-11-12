@@ -1,11 +1,10 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import requests
 from requests.models import Response
 
 from amendements_intelligents.summary.llm_clients import (
-    GroqAPIClient,
     LLMInferenceAPIClient,
     VllmAPIClient,
 )
