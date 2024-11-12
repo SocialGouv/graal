@@ -103,36 +103,49 @@ class AttributionPopulator:
 
     @staticmethod
     def update_with_keyword_matches(
-        row: pd.Series, keyword_matches_df: pd.DataFrame
-    ) -> list:
-        current_attribution_names = row["Affectation (nom)"]
+        row: pd.Series, keyword_matches_df: pd.DataFrame, column_name: str
+    ) -> pd.Series:
+        current_attribution_names = row.get("Affectation (nom)", [])
+
+        # If there is only one attribution, no need to update it
+        if current_attribution_names and len(current_attribution_names) == 1:
+            return row
+
+        # Retrieve keyword attributions from keyword_matches_df
         keyword_attribution = (
-            keyword_matches_df.loc[row.name]["Affectation (nom)"]
+            keyword_matches_df.at[row.name, "Affectation (nom)"]
             if row.name in keyword_matches_df.index
             else []
         )
+
+        # Ensure keyword_attribution is a set of strings, handling different data types
         keyword_attribution_names = set(
-            keyword_attribution.values
-            if hasattr(keyword_attribution, "values")
+            keyword_attribution
+            if isinstance(keyword_attribution, list)
             else [keyword_attribution]
             if isinstance(keyword_attribution, str)
             else []
-            if isinstance(keyword_attribution, float)
-            else keyword_attribution
         )
 
+        # Update "Affectation (nom)" based on conditions
         if not current_attribution_names:
-            return sorted(keyword_attribution_names)
+            row["Affectation (nom)"] = sorted(keyword_attribution_names)
+        else:
+            intersecting_names = set(current_attribution_names).intersection(
+                keyword_attribution_names
+            )
+            if intersecting_names:
+                row["Affectation (nom)"] = sorted(intersecting_names)
+            else:
+                return row  # No intersecting names, no update
 
-        if len(current_attribution_names) == 1:
-            return list(current_attribution_names)
+        # Update "Commentaires" if "Affectation (nom)" was modified
+        if row["Affectation (nom)"]:
+            row["Commentaires"] += (
+                f"Affectations possibles après affectation par mots clés dans '{column_name}' : {', '.join(row['Affectation (nom)'])}\n"
+            )
 
-        intersecting_names = sorted(
-            set(current_attribution_names).intersection(keyword_attribution_names)
-        )
-        if not intersecting_names:
-            return sorted(current_attribution_names)
-        return intersecting_names
+        return row
 
     def match_entities_and_articles_to_amendments(
         self,
@@ -340,7 +353,7 @@ class AttributionPopulator:
         else:
             relevant_amendments_df = self.amendments_df.copy()
 
-        # Step 1: Match codes and articles to amendments
+        # Step 1: Match codes, laws, ordonnances and articles to amendments
         best_code_matches_per_amdt = self.match_codes_and_articles_to_amendments(
             column_name_to_match="Corps amdt"
         )
@@ -393,19 +406,11 @@ class AttributionPopulator:
                 keyword_matches_df.sort_index(inplace=True)
                 relevant_amendments_df.set_index("amdt_idx", inplace=True)
 
-                relevant_amendments_df["Affectation (nom)"] = (
-                    relevant_amendments_df.apply(
-                        AttributionPopulator.update_with_keyword_matches,
-                        axis=1,
-                        keyword_matches_df=keyword_matches_df,
-                    )
-                )
-
-                relevant_amendments_df["Commentaires"] += relevant_amendments_df.apply(
-                    lambda row: f"Affectations possibles après affectation par mots clés dans '{column_name}' : {', '.join(row['Affectation (nom)'])}\n"
-                    if row["Affectation (nom)"]
-                    else row.get("Commentaires", ""),
+                relevant_amendments_df = relevant_amendments_df.apply(
+                    AttributionPopulator.update_with_keyword_matches,
                     axis=1,
+                    keyword_matches_df=keyword_matches_df,
+                    column_name=column_name,
                 )
                 relevant_amendments_df.reset_index(inplace=True)
 
