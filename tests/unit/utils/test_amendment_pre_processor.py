@@ -401,33 +401,24 @@ def test_load_amendments_json(mocker):
                             "date_derniere_modif": "2023-01-01 00:00:01.000",
                             "some_field": "value1",
                         },
-                        {"date_derniere_modif": "", "some_field": "value2"},
+                        {
+                            "date_derniere_modif": "",
+                            "some_field": "value2",
+                        },
                     ]
                 }
             )
         ),
     )
     mocker.patch(
-        "json.load",
-        return_value={
-            "amendements": [
-                {
-                    "date_derniere_modif": "2023-01-01 00:00:01.000",
-                    "some_field": "value1",
-                },
-                {"date_derniere_modif": "", "some_field": "value2"},
-            ]
-        },
-    )
-    mocker.patch("pandas.concat", side_effect=pd.concat)
-    mocker.patch("pandas.DataFrame", side_effect=pd.DataFrame)
-    mocker.patch(
         "amendements_intelligents.utils.amendment_pre_processor.AmendmentPreProcessor.clean_up_json_columns",
         side_effect=lambda x: x,
     )
 
     input_files = ["file1.json"]
-    file_config = {"file1.json": {"default_timestamp": 1234567890}}
+    file_config = {
+        "file1.json": {"default_timestamp": 1234567890, "origin_project": "PLFSS"}
+    }
 
     result_df = AmendmentPreProcessor.load_amendments_json(input_files, file_config)
 
@@ -435,6 +426,7 @@ def test_load_amendments_json(mocker):
         {
             "date_derniere_modif": ["2023-01-01 00:00:01.000", ""],
             "some_field": ["value1", "value2"],
+            "origin_project": "PLFSS",
             "timestamp": [1672531201, 1234567890],
             "amdt_idx": [0, 1],
         }

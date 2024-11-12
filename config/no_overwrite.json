@@ -1,12 +1,12 @@
 {
     "allotments": true,
-    "summary_generation": true,
+    "already_processed_amdt_nums_path": "",
+    "attribution_interstitial_only": false,
     "attribution": true,
-    "similarity_search": true,
     "default_opinion": true,
     "handle_inadmissible_amendments": false,
     "no_value_overwrite": true,
     "placeholder_amdt_body": false,
-    "already_processed_amdt_nums_path": "",
-    "attribution_interstitial_only": false
+    "similarity_search": true,
+    "summary_generation": true
 }

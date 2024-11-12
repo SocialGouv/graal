@@ -32,11 +32,12 @@ class AmendmentPreProcessor:
                 data = json.load(f)
             df = pd.DataFrame(data["amendements"])
 
-            # Assign default_timestamp within the loop explicitly as a local variable
             if file_config:
                 default_timestamp = file_config[file_name]["default_timestamp"]
+                df["origin_project"] = file_config[file_name]["origin_project"]
             else:
                 default_timestamp = 0
+                df["origin_project"] = "<Inconnue>"
 
             df["timestamp"] = df["date_derniere_modif"].apply(
                 lambda x: int(
@@ -65,8 +66,10 @@ class AmendmentPreProcessor:
 
             if file_config:
                 default_timestamp = file_config[file_name]["default_timestamp"]
+                df["origin_project"] = file_config[file_name]["origin_project"]
             else:
                 default_timestamp = 0
+                df["origin_project"] = "<Inconnue>"
 
             df["timestamp"] = default_timestamp
 
