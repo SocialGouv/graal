@@ -1,3 +1,9 @@
+"""
+This module provides utilities for preprocessing amendment data from JSON and Excel files.
+It includes functions for loading, cleaning, and normalizing amendment data, as well as handling
+common patterns in amendment bodies and exposes.
+"""
+
 import json
 import logging
 from datetime import datetime, timezone
@@ -49,14 +55,52 @@ class AmendmentPreProcessor:
         return AmendmentPreProcessor.clean_up_json_columns(amendments_df)
 
     @staticmethod
+    def load_amendments_excel(
+        input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
+    ) -> pd.DataFrame:
+        df_accumulator = []
+        default_timestamp = 0
+        for file_name in input_files:
+            df = pd.read_excel(file_name)
+
+            if file_config:
+                default_timestamp = file_config[file_name]["default_timestamp"]
+            else:
+                default_timestamp = 0
+
+            df["timestamp"] = default_timestamp
+
+            df_accumulator.append(df)
+
+        amendments_df = pd.concat(df_accumulator, ignore_index=True)
+        amendments_df["amdt_idx"] = range(len(amendments_df))
+        return amendments_df
+
+    @staticmethod
+    def concatenate_dataframes(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+        if not df1.empty:
+            max_amdt_idx = df1["amdt_idx"].max() + 1
+        else:
+            max_amdt_idx = 0
+
+        df2["amdt_idx"] += max_amdt_idx
+
+        # Ensure both dataframes have the same columns
+        for column in df1.columns.difference(df2.columns):
+            logging.warning(f"Differing column 1 {column}")
+            df2[column] = None
+        for column in df2.columns.difference(df1.columns):
+            logging.warning(f"Differing column 2 {column}")
+            df1[column] = None
+
+        concatenated_df = pd.concat([df1, df2], ignore_index=True)
+        return concatenated_df
+
+    @staticmethod
     def load_acronyms_excel(acronym_file: FilePath) -> dict[str, str]:
         acronym_df = pd.read_excel(acronym_file)
         acronym_mapping = dict(zip(acronym_df["Acronyme"], acronym_df["Développement"]))
         return acronym_mapping
-
-    @staticmethod
-    def load_amendments_excel(input_file: FilePath) -> pd.DataFrame:
-        return pd.read_excel(input_file)
 
     @staticmethod
     def clean_up_json_columns(amendements_df: pd.DataFrame) -> pd.DataFrame:
