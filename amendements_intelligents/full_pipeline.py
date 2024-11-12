@@ -86,10 +86,17 @@ def parse_arguments():
         action="store_true",
         help="Disable overwriting values that are already present in the input amendments.",
     )
+
     parser.add_argument(
-        "--already_processed_amdt_nums_path",
+        "--placeholder-amdt-body",
+        action="store_true",
+        help="Add placeholder text for empty amendment bodies.",
+    )
+
+    parser.add_argument(
+        "--already-processed-amdt-nums-path",
         type=str,
-        help="Path to a file containing amendment numbers that have already been processed.",
+        help="Path to a file containing amendment numbers that have already been processed and we want to ignore.",
     )
     return parser.parse_args()
 
@@ -144,9 +151,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/test_no_overwrite.json"
+    INPUT_FILE = f"{DATA_FOLDER}/input_plf/lecture-an-17-324-2-PO420120.json"
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_processing_result"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_mission_sante_nov_8_2024"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -192,6 +199,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
         llm_api_clients.append(albert_api_client)
 
+    # llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
         clients=llm_api_clients, queue_timeout=4
     )
@@ -203,6 +211,14 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         amendments_df
     )
     original_amdt_df = amendments_df.copy()
+
+    if args.placeholder_amdt_body:
+        for index, row in amendments_df.iterrows():
+            amendments_df.at[index, "Corps amdt"] = (
+                row["Corps amdt"]
+                if pd.notna(row["Corps amdt"]) and row["Corps amdt"] not in [None, ""]
+                else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
+            )
 
     if args.already_processed_amdt_nums_path:
         with open(args.already_processed_amdt_nums_path, "r", encoding="UTF-8") as file:
