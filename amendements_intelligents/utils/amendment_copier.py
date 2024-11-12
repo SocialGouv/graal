@@ -42,6 +42,7 @@ class AmendmentCopier:
                 ].values[0]
 
                 # Extract the matching details
+                matching_origin_project = matching_amendment["origin_project"].values[0]
                 matching_num_amdt = matching_amendment["Num amdt"].values[0]
                 matching_lecture = matching_amendment["Lecture"].values[0]
                 matching_organe = matching_amendment["Organe"].values[0]
@@ -59,7 +60,7 @@ class AmendmentCopier:
                     target_df.loc[amdt_idx_mask, "Commentaires"] = ""
 
                 target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
-                        Réponse copiée du PLFSS {matching_year}
+                        Réponse copiée de : {matching_origin_project} {matching_year}
                         Numéro d'amendement : {matching_num_amdt}
                         Lecture : {matching_lecture}
                         Organe : {matching_organe}
