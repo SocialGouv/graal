@@ -27,6 +27,7 @@ def sample_data():
             "Exposé amdt orig": ["Exposé 1", "Exposé 2", "Exposé 3"],
             "Objet orig": ["Objet 1", "Objet 2", "Objet 3"],
             "Sort": ["Sort 1", "Irrecevable 123", "Sort 3"],
+            "origin_project": ["PLFSS", "PLACSS", "PLFSS"],
         }
     )
     closest_docs = {
@@ -72,7 +73,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[0, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée du PLFSS 2022
+        Réponse copiée de : PLFSS 2022
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1
@@ -85,7 +86,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[1, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée du PLFSS 2021
+        Réponse copiée de : PLACSS 2021
         Numéro d'amendement : 2
         Lecture : B
         Organe : Organe 2
@@ -99,7 +100,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[2, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée du PLFSS 2020
+        Réponse copiée de : PLFSS 2020
         Numéro d'amendement : 3
         Lecture : C
         Organe : Organe 3

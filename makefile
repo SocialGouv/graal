@@ -13,6 +13,7 @@ install:
 
 run:
 	python amendements_intelligents/full_pipeline.py --config=config/default.json
+	# python amendements_intelligents/full_pipeline.py --config=config/testing.json
 
 run-no-overwrite:
 	python amendements_intelligents/full_pipeline.py --config=config/no_overwrite.json
