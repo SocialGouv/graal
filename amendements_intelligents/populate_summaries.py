@@ -95,7 +95,6 @@ def main():
     #     auth=(USER, PASSWORD),
     # )
     # llm_api_client: LLMAPIClient = VllmAPIClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
-    # llm_api_client: LLMAPIClient = GroqAPIClient()
 
     albert_api_client: LLMAPIClient = AlbertAPIClient(
         base_url="https://albert.api.etalab.gouv.fr/v1",

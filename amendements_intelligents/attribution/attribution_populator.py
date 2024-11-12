@@ -1,4 +1,10 @@
-import logging
+"""
+This module provides the AttributionPopulator class, which is responsible for populating attributions
+for amendments based on matching codes, laws, ordonnances, and keywords. The class uses regular expressions
+and keyword or sentence matching to identify relevant entities and articles within the text of amendments
+and assigns attributions accordingly.
+"""
+
 import re
 from multiprocessing import Pool, cpu_count
 from typing import Any
@@ -20,7 +26,7 @@ class AttributionPopulator:
         ordonnances_articles_df: pd.DataFrame,
         keywords_df: pd.DataFrame,
         name_to_email_mapping: dict[str, str],
-        ignore_non_interstitial_amdts: bool = False,
+        interstitial_only: bool = False,
     ):
         # Initialize sets and max lengths for codes, laws, and ordonnances
         codes_set = (
@@ -93,7 +99,7 @@ class AttributionPopulator:
         self.keywords_df = keywords_df
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
         self.name_to_email_mapping = name_to_email_mapping
-        self.ignore_non_interstitial_amdts = ignore_non_interstitial_amdts
+        self.interstitial_only = interstitial_only
 
     @staticmethod
     def update_with_keyword_matches(
@@ -324,8 +330,8 @@ class AttributionPopulator:
         )
 
     def populate(self):
-        # Step 0: Filter out amendments that should be ignored based on "Num article"
-        if self.ignore_non_interstitial_amdts:
+        # Step 0: Filter out interstitial amendments that should be ignored based on "Num article" if `interstitial_only` is True
+        if self.interstitial_only:
             relevant_amendments_df = self.amendments_df[
                 self.amendments_df["Num article"]
                 .str.lower()

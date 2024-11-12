@@ -2,7 +2,7 @@
 This module serves as the main entry point for processing amendments related to
 the French legislative process. It orchestrates the loading, preprocessing,
 and analysis of amendment data, including generating summaries, allotments,
-recurring amendements detection, attributions, and opinions.
+recurring amendments detection, attributions, and opinions.
 
 Key functionalities include:
 - Loading amendments and related data from JSON and Excel files.
@@ -11,6 +11,9 @@ Key functionalities include:
 - Populating allotments and attributions based on predefined mappings.
 - Performing similarity searches between new and old amendments.
 - Assigning default opinions based on group mappings.
+- Handling previously identified inadmissible amendments by processing them separately.
+- Adding placeholder text for empty amendment bodies.
+- Ignoring already processed amendments based on a provided list.
 - Saving the processed results to Excel and CSV formats.
 """
 
@@ -39,9 +42,7 @@ from amendements_intelligents.populate_summaries import SummaryHandler
 from amendements_intelligents.summary.llm_clients import (
     AlbertAPIClient,
     FakeLLMAPIClient,
-    LLMAPIClient,
     OllamaAPIClient,
-    VllmAPIClient,
 )
 from amendements_intelligents.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
@@ -97,6 +98,13 @@ def parse_arguments():
         "--already-processed-amdt-nums-path",
         type=str,
         help="Path to a file containing amendment numbers that have already been processed and we want to ignore.",
+    )
+
+    parser.add_argument(
+        "--attribution-interstitial-only",
+        action=argparse.BooleanOptionalAction,
+        help="Enable attribution only for interstitial amendments.",
+        default=False,
     )
     return parser.parse_args()
 
@@ -305,6 +313,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             name_to_email_mapping=AttributionDataLoader.load_name_email_mappings(
                 attribution_mappings_excel
             ),
+            interstitial_only=args.attribution_interstitial_only,
         )
         intermediate_amdts_df = attributor.populate()
 
