@@ -13,3 +13,6 @@ install:
 
 run:
 	python amendements_intelligents/full_pipeline.py --allotments --summary-generation --attribution --similarity-search --default-opinion
+
+run-no-overwrite:
+	python amendements_intelligents/full_pipeline.py --allotments --summary-generation --attribution --similarity-search --default-opinion --no-value-overwrite
