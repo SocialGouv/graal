@@ -18,6 +18,7 @@ Key functionalities include:
 """
 
 import argparse
+import json
 import logging
 import logging.config
 import os
@@ -54,59 +55,21 @@ from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 logging.config.fileConfig("logging.conf")
 
 
+def load_config(config_path: str) -> argparse.Namespace:
+    with open(config_path, "r", encoding="UTF-8") as file:
+        config = json.load(file)
+    return argparse.Namespace(**config)
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Process amendments related to the French legislative process."
     )
     parser.add_argument(
-        "--allotments", action="store_true", help="Enable allotments section."
+        "--config", type=str, required=True, help="Path to the JSON configuration file."
     )
-    parser.add_argument(
-        "--summary-generation",
-        action="store_true",
-        help="Enable summary generation section.",
-    )
-    parser.add_argument(
-        "--attribution", action="store_true", help="Enable attribution section."
-    )
-    parser.add_argument(
-        "--similarity-search",
-        action="store_true",
-        help="Enable similarity search section.",
-    )
-    parser.add_argument(
-        "--default-opinion", action="store_true", help="Enable default opinion section."
-    )
-    parser.add_argument(
-        "--handle-inadmissible-amendments",
-        action="store_true",
-        help="Enable handling inadmissible amendments section.",
-    )
-    parser.add_argument(
-        "--no-value-overwrite",
-        action="store_true",
-        help="Disable overwriting values that are already present in the input amendments.",
-    )
-
-    parser.add_argument(
-        "--placeholder-amdt-body",
-        action="store_true",
-        help="Add placeholder text for empty amendment bodies.",
-    )
-
-    parser.add_argument(
-        "--already-processed-amdt-nums-path",
-        type=str,
-        help="Path to a file containing amendment numbers that have already been processed and we want to ignore.",
-    )
-
-    parser.add_argument(
-        "--attribution-interstitial-only",
-        action=argparse.BooleanOptionalAction,
-        help="Enable attribution only for interstitial amendments.",
-        default=False,
-    )
-    return parser.parse_args()
+    args = parser.parse_args()
+    return load_config(args.config)
 
 
 def derive_columns_to_work_on_from_anebaled_features(
@@ -228,7 +191,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
             )
 
-    if args.already_processed_amdt_nums_path:
+    if len(args.already_processed_amdt_nums_path) > 0:
         with open(args.already_processed_amdt_nums_path, "r", encoding="UTF-8") as file:
             amdt_nums = {int(line.strip()) for line in file}
         amendments_df = amendments_df[~amendments_df["Num amdt"].isin(amdt_nums)]

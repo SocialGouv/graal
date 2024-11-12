@@ -62,58 +62,33 @@ export OLLAMA_MODEL_NAME="llama3.1:70b"
 
 ```
 
-## Scripts
+## Pipeline
 
-The project includes several scripts for different functionalities:
+### Config
 
-### Populate Similarities
+The configuration options for the pipeline can be set in a JSON file. Below are the available options and their descriptions:
 
-This script calculates and populates the similarities between amendments.
+- `allotments`: Enable allotments. (boolean)
+- `already_processed_amdt_nums_path`: Path to a file containing amendment numbers that have already been processed and we want to ignore. (string)
+- `attribution_interstitial_only`: Enable attribution only for interstitial amendments. (boolean)
+- `attribution`: Enable attribution. (boolean)
+- `default_opinion`: Enable default opinion. (boolean)
+- `handle_inadmissible_amendments`: Enable handling inadmissible amendments. (boolean)
+- `no_value_overwrite`: Disable overwriting values that are already present in the input amendments. (boolean)
+- `placeholder_amdt_body`: Add placeholder text for empty amendment bodies. (boolean)
+- `similarity_search`: Enable similarity search with older amendments. (boolean)
+- `summary_generation`: Enable summary generation. (boolean)
 
-```bash
-python amendements_intelligents/populate_similarities.py
-```
+See [config/default.json](config/default.json) for an example.
 
-### Populate Allotments
-
-This script handles the grouping of similar amendments into allotments.
-
-```bash
-python amendements_intelligents/populate_allotments.py
-```
-
-### Populate Attribution
-
-This script manages the attribution of amendments to the appropriate agents based on the mappings file (ask the team to get a link to the excel mappings).
-
-```bash
-python amendements_intelligents/populate_attribution.py
-```
-
-### Populate Opinion
-
-This script processes and populates opinion-related data for the amendments.
-
-```bash
-python amendements_intelligents/populate_opinion.py
-```
-
-### Populate Summaries
-
-This script generates and populates summaries for the amendments.
-
-```bash
-python amendements_intelligents/populate_summaries.py
-```
-
-### Full Pipeline
+### Script
 
 The full pipeline does all of the above at once.
 
 To run the full pipeline:
 
 ```bash
-python amendements_intelligents/full_pipeline.py
+python amendements_intelligents/full_pipeline.py --config=config/default.json
 ```
 
 ### Merge Amendment DataFrames
