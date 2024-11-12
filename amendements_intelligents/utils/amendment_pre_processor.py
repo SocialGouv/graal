@@ -87,10 +87,8 @@ class AmendmentPreProcessor:
 
         # Ensure both dataframes have the same columns
         for column in df1.columns.difference(df2.columns):
-            logging.warning(f"Differing column 1 {column}")
             df2[column] = None
         for column in df2.columns.difference(df1.columns):
-            logging.warning(f"Differing column 2 {column}")
             df1[column] = None
 
         concatenated_df = pd.concat([df1, df2], ignore_index=True)
