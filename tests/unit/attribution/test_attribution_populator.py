@@ -51,7 +51,7 @@ def test_match_codes_and_articles_to_amendments_body():
             "Expert3": "expert3@example.com",
             "DefaultExpert": "default@example.com",
         },
-        ignore_non_interstitial_amdts=False,
+        interstitial_only=False,
     )
 
     matches = attribution_populator.match_codes_and_articles_to_amendments("Corps amdt")
@@ -111,7 +111,7 @@ def test_match_laws_and_articles_to_amendments():
             "Expert3": "expert3@example.com",
             "DefaultExpert": "default@example.com",
         },
-        ignore_non_interstitial_amdts=False,
+        interstitial_only=False,
     )
 
     matches = attribution_populator.match_laws_and_articles_to_amendments("Corps amdt")
@@ -158,7 +158,7 @@ def test_filter_matching_entities_and_articles():
             "Expert1": "expert1@example.com",
             "DefaultExpert": "default@example.com",
         },
-        ignore_non_interstitial_amdts=False,
+        interstitial_only=False,
     )
 
     code_matches = attribution_populator.match_codes_and_articles_to_amendments(
@@ -204,7 +204,7 @@ def test_aggregate_matches_by_amendment():
             "Expert1": "expert1@example.com",
             "DefaultExpert": "default@example.com",
         },
-        ignore_non_interstitial_amdts=False,
+        interstitial_only=False,
     )
 
     matches = attribution_populator.match_codes_and_articles_to_amendments("Corps amdt")
@@ -248,7 +248,7 @@ def test_parallel_keyword_fuzzy_matching(mock_pool):
         ordonnances_articles_df=pd.DataFrame(),
         keywords_df=pd.DataFrame(),
         name_to_email_mapping={},
-        ignore_non_interstitial_amdts=False,
+        interstitial_only=False,
     )
 
     results = attribution_populator.parallel_keyword_fuzzy_matching(
@@ -322,7 +322,7 @@ def test_match_keywords_to_amendments():
             "Expert3": "expert3@example.com",
             "DefaultExpert": "default@example.com",
         },
-        ignore_non_interstitial_amdts=False,
+        interstitial_only=False,
     )
 
     keyword_matches_df = attribution_populator.match_keywords_to_amendments(
