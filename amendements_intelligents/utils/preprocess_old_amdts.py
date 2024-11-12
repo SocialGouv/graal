@@ -1,3 +1,11 @@
+"""
+This module preprocesses old amendments for similarity search.
+
+It includes functions to load and preprocess amendments from JSON and Excel files,
+process the amendments to filter and cluster them (in order to remove duplicates), and save the processed amendments
+to a file. These will then be used to populate similarities between old and new amendments in the amendement processing pipeline.
+"""
+
 import logging
 import logging.config
 import os
@@ -15,92 +23,98 @@ from amendements_intelligents.types import IntIndex
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
-logger = logging.getLogger(__name__)
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
 OUTPUT_FILE = f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
 ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
 
-PLFSS_FILE_CONFIG = {
+PLFSS_FILE_CONFIG_JSON = {
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json": {
-        "default_timestamp": int(datetime(2021, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2021, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3551-PO717460.json": {
-        "default_timestamp": int(datetime(2021, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2021, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO717460.json": {
-        "default_timestamp": int(datetime(2021, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2021, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO420120.json": {
-        "default_timestamp": int(datetime(2021, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2021, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-118-PO78718.json": {
-        "default_timestamp": int(datetime(2022, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2022, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-189-PO78718.json": {
-        "default_timestamp": int(datetime(2022, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2022, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4685-PO717460.json": {
-        "default_timestamp": int(datetime(2022, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2022, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4523-PO717460.json": {
-        "default_timestamp": int(datetime(2022, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2022, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-senat-2022-2023-96-PO78718.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO791932.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO420120.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-1682-PO791932 (2).json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-480-PO791932.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json": {
-        "default_timestamp": int(datetime(2024, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2024, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1875-PO791932.json": {
-        "default_timestamp": int(datetime(2024, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2024, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-senat-2023-2024-77-PO78718.json": {
-        "default_timestamp": int(datetime(2024, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2024, month=7, day=1).timestamp())
     },
 }
 
-PLACSS_FILE_CONFIG = {
+PLACSS_FILE_CONFIG_JSON = {
     f"{DATA_FOLDER}/exports_lectures/PLACSS 22/AN Séance 1ère lecture/lecture-an-16-1268-PO791932.json": {
-        "default_timestamp": int(datetime(2022, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2022, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/PLACSS 22/Sénat Séance 1ère lecture/lecture-senat-2022-2023-705-PO78718.json": {
-        "default_timestamp": int(datetime(2022, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2022, month=7, day=1).timestamp())
     },
 }
 
-LFRSS_FILE_CONFIG = {
+LFRSS_FILE_CONFIG_JSON = {
     f"{DATA_FOLDER}/exports_lectures/PPL LIOT 2023 abrogation réforme des retraites/Séance AN/lecture-an-16-1299-PO791932.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO791932.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO420120.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
     f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-senat-2022-2023-368-PO78718.json": {
-        "default_timestamp": int(datetime(2023, 7, 1).timestamp())
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp())
     },
 }
 
-ALL_INPUT_FILE_CONFIGS = {
-    **PLFSS_FILE_CONFIG,
-    **PLACSS_FILE_CONFIG,
-    **LFRSS_FILE_CONFIG,
+ALL_INPUT_FILE_CONFIGS_JSON = {
+    **PLFSS_FILE_CONFIG_JSON,
+    **PLACSS_FILE_CONFIG_JSON,
+    **LFRSS_FILE_CONFIG_JSON,
 }
+
+PLFSS_FILE_CONFIG_EXCEL = {
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/lecture_AN_avec_toutes_reponses.xlsx": {
+        "default_timestamp": int(datetime(2024, month=10, day=17).timestamp())
+    },
+}
+ALL_INPUT_FILE_CONFIGS_EXCEL = {**PLFSS_FILE_CONFIG_EXCEL}
 
 
 def remove_oldest_and_without_response(
@@ -115,15 +129,27 @@ def remove_oldest_and_without_response(
 
 
 def load_and_preprocess_amendments(
-    file_configs: dict[FilePath, Any],
+    file_configs_json: dict[FilePath, Any],
+    file_configs_excel: dict[FilePath, Any],
     acronym_file: FilePath,
 ) -> pd.DataFrame:
-    input_files = list(file_configs.keys())
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(acronym_file)
-    amendments_df = AmendmentPreProcessor.load_amendments_json(
-        input_files, file_configs
+    amendments_df_json = AmendmentPreProcessor.load_amendments_json(
+        list(file_configs_json.keys()), file_configs_json
     )
-    return SimilarityHandler.preprocess_for_similarity(amendments_df, acronym_mapping)
+    amendments_df_json = SimilarityHandler.preprocess_for_similarity(
+        amendments_df_json, acronym_mapping
+    )
+    amendments_df_excel = AmendmentPreProcessor.load_amendments_excel(
+        list(file_configs_excel.keys()), file_configs_excel
+    )
+    amendments_df_excel = SimilarityHandler.preprocess_for_similarity(
+        amendments_df_excel, acronym_mapping
+    )
+    amendments_df = AmendmentPreProcessor.concatenate_dataframes(
+        amendments_df_json, amendments_df_excel
+    )
+    return amendments_df
 
 
 def process_amendments(amendments_df: pd.DataFrame) -> pd.DataFrame:
@@ -138,12 +164,17 @@ def process_amendments(amendments_df: pd.DataFrame) -> pd.DataFrame:
 def save_processed_amendments(df: pd.DataFrame, output_file: str):
     with open(output_file, "wb") as f:
         pickle.dump(df, f)
-    logger.info(f"Dumped pre-processed old amendments in {output_file}")
+    logging.info(f"Dumped pre-processed old amendments in {output_file}")
 
 
 def main():
-    amendments_df = load_and_preprocess_amendments(ALL_INPUT_FILE_CONFIGS, ACRONYM_FILE)
+    amendments_df = load_and_preprocess_amendments(
+        ALL_INPUT_FILE_CONFIGS_JSON, ALL_INPUT_FILE_CONFIGS_EXCEL, ACRONYM_FILE
+    )
     processed_df = process_amendments(amendments_df)
+    logging.info(
+        f"Number of old amendments available for similarity search: {len(processed_df)}"
+    )
     save_processed_amendments(processed_df, OUTPUT_FILE)
 
 
@@ -151,4 +182,4 @@ if __name__ == "__main__":
     start_time = time.time()
     main()
     end_time = time.time()
-    logger.info(f"Total execution time: {end_time - start_time:.2f} seconds")
+    logging.info(f"Total execution time: {end_time - start_time:.2f} seconds")
