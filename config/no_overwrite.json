@@ -1,0 +1,12 @@
+{
+    "allotments": true,
+    "summary_generation": true,
+    "attribution": true,
+    "similarity_search": true,
+    "default_opinion": true,
+    "handle_inadmissible_amendments": false,
+    "no_value_overwrite": true,
+    "placeholder_amdt_body": false,
+    "already_processed_amdt_nums_path": "",
+    "attribution_interstitial_only": false
+}
