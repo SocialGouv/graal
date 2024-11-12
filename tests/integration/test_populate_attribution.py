@@ -24,7 +24,7 @@ def test_integration_attribute_amendments():
     acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
         acronym_file=ACRONYM_FILE
     )
-    amendments_df = AmendmentPreProcessor.load_amendments_excel(input_file=test_file)
+    amendments_df = pd.read_excel(test_file)
     # amendments_df = amendments_df[amendments_df["amdt_idx"] == 24]
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=amendments_df
