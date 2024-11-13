@@ -25,10 +25,11 @@ class InadmissibleAmendmentHandler:
             old_amendments_df=filtered_amendments_df,
             new_amendments_df=amendments_df,
             exact_match_threshold_ratio=0.95,
-            threshold_ratio_mappings={"amendement redactionnel": 0.95},
+            similarity_threshold_overrides={"amendement redactionnel": 0.95},
         )
         similarity_evaluator_expose.prefilter_similar_docs(
-            column_used_for_similarity="Exposé amdt", threshold=0.95
+            column_used_for_similarity="Exposé amdt",
+            clustering_similarity_threshold=0.95,
         )
         closest_amdts = similarity_evaluator_expose.find_best_matches(
             column_used_for_similarity="Exposé amdt"
