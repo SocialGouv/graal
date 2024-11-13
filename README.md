@@ -1,6 +1,6 @@
-# Amendements Intelligents
+# GRAAL - GESTION ET RÉPARTITION AUTOMATISÉE DES AMENDEMENTS LÉGISLATIFS
 
-This project provides tools for processing and analyzing amendments, particularly for the PLFSS (Projet de Loi de Financement de la Sécurité Sociale).
+This project offers tools for processing and analyzing amendments, aiming to streamline and expedite the tasks of agents responsible for addressing these amendments.
 
 ## Project Structure
 
@@ -13,8 +13,10 @@ The project is organized into several main components:
   - `opinion/`: Handles opinion-related functionality
   - `summary/`: Provides summarization capabilities
   - `utils/`: Contains utility functions and helpers
+- `data/`: Contains some example data to run the pipeline on.
 - `scripts/`: Contains utility scripts
 - `tests/`: Contains unit and integration tests
+- `config/`: Contains preset configuration files for the pipeline
 
 ## Setup
 
@@ -36,10 +38,16 @@ poetry shell
 make install
 ```
 
-### Prepare PLFSS Data
+### Prepare amendments Data
 
-Get some PLFSS extracts from Signale in JSON format and place them in your data folder.
+Extracts amendments from Signale in JSON format and place them in your data folder.
 This project comes with `PLFSS_2024.json` and `exports_lectures/PLFSS 2023`.
+
+### Download the Excel configuration file
+
+If you are part of the "Ministères sociaux", you should be able to access the [configuration file](https://msociauxfr.sharepoint.com/:x:/t/FabNum/EQ5o-Ol-nSlJp1ywM98VrJ8B0lu-2v6enmBtqC70HL-HtA?e=RahXn1) on your own, which you can copy and adapt to your use case.
+
+Otherwise, get in touch with the "Fabrique du numérique des ministères sociaux".
 
 ### Environment Variables
 
@@ -49,41 +57,39 @@ Set up the following environment variables:
 # Folder where your data can be found
 export DATA_FOLDER="data"
 
-# Work with Albert API
+# If your work with Albert API
 export ETALAB_API_KEY=<albert_api_token>
 export ETALAB_BASE_URL="https://albert.api.etalab.gouv.fr/v1"
 export ETALAB_MODEL_NAME="meta-llama/Meta-Llama-3.1-70B-Instruct"
 
-# Work with Ollama on OVH
+# If you work with Ollama on OVH
 export OLLAMA_ENDPOINT=https://<ip_address>.nip.io/api/generate
 export OLLAMA_USER=<user>
 export OLLAMA_PASSWORD=<password>
 export OLLAMA_MODEL_NAME="llama3.1:70b"
-
 ```
+
+**NB:** You can still test GRAAL without using Albert or Ollama by using the FakeLLMAPIClient. See [pipeline](#pipeline)
 
 ## Pipeline
 
-### Config
+### Pipeline Overview
 
-The configuration options for the pipeline can be set in a JSON file. Below are the available options and their descriptions:
+The pipeline is designed to process and analyze amendments efficiently. It consists of several stages, each responsible for a specific task. Below is an overview of the main features and their functionalities:
 
-- `allotments`: Enable allotments. (boolean)
-- `already_processed_amdt_nums_path`: Path to a file containing amendment numbers that have already been processed and we want to ignore. (string)
-- `attribution_interstitial_only`: Enable attribution only for interstitial amendments. (boolean)
-- `attribution`: Enable attribution. (boolean)
-- `default_opinion`: Enable default opinion. (boolean)
-- `handle_inadmissible_amendments`: Enable handling inadmissible amendments. (boolean)
-- `no_value_overwrite`: Disable overwriting values that are already present in the input amendments. (boolean)
-- `placeholder_amdt_body`: Add placeholder text for empty amendment bodies. (boolean)
-- `similarity_search`: Enable similarity search with older amendments. (boolean)
-- `summary_generation`: Enable summary generation. (boolean)
+- **Allotments**: Groups similar amendments together to streamline processing.
+- **Already Processed Amendments**: Skips amendments that have already been processed, using a specified file containing their numbers.
+- **Attribution**: Assigns amendments to the appropriate agents, with an option to focus only on interstitial amendments. This attribution is configured through an excel configuration file.
+- **Default Opinion**: Automatically generates a default opinion for amendments.
+- **Handling Inadmissible Amendments**: Identifies and processes inadmissible amendments.
+- **Preserve Existing Values**: Ensures that existing values in the input amendments are not overwritten. This is particularly useful when running GRAAL after some agents have already started working on the amendments.
+- **Placeholder Amendment Body**: Adds placeholder text for amendments that have empty bodies.
+- **Similarity Search**: Finds and links amendments that are similar to older ones, aiding in consistency and historical context.
+- **Summary Generation**: Creates summaries for amendments to provide a quick overview.
 
-See [config/default.json](config/default.json) for an example.
+These features work together to ensure that amendments are processed accurately and efficiently, reducing the workload on agents and improving the overall workflow.
 
 ### Script
-
-The full pipeline does all of the above at once.
 
 To run the full pipeline:
 
@@ -91,24 +97,52 @@ To run the full pipeline:
 python amendements_intelligents/full_pipeline.py --config=config/default.json
 ```
 
-### Merge Amendment DataFrames
+### Config
 
-The [amendements_intelligents/utils/merge_amdt_df_into_another.py](amendements_intelligents/utils/merge_amdt_df_into_another.py) script enables us to seamlessly merge an existing CSV file of amendments that have already been processed in Signale with newly processed amendments from the pipeline. This script is particularly useful if any issues occur within the full pipeline, resulting in agents beginning work on amendments directly in Signale. Once the pipeline is repaired, we generate a new CSV for import into Signale. However, without this script, that import would overwrite prior work—a situation we aim to avoid.
+Each feature mentioned above can be enabled or disabled through the configuration file. Some features also require specific text values to be set.
 
-To use this script, update file paths in the script and run the following command:
+See [config/default.json](config/default.json) for the configuration we use most of the time.
 
-```bash
-python amendements_intelligents/utils/merge_amdt_df_into_another.py
+Additionally, some parameters in the [amendements_intelligents/full_pipeline.py](amendements_intelligents/full_pipeline.py) script are currently hardcoded. You will need to modify the file directly (work in progress).
+
+For instance, to enable or disable the use of Ollama, Albert API, or the FakeLLMAPIClient (which outputs random Latin sentences), you can comment or uncomment the corresponding lines in this section of the code:
+
+```python
+llm_api_clients = []
+for _ in range(10):
+    ollama_api_client = OllamaAPIClient(
+        endpoint=os.getenv("OLLAMA_ENDPOINT"),
+        model_name=os.getenv("OLLAMA_MODEL_NAME"),
+        user=os.getenv("OLLAMA_USER"),
+        password=os.getenv("OLLAMA_PASSWORD"),
+    )
+    llm_api_clients.append(ollama_api_client)
+
+for _ in range(6):
+    albert_api_client = AlbertAPIClient(
+        base_url=os.getenv(
+            "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
+        ),
+        api_key=os.getenv("ETALAB_API_KEY"),
+        model_name=os.getenv(
+            "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+        ),
+    )
+    llm_api_clients.append(albert_api_client)
+
+llm_api_clients.append(FakeLLMAPIClient())
 ```
 
 ## Run through Docker
 
 Build image:
+
 ```shell
 docker build -t smart-amendments .
 ```
 
 Run full pipepline:
+
 ```shell
 docker run --env-file .env -v "$(pwd)/data":/app/data smart-amendments
 ```
