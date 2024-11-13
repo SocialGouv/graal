@@ -15,21 +15,21 @@ class SimilarityFinder:
         self,
         old_amendments_df: pd.DataFrame,
         new_amendments_df: pd.DataFrame,
-        exact_match_threshold_ratio: float = 0.60,
-        threshold_ratio_mappings: Optional[dict[str, float]] = None,
+        similarity_threshold_overrides: Optional[dict[str, float]] = None,
     ):
         self.old_amendments_df = old_amendments_df
         self.new_amendments_df = new_amendments_df
         self.similar_doc_indices: dict[IntIndex, list[IntIndex]] = {}
-        self.default_texact_match_threshold_ratioreshold_ratio = (
-            exact_match_threshold_ratio
-        )
-        self.threshold_ratio_mappings = (
-            threshold_ratio_mappings if threshold_ratio_mappings is not None else {}
+        self.similarity_threshold_overrides = (
+            similarity_threshold_overrides
+            if similarity_threshold_overrides is not None
+            else {}
         )
 
     def prefilter_similar_docs(
-        self, column_used_for_similarity: str = "Exposé amdt", threshold=0.60
+        self,
+        column_used_for_similarity: str = "Exposé amdt",
+        clustering_similarity_threshold=0.60,
     ) -> dict[IntIndex, list[IntIndex]]:
         """
         Pre-filters similar documents based on a TF-IDF comparison of the `column_used_for_similarity` in the old and new amendments.
@@ -44,7 +44,7 @@ class SimilarityFinder:
         self.similar_doc_indices = SimilarityFinder.tf_idf_filtering(
             old_amdt_values=self.old_amendments_df[column_used_for_similarity].tolist(),
             new_amd_values=self.new_amendments_df[column_used_for_similarity].tolist(),
-            threshold=threshold,
+            threshold=clustering_similarity_threshold,
         )
         # Transform indices into corresponding amdt_idx
         self.similar_doc_indices = {
@@ -67,7 +67,9 @@ class SimilarityFinder:
         return self.similar_doc_indices
 
     def find_best_matches(
-        self, column_used_for_similarity: str = "Exposé amdt"
+        self,
+        column_used_for_similarity: str,
+        exact_match_similarity_threshold: float,
     ) -> dict:
         if self.similar_doc_indices is None:
             raise ValueError(
@@ -106,12 +108,12 @@ class SimilarityFinder:
             }
         }
         logging.info("Looking for best matches on pre-filtered amendments...")
-        closest_docs = SimilarityFinder.find_best_matching_docs(
+        closest_docs = self.find_best_matching_docs(
             similar_doc_indices=self.similar_doc_indices,
             new_amdt_data=new_amdt_data,
             old_amdt_data=old_amdt_data,
-            exact_match_threshold_ratio=self.default_texact_match_threshold_ratioreshold_ratio,
-            threshold_ratio_mappings=self.threshold_ratio_mappings,
+            exact_match_similarity_threshold=exact_match_similarity_threshold,
+            similarity_threshold_overrides=self.similarity_threshold_overrides,
         )
 
         for _, doc_info in closest_docs.items():
@@ -156,8 +158,8 @@ class SimilarityFinder:
         similar_doc_indices: dict[IntIndex, list[IntIndex]],
         new_amdt_data: dict,
         old_amdt_data: dict,
-        exact_match_threshold_ratio: float,
-        threshold_ratio_mappings: dict[str, float],
+        exact_match_similarity_threshold: float,
+        similarity_threshold_overrides: dict[str, float],
     ) -> dict[IntIndex, dict[str, Any]]:
         old_amdt_data_texts = old_amdt_data["text"]
         old_amdt_data_responses = old_amdt_data["response"]
@@ -190,10 +192,10 @@ class SimilarityFinder:
                 cur_text_length = len(cur_doc_text)
                 cur_similarity_ratio = (cur_text_length - distance) / cur_text_length
 
-                threshold_ratio = exact_match_threshold_ratio
-                for key in threshold_ratio_mappings:
+                threshold_ratio = exact_match_similarity_threshold
+                for key in similarity_threshold_overrides:
                     if new_amdt_data_text.startswith(key):
-                        threshold_ratio = threshold_ratio_mappings[key]
+                        threshold_ratio = similarity_threshold_overrides[key]
                         break
 
                 # We want to prioritize responses that are not empty while still meeting the similarity ratio threshold
