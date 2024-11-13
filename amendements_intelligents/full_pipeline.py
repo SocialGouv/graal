@@ -36,9 +36,9 @@ from amendements_intelligents.attribution.attribution_populator import (
 from amendements_intelligents.clustering.inadmissible_amdt_handler import (
     InadmissibleAmendmentHandler,
 )
+from amendements_intelligents.clustering.similarity_handler import SimilarityHandler
 from amendements_intelligents.opinion.opinion_handler import OpinionHandler
 from amendements_intelligents.populate_allotments import AllotmentHandler
-from amendements_intelligents.populate_similarities import SimilarityHandler
 from amendements_intelligents.populate_summaries import SummaryHandler
 from amendements_intelligents.summary.llm_clients import (
     AlbertAPIClient,
@@ -290,7 +290,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             columns_to_filter_with=["Exposé amdt", "Corps amdt"],
         )
         new_amendments_df = AmendmentPreProcessor.normalize_amendments(
-            new_amendments_df, columns_to_normalize=["Exposé amdt"]
+            new_amendments_df, columns_to_normalize=["Exposé amdt", "Corps amdt"]
         )
         new_amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=new_amendments_df
@@ -302,6 +302,17 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             preprocessed_old_amendments_df=old_amendments_df,
             preprocessed_new_amendments_df=new_amendments_df,
             original_new_amendments_df=saved_new_amendments_df,
+            clustering_similarity_thresholds={
+                "Exposé amdt": 0.4,
+                "Corps amdt": 0.4,
+            },
+            fuzzy_match_similarity_thresholds={
+                "Exposé amdt": 0.4,
+                "Corps amdt": 0.9,
+            },
+            similarity_threshold_overrides={
+                "Exposé amdt": {"amendement redactionnel": 0.95},
+            },
         )
 
     if args.default_opinion:
