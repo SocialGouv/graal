@@ -28,7 +28,7 @@ def test_prefilter_similar_docs():
         }
     )
     similarity_finder = SimilarityFinder(old_amendments_df, new_amendments_df)
-    similar_doc_indices = similarity_finder.prefilter_similar_docs(
+    similar_doc_indices = similarity_finder.clusterize_similar_amdts(
         clustering_similarity_threshold=0.7
     )
     assert similar_doc_indices == {5: [3], 6: [1], 8: [1]}
@@ -73,10 +73,12 @@ def test_find_best_matches():
         old_amendments_df=old_amendments_df,
         new_amendments_df=new_amendments_df,
     )
-    similarity_finder.prefilter_similar_docs()
+    clusters = similarity_finder.clusterize_similar_amdts()
     closest_docs = similarity_finder.find_best_matches(
+        clusters=clusters,
         column_used_for_similarity="Exposé amdt",
-        exact_match_similarity_threshold=0.7,
+        fuzzy_match_similarity_threshold=0.7,
+        similarity_threshold_overrides={},
     )
     assert closest_docs == {
         6: {
@@ -99,7 +101,9 @@ def test_find_best_matches_missing_df():
     with pytest.raises(TypeError):
         similarity_finder.find_best_matches(
             column_used_for_similarity="Exposé amdt",
-            exact_match_similarity_threshold=0.7,
+            clusters={},
+            fuzzy_match_similarity_threshold=0.7,
+            similarity_threshold_overrides={},
         )
 
 
@@ -132,10 +136,10 @@ def test_find_best_matching_docs():
     }
 
     closest_docs = SimilarityFinder.find_best_matching_docs(
-        similar_doc_indices=similar_doc_indices,
+        clusters=similar_doc_indices,
         new_amdt_data=new_amdt_data,
         old_amdt_data=old_amdt_data,
-        exact_match_similarity_threshold=default_threshold_ratio,
+        fuzzy_match_similarity_threshold=default_threshold_ratio,
         similarity_threshold_overrides=threshold_ratio_mappings,
     )
 
@@ -177,10 +181,10 @@ def test_find_best_matching_docs_with_preference_for_non_empty_responses():
     }
 
     closest_docs = SimilarityFinder.find_best_matching_docs(
-        similar_doc_indices=similar_doc_indices,
+        clusters=similar_doc_indices,
         new_amdt_data=new_amdt_data,
         old_amdt_data=old_amdt_data,
-        exact_match_similarity_threshold=default_threshold_ratio,
+        fuzzy_match_similarity_threshold=default_threshold_ratio,
         similarity_threshold_overrides=threshold_ratio_mappings,
     )
 

@@ -15,63 +15,58 @@ class SimilarityFinder:
         self,
         old_amendments_df: pd.DataFrame,
         new_amendments_df: pd.DataFrame,
-        similarity_threshold_overrides: Optional[dict[str, float]] = None,
     ):
         self.old_amendments_df = old_amendments_df
         self.new_amendments_df = new_amendments_df
-        self.similar_doc_indices: dict[IntIndex, list[IntIndex]] = {}
-        self.similarity_threshold_overrides = (
-            similarity_threshold_overrides
-            if similarity_threshold_overrides is not None
-            else {}
-        )
 
-    def prefilter_similar_docs(
+    def clusterize_similar_amdts(
         self,
-        column_used_for_similarity: str = "Exposé amdt",
+        column_used_for_clustering: str = "Exposé amdt",
         clustering_similarity_threshold=0.60,
     ) -> dict[IntIndex, list[IntIndex]]:
         """
-        Pre-filters similar documents based on a TF-IDF comparison of the `column_used_for_similarity` in the old and new amendments.
+        Clusterize similar documents using TF-IDF comparison on the `column_used_for_clustering` field from both old and new amendments.
 
-        Internally, it saves a dictionary with keys being the amdt_idx of the new amendment and values being a list of amdt_idx of the old amendments that are similar. It will be used to find the best matches later on.
-
-        Return: The dictionnary mentionned above.
+        Returns: A dictionary representing clusters of documents, where keys are the amdt_idx of new
+        amendments and values are lists of amdt_idx of similar old amendments. This will be used to
+        identify the best matches in subsequent steps. This will be used to identify the best matches in subsequent steps.
         """
         logging.info(
-            f'Pre-filtering similar "{column_used_for_similarity}" for optimization...'
+            f'Pre-filtering similar "{column_used_for_clustering}" for optimization...'
         )
-        self.similar_doc_indices = SimilarityFinder.tf_idf_filtering(
-            old_amdt_values=self.old_amendments_df[column_used_for_similarity].tolist(),
-            new_amd_values=self.new_amendments_df[column_used_for_similarity].tolist(),
+        clusters = SimilarityFinder.tf_idf_filtering(
+            old_amdt_values=self.old_amendments_df[column_used_for_clustering].tolist(),
+            new_amd_values=self.new_amendments_df[column_used_for_clustering].tolist(),
             threshold=clustering_similarity_threshold,
         )
         # Transform indices into corresponding amdt_idx
-        self.similar_doc_indices = {
+        clusters = {
             self.new_amendments_df.iloc[new_idx]["amdt_idx"]: [
                 self.old_amendments_df.iloc[old_idx]["amdt_idx"]
                 for old_idx in old_indices
             ]
-            for new_idx, old_indices in self.similar_doc_indices.items()
+            for new_idx, old_indices in clusters.items()
         }
-        list_lengths = [len(docs) for docs in self.similar_doc_indices.values()]
+        list_lengths = [len(docs) for docs in clusters.values()]
         if list_lengths:
             average_length = sum(list_lengths) / len(list_lengths)
             logging.info(
-                f'Average number of potential matches per amendment for "{column_used_for_similarity}": {average_length}'
+                f'Clustering: Average number of potential matches per amendment for "{column_used_for_clustering}": {average_length}'
             )
         else:
             logging.info(
-                f'Average number of potential matches per amendment for "{column_used_for_similarity}": 0'
+                f'Clustering: Average number of potential matches per amendment for "{column_used_for_clustering}": 0'
             )
-        return self.similar_doc_indices
+        return clusters
 
     def find_best_matches(
         self,
         column_used_for_similarity: str,
-        exact_match_similarity_threshold: float,
+        clusters: dict[IntIndex, list[IntIndex]],
+        fuzzy_match_similarity_threshold: float,
+        similarity_threshold_overrides: dict[str, float],
     ) -> dict:
-        if self.similar_doc_indices is None:
+        if clusters is None:
             raise ValueError(
                 "You need to prefilter similar documents (with `prefilter_similar_docs`) before finding the best matches."
             )
@@ -109,18 +104,18 @@ class SimilarityFinder:
         }
         logging.info("Looking for best matches on pre-filtered amendments...")
         closest_docs = self.find_best_matching_docs(
-            similar_doc_indices=self.similar_doc_indices,
+            clusters=clusters,
             new_amdt_data=new_amdt_data,
             old_amdt_data=old_amdt_data,
-            exact_match_similarity_threshold=exact_match_similarity_threshold,
-            similarity_threshold_overrides=self.similarity_threshold_overrides,
+            fuzzy_match_similarity_threshold=fuzzy_match_similarity_threshold,
+            similarity_threshold_overrides=similarity_threshold_overrides,
         )
 
         for _, doc_info in closest_docs.items():
             doc_info["column_used_for_comparison"] = column_used_for_similarity
 
         logging.info(
-            f"Found matches in previous lectures for {len(closest_docs)} amendments"
+            f"Fuzzy match with '{column_used_for_similarity}' column:\n\tFound matches in previous lectures for {len(closest_docs)} amendments"
         )
         return closest_docs
 
@@ -155,10 +150,10 @@ class SimilarityFinder:
 
     @staticmethod
     def find_best_matching_docs(
-        similar_doc_indices: dict[IntIndex, list[IntIndex]],
+        clusters: dict[IntIndex, list[IntIndex]],
         new_amdt_data: dict,
         old_amdt_data: dict,
-        exact_match_similarity_threshold: float,
+        fuzzy_match_similarity_threshold: float,
         similarity_threshold_overrides: dict[str, float],
     ) -> dict[IntIndex, dict[str, Any]]:
         old_amdt_data_texts = old_amdt_data["text"]
@@ -168,7 +163,7 @@ class SimilarityFinder:
 
         closest_docs = {}
 
-        for new_amdt_idx, old_amdt_data_indices in similar_doc_indices.items():
+        for new_amdt_idx, old_amdt_data_indices in clusters.items():
             new_amdt_data_text = new_amdt_data_texts[new_amdt_idx]
 
             best_doc_amdt_idx = None
@@ -192,7 +187,7 @@ class SimilarityFinder:
                 cur_text_length = len(cur_doc_text)
                 cur_similarity_ratio = (cur_text_length - distance) / cur_text_length
 
-                threshold_ratio = exact_match_similarity_threshold
+                threshold_ratio = fuzzy_match_similarity_threshold
                 for key in similarity_threshold_overrides:
                     if new_amdt_data_text.startswith(key):
                         threshold_ratio = similarity_threshold_overrides[key]
