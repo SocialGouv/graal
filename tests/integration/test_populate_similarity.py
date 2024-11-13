@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from amendements_intelligents.populate_similarities import SimilarityHandler
+from amendements_intelligents.clustering.similarity_handler import SimilarityHandler
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -59,7 +59,17 @@ def test_integration_similarity():
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,
-        clustering_similarity_threshold=0.2,
+        clustering_similarity_thresholds={
+            "Exposé amdt": 0.2,
+            # "Corps amdt": 0.4,
+        },
+        fuzzy_match_similarity_thresholds={
+            "Exposé amdt": 0.4,
+            # "Corps amdt": 0.9,
+        },
+        similarity_threshold_overrides={
+            "Exposé amdt": {"amendement redactionnel": 0.95},
+        },
     )
 
     # COMPUTE THE DIFFERENCE

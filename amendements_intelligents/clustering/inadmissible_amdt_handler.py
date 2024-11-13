@@ -26,13 +26,15 @@ class InadmissibleAmendmentHandler:
             new_amendments_df=amendments_df,
             # similarity_threshold_overrides={"amendement redactionnel": 0.95},
         )
-        similarity_evaluator_expose.prefilter_similar_docs(
-            column_used_for_similarity="Exposé amdt",
+        clusters = similarity_evaluator_expose.clusterize_similar_amdts(
+            column_used_for_clustering="Exposé amdt",
             clustering_similarity_threshold=0.95,
         )
         closest_amdts = similarity_evaluator_expose.find_best_matches(
             column_used_for_similarity="Exposé amdt",
-            exact_match_similarity_threshold=0.95,
+            clusters=clusters,
+            fuzzy_match_similarity_threshold=0.95,
+            similarity_threshold_overrides={},
         )
 
         if "Commentaires" not in amendments_df.columns:
