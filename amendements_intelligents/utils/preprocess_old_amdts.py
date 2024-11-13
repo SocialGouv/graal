@@ -18,7 +18,7 @@ import pandas as pd
 from pydantic import FilePath
 
 from amendements_intelligents.allotment.allotment_handler import AllotmentHandler
-from amendements_intelligents.populate_similarities import SimilarityHandler
+from amendements_intelligents.clustering.similarity_handler import SimilarityHandler
 from amendements_intelligents.types import IntIndex
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
 
