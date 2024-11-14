@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 import pandas as pd
+from pydantic import FilePath
 
 from amendements_intelligents.clustering.similarity_handler import SimilarityHandler
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
@@ -17,10 +18,13 @@ def set_timestamps(df):
     )
 
 
-def test_integration_similarity():
-    ACRONYM_FILE = "tests/integration/test_data/acronym_mapping.xlsx"
-    file_path = "tests/integration/test_data/test_populate_similarities.xlsx"
-
+def run_test(
+    file_path: FilePath,
+    clustering_similarity_thresholds: dict,
+    fuzzy_match_similarity_thresholds: dict,
+    similarity_threshold_overrides: dict,
+) -> None:
+    ACRONYM_FILE = FilePath("tests/integration/test_data/acronym_mapping.xlsx")
     old_amendments_df = pd.read_excel(file_path, sheet_name="vieux amendements")
     # old_amendments_df = old_amendments_df[old_amendments_df["Num amdt"].isin([3, 4])]
     old_amendments_df["amdt_idx"] = range(len(old_amendments_df))
@@ -59,24 +63,16 @@ def test_integration_similarity():
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,
-        clustering_similarity_thresholds={
-            "Exposé amdt": 0.2,
-            # "Corps amdt": 0.4,
-        },
-        fuzzy_match_similarity_thresholds={
-            "Exposé amdt": 0.4,
-            # "Corps amdt": 0.9,
-        },
-        similarity_threshold_overrides={
-            "Exposé amdt": {"amendement redactionnel": 0.95},
-        },
+        clustering_similarity_thresholds=clustering_similarity_thresholds,
+        fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
+        similarity_threshold_overrides=similarity_threshold_overrides,
     )
 
     # COMPUTE THE DIFFERENCE
 
     diff_df = pd.DataFrame()
 
-    def get_expected_value(df, amdt_idx, column):
+    def get_expected_value(df: pd.DataFrame, amdt_idx: int, column: str) -> str:
         value = df.loc[df["amdt_idx"] == amdt_idx, column].values[0]
         return "" if pd.isnull(value) else value
 
@@ -140,3 +136,38 @@ def test_integration_similarity():
         logging.warning(f"Percentage of differing rows: {percentage_diff:.2f}%")
 
     assert diff_df.empty, f"Differences found: {len(diff_df)}"
+
+
+def test_integration_similarity_expose():
+    file_path = "tests/integration/test_data/test_populate_similarities_expose.xlsx"
+    clustering_similarity_thresholds = {
+        "Exposé amdt": 0.2,
+    }
+    fuzzy_match_similarity_thresholds = {
+        "Exposé amdt": 0.4,
+    }
+    similarity_threshold_overrides = {
+        "Exposé amdt": {"amendement redactionnel": 0.95},
+    }
+    run_test(
+        file_path,
+        clustering_similarity_thresholds,
+        fuzzy_match_similarity_thresholds,
+        similarity_threshold_overrides,
+    )
+
+
+def test_integration_similarity_body():
+    file_path = "tests/integration/test_data/test_populate_similarities_body.xlsx"
+    clustering_similarity_thresholds = {
+        "Corps amdt": 0.4,
+    }
+    fuzzy_match_similarity_thresholds = {
+        "Corps amdt": 0.9,
+    }
+    run_test(
+        file_path,
+        clustering_similarity_thresholds,
+        fuzzy_match_similarity_thresholds,
+        similarity_threshold_overrides={},
+    )
