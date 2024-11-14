@@ -1,18 +1,11 @@
 import logging
 import logging.config
-import os
 import time
 from typing import Optional
 
 import pandas as pd
 
 from amendements_intelligents.summary.amendment_summarizer import AmendmentSummarizer
-from amendements_intelligents.summary.llm_clients import (
-    AlbertAPIClient,
-    FakeLLMAPIClient,
-    LLMAPIClient,
-    OllamaAPIClient,
-)
 from amendements_intelligents.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
@@ -82,66 +75,3 @@ class SummaryHandler:
         logging.info(f"Time taken: {end_time - start_time} seconds")
 
         return amdt_with_summaries_df
-
-
-def main():
-    DATA_FOLDER = os.getenv("DATA_FOLDER")
-    # MODEL_NAME = os.getenv("MODEL_NAME")
-    # LLM_ENDPOINT = os.getenv("LLM_ENDPOINT")
-    # USER = os.getenv("USER")
-    # PASSWORD = os.getenv("PASSWORD")
-    # llm_api_client: LLMAPIClient = LLMInferenceAPIClient(
-    #     url=LLM_ENDPOINT,
-    #     auth=(USER, PASSWORD),
-    # )
-    # llm_api_client: LLMAPIClient = VllmAPIClient(MODEL_NAME, VLLM_ENDPOINT, USER, PASSWORD)
-
-    albert_api_client: LLMAPIClient = AlbertAPIClient(
-        base_url="https://albert.api.etalab.gouv.fr/v1",
-        api_key=os.getenv("ETALAB_API_KEY"),
-        model_name="meta-llama/Meta-Llama-3.1-70B-Instruct",
-    )
-    # fake_api_client: LLMAPIClient = FakeLLMAPIClient()
-    OLLAMA_USER = os.getenv("OLLAMA_USER")
-    OLLAMA_PASSWORD = os.getenv("OLLAMA_PASSWORD")
-    OLLAMA_ENDPOINT = os.getenv("OLLAMA_ENDPOINT")
-    OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME")
-    logging.info(
-        f"{OLLAMA_USER}, {OLLAMA_PASSWORD}, {OLLAMA_ENDPOINT}, {OLLAMA_MODEL_NAME}"
-    )
-    ollama_api_client = OllamaAPIClient(
-        endpoint=OLLAMA_ENDPOINT,
-        model_name=OLLAMA_MODEL_NAME,
-        user=OLLAMA_USER,
-        password=OLLAMA_PASSWORD,
-    )
-    summary_gen_load_balancer = SummaryGenerationLoadBalancer(
-        clients=[albert_api_client, ollama_api_client], queue_timeout=4
-    )
-
-    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
-    acronym_file = f"{DATA_FOLDER}/acronym_mapping.xlsx"
-
-    amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
-        acronym_file=acronym_file
-    )
-
-    amdt_summary_populator = SummaryHandler(
-        summary_gen_load_balancer=summary_gen_load_balancer,
-        amendments_df=amendments_df,
-        acronym_mapping=acronym_mapping,
-        summary_column="Objet amdt",
-    )
-
-    amdt_summary_populator.preprocess()
-
-    amdt_with_summaries_df = amdt_summary_populator.populate()
-
-    amdt_with_summaries_df.to_excel(
-        "data/amendments_with_summary_local.xlsx", index=False
-    )
-
-
-if __name__ == "__main__":
-    main()

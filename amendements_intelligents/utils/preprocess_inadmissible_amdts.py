@@ -4,6 +4,7 @@ import os
 import pickle
 import time
 
+import pandas as pd
 from pydantic import FilePath
 
 from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
@@ -20,10 +21,9 @@ def main():
         f"{DATA_FOLDER}/export_plfss_commission/export_1ere_commission_2025.json"
     )
 
-    ACRONYM_FILE = FilePath(f"{DATA_FOLDER}/acronym_mapping.xlsx")
-
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
-        acronym_file=ACRONYM_FILE
+    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx"
+    attribution_mappings_excel = pd.read_excel(
+        ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
     )
 
     lecture_amdt_df = AmendmentPreProcessor.load_amendments_json(
@@ -31,6 +31,9 @@ def main():
     )
     lecture_amdt_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=lecture_amdt_df
+    )
+    acronym_mapping = AmendmentPreProcessor.load_acronyms(
+        attribution_mappings_excel["Acronymes"]
     )
     lecture_amdt_df = AmendmentPreProcessor.replace_acronyms(
         amendments_df=lecture_amdt_df,

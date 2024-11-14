@@ -114,8 +114,7 @@ def derive_columns_to_work_on_from_anebaled_features(
 
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_oct_25.xlsx"
-    ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
+    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx"
     PREPROCESSED_INADMISSIBLE_FILE = (
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
@@ -197,8 +196,8 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         amendments_df = amendments_df[~amendments_df["Num amdt"].isin(amdt_nums)]
         print(f"Ignoring num amdts: {amdt_nums}")
 
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
-        acronym_file=ACRONYM_FILE
+    acronym_mapping = AmendmentPreProcessor.load_acronyms(
+        attribution_mappings_excel["Acronymes"]
     )
     amendments_df = AmendmentPreProcessor.replace_acronyms(
         amendments_df=amendments_df,
