@@ -14,17 +14,16 @@ from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
 
 
 def test_integration_attribute_amendments():
-    test_file = "tests/integration/test_data/test_populate_attribution.xlsx"
-    mappings_file = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
-    ACRONYM_FILE = "tests/integration/test_data/acronym_mapping.xlsx"
+    TEST_FILE = "tests/integration/test_data/test_populate_attribution.xlsx"
+    CONFIG_FILE = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
 
     # Make sure that random choices are always the same in this test
     np.random.seed(42)
 
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(
-        acronym_file=ACRONYM_FILE
-    )
-    amendments_df = pd.read_excel(test_file)
+    config_excel = pd.read_excel(CONFIG_FILE, sheet_name=None)
+
+    acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
+    amendments_df = pd.read_excel(TEST_FILE)
     # amendments_df = amendments_df[amendments_df["amdt_idx"] == 24]
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=amendments_df
@@ -46,19 +45,18 @@ def test_integration_attribute_amendments():
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
     )
 
-    excel_data = pd.read_excel(mappings_file, sheet_name=None)
-    codes_articles_df = AttributionDataLoader.load_codes_and_articles(excel_data)
-    laws_articles_df = AttributionDataLoader.load_laws_and_articles(excel_data)
+    codes_articles_df = AttributionDataLoader.load_codes_and_articles(config_excel)
+    laws_articles_df = AttributionDataLoader.load_laws_and_articles(config_excel)
     ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
-        excel_data
+        config_excel
     )
     keywords_df = AttributionDataLoader.load_keywords(
-        excel_data=excel_data, acronym_mapping=acronym_mapping
+        excel_data=config_excel, acronym_mapping=acronym_mapping
     )
     attribution_mappings_when_empty = (
-        AttributionDataLoader.load_default_attribution_mappings(excel_data)
+        AttributionDataLoader.load_default_attribution_mappings(config_excel)
     )
-    name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(excel_data)
+    name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(config_excel)
 
     attributor = AttributionPopulator(
         amendments_df=amendments_df,

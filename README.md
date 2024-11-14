@@ -45,7 +45,7 @@ This project comes with `PLFSS_2024.json` and `exports_lectures/PLFSS 2023`.
 
 ### Download the Excel configuration file
 
-If you are part of the "Ministères sociaux", you should be able to access the [configuration file](https://msociauxfr.sharepoint.com/:x:/t/FabNum/EQ5o-Ol-nSlJp1ywM98VrJ8B0lu-2v6enmBtqC70HL-HtA?e=RahXn1) on your own, which you can copy and adapt to your use case.
+If you are part of the "Ministères sociaux", you should be able to access the [configuration file](https://msociauxfr.sharepoint.com/:x:/t/FabNum/EUAB4dL6TVNFs4bJsGvhS6cBRm5rmM6nXEbAznY4dNZIiA?e=OnPXEO) on your own, which you can copy and adapt to your use case.
 
 Otherwise, get in touch with the "Fabrique du numérique des ministères sociaux".
 

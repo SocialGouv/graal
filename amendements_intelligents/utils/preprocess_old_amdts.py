@@ -26,7 +26,7 @@ logging.config.fileConfig("logging.conf")
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
 OUTPUT_FILE = f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
-ACRONYM_FILE = f"{DATA_FOLDER}/acronym_mapping.xlsx"
+ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx"
 
 PLFSS_FILE_CONFIG_JSON = {
     f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json": {
@@ -154,9 +154,8 @@ def remove_oldest_and_without_response(
 def load_and_preprocess_amendments(
     file_configs_json: dict[FilePath, Any],
     file_configs_excel: dict[FilePath, Any],
-    acronym_file: FilePath,
+    acronym_mapping: pd.DataFrame,
 ) -> pd.DataFrame:
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(acronym_file)
     amendments_df_json = AmendmentPreProcessor.load_amendments_json(
         list(file_configs_json.keys()), file_configs_json
     )
@@ -191,8 +190,16 @@ def save_processed_amendments(df: pd.DataFrame, output_file: str):
 
 
 def main():
+    attribution_mappings_excel = pd.read_excel(
+        ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
+    )
+    acronym_mapping = AmendmentPreProcessor.load_acronyms(
+        attribution_mappings_excel["Acronymes"]
+    )
     amendments_df = load_and_preprocess_amendments(
-        ALL_INPUT_FILE_CONFIGS_JSON, ALL_INPUT_FILE_CONFIGS_EXCEL, ACRONYM_FILE
+        ALL_INPUT_FILE_CONFIGS_JSON,
+        ALL_INPUT_FILE_CONFIGS_EXCEL,
+        acronym_mapping=acronym_mapping,
     )
     processed_df = process_amendments(amendments_df)
     logging.info(
