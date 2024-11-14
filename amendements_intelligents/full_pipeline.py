@@ -122,9 +122,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json"
+    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO838901.json"
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/amdt_mission_sante_nov_8_2024"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
