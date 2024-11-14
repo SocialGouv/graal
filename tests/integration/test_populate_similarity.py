@@ -24,7 +24,10 @@ def run_test(
     fuzzy_match_similarity_thresholds: dict,
     similarity_threshold_overrides: dict,
 ) -> None:
-    ACRONYM_FILE = FilePath("tests/integration/test_data/acronym_mapping.xlsx")
+    CONFIG_FILE = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
+
+    config_excel = pd.read_excel(CONFIG_FILE, sheet_name=None)
+
     old_amendments_df = pd.read_excel(file_path, sheet_name="vieux amendements")
     # old_amendments_df = old_amendments_df[old_amendments_df["Num amdt"].isin([3, 4])]
     old_amendments_df["amdt_idx"] = range(len(old_amendments_df))
@@ -42,8 +45,7 @@ def run_test(
 
     expected_result_df = new_amendments_df.copy()
 
-    acronym_mapping = AmendmentPreProcessor.load_acronyms_excel(ACRONYM_FILE)
-
+    acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
     preprocessed_old_amendments_df = SimilarityHandler.preprocess_for_similarity(
         old_amendments_df, acronym_mapping
     )
