@@ -157,19 +157,19 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #     )
     #     llm_api_clients.append(ollama_api_client)
 
-    # for _ in range(6):
-    #     albert_api_client = AlbertAPIClient(
-    #         base_url=os.getenv(
-    #             "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
-    #         ),
-    #         api_key=os.getenv("ETALAB_API_KEY"),
-    #         model_name=os.getenv(
-    #             "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
-    #         ),
-    #     )
-    #     llm_api_clients.append(albert_api_client)
+    for _ in range(6):
+        albert_api_client = AlbertAPIClient(
+            base_url=os.getenv(
+                "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
+            ),
+            api_key=os.getenv("ETALAB_API_KEY"),
+            model_name=os.getenv(
+                "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+            ),
+        )
+        llm_api_clients.append(albert_api_client)
 
-    llm_api_clients.append(FakeLLMAPIClient())
+    # llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
         clients=llm_api_clients, queue_timeout=4
     )
