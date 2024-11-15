@@ -27,6 +27,7 @@ import time
 
 import pandas as pd
 
+from amendements_intelligents.allotment.allotment_handler import AllotmentHandler
 from amendements_intelligents.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
@@ -38,7 +39,6 @@ from amendements_intelligents.clustering.inadmissible_amdt_handler import (
 )
 from amendements_intelligents.clustering.similarity_handler import SimilarityHandler
 from amendements_intelligents.opinion.opinion_handler import OpinionHandler
-from amendements_intelligents.populate_allotments import AllotmentHandler
 from amendements_intelligents.populate_summaries import SummaryHandler
 from amendements_intelligents.summary.llm_clients import (
     AlbertAPIClient,
