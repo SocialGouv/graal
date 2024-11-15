@@ -99,7 +99,6 @@ class AmendmentPreProcessor:
 
     @staticmethod
     def load_acronyms(acronym_df: pd.DataFrame) -> dict[str, str]:
-        logging.warning(f"acronym_df {acronym_df}")
         acronym_mapping = dict(zip(acronym_df["Acronyme"], acronym_df["Développement"]))
         return acronym_mapping
 
