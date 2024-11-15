@@ -95,6 +95,16 @@ To run the full pipeline:
 
 ```bash
 python amendements_intelligents/full_pipeline.py --config=config/default.json
+# OR
+make run
+```
+
+To run the full pipeline without overwriting work already done in Signale:
+
+```bash
+python amendements_intelligents/full_pipeline.py --config=config/no_overwrite.json
+# OR
+make run-no-overwrite
 ```
 
 ### Config
