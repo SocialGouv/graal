@@ -304,15 +304,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             },
         )
 
-    if args.default_opinion:
-        opinion_populator = OpinionHandler(
-            amendments_df=intermediate_amdts_df,
-            group_to_default_opinion=AttributionDataLoader.load_group_to_default_opinion(
-                attribution_mappings_excel
-            ),
-        )
-        intermediate_amdts_df = opinion_populator.populate()
-
     if args.allotments:
         intermediate_amdts_df = AllotmentHandler.populate(
             original_amendments_df=preprocessed_original_amdt_df,
@@ -328,6 +319,21 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Affectation (nom)",
             ],
         )
+
+    if args.default_opinion:
+        opinion_populator = OpinionHandler(
+            amendments_df=intermediate_amdts_df,
+            group_to_default_opinion=AttributionDataLoader.load_group_to_default_opinion(
+                attribution_mappings_excel
+            ),
+        )
+        intermediate_amdts_df = opinion_populator.populate()
+        if args.allotments:
+            for allot, group in intermediate_amdts_df.groupby("Allotissement"):
+                if "Défavorable" in group["Avis du Gouvernement"].values:
+                    intermediate_amdts_df.loc[
+                        intermediate_amdts_df["Allotissement"] == allot, "Avis du Gouvernement"
+                    ] = "Défavorable"
 
     if args.summary_generation:
         regex_pattern = r"amendements? d.?appel"
