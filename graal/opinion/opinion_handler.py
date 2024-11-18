@@ -16,4 +16,3 @@ class OpinionHandler:
         )
 
         return self.amendments_df
-        return self.amendments_df
