@@ -4,7 +4,7 @@ import logging.config
 import pandas as pd
 
 from graal.clustering.similarity_finder import SimilarityFinder
-from graal.types import ColumnName
+from graal.custom_types import ColumnName
 from graal.utils.amendment_copier import AmendmentCopier
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 

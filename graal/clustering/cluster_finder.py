@@ -9,7 +9,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from graal.types import IntIndex
+from graal.custom_types import IntIndex
 
 
 class AmendmentsClusterFinder:

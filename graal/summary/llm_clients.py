@@ -9,7 +9,7 @@ import requests
 from openai import OpenAI
 from pydantic_core import Url
 
-from graal.types import (
+from graal.custom_types import (
     APIKey,
     CredentialsPassword,
     CredentialsUsername,

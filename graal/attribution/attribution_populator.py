@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from graal.attribution.attribution_matcher import AttributionMatcher
-from graal.types import ColumnName, EntityType
+from graal.custom_types import ColumnName, EntityType
 
 
 class AttributionPopulator:
