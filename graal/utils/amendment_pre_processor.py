@@ -13,10 +13,7 @@ import pandas as pd
 from pydantic import FilePath
 
 from graal.custom_types import ColumnName
-from graal.utils.text_utils import (
-    extract_plain_text_from_html,
-    normalize_text,
-)
+from graal.utils.text_utils import extract_plain_text_from_html, normalize_text
 
 
 class AmendmentPreProcessor:
@@ -119,9 +116,6 @@ class AmendmentPreProcessor:
             extract_plain_text_from_html
         )
         amendements_df["sort"] = amendements_df["sort"].apply(
-            extract_plain_text_from_html
-        )
-        amendements_df["reponse"] = amendements_df["reponse"].apply(
             extract_plain_text_from_html
         )
 
