@@ -5,7 +5,7 @@ import time
 import pandas as pd
 from pydantic import FilePath
 
-from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
+from graal.clustering.similarity_finder import SimilarityFinder
 
 logging.config.fileConfig("logging.conf")
 

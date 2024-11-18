@@ -7,7 +7,7 @@ from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from amendements_intelligents.types import IntIndex
+from graal.types import IntIndex
 
 
 class SimilarityFinder:

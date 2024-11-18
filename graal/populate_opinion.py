@@ -5,11 +5,11 @@ import time
 
 import pandas as pd
 
-from amendements_intelligents.attribution.attribution_data_loader import (
+from graal.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from amendements_intelligents.opinion.opinion_handler import OpinionHandler
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.opinion.opinion_handler import OpinionHandler
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 

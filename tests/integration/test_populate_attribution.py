@@ -3,14 +3,14 @@ import logging
 import numpy as np
 import pandas as pd
 
-from amendements_intelligents.attribution.attribution_data_loader import (
+from graal.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from amendements_intelligents.attribution.attribution_populator import (
+from graal.attribution.attribution_populator import (
     AttributionPopulator,
 )
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
-from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.text_utils import AttributionTextNormalizer
 
 
 def test_integration_attribute_amendments():

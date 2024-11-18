@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
+from graal.clustering.similarity_finder import SimilarityFinder
 
 
 def test_prefilter_similar_docs():

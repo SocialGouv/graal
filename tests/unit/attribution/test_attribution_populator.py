@@ -3,10 +3,10 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
-from amendements_intelligents.attribution.attribution_populator import (
+from graal.attribution.attribution_populator import (
     AttributionPopulator,
 )
-from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
+from graal.utils.text_utils import AttributionTextNormalizer
 
 
 def test_match_codes_and_articles_to_amendments_body():
@@ -264,7 +264,7 @@ def test_update_with_keyword_matches(input_row, keyword_matches_df, expected_row
     assert result.equals(expected_row)
 
 
-@patch("amendements_intelligents.attribution.attribution_populator.Pool")
+@patch("graal.attribution.attribution_populator.Pool")
 def test_parallel_keyword_fuzzy_matching(mock_pool):
     mock_pool_instance = Mock()
     mock_pool_instance.starmap.return_value = [[{"keyword": "civil", "amdt_idx": "1"}]]

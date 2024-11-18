@@ -12,8 +12,8 @@ install:
 	poetry run python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 
 run:
-	python amendements_intelligents/full_pipeline.py --config=config/default.json
-	# python amendements_intelligents/full_pipeline.py --config=config/testing.json
+	python graal/full_pipeline.py --config=config/default.json
+	# python graal/full_pipeline.py --config=config/testing.json
 
 run-no-overwrite:
-	python amendements_intelligents/full_pipeline.py --config=config/no_overwrite.json
+	python graal/full_pipeline.py --config=config/no_overwrite.json

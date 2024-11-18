@@ -3,7 +3,7 @@ import textwrap
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.amendment_copier import AmendmentCopier
+from graal.utils.amendment_copier import AmendmentCopier
 
 
 @pytest.fixture

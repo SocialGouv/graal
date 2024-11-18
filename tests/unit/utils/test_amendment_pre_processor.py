@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import pytest
 
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 
 def test_replace_common_amendment_bodies():
@@ -411,7 +411,7 @@ def test_load_amendments_json(mocker):
         ),
     )
     mocker.patch(
-        "amendements_intelligents.utils.amendment_pre_processor.AmendmentPreProcessor.clean_up_json_columns",
+        "graal.utils.amendment_pre_processor.AmendmentPreProcessor.clean_up_json_columns",
         side_effect=lambda x: x,
     )
 

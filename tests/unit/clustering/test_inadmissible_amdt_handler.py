@@ -2,13 +2,13 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from amendements_intelligents.clustering.inadmissible_amdt_handler import (
+from graal.clustering.inadmissible_amdt_handler import (
     InadmissibleAmendmentHandler,
 )
 
 
-@patch("amendements_intelligents.clustering.inadmissible_amdt_handler.pd.read_pickle")
-@patch("amendements_intelligents.clustering.inadmissible_amdt_handler.SimilarityFinder")
+@patch("graal.clustering.inadmissible_amdt_handler.pd.read_pickle")
+@patch("graal.clustering.inadmissible_amdt_handler.SimilarityFinder")
 def test_process(mock_similarity_finder, mock_read_pickle):
     test_cases = [
         {

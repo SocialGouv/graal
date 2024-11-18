@@ -3,10 +3,10 @@ import logging.config
 
 import pandas as pd
 
-from amendements_intelligents.clustering.similarity_finder import SimilarityFinder
-from amendements_intelligents.types import ColumnName
-from amendements_intelligents.utils.amendment_copier import AmendmentCopier
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.clustering.similarity_finder import SimilarityFinder
+from graal.types import ColumnName
+from graal.utils.amendment_copier import AmendmentCopier
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 

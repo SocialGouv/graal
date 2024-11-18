@@ -7,7 +7,7 @@ import time
 import pandas as pd
 from pydantic import FilePath
 
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 
