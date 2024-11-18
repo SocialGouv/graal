@@ -28,28 +28,15 @@ import time
 import pandas as pd
 
 from graal.allotment.allotment_handler import AllotmentHandler
-from graal.attribution.attribution_data_loader import (
-    AttributionDataLoader,
-)
-from graal.attribution.attribution_populator import (
-    AttributionPopulator,
-)
-from graal.clustering.inadmissible_amdt_handler import (
-    InadmissibleAmendmentHandler,
-)
+from graal.attribution.attribution_data_loader import AttributionDataLoader
+from graal.attribution.attribution_populator import AttributionPopulator
+from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.populate_summaries import SummaryHandler
-from graal.summary.llm_clients import (
-    AlbertAPIClient,
-    FakeLLMAPIClient,
-    OllamaAPIClient,
-)
-from graal.summary.summary_generation_load_balancer import (
-    SummaryGenerationLoadBalancer,
-)
-from graal.types import ColumnsToWorkOn
+from graal.summary.llm_clients import AlbertAPIClient, FakeLLMAPIClient, OllamaAPIClient
+from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.text_utils import AttributionTextNormalizer
 
