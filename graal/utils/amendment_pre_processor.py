@@ -12,7 +12,7 @@ from typing import Any, Optional
 import pandas as pd
 from pydantic import FilePath
 
-from graal.types import ColumnName
+from graal.custom_types import ColumnName
 from graal.utils.text_utils import (
     extract_plain_text_from_html,
     normalize_text,

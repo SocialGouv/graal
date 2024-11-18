@@ -1,6 +1,6 @@
 import textwrap
 
-from graal.types import Prompt, TxtContent
+from graal.custom_types import Prompt, TxtContent
 
 
 class SummaryPromptBuilder:

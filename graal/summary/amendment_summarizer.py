@@ -6,7 +6,7 @@ from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
-from graal.types import IntIndex
+from graal.custom_types import IntIndex
 from graal.utils.text_utils import SummaryTextNormalizer
 
 

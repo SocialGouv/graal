@@ -1,6 +1,6 @@
 import pandas as pd
 
-from graal.types import EntityType
+from graal.custom_types import EntityType
 from graal.utils.text_utils import AttributionTextNormalizer
 
 

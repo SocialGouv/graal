@@ -5,7 +5,7 @@ from typing import Callable
 import pandas as pd
 
 from graal.clustering.cluster_finder import AmendmentsClusterFinder
-from graal.types import IntIndex
+from graal.custom_types import IntIndex
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
