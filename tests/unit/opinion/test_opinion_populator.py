@@ -1,6 +1,6 @@
 import pandas as pd
 
-from amendements_intelligents.opinion.opinion_handler import OpinionHandler
+from graal.opinion.opinion_handler import OpinionHandler
 
 
 def test_opinion_populator():

@@ -2,12 +2,12 @@ import logging
 
 import pandas as pd
 
-from amendements_intelligents.summary.summary_generation_load_balancer import (
+from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
-from amendements_intelligents.summary.summary_prompt_builder import SummaryPromptBuilder
-from amendements_intelligents.types import IntIndex
-from amendements_intelligents.utils.text_utils import SummaryTextNormalizer
+from graal.summary.summary_prompt_builder import SummaryPromptBuilder
+from graal.types import IntIndex
+from graal.utils.text_utils import SummaryTextNormalizer
 
 
 class AmendmentSummarizer:

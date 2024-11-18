@@ -4,9 +4,9 @@ from typing import Callable
 
 import pandas as pd
 
-from amendements_intelligents.clustering.cluster_finder import AmendmentsClusterFinder
-from amendements_intelligents.types import IntIndex
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.clustering.cluster_finder import AmendmentsClusterFinder
+from graal.types import IntIndex
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 

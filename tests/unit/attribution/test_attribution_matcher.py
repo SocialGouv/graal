@@ -1,4 +1,4 @@
-from amendements_intelligents.attribution.attribution_matcher import AttributionMatcher
+from graal.attribution.attribution_matcher import AttributionMatcher
 
 
 def test_fuzzy_match():

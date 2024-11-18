@@ -1,6 +1,6 @@
 import hashlib
 
-from amendements_intelligents.types import ExpertiseID, ExpertMetadata
+from graal.types import ExpertiseID, ExpertMetadata
 
 
 def create_expertise_dict(

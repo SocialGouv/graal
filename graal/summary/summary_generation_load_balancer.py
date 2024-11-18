@@ -3,8 +3,8 @@ import queue
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
-from amendements_intelligents.summary.llm_clients import LLMAPIClient
-from amendements_intelligents.summary.summary_prompt_builder import SummaryPromptBuilder
+from graal.summary.llm_clients import LLMAPIClient
+from graal.summary.summary_prompt_builder import SummaryPromptBuilder
 
 
 class SummaryGenerationLoadBalancer:

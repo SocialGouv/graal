@@ -4,9 +4,9 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
-from amendements_intelligents.populate_summaries import AmendmentSummarizer
-from amendements_intelligents.summary.llm_clients import LLMAPIClient
-from amendements_intelligents.summary.summary_generation_load_balancer import (
+from graal.populate_summaries import AmendmentSummarizer
+from graal.summary.llm_clients import LLMAPIClient
+from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
 

@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from amendements_intelligents.summary.llm_clients import LLMAPIClient
-from amendements_intelligents.summary.summary_generation_load_balancer import (
+from graal.summary.llm_clients import LLMAPIClient
+from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
 

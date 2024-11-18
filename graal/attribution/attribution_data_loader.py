@@ -1,7 +1,7 @@
 import pandas as pd
 
-from amendements_intelligents.types import EntityType
-from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
+from graal.types import EntityType
+from graal.utils.text_utils import AttributionTextNormalizer
 
 
 class AttributionDataLoader:

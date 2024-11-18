@@ -1,6 +1,6 @@
 import textwrap
 
-from amendements_intelligents.types import Prompt, TxtContent
+from graal.types import Prompt, TxtContent
 
 
 class SummaryPromptBuilder:

@@ -12,8 +12,8 @@ from typing import Any, Optional
 import pandas as pd
 from pydantic import FilePath
 
-from amendements_intelligents.types import ColumnName
-from amendements_intelligents.utils.text_utils import (
+from graal.types import ColumnName
+from graal.utils.text_utils import (
     extract_plain_text_from_html,
     normalize_text,
 )

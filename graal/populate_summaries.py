@@ -5,11 +5,11 @@ from typing import Optional
 
 import pandas as pd
 
-from amendements_intelligents.summary.amendment_summarizer import AmendmentSummarizer
-from amendements_intelligents.summary.summary_generation_load_balancer import (
+from graal.summary.amendment_summarizer import AmendmentSummarizer
+from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 

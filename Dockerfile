@@ -14,4 +14,4 @@ COPY . .
 
 ENV PYTHONPATH="/app"
 
-CMD ["poetry", "run", "python", "/app/amendements_intelligents/full_pipeline.py"]
+CMD ["poetry", "run", "python", "/app/graal/full_pipeline.py"]

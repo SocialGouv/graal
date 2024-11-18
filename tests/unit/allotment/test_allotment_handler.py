@@ -1,6 +1,6 @@
 import pandas as pd
 
-from amendements_intelligents.allotment.allotment_handler import AllotmentHandler
+from graal.allotment.allotment_handler import AllotmentHandler
 
 
 def test_filter_amdts_to_keep_one_per_allotment():
