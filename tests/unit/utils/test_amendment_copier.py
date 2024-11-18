@@ -73,7 +73,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[0, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 2022
+        Réponse copiée de : PLFSS (traité en 2022)
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1
@@ -86,7 +86,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[1, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLACSS 2021
+        Réponse copiée de : PLACSS (traité en 2021)
         Numéro d'amendement : 2
         Lecture : B
         Organe : Organe 2
@@ -100,7 +100,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[2, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 2020
+        Réponse copiée de : PLFSS (traité en 2020)
         Numéro d'amendement : 3
         Lecture : C
         Organe : Organe 3
