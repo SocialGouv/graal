@@ -1,6 +1,6 @@
 import hashlib
 
-from graal.types import ExpertiseID, ExpertMetadata
+from graal.custom_types import ExpertiseID, ExpertMetadata
 
 
 def create_expertise_dict(

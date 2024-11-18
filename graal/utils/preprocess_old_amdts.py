@@ -19,7 +19,7 @@ from pydantic import FilePath
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
-from graal.types import IntIndex
+from graal.custom_types import IntIndex
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")

@@ -1,6 +1,6 @@
 from typing import Set
 
-from graal.types import ColumnName
+from graal.custom_types import ColumnName
 
 
 class AttributionMatcher:

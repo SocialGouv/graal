@@ -38,6 +38,7 @@ from graal.clustering.inadmissible_amdt_handler import (
     InadmissibleAmendmentHandler,
 )
 from graal.clustering.similarity_handler import SimilarityHandler
+from graal.custom_types import ColumnsToWorkOn
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.populate_summaries import SummaryHandler
 from graal.summary.llm_clients import (

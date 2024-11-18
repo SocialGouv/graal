@@ -8,7 +8,7 @@ from graal.summary.llm_clients import (
     LLMInferenceAPIClient,
     VllmAPIClient,
 )
-from graal.types import TxtContent
+from graal.custom_types import TxtContent
 
 
 @pytest.fixture
