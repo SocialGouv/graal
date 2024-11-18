@@ -12,8 +12,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from amendements_intelligents.attribution.attribution_matcher import AttributionMatcher
-from amendements_intelligents.types import ColumnName, EntityType
+from graal.attribution.attribution_matcher import AttributionMatcher
+from graal.types import ColumnName, EntityType
 
 
 class AttributionPopulator:

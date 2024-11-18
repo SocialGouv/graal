@@ -1,6 +1,6 @@
 from typing import Set
 
-from amendements_intelligents.types import ColumnName
+from graal.types import ColumnName
 
 
 class AttributionMatcher:

@@ -27,30 +27,30 @@ import time
 
 import pandas as pd
 
-from amendements_intelligents.allotment.allotment_handler import AllotmentHandler
-from amendements_intelligents.attribution.attribution_data_loader import (
+from graal.allotment.allotment_handler import AllotmentHandler
+from graal.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from amendements_intelligents.attribution.attribution_populator import (
+from graal.attribution.attribution_populator import (
     AttributionPopulator,
 )
-from amendements_intelligents.clustering.inadmissible_amdt_handler import (
+from graal.clustering.inadmissible_amdt_handler import (
     InadmissibleAmendmentHandler,
 )
-from amendements_intelligents.clustering.similarity_handler import SimilarityHandler
-from amendements_intelligents.opinion.opinion_handler import OpinionHandler
-from amendements_intelligents.populate_summaries import SummaryHandler
-from amendements_intelligents.summary.llm_clients import (
+from graal.clustering.similarity_handler import SimilarityHandler
+from graal.opinion.opinion_handler import OpinionHandler
+from graal.populate_summaries import SummaryHandler
+from graal.summary.llm_clients import (
     AlbertAPIClient,
     FakeLLMAPIClient,
     OllamaAPIClient,
 )
-from amendements_intelligents.summary.summary_generation_load_balancer import (
+from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
-from amendements_intelligents.types import ColumnsToWorkOn
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
-from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
+from graal.types import ColumnsToWorkOn
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
 
@@ -114,14 +114,16 @@ def derive_columns_to_work_on_from_anebaled_features(
 
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx"
+    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_15.xlsx"
     PREPROCESSED_INADMISSIBLE_FILE = (
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO838901.json"
+    INPUT_FILE = (
+        f"{DATA_FOLDER}/input_plfss/lecture-senat-2024-2025-129-PO78718 (1).json"
+    )
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [

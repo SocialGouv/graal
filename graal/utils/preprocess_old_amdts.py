@@ -17,10 +17,10 @@ from typing import Any
 import pandas as pd
 from pydantic import FilePath
 
-from amendements_intelligents.allotment.allotment_handler import AllotmentHandler
-from amendements_intelligents.clustering.similarity_handler import SimilarityHandler
-from amendements_intelligents.types import IntIndex
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.allotment.allotment_handler import AllotmentHandler
+from graal.clustering.similarity_handler import SimilarityHandler
+from graal.types import IntIndex
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 

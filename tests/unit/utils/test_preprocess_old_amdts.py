@@ -1,6 +1,6 @@
 import pandas as pd
 
-from amendements_intelligents.utils.preprocess_old_amdts import (
+from graal.utils.preprocess_old_amdts import (
     remove_oldest_and_without_response,
 )
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.clustering.cluster_finder import AmendmentsClusterFinder
+from graal.clustering.cluster_finder import AmendmentsClusterFinder
 
 
 @pytest.fixture

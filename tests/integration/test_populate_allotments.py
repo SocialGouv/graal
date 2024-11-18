@@ -2,9 +2,9 @@ import logging
 
 import pandas as pd
 
-from amendements_intelligents.allotment.allotment_handler import AllotmentHandler
-from amendements_intelligents.utils.amendment_pre_processor import AmendmentPreProcessor
-from amendements_intelligents.utils.sheet_data_loader import SheetDataLoader
+from graal.allotment.allotment_handler import AllotmentHandler
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.sheet_data_loader import SheetDataLoader
 
 
 def load_test_file_to_compare(

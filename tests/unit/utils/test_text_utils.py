@@ -1,6 +1,6 @@
 import pytest
 
-from amendements_intelligents.utils.text_utils import (
+from graal.utils.text_utils import (
     AttributionTextNormalizer,
     SummaryTextNormalizer,
     digitize_small_french_numbers,

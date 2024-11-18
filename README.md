@@ -6,7 +6,7 @@ This project offers tools for processing and analyzing amendments, aiming to str
 
 The project is organized into several main components:
 
-- `amendements_intelligents/`: Main package containing the core functionality
+- `graal/`: Main package containing the core functionality
   - `allotment/`: Handles grouping of similar amendments
   - `attribution/`: Manages attribution of amendments
   - `clustering/`: Implements clustering and similarity finding algorithms
@@ -94,7 +94,7 @@ These features work together to ensure that amendments are processed accurately 
 To run the full pipeline:
 
 ```bash
-python amendements_intelligents/full_pipeline.py --config=config/default.json
+python graal/full_pipeline.py --config=config/default.json
 # OR
 make run
 ```
@@ -102,7 +102,7 @@ make run
 To run the full pipeline without overwriting work already done in Signale:
 
 ```bash
-python amendements_intelligents/full_pipeline.py --config=config/no_overwrite.json
+python graal/full_pipeline.py --config=config/no_overwrite.json
 # OR
 make run-no-overwrite
 ```
@@ -113,7 +113,7 @@ Each feature mentioned above can be enabled or disabled through the configuratio
 
 See [config/default.json](config/default.json) for the configuration we use most of the time.
 
-Additionally, some parameters in the [amendements_intelligents/full_pipeline.py](amendements_intelligents/full_pipeline.py) script are currently hardcoded. You will need to modify the file directly (work in progress).
+Additionally, some parameters in the [graal/full_pipeline.py](graal/full_pipeline.py) script are currently hardcoded. You will need to modify the file directly (work in progress).
 
 For instance, to enable or disable the use of Ollama, Albert API, or the FakeLLMAPIClient (which outputs random Latin sentences), you can comment or uncomment the corresponding lines in this section of the code:
 

@@ -4,11 +4,11 @@ import pytest
 import requests
 from requests.models import Response
 
-from amendements_intelligents.summary.llm_clients import (
+from graal.summary.llm_clients import (
     LLMInferenceAPIClient,
     VllmAPIClient,
 )
-from amendements_intelligents.types import TxtContent
+from graal.types import TxtContent
 
 
 @pytest.fixture

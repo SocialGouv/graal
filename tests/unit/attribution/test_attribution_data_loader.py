@@ -1,10 +1,10 @@
 import pandas as pd
 import pytest
 
-from amendements_intelligents.attribution.attribution_data_loader import (
+from graal.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from amendements_intelligents.utils.text_utils import AttributionTextNormalizer
+from graal.utils.text_utils import AttributionTextNormalizer
 
 
 @pytest.fixture
