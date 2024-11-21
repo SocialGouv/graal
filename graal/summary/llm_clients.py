@@ -71,6 +71,26 @@ class OllamaAPIClient(LLMAPIClient):
             return f"Failed to get a response. Status code: {response.status_code}"
 
 
+class ChatGPTAPIClient(LLMAPIClient):
+    def __init__(self, model_name: str, api_key: APIKey):
+        super().__init__(prefix="chatgpt")
+        self.model_name = model_name
+        self.api_key = api_key
+        self.client = OpenAI(api_key=api_key)
+
+    def generate_summary(self, prompt: TxtContent) -> str:
+        logging.info(f"{self.name} is generating a summary")
+
+        data = {
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": f"{prompt}"}],
+            "temperature": 0,
+        }
+
+        response = self.client.chat.completions.create(**data)
+        return response.choices[0].message.content
+
+
 class VllmAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, vllm_endpoint: Url, user: str, password: str):
         super().__init__(prefix="vllm")
