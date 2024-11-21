@@ -14,6 +14,7 @@ Embeddings = list[Embedding]
 ExpertiseDesc = str
 ExpertiseID = str  # hash of ExpertDesc
 IntIndex = int
+LLMName = str
 Metadata = Union[str, int, float]
 Prompt = str
 TxtContent = str
