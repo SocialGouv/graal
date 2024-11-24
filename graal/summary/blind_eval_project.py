@@ -17,14 +17,9 @@ logging.config.fileConfig("logging.conf")
 
 
 class BlindEvalProject:
-    def __init__(self, amendments_df: pd.DataFrame):
-        """
-        Initialize the BlindEvalProject class.
-
-        :param amendments_df: DataFrame containing amendment information.
-        :param llm_clients: A dictionary mapping names to LLM client instances.
-        """
+    def __init__(self, amendments_df: pd.DataFrame, metrics: list[ColumnName]):
         self.amendments_df = amendments_df
+        self.metrics = metrics
         self.latest_gen_idx = 0
         self.data: dict[int, dict[str, Any]] = {}
         self.mapping_obj_to_author: dict[int, dict[str, str]] = {}
@@ -66,10 +61,11 @@ class BlindEvalProject:
                 "ID": self.latest_gen_idx,
                 "Exposé amdt": amendment["Exposé amdt"],
                 "Corps amdt": amendment["Corps amdt"],
-                "Concision": "",
-                "Fidélité au texte": "",
-                "Formulation": "",
             }
+
+            for metric in self.metrics:
+                self.data[self.latest_gen_idx][f"1 - {metric}"] = ""
+                self.data[self.latest_gen_idx][f"2 - {metric}"] = ""
             self.mapping_obj_to_author[self.latest_gen_idx] = {
                 "Objet 1": summaries[0][1],
                 "Objet 2": summaries[1][1],
@@ -147,6 +143,28 @@ class BlindEvalProject:
                         col_num,
                         17,
                         writer.book.add_format(
-                            {"text_wrap": True, "valign": "top", "align": "center"}
+                            {
+                                "text_wrap": True,
+                                "valign": "top",
+                                "align": "center",
+                            }
                         ),
                     )
+                    # Add data validation for dropdown menu with "oui" or "non"
+                    for col_name in column_order:
+                        if col_name not in [
+                            "Exposé amdt",
+                            "Corps amdt",
+                            "Objet 1",
+                            "Objet 2",
+                        ]:
+                            col_letter = chr(65 + column_order.index(col_name))
+                            worksheet.data_validation(
+                                f"{col_letter}2:{col_letter}{len(df_filtered) + 1}",
+                                {
+                                    "validate": "list",
+                                    "source": ["oui", "non"],
+                                    "input_message": "Choose 'oui' or 'non'",
+                                    "error_message": "Invalid input, choose 'oui' or 'non'",
+                                },
+                            )
