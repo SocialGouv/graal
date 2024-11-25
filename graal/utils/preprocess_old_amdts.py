@@ -107,10 +107,6 @@ PLACSS_FILE_CONFIG_JSON = {
 }
 
 LFRSS_FILE_CONFIG_JSON = {
-    f"{DATA_FOLDER}/exports_lectures/PPL LIOT 2023 abrogation réforme des retraites/Séance AN/lecture-an-16-1299-PO791932.json": {
-        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
-        "origin_project": "LFRSS",
-    },
     f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO791932.json": {
         "default_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "LFRSS",
@@ -125,10 +121,18 @@ LFRSS_FILE_CONFIG_JSON = {
     },
 }
 
+PPL_FILE_CONFIG_JSON = {
+    f"{DATA_FOLDER}/exports_lectures/PPL LIOT 2023 abrogation réforme des retraites/Séance AN/lecture-an-16-1299-PO791932.json": {
+        "default_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
+        "origin_project": "LFRSS",
+    },
+}
+
 ALL_INPUT_FILE_CONFIGS_JSON = {
     **PLFSS_FILE_CONFIG_JSON,
     **PLACSS_FILE_CONFIG_JSON,
     **LFRSS_FILE_CONFIG_JSON,
+    **PPL_FILE_CONFIG_JSON,
 }
 
 PLFSS_FILE_CONFIG_EXCEL = {
@@ -137,7 +141,15 @@ PLFSS_FILE_CONFIG_EXCEL = {
         "origin_project": "PLFSS",
     },
 }
-ALL_INPUT_FILE_CONFIGS_EXCEL = {**PLFSS_FILE_CONFIG_EXCEL}
+
+PPL_FILE_CONFIG_EXCEL = {
+    f"{DATA_FOLDER}/exports_lectures/PPL Retraites/2024/PPL_retraites_RN_BDD.xlsx": {
+        "default_timestamp": int(datetime(2024, month=10, day=1).timestamp()),
+        "origin_project": "PPL Retraites",
+    },
+}
+
+ALL_INPUT_FILE_CONFIGS_EXCEL = {**PLFSS_FILE_CONFIG_EXCEL, **PPL_FILE_CONFIG_EXCEL}
 
 
 def remove_oldest_and_without_response(
