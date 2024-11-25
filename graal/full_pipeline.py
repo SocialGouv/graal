@@ -25,7 +25,9 @@ import os
 import re
 import time
 
+import httpx
 import pandas as pd
+from pydantic import FilePath
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.attribution.attribution_data_loader import AttributionDataLoader
@@ -35,7 +37,12 @@ from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.populate_summaries import SummaryHandler
-from graal.summary.llm_clients import AlbertAPIClient, FakeLLMAPIClient, OllamaAPIClient
+from graal.summary.llm_clients import (
+    AlbertAPIClient,
+    FakeLLMAPIClient,
+    LLMAPIClient,
+    OllamaAPIClient,
+)
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.text_utils import AttributionTextNormalizer
@@ -103,17 +110,16 @@ def derive_columns_to_work_on_from_anebaled_features(
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_15.xlsx"
-    PREPROCESSED_INADMISSIBLE_FILE = (
+    PREPROCESSED_INADMISSIBLE_FILE = FilePath(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = (
-        f"{DATA_FOLDER}/input_plfss/lecture-senat-2024-2025-129-PO78718 (1).json"
-    )
+    INPUT_FILE = FilePath(f"{DATA_FOLDER}/input_ppl/lecture-an-17-613-PO838901.json")
+    # INPUT_FILE = FilePath(f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json")
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_LFI"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -137,22 +143,22 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
     )
 
-    llm_api_clients = []
-    # for _ in range(10):
+    llm_api_clients: list[LLMAPIClient] = []
+    # for _ in range(5):
     #     ollama_api_client = OllamaAPIClient(
-    #         endpoint=os.getenv("OLLAMA_ENDPOINT"),
-    #         model_name=os.getenv("OLLAMA_MODEL_NAME"),
-    #         user=os.getenv("OLLAMA_USER"),
-    #         password=os.getenv("OLLAMA_PASSWORD"),
+    #         endpoint=Url(os.environ["OLLAMA_ENDPOINT"]),
+    #         model_name=os.environ["OLLAMA_MODEL_NAME"],
+    #         user=os.environ["OLLAMA_USER"],
+    #         password=os.environ["OLLAMA_PASSWORD"],
     #     )
     #     llm_api_clients.append(ollama_api_client)
 
     for _ in range(6):
         albert_api_client = AlbertAPIClient(
-            base_url=os.getenv(
-                "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
+            base_url=httpx.URL(
+                os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
             ),
-            api_key=os.getenv("ETALAB_API_KEY"),
+            api_key=os.environ["ETALAB_API_KEY"],
             model_name=os.getenv(
                 "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
             ),
@@ -332,7 +338,8 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             for allot, group in intermediate_amdts_df.groupby("Allotissement"):
                 if "Défavorable" in group["Avis du Gouvernement"].values:
                     intermediate_amdts_df.loc[
-                        intermediate_amdts_df["Allotissement"] == allot, "Avis du Gouvernement"
+                        intermediate_amdts_df["Allotissement"] == allot,
+                        "Avis du Gouvernement",
                     ] = "Défavorable"
 
     if args.summary_generation:

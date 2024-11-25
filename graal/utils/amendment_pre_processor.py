@@ -7,7 +7,7 @@ common patterns in amendment bodies and exposes.
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 
 import pandas as pd
 from pydantic import FilePath
@@ -147,7 +147,7 @@ class AmendmentPreProcessor:
 
     @staticmethod
     def clear_columns_to_be_overridden(
-        amendments_df: pd.DataFrame, columns_to_clear: list[ColumnName]
+        amendments_df: pd.DataFrame, columns_to_clear: Iterable[ColumnName]
     ) -> pd.DataFrame:
         for col_name in columns_to_clear:
             logging.info(f"Clearing column {col_name}...\n")
