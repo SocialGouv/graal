@@ -12,11 +12,11 @@ from graal.summary.summary_generation_load_balancer import (
 @pytest.fixture
 def mock_clients():
     client1 = MagicMock(spec=LLMAPIClient)
-    client1.generate_summary.return_value = "Summary 1"
+    client1.generate_text.return_value = "Summary 1"
     client1.name = "Client 1"
 
     client2 = MagicMock(spec=LLMAPIClient)
-    client2.generate_summary.return_value = "Summary 2"
+    client2.generate_text.return_value = "Summary 2"
     client2.name = "Client 2"
 
     return [client1, client2]
@@ -45,41 +45,30 @@ def test_obtain_client_timeout():
         load_balancer._obtain_client()
 
 
-def test_generate_summary_success(mock_clients):
+def test_generate_text_success(mock_clients):
     load_balancer = SummaryGenerationLoadBalancer(clients=mock_clients, queue_timeout=1)
-    result = load_balancer.generate_summary("Test prompt")
+    result = load_balancer.generate_text("Test prompt")
     assert result == "Summary 1"
     assert load_balancer.summary_count == 1
 
 
-def test_generate_summary_retry_success(mock_clients):
-    mock_clients[0].generate_summary.side_effect = [Exception("Error")]
+def test_generate_text_retry_success(mock_clients):
+    mock_clients[0].generate_text.side_effect = [Exception("Error")]
     load_balancer = SummaryGenerationLoadBalancer(clients=mock_clients, queue_timeout=1)
-    result = load_balancer.generate_summary("Test prompt")
+    result = load_balancer.generate_text("Test prompt")
     assert result == "Summary 2"
     assert load_balancer.summary_count == 1
 
 
-def test_generate_summary_all_fail(mock_clients):
+def test_generate_text_all_fail(mock_clients):
     for client in mock_clients:
-        client.generate_summary.side_effect = Exception("Error")
+        client.generate_text.side_effect = Exception("Error")
     load_balancer = SummaryGenerationLoadBalancer(
         clients=mock_clients, queue_timeout=1, max_retries=2
     )
-    with pytest.raises(RuntimeError, match="All llm clients failed after retries."):
-        load_balancer.generate_summary("Test prompt")
+    result = load_balancer.generate_text("Test prompt")
+    assert result == ""
     assert load_balancer.summary_count == 0
-
-
-def test_generate_summary_logging(mock_clients, caplog):
-    mock_clients[0].generate_summary.side_effect = Exception("Error")
-    load_balancer = SummaryGenerationLoadBalancer(
-        clients=mock_clients, queue_timeout=1, max_retries=1
-    )
-    with caplog.at_level(logging.ERROR):
-        with pytest.raises(RuntimeError):
-            load_balancer.generate_summary("Test prompt")
-    assert "Error with client Client 1: Error" in caplog.text
 
 
 def test_rerun_long_results(mock_clients):

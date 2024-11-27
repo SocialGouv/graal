@@ -33,7 +33,7 @@ class SummaryGenerationLoadBalancer:
     def _put_client_back(self, client: LLMAPIClient):
         self.client_pool.put(client)
 
-    def generate_summary(self, prompt: str) -> str:
+    def generate_text(self, prompt: str) -> str:
         retries = 0
         while retries < self.max_retries:
             try:
@@ -63,7 +63,7 @@ class SummaryGenerationLoadBalancer:
     def generate_summaries_concurrent(self, prompts: List[str]) -> List[str]:
         with ThreadPoolExecutor(max_workers=len(self.clients)) as executor:
             futures = [
-                executor.submit(self.generate_summary, prompt) for prompt in prompts
+                executor.submit(self.generate_text, prompt) for prompt in prompts
             ]
             results = [future.result() for future in futures]
         return results

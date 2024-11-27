@@ -3,18 +3,11 @@ import textwrap
 import pandas as pd
 import pytest
 
-from graal.utils.amendment_copier import AmendmentCopier
+from graal.clustering.similarity_handler import SimilarityHandler
 
 
 @pytest.fixture
 def sample_data():
-    new_amendments_df = pd.DataFrame(
-        {
-            "Num amdt": [1, 2, 3],
-            "Lecture": ["A", "B", "C"],
-            "amdt_idx": [97, 98, 99],
-        }
-    )
     old_amendments_df = pd.DataFrame(
         {
             "Num amdt": [1, 2, 3],
@@ -30,7 +23,7 @@ def sample_data():
             "origin_project": ["PLFSS", "PLACSS", "PLFSS"],
         }
     )
-    closest_docs = {
+    closest_amdts = {
         97: {
             "best_matching_doc_amdt_idx": 1,
             "best_matching_doc_lecture": "A",
@@ -61,13 +54,16 @@ def sample_data():
             "Sort": ["", "", ""],
         }
     )
-    return new_amendments_df, old_amendments_df, closest_docs, target_df
+    return old_amendments_df, closest_amdts, target_df
 
 
 def test_copy_matches_to_amendments_df(sample_data):
-    new_amendments_df, old_amendments_df, closest_docs, target_df = sample_data
-    copier = AmendmentCopier(new_amendments_df, old_amendments_df, closest_docs)
-    result_df = copier.copy_matches_to_amendments_df(target_df)
+    old_amendments_df, closest_amdts, target_df = sample_data
+    result_df = SimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+    )
 
     assert result_df.loc[0, "Réponse"] == "Response 1"
     assert (

@@ -1,11 +1,12 @@
 import logging
 import logging.config
+import textwrap
+from datetime import datetime
 
 import pandas as pd
 
 from graal.clustering.similarity_finder import SimilarityFinder
 from graal.custom_types import ColumnName
-from graal.utils.amendment_copier import AmendmentCopier
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -89,13 +90,70 @@ class SimilarityHandler:
                     merged_closest_amdts[amdt_idx] = match
 
         # Copy matched amendments to new_amendments_df
-        amendment_copier = AmendmentCopier(
-            new_amendments_df=preprocessed_new_amendments_df,
+        new_amendments_with_copies_df = SimilarityHandler.copy_matches_to_amendments_df(
+            target_df=original_new_amendments_df,
             old_amendments_df=preprocessed_old_amendments_df,
             closest_amdts=merged_closest_amdts,
         )
-        new_amendments_with_copies_df = amendment_copier.copy_matches_to_amendments_df(
-            target_df=original_new_amendments_df
-        )
 
         return new_amendments_with_copies_df
+
+    @staticmethod
+    def copy_matches_to_amendments_df(
+        target_df: pd.DataFrame, old_amendments_df: pd.DataFrame, closest_amdts: dict
+    ) -> pd.DataFrame:
+        # Iterate over the closest documents
+        for new_amdt_idx, closest_doc in closest_amdts.items():
+            amdt_idx_mask = target_df["amdt_idx"] == new_amdt_idx
+
+            # Get the best match details
+            best_matching_doc_amdt_idx = closest_doc["best_matching_doc_amdt_idx"]
+            column_used_for_comparison = closest_doc["column_used_for_comparison"]
+
+            # Filter old amendments for the best match
+            old_amendment_mask = (
+                old_amendments_df["amdt_idx"] == best_matching_doc_amdt_idx
+            )
+            matching_amendment = old_amendments_df.loc[old_amendment_mask]
+
+            if not matching_amendment.empty:
+                # Copy the response if available
+                target_df.loc[amdt_idx_mask.values, "Réponse"] = matching_amendment[
+                    "Réponse"
+                ].values[0]
+
+                # Extract the matching details
+                matching_origin_project = matching_amendment["origin_project"].values[0]
+                matching_num_amdt = matching_amendment["Num amdt"].values[0]
+                matching_lecture = matching_amendment["Lecture"].values[0]
+                matching_organe = matching_amendment["Organe"].values[0]
+                matching_timestamp = -closest_doc["best_matching_comparison_value"]
+                matching_year = datetime.fromtimestamp(matching_timestamp).year
+
+                # Update target DataFrame with the matched details
+                current_comments = target_df.loc[amdt_idx_mask, "Commentaires"].values[
+                    0
+                ]
+                if current_comments:
+                    target_df.loc[amdt_idx_mask, "Commentaires"] += "\n"
+                else:
+                    target_df.loc[amdt_idx_mask, "Commentaires"] = ""
+
+                target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
+                        Réponse copiée de : {matching_origin_project} {matching_year}
+                        Numéro d'amendement : {matching_num_amdt}
+                        Lecture : {matching_lecture}
+                        Organe : {matching_organe}
+                        Colonne similaire : {column_used_for_comparison}
+                    """).strip()
+
+                # Check and copy the "Sort" value if it contains "Irrecevable"
+                old_sort_value = matching_amendment["Sort"].values[0]
+                if pd.notna(old_sort_value) and "irrecevable" in old_sort_value.lower():
+                    target_df.loc[amdt_idx_mask, "Sort"] = old_sort_value
+                    target_df.loc[amdt_idx_mask, "Commentaires"] += "\n"
+                    target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
+                            Sort copié : {old_sort_value}
+                        """).strip()
+
+        return target_df
