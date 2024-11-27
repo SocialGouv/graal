@@ -62,17 +62,17 @@ addopts = [
     "--color=yes",
 ]
 
-[tool.pylint]
-disable = [
-    "line-too-long",
-    "missing-function-docstring",
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "redefined-outer-name",
-    "protected-access",
-    "invalid-name",
-    "logging-fstring-interpolation",
-    "fixme"
+[tool.ruff]
+select = ["E", "F", "W", "C", "N", "B", "Q", "S"]
+ignore = [
+    "E501",  # line-too-long
+    "D103",  # missing-function-docstring
+    "D100",  # missing-module-docstring
+    "D101",  # missing-class-docstring
+    "F811",  # redefined-outer-name
+    "N802",  # invalid-name
+    "G001",  # logging-fstring-interpolation
+    "N806",  # non-lowercase-variable-in-function
 ]
 
 [tool.mypy]
