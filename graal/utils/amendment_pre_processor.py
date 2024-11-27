@@ -22,18 +22,20 @@ class AmendmentPreProcessor:
         input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
     ) -> pd.DataFrame:
         df_accumulator = []
-        # Initialize default_timestamp before the loop to avoid warnings
-        default_timestamp = 0
+        # Initialize default_processing_timestamp before the loop to avoid warnings
+        default_processing_timestamp = 0
         for file_name in input_files:
             with open(file_name, "r", encoding="utf-8-sig") as f:
                 data = json.load(f)
             df = pd.DataFrame(data["amendements"])
 
             if file_config:
-                default_timestamp = file_config[file_name]["default_timestamp"]
+                default_processing_timestamp = file_config[file_name][
+                    "default_processing_timestamp"
+                ]
                 df["origin_project"] = file_config[file_name]["origin_project"]
             else:
-                default_timestamp = 0
+                default_processing_timestamp = 0
                 df["origin_project"] = "<Inconnue>"
 
             df["timestamp"] = df["date_derniere_modif"].apply(
@@ -43,7 +45,7 @@ class AmendmentPreProcessor:
                     .timestamp()
                 )
                 if x not in [None, ""]
-                else default_timestamp
+                else default_processing_timestamp
             )
 
             df_accumulator.append(df)
@@ -57,18 +59,20 @@ class AmendmentPreProcessor:
         input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
     ) -> pd.DataFrame:
         df_accumulator = []
-        default_timestamp = 0
+        default_processing_timestamp = 0
         for file_name in input_files:
             df = pd.read_excel(file_name)
 
             if file_config:
-                default_timestamp = file_config[file_name]["default_timestamp"]
+                default_processing_timestamp = file_config[file_name][
+                    "default_processing_timestamp"
+                ]
                 df["origin_project"] = file_config[file_name]["origin_project"]
             else:
-                default_timestamp = 0
+                default_processing_timestamp = 0
                 df["origin_project"] = "<Inconnue>"
 
-            df["timestamp"] = default_timestamp
+            df["timestamp"] = default_processing_timestamp
 
             df_accumulator.append(df)
 
