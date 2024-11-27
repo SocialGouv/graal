@@ -415,7 +415,10 @@ def test_load_amendments_json(mocker):
 
     input_files = ["file1.json"]
     file_config = {
-        "file1.json": {"default_timestamp": 1234567890, "origin_project": "PLFSS"}
+        "file1.json": {
+            "default_processing_timestamp": 1234567890,
+            "origin_project": "PLFSS",
+        }
     }
 
     result_df = AmendmentPreProcessor.load_amendments_json(input_files, file_config)
