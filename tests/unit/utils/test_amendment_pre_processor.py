@@ -413,25 +413,148 @@ def test_load_amendments_json(mocker):
         side_effect=lambda x: x,
     )
 
-    input_files = ["file1.json"]
+    input_files = ["file1.json", "file2.json", "file3.json"]
     file_config = {
         "file1.json": {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PLFSS",
-        }
+            "project_name_timestamp_delta": 365 * 24 * 60 * 60,  # 365 days in seconds
+        },
+        "file2.json": {
+            "default_processing_timestamp": 1234567890,
+            "origin_project": "PPL Retraites",
+        },
+        "file3.json": {
+            "default_processing_timestamp": 1234567890,
+            "origin_project": "PLACSS",
+            "project_name_timestamp_delta": -365 * 24 * 60 * 60,  # 365 days in seconds
+        },
     }
 
     result_df = AmendmentPreProcessor.load_amendments_json(input_files, file_config)
 
     expected_df = pd.DataFrame(
         {
-            "date_derniere_modif": ["2023-01-01 00:00:01.000", ""],
-            "some_field": ["value1", "value2"],
-            "origin_project": "PLFSS",
-            "timestamp": [1672531201, 1234567890],
-            "amdt_idx": [0, 1],
+            "date_derniere_modif": [
+                "2023-01-01 00:00:01.000",
+                "",
+                "2023-01-01 00:00:01.000",
+                "",
+                "2023-01-01 00:00:01.000",
+                "",
+            ],
+            "some_field": ["value1", "value2", "value1", "value2", "value1", "value2"],
+            "origin_project": [
+                "PLFSS",
+                "PLFSS",
+                "PPL Retraites",
+                "PPL Retraites",
+                "PLACSS",
+                "PLACSS",
+            ],
+            "timestamp": [
+                1672531201 + 365 * 24 * 60 * 60,
+                1234567890 + 365 * 24 * 60 * 60,
+                1672531201,
+                1234567890,
+                1672531201 - 365 * 24 * 60 * 60,
+                1234567890 - 365 * 24 * 60 * 60,
+            ],
+            "amdt_idx": [0, 1, 2, 3, 4, 5],
         }
     )
+
+    pd.testing.assert_frame_equal(
+        result_df.reset_index(drop=True), expected_df.reset_index(drop=True)
+    )
+
+
+def test_load_amendments_excel(mocker):
+    mocker.patch(
+        "pandas.read_excel",
+        side_effect=[
+            pd.DataFrame(
+                {
+                    "date_derniere_modif": ["2023-01-01 00:00:01.000", ""],
+                    "some_field": ["value1", "value2"],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "date_derniere_modif": ["2023-01-01 00:00:01.000", ""],
+                    "some_field": ["value3", "value4"],
+                }
+            ),
+        ],
+    )
+
+    input_files = ["file1.xlsx", "file2.xlsx"]
+    file_config = {
+        "file1.xlsx": {
+            "default_processing_timestamp": 1234567890,
+            "origin_project": "PLFSS",
+            "project_name_timestamp_delta": 365 * 24 * 60 * 60,  # 365 days in seconds
+        },
+        "file2.xlsx": {
+            "default_processing_timestamp": 1234567890,
+            "origin_project": "PPL Retraites",
+        },
+    }
+
+    result_df = AmendmentPreProcessor.load_amendments_excel(input_files, file_config)
+
+    expected_df = pd.DataFrame(
+        {
+            "date_derniere_modif": [
+                "2023-01-01 00:00:01.000",
+                "",
+                "2023-01-01 00:00:01.000",
+                "",
+            ],
+            "some_field": ["value1", "value2", "value3", "value4"],
+            "origin_project": ["PLFSS", "PLFSS", "PPL Retraites", "PPL Retraites"],
+            "timestamp": [
+                1234567890 + 365 * 24 * 60 * 60,
+                1234567890 + 365 * 24 * 60 * 60,
+                1234567890,
+                1234567890,
+            ],
+            "amdt_idx": [0, 1, 2, 3],
+        }
+    )
+
+    pd.testing.assert_frame_equal(
+        result_df.reset_index(drop=True), expected_df.reset_index(drop=True)
+    )
+
+
+def test_concatenate_dataframes():
+    df1 = pd.DataFrame(
+        {
+            "amdt_idx": [0, 1],
+            "col1": ["A", "B"],
+            "col2": ["C", "D"],
+        }
+    )
+
+    df2 = pd.DataFrame(
+        {
+            "amdt_idx": [0, 1],
+            "col1": ["E", "F"],
+            "col3": ["G", "H"],
+        }
+    )
+
+    expected_df = pd.DataFrame(
+        {
+            "amdt_idx": [0, 1, 2, 3],
+            "col1": ["A", "B", "E", "F"],
+            "col2": ["C", "D", None, None],
+            "col3": [None, None, "G", "H"],
+        }
+    )
+
+    result_df = AmendmentPreProcessor.concatenate_dataframes(df1, df2)
 
     pd.testing.assert_frame_equal(
         result_df.reset_index(drop=True), expected_df.reset_index(drop=True)
