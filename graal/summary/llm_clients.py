@@ -24,7 +24,7 @@ class LLMAPIClient(ABC):
         )
 
     @abstractmethod
-    def generate_summary(self, prompt):
+    def generate_text(self, prompt):
         pass
 
 
@@ -44,7 +44,7 @@ class OllamaAPIClient(LLMAPIClient):
         self.password = password
         self.timeout = timeout
 
-    def generate_summary(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: TxtContent) -> str:
         logging.info(f"{self.name} is generating a summary")
         url = self.endpoint
 
@@ -78,7 +78,7 @@ class ChatGPTAPIClient(LLMAPIClient):
         self.api_key = api_key
         self.client = OpenAI(api_key=api_key)
 
-    def generate_summary(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: TxtContent) -> str:
         logging.info(f"{self.name} is generating a summary")
 
         data = {
@@ -99,7 +99,7 @@ class VllmAPIClient(LLMAPIClient):
         self.user = user
         self.password = password
 
-    def generate_summary(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: TxtContent) -> str:
         url = self.vllm_endpoint
         headers = {"Content-Type": "application/json"}
         auth = (self.user, self.password)
@@ -131,7 +131,7 @@ class LLMInferenceAPIClient(LLMAPIClient):
         self.url = url
         self.auth = auth
 
-    def generate_summary(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: TxtContent) -> str:
         headers = {"Content-Type": "application/json"}
 
         # Create the payload for the request
@@ -154,7 +154,7 @@ class FakeLLMAPIClient(LLMAPIClient):
     def __init__(self):
         super().__init__(prefix="fake")
 
-    def generate_summary(self, _prompt: TxtContent) -> str:
+    def generate_text(self, _prompt: TxtContent) -> str:
         # Generate a random summary
         summary = random.choice(
             [
@@ -172,7 +172,7 @@ class AlbertAPIClient(LLMAPIClient):
         self.model_name = model_name
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
-    def generate_summary(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: TxtContent) -> str:
         logging.info(f"{self.name} is generating a summary")
 
         data = {
