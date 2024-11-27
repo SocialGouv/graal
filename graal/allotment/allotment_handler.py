@@ -35,7 +35,7 @@ class AllotmentHandler:
             columns_to_normalize=["Corps amdt"],
         )
         prepared_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-            amendments_df=prepared_df, columns_to_filter_with=["Corps amdt"]
+            amendments_df=prepared_df, columns_to_filter=["Corps amdt"]
         )
         prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=prepared_df

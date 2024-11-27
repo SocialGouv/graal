@@ -211,7 +211,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         normalized_for_allot_df = (
             AmendmentPreProcessor.remove_empty_rows_for_given_columns(
                 amendments_df=intermediate_amdts_df,
-                columns_to_filter_with=["Corps amdt"],
+                columns_to_filter=["Corps amdt"],
             )
         )
         normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
@@ -282,7 +282,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         saved_new_amendments_df = new_amendments_df.copy()
         new_amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
             amendments_df=new_amendments_df,
-            columns_to_filter_with=["Exposé amdt", "Corps amdt"],
+            columns_to_filter=["Exposé amdt", "Corps amdt"],
         )
         new_amendments_df = AmendmentPreProcessor.normalize_amendments(
             new_amendments_df, columns_to_normalize=["Exposé amdt", "Corps amdt"]
