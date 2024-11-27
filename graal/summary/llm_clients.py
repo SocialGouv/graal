@@ -55,8 +55,6 @@ class OllamaAPIClient(LLMAPIClient):
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
-            # TODO: Figure out which one is the temperature param for Ollama
-            "temperature": 0,
             "options": {
                 "temperature": 0,
             },
