@@ -4,11 +4,11 @@ import pytest
 import requests
 from requests.models import Response
 
+from graal.custom_types import TxtContent
 from graal.summary.llm_clients import (
     LLMInferenceAPIClient,
     VllmAPIClient,
 )
-from graal.custom_types import TxtContent
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def llm_inference_client():
     )
 
 
-def test_generate_summary(vllm_client):
+def test_generate_text(vllm_client):
     prompt = "Test prompt"
     expected_summary = "Test summary"
 
@@ -38,7 +38,7 @@ def test_generate_summary(vllm_client):
     response_mock._content = b'{"choices": [{"text": "Test summary"}]}'
 
     with patch.object(requests, "post", return_value=response_mock) as mock_post:
-        summary = vllm_client.generate_summary(prompt)
+        summary = vllm_client.generate_text(prompt)
         mock_post.assert_called_once_with(
             "https://test-host/v1/completions",
             headers={"Content-Type": "application/json"},
@@ -54,7 +54,7 @@ def test_generate_summary(vllm_client):
         assert summary == expected_summary
 
 
-def test_llm_inference_api_client_generate_summary(llm_inference_client):
+def test_llm_inference_api_client_generate_text(llm_inference_client):
     prompt = TxtContent("This is a test prompt.")
     expected_summary = "This is a test summary."
 
@@ -63,7 +63,7 @@ def test_llm_inference_api_client_generate_summary(llm_inference_client):
     response_mock._content = b'{"generated_texts": ["This is a test summary."]}'
 
     with patch.object(requests, "post", return_value=response_mock) as mock_post:
-        summary = llm_inference_client.generate_summary(prompt)
+        summary = llm_inference_client.generate_text(prompt)
         mock_post.assert_called_once_with(
             "https://test-inference-api/v1/generate",
             json={"prompts": [prompt]},
@@ -74,7 +74,7 @@ def test_llm_inference_api_client_generate_summary(llm_inference_client):
         assert summary == expected_summary
 
 
-def test_llm_inference_api_client_generate_summary_failure(llm_inference_client):
+def test_llm_inference_api_client_generate_text_failure(llm_inference_client):
     prompt = TxtContent("This is a test prompt.")
 
     response_mock = Response()
@@ -82,7 +82,7 @@ def test_llm_inference_api_client_generate_summary_failure(llm_inference_client)
     response_mock._content = b""
 
     with patch.object(requests, "post", return_value=response_mock) as mock_post:
-        summary = llm_inference_client.generate_summary(prompt)
+        summary = llm_inference_client.generate_text(prompt)
         mock_post.assert_called_once_with(
             "https://test-inference-api/v1/generate",
             json={"prompts": [prompt]},

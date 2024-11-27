@@ -15,7 +15,7 @@ from graal.summary.summary_generation_load_balancer import (
 def mock_client():
     client = Mock(spec=LLMAPIClient)
     client.name = "mock_client"
-    client.generate_summary.side_effect = lambda _: "mock_summary"
+    client.generate_text.side_effect = lambda _: "mock_summary"
     return client
 
 
