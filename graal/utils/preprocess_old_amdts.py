@@ -136,8 +136,12 @@ ALL_INPUT_FILE_CONFIGS_JSON = {
 }
 
 PLFSS_FILE_CONFIG_EXCEL = {
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/lecture_AN_avec_toutes_reponses.xlsx": {
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/BDD_AN_L1_SP_Amendements_copie_valeurs.xlsx": {
         "default_timestamp": int(datetime(2024, month=10, day=17).timestamp()),
+        "origin_project": "PLFSS",
+    },
+    f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/BDD_PLFSS_2025_SENAT_L1_SP.xlsx": {
+        "default_timestamp": int(datetime(2024, month=11, day=20).timestamp()),
         "origin_project": "PLFSS",
     },
 }
