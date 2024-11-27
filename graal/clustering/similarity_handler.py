@@ -26,7 +26,7 @@ class SimilarityHandler:
         )
         amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
             amendments_df=amendments_df,
-            columns_to_filter_with=["Exposé amdt", "Corps amdt"],
+            columns_to_filter=["Exposé amdt", "Corps amdt", "Num article"],
         )
         amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=amendments_df

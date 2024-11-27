@@ -53,7 +53,7 @@ def main():
         how="left",
     )
     amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-        amendments_df=amendments_df, columns_to_filter_with=["Corps amdt"]
+        amendments_df=amendments_df, columns_to_filter=["Corps amdt"]
     )
     amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
         amendments_df=amendments_df

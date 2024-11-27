@@ -244,9 +244,9 @@ class AmendmentPreProcessor:
     @staticmethod
     def remove_empty_rows_for_given_columns(
         amendments_df: pd.DataFrame,
-        columns_to_filter_with: list[ColumnName],
+        columns_to_filter: list[ColumnName],
     ) -> pd.DataFrame:
-        for column in columns_to_filter_with:
+        for column in columns_to_filter:
             amendments_df.dropna(subset=column, inplace=True)
             amendments_df = amendments_df[
                 amendments_df[column].str.strip().apply(len) > 0

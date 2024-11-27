@@ -73,7 +73,7 @@ def test_remove_useless_amendments():
     )
     processor = AmendmentPreProcessor
     result_df = processor.remove_empty_rows_for_given_columns(
-        amendments_df=df, columns_to_filter_with=["Corps amdt"]
+        amendments_df=df, columns_to_filter=["Corps amdt"]
     )
 
     expected_df = pd.DataFrame(
