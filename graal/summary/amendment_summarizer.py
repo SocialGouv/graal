@@ -16,14 +16,12 @@ class AmendmentSummarizer:
         amendments_df: pd.DataFrame,
         summary_gen_load_balancer: SummaryGenerationLoadBalancer,
         summary_column: str = "Objet amdt",
-        max_retries: int = 3,
         base_linear_backoff_sec: int = 10,
     ):
         self.amendments_df = amendments_df
         self.prompt_builder = SummaryPromptBuilder()
         self.summary_gen_load_balancer = summary_gen_load_balancer
         self.summary_column = summary_column
-        self.max_retries = max_retries
         self.base_linear_backoff_sec = base_linear_backoff_sec
         self.row_to_amdt_idx = dict(enumerate(self.amendments_df["amdt_idx"]))
         self.amdt_idx_to_row = {v: k for k, v in self.row_to_amdt_idx.items()}

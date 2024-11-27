@@ -70,7 +70,7 @@ def parse_arguments():
 def derive_columns_to_work_on_from_anebaled_features(
     args: argparse.Namespace,
 ) -> ColumnsToWorkOn:
-    columns_to_clear = set(["Commentaires"])
+    columns_to_clear = {"Commentaires"}
     columns_to_preserve = set()
     if args.allotments:
         columns_to_clear.update(["Allotissement"])
