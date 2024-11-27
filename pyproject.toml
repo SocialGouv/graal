@@ -65,15 +65,18 @@ addopts = [
 [tool.ruff]
 select = ["E", "F", "W", "C", "N", "B", "Q", "S"]
 ignore = [
-    "E501",  # line-too-long
-    "D103",  # missing-function-docstring
     "D100",  # missing-module-docstring
     "D101",  # missing-class-docstring
+    "D103",  # missing-function-docstring
+    "E501",  # line-too-long
     "F811",  # redefined-outer-name
-    "N802",  # invalid-name
     "G001",  # logging-fstring-interpolation
+    "N802",  # invalid-name
     "N806",  # non-lowercase-variable-in-function
+    "S301",  # pickle is considered harmful
+    "S311",  # standard pseudo-random generators are not suitable for security/cryptographic purposes
 ]
 
 [tool.mypy]
 ignore_missing_imports = true
+disable_error_code = ["call-overload", "import-untyped"]
