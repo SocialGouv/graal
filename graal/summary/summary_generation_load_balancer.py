@@ -55,7 +55,10 @@ class SummaryGenerationLoadBalancer:
                 logging.error(f"Error with client {client.name}: {e}")
                 self._put_client_back(client)
                 retries += 1
-        raise RuntimeError("All llm clients failed after retries.")
+        logging.error(
+            f'We tried this prompt {self.max_retries} times and failed:\n\n """\n{prompt}\n"""'
+        )
+        return ""
 
     def generate_summaries_concurrent(self, prompts: List[str]) -> List[str]:
         with ThreadPoolExecutor(max_workers=len(self.clients)) as executor:
