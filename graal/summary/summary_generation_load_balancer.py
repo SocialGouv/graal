@@ -45,7 +45,7 @@ class SummaryGenerationLoadBalancer:
                 ) from e
 
             try:
-                result = client.generate_summary(prompt)
+                result = client.generate_text(prompt)
                 self._put_client_back(client)
                 self.summary_count += 1  # Increment summary count
                 if self.summary_count % 10 == 0:

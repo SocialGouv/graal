@@ -49,7 +49,7 @@ class BlindEvalProject:
             )
 
             llm_source = next(llm_cycle)
-            llm_summary = llm_clients[llm_source].generate_summary(prompt)
+            llm_summary = llm_clients[llm_source].generate_text(prompt)
 
             summaries = np.random.permutation(
                 [(llm_summary, llm_source), (clean_expert_summary, "Expert")]
