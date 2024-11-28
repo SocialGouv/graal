@@ -112,8 +112,8 @@ class AmendmentPreProcessor:
         return concatenated_df
 
     @staticmethod
-    def load_acronyms(acronym_df: pd.DataFrame) -> dict[str, str]:
-        acronym_mapping = dict(zip(acronym_df["Acronyme"], acronym_df["Développement"]))
+    def load_acronyms(config_df: pd.DataFrame) -> dict[str, str]:
+        acronym_mapping = dict(zip(config_df["Acronyme"], config_df["Développement"]))
         return acronym_mapping
 
     @staticmethod

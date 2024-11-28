@@ -109,7 +109,7 @@ def derive_columns_to_work_on_from_anebaled_features(
 
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    GRAAL_CONFIG_FILE = f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 27 Nov 2024.xlsx"
+    GRAAL_CONFIG_FILE = f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 28 Nov 2024.xlsx"
     PREPROCESSED_INADMISSIBLE_FILE = FilePath(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
@@ -165,7 +165,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     # llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
-        clients=llm_api_clients, queue_timeout=4
+        clients=llm_api_clients, queue_timeout=4, max_retries=5
     )
 
     intermediate_amdts_df = None
@@ -235,11 +235,13 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
 
     if args.summary_generation:
+        config_prompt = attribution_mappings_excel["Prompt Objet"].to_string()
         amdt_summary_populator = SummaryHandler(
             summary_gen_load_balancer=summary_gen_load_balancer,
             amendments_df=intermediate_amdts_df,
             acronym_mapping=acronym_mapping,
             summary_column="Objet amdt",
+            config_prompt=config_prompt,
         )
         intermediate_amdts_df = amdt_summary_populator.populate()
 

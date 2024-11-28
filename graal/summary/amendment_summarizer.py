@@ -1,12 +1,10 @@
-import logging
-
 import pandas as pd
 
+from graal.custom_types import IntIndex, Prompt
 from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
-from graal.custom_types import IntIndex
 from graal.utils.text_utils import SummaryTextNormalizer
 
 
@@ -15,13 +13,14 @@ class AmendmentSummarizer:
         self,
         amendments_df: pd.DataFrame,
         summary_gen_load_balancer: SummaryGenerationLoadBalancer,
+        config_prompt: Prompt,
         summary_column: str = "Objet amdt",
         base_linear_backoff_sec: int = 10,
     ):
         self.amendments_df = amendments_df
-        self.prompt_builder = SummaryPromptBuilder()
         self.summary_gen_load_balancer = summary_gen_load_balancer
         self.summary_column = summary_column
+        self.config_prompt = config_prompt
         self.base_linear_backoff_sec = base_linear_backoff_sec
         self.row_to_amdt_idx = dict(enumerate(self.amendments_df["amdt_idx"]))
         self.amdt_idx_to_row = {v: k for k, v in self.row_to_amdt_idx.items()}
@@ -41,7 +40,8 @@ class AmendmentSummarizer:
                 self._store_summary(amdt_idx, predefined_summary)
             else:
                 if row["Exposé amdt"] and row["Corps amdt"]:
-                    prompt = self.prompt_builder.build_prompt(
+                    prompt = SummaryPromptBuilder.build_prompt_with_text_replacement(
+                        config_prompt=self.config_prompt,
                         explanatory_statement=row["Exposé amdt"],
                         amdt_body=row["Corps amdt"],
                     )
