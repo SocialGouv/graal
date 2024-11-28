@@ -109,7 +109,7 @@ def derive_columns_to_work_on_from_anebaled_features(
 
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_15.xlsx"
+    GRAAL_CONFIG_FILE = f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 27 Nov 2024.xlsx"
     PREPROCESSED_INADMISSIBLE_FILE = FilePath(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
@@ -139,9 +139,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     columns_to_work_on = derive_columns_to_work_on_from_anebaled_features(args)
 
-    attribution_mappings_excel = pd.read_excel(
-        ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
-    )
+    attribution_mappings_excel = pd.read_excel(GRAAL_CONFIG_FILE, sheet_name=None)
 
     llm_api_clients: list[LLMAPIClient] = []
     # for _ in range(5):
