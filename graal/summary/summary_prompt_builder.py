@@ -5,6 +5,14 @@ from graal.custom_types import Prompt, TxtContent
 
 class SummaryPromptBuilder:
     @staticmethod
+    def build_prompt_with_text_replacement(
+        config_prompt: Prompt, explanatory_statement: TxtContent, amdt_body: TxtContent
+    ) -> Prompt:
+        config_prompt = config_prompt.replace("{{expose_amdt}}", explanatory_statement)
+        config_prompt = config_prompt.replace("{{corps_amdt}}", amdt_body)
+        return config_prompt
+
+    @staticmethod
     def build_prompt(
         explanatory_statement: TxtContent, amdt_body: TxtContent
     ) -> Prompt:

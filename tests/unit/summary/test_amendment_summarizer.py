@@ -44,7 +44,10 @@ def sample_amendments_df():
 
 def test_process_amendments(load_balancer, sample_amendments_df):
     summarizer = AmendmentSummarizer(
-        sample_amendments_df, load_balancer, summary_column="Objet amdt"
+        sample_amendments_df,
+        load_balancer,
+        config_prompt="",
+        summary_column="Objet amdt",
     )
     summarizer.summarize(start_index=0, stop_index=3)
 
@@ -58,7 +61,10 @@ def test_process_amendments_with_custom_summary_column(
     load_balancer, sample_amendments_df
 ):
     summarizer = AmendmentSummarizer(
-        sample_amendments_df, load_balancer, summary_column="Objet Custom"
+        sample_amendments_df,
+        load_balancer,
+        config_prompt="",
+        summary_column="Objet Custom",
     )
     summarizer.summarize(start_index=0, stop_index=3)
 
@@ -70,7 +76,10 @@ def test_process_amendments_with_custom_summary_column(
 
 def test_process_amendments_with_low_stop_index(load_balancer, sample_amendments_df):
     summarizer = AmendmentSummarizer(
-        sample_amendments_df, load_balancer, summary_column="Objet amdt"
+        sample_amendments_df,
+        load_balancer,
+        config_prompt="",
+        summary_column="Objet amdt",
     )
     summarizer.summarize(start_index=0, stop_index=2)
 
@@ -82,7 +91,10 @@ def test_process_amendments_with_low_stop_index(load_balancer, sample_amendments
 
 def test_process_amendments_with_high_start_index(load_balancer, sample_amendments_df):
     summarizer = AmendmentSummarizer(
-        sample_amendments_df, load_balancer, summary_column="Objet amdt"
+        sample_amendments_df,
+        load_balancer,
+        config_prompt="",
+        summary_column="Objet amdt",
     )
     summarizer.summarize(start_index=5, stop_index=3)
 
@@ -102,7 +114,9 @@ def test_process_amendments_with_invalid_rows(load_balancer):
     df = pd.DataFrame(data)
     df["Objet amdt"] = ""
 
-    summarizer = AmendmentSummarizer(df, load_balancer, summary_column="Objet amdt")
+    summarizer = AmendmentSummarizer(
+        df, load_balancer, summary_column="Objet amdt", config_prompt=""
+    )
     summarizer.summarize(start_index=0, stop_index=3)
 
     assert df.loc[0, "Objet amdt"] == ""

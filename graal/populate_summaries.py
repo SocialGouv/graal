@@ -5,6 +5,7 @@ from typing import Optional
 
 import pandas as pd
 
+from graal.custom_types import Prompt
 from graal.summary.amendment_summarizer import AmendmentSummarizer
 from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
@@ -20,11 +21,13 @@ class SummaryHandler:
         acronym_mapping: dict[str, str],
         amendments_df: pd.DataFrame,
         summary_gen_load_balancer: SummaryGenerationLoadBalancer,
+        config_prompt: Prompt,
         summary_column: str = "Objet amdt",
     ):
         self.acronym_mapping = acronym_mapping
         self.amendments_df = amendments_df
         self.summary_gen_load_balancer = summary_gen_load_balancer
+        self.config_prompt = config_prompt
         self.summary_column = summary_column
 
     def preprocess(self) -> pd.DataFrame:
@@ -51,6 +54,7 @@ class SummaryHandler:
             amendments_df=self.amendments_df,
             summary_gen_load_balancer=self.summary_gen_load_balancer,
             summary_column=self.summary_column,
+            config_prompt=self.config_prompt,
         )
 
         start_index = 0 if start_index is None else start_index
@@ -65,11 +69,6 @@ class SummaryHandler:
             start_index=start_index,
             stop_index=stop_index,
         )
-
-        # for i in range(start_index, stop_index):
-        #     logging.info(
-        #         f'amdt_with_summaries_df {i}, {amdt_with_summaries_df.loc[i, "Num amdt"]}, self.summary_column: {amdt_with_summaries_df.loc[i, self.summary_column]}\n'
-        #     )
 
         end_time = time.time()
         logging.info(f"Time taken: {end_time - start_time} seconds")

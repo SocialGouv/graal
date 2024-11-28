@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from pydantic import FilePath
 
-from graal.custom_types import ColumnName, IntIndex, LLMName
+from graal.custom_types import ColumnName, IntIndex, LLMName, Prompt
 from graal.summary.llm_clients import LLMAPIClient
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
 
@@ -17,13 +17,19 @@ logging.config.fileConfig("logging.conf")
 
 
 class BlindEvalProject:
-    def __init__(self, amendments_df: pd.DataFrame, metrics: list[ColumnName]):
+    def __init__(
+        self,
+        amendments_df: pd.DataFrame,
+        metrics: list[ColumnName],
+        config_prompt: Prompt,
+    ):
         self.amendments_df = amendments_df
         self.metrics = metrics
         self.latest_gen_idx = 0
         self.data: dict[int, dict[str, Any]] = {}
         self.mapping_obj_to_author: dict[int, dict[str, str]] = {}
         self.shuffled_indices = np.random.permutation(len(self.amendments_df)).tolist()
+        self.config_prompt = config_prompt
 
     def add_next_n_rows(self, n: int, llm_clients: dict[LLMName, LLMAPIClient]):
         all_llms = list(llm_clients.keys())
@@ -43,7 +49,8 @@ class BlindEvalProject:
                 flags=re.IGNORECASE,
             ).strip()
 
-            prompt = SummaryPromptBuilder.build_prompt(
+            prompt = SummaryPromptBuilder.build_prompt_with_text_replacement(
+                config_prompt=self.config_prompt,
                 explanatory_statement=amendment["Exposé amdt"],
                 amdt_body=amendment["Corps amdt"],
             )
