@@ -71,7 +71,7 @@ Résumé :
     def build_prompt_summarize_again(current_summary: TxtContent) -> Prompt:
         prompt = f"""
 Contexte :
-Tu es un juriste spécialisé en droit de la sécurité sociale en France. Ta tâche est de résumer un texte.
+Ta tâche est de résumer un texte.
 
 Le résumé doit suivre ces règles strictes :
 1. Si le texte concerne une expérimentation, commence le résumé par "Expérimenter", suivi du sujet de l'expérimentation.
