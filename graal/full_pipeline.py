@@ -110,11 +110,13 @@ def derive_columns_to_work_on_from_anebaled_features(
 
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    GRAAL_CONFIG_FILE = f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 28 Nov 2024.xlsx"
+    GRAAL_CONFIG_FILE = FilePath(
+        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 28 Nov 2024.xlsx"
+    )
     PREPROCESSED_INADMISSIBLE_FILE = FilePath(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
-    PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
+    PRE_PROCESSED_OLD_AMENDMENTS_FILE = FilePath(
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
     ONE_YEAR_IN_SECONDS: Seconds = 365 * 24 * 60 * 60
