@@ -19,130 +19,182 @@ from pydantic import FilePath
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
-from graal.custom_types import IntIndex
+from graal.custom_types import InputFileConfig, IntIndex, Seconds
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
-OUTPUT_FILE = f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
-ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx"
+OUTPUT_FILE = FilePath(f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl")
+ATTRIBUTION_MAPPINGS_FILE = FilePath(f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx")
 
-PLFSS_FILE_CONFIG_JSON = {
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json": {
+ONE_YEAR_IN_SECONDS: Seconds = 365 * 24 * 60 * 60
+
+
+PLFSS_FILE_CONFIG_JSON: dict[FilePath, InputFileConfig] = {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json"
+    ): {
         "default_processing_timestamp": int(datetime(2021, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3551-PO717460.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3551-PO717460.json"
+    ): {
         "default_processing_timestamp": int(datetime(2021, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO717460.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO717460.json"
+    ): {
         "default_processing_timestamp": int(datetime(2021, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO420120.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-an-15-3397-PO420120.json"
+    ): {
         "default_processing_timestamp": int(datetime(2021, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-118-PO78718.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-118-PO78718.json"
+    ): {
         "default_processing_timestamp": int(datetime(2022, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-189-PO78718.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-189-PO78718.json"
+    ): {
         "default_processing_timestamp": int(datetime(2022, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4685-PO717460.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4685-PO717460.json"
+    ): {
         "default_processing_timestamp": int(datetime(2022, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4523-PO717460.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4523-PO717460.json"
+    ): {
         "default_processing_timestamp": int(datetime(2022, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-senat-2022-2023-96-PO78718.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-senat-2022-2023-96-PO78718.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO791932.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO791932.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO420120.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-274-PO420120.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-1682-PO791932 (2).json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-1682-PO791932 (2).json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-480-PO791932.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2023/lecture-an-16-480-PO791932.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1682-PO420120.json"
+    ): {
         "default_processing_timestamp": int(datetime(2024, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1875-PO791932.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-an-16-1875-PO791932.json"
+    ): {
         "default_processing_timestamp": int(datetime(2024, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-senat-2023-2024-77-PO78718.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/Export PLFSS 2024/JSON/lecture-senat-2023-2024-77-PO78718.json"
+    ): {
         "default_processing_timestamp": int(datetime(2024, month=7, day=1).timestamp()),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
 }
 
-PLACSS_FILE_CONFIG_JSON = {
-    f"{DATA_FOLDER}/exports_lectures/PLACSS 22/AN Séance 1ère lecture/lecture-an-16-1268-PO791932.json": {
+
+PLACSS_FILE_CONFIG_JSON: dict[FilePath, InputFileConfig] = {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLACSS 22/AN Séance 1ère lecture/lecture-an-16-1268-PO791932.json"
+    ): {
         "default_processing_timestamp": int(datetime(2022, month=7, day=1).timestamp()),
         "origin_project": "PLACSS",
-        "project_name_timestamp_delta": -365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": -ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLACSS 22/Sénat Séance 1ère lecture/lecture-senat-2022-2023-705-PO78718.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLACSS 22/Sénat Séance 1ère lecture/lecture-senat-2022-2023-705-PO78718.json"
+    ): {
         "default_processing_timestamp": int(datetime(2022, month=7, day=1).timestamp()),
         "origin_project": "PLACSS",
-        "project_name_timestamp_delta": -365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": -ONE_YEAR_IN_SECONDS,
     },
 }
 
-LFRSS_FILE_CONFIG_JSON = {
-    f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO791932.json": {
+LFRSS_FILE_CONFIG_JSON: dict[FilePath, InputFileConfig] = {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO791932.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "LFRSS",
+        "project_name_timestamp_delta": 0,
     },
-    f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO420120.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-an-16-760-PO420120.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "LFRSS",
+        "project_name_timestamp_delta": 0,
     },
-    f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-senat-2022-2023-368-PO78718.json": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/LFRSS 2023/lecture-senat-2022-2023-368-PO78718.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "LFRSS",
+        "project_name_timestamp_delta": 0,
     },
 }
 
-PPL_FILE_CONFIG_JSON = {
-    f"{DATA_FOLDER}/exports_lectures/PPL LIOT 2023 abrogation réforme des retraites/Séance AN/lecture-an-16-1299-PO791932.json": {
+PPL_FILE_CONFIG_JSON: dict[FilePath, InputFileConfig] = {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PPL LIOT 2023 abrogation réforme des retraites/Séance AN/lecture-an-16-1299-PO791932.json"
+    ): {
         "default_processing_timestamp": int(datetime(2023, month=7, day=1).timestamp()),
         "origin_project": "PPL LIOT abrogation réforme des retraites",
+        "project_name_timestamp_delta": 0,
     },
 }
 
@@ -153,29 +205,36 @@ ALL_INPUT_FILE_CONFIGS_JSON = {
     **PPL_FILE_CONFIG_JSON,
 }
 
-PLFSS_FILE_CONFIG_EXCEL = {
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/BDD_AN_L1_SP_Amendements_copie_valeurs.xlsx": {
+PLFSS_FILE_CONFIG_EXCEL: dict[FilePath, InputFileConfig] = {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/BDD_AN_L1_SP_Amendements_copie_valeurs.xlsx"
+    ): {
         "default_processing_timestamp": int(
             datetime(2024, month=10, day=17).timestamp()
         ),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
-    f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/BDD_PLFSS_2025_SENAT_L1_SP.xlsx": {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PLFSS 2025/BDD_PLFSS_2025_SENAT_L1_SP.xlsx"
+    ): {
         "default_processing_timestamp": int(
             datetime(2024, month=11, day=20).timestamp()
         ),
         "origin_project": "PLFSS",
-        "project_name_timestamp_delta": 365 * 24 * 60 * 60,
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
     },
 }
 
-PPL_FILE_CONFIG_EXCEL = {
-    f"{DATA_FOLDER}/exports_lectures/PPL Retraites/2024/PPL_retraites_RN_BDD.xlsx": {
+PPL_FILE_CONFIG_EXCEL: dict[FilePath, InputFileConfig] = {
+    FilePath(
+        f"{DATA_FOLDER}/exports_lectures/PPL Retraites/2024/PPL_retraites_RN_BDD.xlsx"
+    ): {
         "default_processing_timestamp": int(
             datetime(2024, month=10, day=1).timestamp()
         ),
         "origin_project": "PPL Retraites",
+        "project_name_timestamp_delta": 0,
     },
 }
 
