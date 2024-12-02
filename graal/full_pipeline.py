@@ -24,6 +24,7 @@ import logging.config
 import os
 import re
 import time
+from datetime import datetime
 
 import httpx
 import pandas as pd
@@ -34,7 +35,7 @@ from graal.attribution.attribution_data_loader import AttributionDataLoader
 from graal.attribution.attribution_populator import AttributionPopulator
 from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
-from graal.custom_types import ColumnsToWorkOn
+from graal.custom_types import ColumnsToWorkOn, InputFileConfig, Seconds
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.populate_summaries import SummaryHandler
 from graal.summary.llm_clients import (
@@ -116,8 +117,17 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = (
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    INPUT_FILE = FilePath(f"{DATA_FOLDER}/input_ppl/lecture-an-17-613-PO838901.json")
-    # INPUT_FILE = FilePath(f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO59048.json")
+    ONE_YEAR_IN_SECONDS: Seconds = 365 * 24 * 60 * 60
+
+    INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
+        FilePath(f"{DATA_FOLDER}/input_ppl/lecture-an-17-475-PO838901.json"): {
+            "default_processing_timestamp": int(
+                datetime(2024, month=11, day=27).timestamp()
+            ),
+            "origin_project": "PPL Retraites",
+            "project_name_timestamp_delta": 0,
+        },
+    }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_LFI"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
@@ -170,7 +180,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     intermediate_amdts_df = None
 
-    amendments_df = AmendmentPreProcessor.load_amendments_json(input_files=[INPUT_FILE])
+    amendments_df = AmendmentPreProcessor.load_amendments_json(
+        list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
+    )
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
