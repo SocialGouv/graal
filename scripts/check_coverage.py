@@ -28,6 +28,7 @@ def main():
                 # Process each file in the dictionary
                 # Add your code here to perform operations on each file
                 # For example, you can print the file name
+                # Add a comment for the lulz
                 percent_covered = files[file_name]["summary"]["percent_covered"]
                 required_coverage = args.required_coverage
                 if file_name in some_fake_name:
