@@ -6,7 +6,7 @@ import tabulate
 
 
 def main():
-    required_coverage_per_file = {
+    some_fake_name = {
         # "my_file": 70,
     }
     parser = argparse.ArgumentParser(description="Check coverage of JSON files")
@@ -30,8 +30,8 @@ def main():
                 # For example, you can print the file name
                 percent_covered = files[file_name]["summary"]["percent_covered"]
                 required_coverage = args.required_coverage
-                if file_name in required_coverage_per_file:
-                    required_coverage = required_coverage_per_file[file_name]
+                if file_name in some_fake_name:
+                    required_coverage = some_fake_name[file_name]
                 if percent_covered < required_coverage:
                     errors.append(
                         {
