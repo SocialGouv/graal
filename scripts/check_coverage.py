@@ -53,6 +53,7 @@ def main():
             headers = ["File Name", "Coverage"]
             print(tabulate.tabulate(table, headers))
             print("\033[1;31mErrors with code coverage\033[0m")
+            print("Hello there")
             sys.exit(1)
         else:
             print("\033[1;32mAll files meet the required coverage\033[0m")
