@@ -322,6 +322,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             similarity_threshold_overrides={
                 "Exposé amdt": {"amendement redactionnel": 0.95},
             },
+            column_filtering_funcs={
+                "Corps amdt": SimilarityHandler.filter_old_amendments_by_project_and_year,
+            },
         )
 
     if args.allotments:
