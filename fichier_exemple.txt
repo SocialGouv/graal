@@ -1,3 +1,8 @@
 Changement 1
 Changement 2
 Changement 3
+
+Les commandes à utiliser :
+
+Entre 2 commits :
+exec git push origin HEAD:refs/heads/prez-1
