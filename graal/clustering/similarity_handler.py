@@ -2,6 +2,7 @@ import logging
 import logging.config
 import textwrap
 from datetime import datetime
+from typing import Callable, Optional
 
 import pandas as pd
 
@@ -43,6 +44,30 @@ class SimilarityHandler:
         return amendments_df
 
     @staticmethod
+    def filter_old_amendments_by_project_and_year(
+        preprocessed_old_amendments_df: pd.DataFrame,
+        preprocessed_new_amendments_df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """
+        Filters old amendments by project and year based on the corresponding values in the first row of
+        new amendments.
+        """
+        first_new_amendment = preprocessed_new_amendments_df.iloc[0]
+        origin_project = first_new_amendment["origin_project"]
+        timestamp = first_new_amendment["timestamp"]
+        year = datetime.fromtimestamp(timestamp).year
+
+        return preprocessed_old_amendments_df[
+            (preprocessed_old_amendments_df["origin_project"] == origin_project)
+            & (
+                preprocessed_old_amendments_df["timestamp"].apply(
+                    lambda x: datetime.fromtimestamp(x).year
+                )
+                == year
+            )
+        ]
+
+    @staticmethod
     def populate(
         preprocessed_old_amendments_df: pd.DataFrame,
         preprocessed_new_amendments_df: pd.DataFrame,
@@ -52,25 +77,35 @@ class SimilarityHandler:
         similarity_threshold_overrides: dict[ColumnName, dict[str, float]],
         default_clustering_similarity_threshold: float = 0.4,
         default_fuzzy_match_similarity_threshold: float = 0.9,
+        column_filtering_funcs: Optional[
+            dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
+        ] = None,
     ) -> pd.DataFrame:
-        similarity_evaluator_expose = SimilarityFinder(
-            old_amendments_df=preprocessed_old_amendments_df,
-            new_amendments_df=preprocessed_new_amendments_df,
-        )
-
+        if column_filtering_funcs is None:
+            column_filtering_funcs = {}
         columns_to_process = clustering_similarity_thresholds.keys()
 
-        merged_closest_amdts: dict = {}
+        merged_closest_amdts: dict[int, dict] = {}
 
         for column in columns_to_process:
-            clusters = similarity_evaluator_expose.clusterize_similar_amdts(
+            # In some cases we don't want to look for similarity in all old amendments so we have this filter here
+            filter_func = column_filtering_funcs.get(column, lambda x, _y: x)
+            df_to_compare = filter_func(
+                preprocessed_old_amendments_df, preprocessed_new_amendments_df
+            )
+            logging.warning(f"df_to_compare {df_to_compare}")
+            similarity_evaluator = SimilarityFinder(
+                old_amendments_df=df_to_compare,
+                new_amendments_df=preprocessed_new_amendments_df,
+            )
+            clusters = similarity_evaluator.clusterize_similar_amdts(
                 column_used_for_clustering=column,
                 clustering_similarity_threshold=clustering_similarity_thresholds.get(
                     column, default_clustering_similarity_threshold
                 ),
             )
 
-            closest_amdts = similarity_evaluator_expose.find_best_matches(
+            closest_amdts = similarity_evaluator.find_best_matches(
                 column_used_for_similarity=column,
                 clusters=clusters,
                 fuzzy_match_similarity_threshold=fuzzy_match_similarity_thresholds.get(
