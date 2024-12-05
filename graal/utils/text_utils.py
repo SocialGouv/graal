@@ -7,6 +7,8 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from unidecode import unidecode
 
+from graal.custom_types import TxtContent
+
 FRENCH_IRREGULAR_PLURALS = {
     "travaux": "travail",
     "vitraux": "vitrail",
@@ -110,18 +112,27 @@ def remove_small_roman_numerals(text: str) -> str:
 
 
 def remove_sentences_starting_with(
-    text: str, patterns: list[str], delimiter_pattern: str = r"\.|\n"
+    text: str, patterns: list[str], delimiter_pattern: str = r"[\.\n][\.\s]*"
 ) -> str:
-    filtered_sentences = [
-        sentence.strip()
-        for sentence in re.split(delimiter_pattern, text)
-        if sentence
-        and not any(
+    sentences = [s for s in re.split(f"({delimiter_pattern})", text) if s]
+    filtered_sentences = []
+    skip_next = False
+
+    for i in range(len(sentences)):
+        if skip_next:
+            skip_next = False
+            continue
+
+        sentence = sentences[i]
+        if any(
             sentence.strip().lower().startswith(pattern.strip().lower())
             for pattern in patterns
-        )
-    ]
-    return " ".join(sentence for sentence in filtered_sentences if sentence != "")
+        ):
+            skip_next = True  # Skip the delimiter
+        else:
+            filtered_sentences.append(sentence)
+
+    return "".join(filtered_sentences)
 
 
 def normalize_text(text: Optional[str]) -> str:
@@ -174,7 +185,7 @@ def extract_plain_text_from_html(encoded_html: str) -> None:
 
 class AttributionTextNormalizer:
     @staticmethod
-    def normalize_text(text: str) -> str:
+    def normalize_text(text: TxtContent) -> TxtContent:
         """Normalize text by stripping, converting to lowercase, and removing specific spaces."""
         text = remove_small_roman_numerals(text)
         text = unidecode(text.strip().lower())
@@ -187,18 +198,22 @@ class AttributionTextNormalizer:
         )
         # Remove extra whitespaces
         text = re.sub(r"\s+", " ", text)
-        text = remove_sentences_starting_with(
+        text = AttributionTextNormalizer.ignore_predefined_sentences(text)
+
+        return text
+
+    @staticmethod
+    def ignore_predefined_sentences(text: TxtContent) -> TxtContent:
+        return remove_sentences_starting_with(
             text,
             patterns=[
                 unidecode("la perte de recettes"),
                 unidecode(
-                    "la charge pour l’état et les collectivités territoriales est compensée"
+                    "la charge pour l'état et les collectivités territoriales est compensée"
                 ),
             ],
             delimiter_pattern=r"(?<! art)(?<! l)\.|(\n)",
         )
-
-        return text
 
 
 class SummaryTextNormalizer:

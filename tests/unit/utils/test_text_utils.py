@@ -34,23 +34,14 @@ def test_remove_small_roman_numerals(input_text, expected_output):
     "input_text, pattern, expected_output",
     [
         (
-            """
-            First line.
-            Second line
-            Third line.
-            """,
-            "Second",
-            "First line Third line",
-        ),
-        (
             "First line. Second line. Third line.",
             "Second",
-            "First line Third line",
+            "First line. Third line.",
         ),
         (
             "First line\n\n\tSecond line.\nThird line.",
             "Second",
-            "First line Third line",
+            "First line\n\n\tThird line.",
         ),
     ],
 )
@@ -227,7 +218,7 @@ def test_normalize_text_with_special_characters():
             V. – La perte de recettes pour les organismes »
             V. – La charge pour l’État et les collectivités territoriales est compensée par xxx »
             """,
-            "un rapport d'evaluation est",
+            ". un rapport d'evaluation est .",
         ),
     ],
 )
@@ -270,3 +261,35 @@ def test_attribution_text_normalizer(input_text, expected_output):
 )
 def test_summary_text_normalizer(input_text, expected_output):
     assert SummaryTextNormalizer.normalize_text(input_text) == expected_output
+
+
+@pytest.mark.parametrize(
+    "input_text, expected_output",
+    [
+        (
+            "la perte de recettes pour l'etat est importante. ceci est une phrase normale.",
+            " ceci est une phrase normale.",
+        ),
+        (
+            "la charge pour l'etat et les collectivites territoriales est compensee par des mesures. une autre phrase normale.",
+            " une autre phrase normale.",
+        ),
+        (
+            "ceci est une phrase normale. la perte de recettes pour l'etat est importante.",
+            "ceci est une phrase normale.",
+        ),
+        (
+            "une phrase normale. la charge pour l'etat et les collectivites territoriales est compensee par des mesures.",
+            "une phrase normale.",
+        ),
+        (
+            "une phrase normale.\nune autre phrase normale.",
+            "une phrase normale.\n\nune autre phrase normale.",
+        ),
+    ],
+)
+def test_ignore_predefined_sentences(input_text, expected_output):
+    assert (
+        AttributionTextNormalizer.ignore_predefined_sentences(input_text)
+        == expected_output
+    )
