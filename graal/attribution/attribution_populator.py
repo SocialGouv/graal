@@ -84,7 +84,7 @@ class AttributionPopulator:
         }
         possible_ordinals_pattern = "|".join(sorted(latin_ordinals_set, reverse=True))
         self.article_pattern = re.compile(
-            rf"(?:(?:l\.|articles?|art))(?:\set\s|\s?(\d+(?:-\d+)*(?:\s?(?:{possible_ordinals_pattern}))?))+"
+            rf"(?:(?:l\.|articles?|art\.?))(?:\set\s|\s?(\d+(?:-\d+)*(?:\s?(?:{possible_ordinals_pattern}))?))+"
         )
 
         self.matcher = AttributionMatcher()
