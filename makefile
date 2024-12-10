@@ -9,6 +9,7 @@ integration_test:
 
 install:
 	poetry install
+	poetry run detect-secrets scan > .secrets.baseline
 	poetry run python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 
 run:
