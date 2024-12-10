@@ -14,7 +14,7 @@ from graal.utils.text_utils import AttributionTextNormalizer
 
 
 def test_integration_attribute_amendments():
-    TEST_FILE = "tests/integration/test_data/test_populate_attribution.xlsx"
+    TEST_FILE = "tests/integration/test_data/test_attribution.xlsx"
     CONFIG_FILE = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
 
     # Make sure that random choices are always the same in this test

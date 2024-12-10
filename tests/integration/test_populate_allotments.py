@@ -21,7 +21,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
 
     test_df = load_test_file_to_compare(
-        "tests/integration/test_data/test_populate_allotments.xlsx", "test1"
+        "tests/integration/test_data/test_allotments.xlsx", "test1"
     )
 
     test_df["Allotissement"] = test_df["Allotissement"].apply(
