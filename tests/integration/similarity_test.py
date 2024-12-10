@@ -141,7 +141,7 @@ def run_test(
 
 
 def test_integration_similarity_expose():
-    file_path = "tests/integration/test_data/test_populate_similarities_expose.xlsx"
+    file_path = "tests/integration/test_data/test_similarities_expose.xlsx"
     clustering_similarity_thresholds = {
         "Exposé amdt": 0.2,
     }
@@ -160,7 +160,7 @@ def test_integration_similarity_expose():
 
 
 def test_integration_similarity_body():
-    file_path = "tests/integration/test_data/test_populate_similarities_body.xlsx"
+    file_path = "tests/integration/test_data/test_similarities_body.xlsx"
     clustering_similarity_thresholds = {
         "Corps amdt": 0.4,
     }
