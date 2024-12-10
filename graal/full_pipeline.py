@@ -264,6 +264,10 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
             "Corps amdt"
         ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
+        # TESTING TESTING
+        amdt_with_attribution_df.loc[:, "Exposé amdt"] = preprocessed_original_amdt_df[
+            "Exposé amdt"
+        ].apply(lambda x: AttributionTextNormalizer.ignore_predefined_sentences(str(x)))
 
         attributor = AttributionPopulator(
             amendments_df=amdt_with_attribution_df,
