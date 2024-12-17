@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Any, Literal, TypedDict, Union
 
 AmendementTxt = str
+Acronym = str
 APIKey = str
 CollectionMetadata = dict[str, Any]
 ColumnName = str
