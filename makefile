@@ -13,6 +13,9 @@ install:
 	poetry run detect-secrets scan > .secrets.baseline
 	poetry run python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
 
+similarity-db:
+	poetry run python graal/utils/preprocess_old_amdts.py
+
 run:
 	python graal/full_pipeline.py --config=config/default.json
 
