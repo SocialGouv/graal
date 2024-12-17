@@ -236,6 +236,15 @@ PPL_FILE_CONFIG_EXCEL: dict[Path, InputFileConfig] = {
         "origin_project": "PPL Retraites",
         "project_name_timestamp_delta": 0,
     },
+    Path(
+        f"{DATA_FOLDER}/exports_lectures/PPL fin de vie 2024/BDD_Commission_PJL fin de vie.xlsx"
+    ): {
+        "default_processing_timestamp": int(
+            datetime(2024, month=5, day=18).timestamp()
+        ),
+        "origin_project": "PPL Fin de vie",
+        "project_name_timestamp_delta": 0,
+    },
 }
 
 ALL_INPUT_FILE_CONFIGS_EXCEL = {**PLFSS_FILE_CONFIG_EXCEL, **PPL_FILE_CONFIG_EXCEL}
