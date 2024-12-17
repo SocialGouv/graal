@@ -25,6 +25,7 @@ ProjectName = Literal[
     "LFRSS",
     "PPL LIOT abrogation réforme des retraites",
     "PPL Retraites",
+    "PPL Fin de vie",
 ]
 
 
