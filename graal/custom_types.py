@@ -20,6 +20,7 @@ TxtContent = str
 
 ProjectName = Literal[
     "PLFSS",
+    "PLF",
     "PLACSS",
     "LFRSS",
     "PPL LIOT abrogation réforme des retraites",
