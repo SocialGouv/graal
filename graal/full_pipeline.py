@@ -25,24 +25,22 @@ import os
 import re
 import time
 from datetime import datetime
+from pathlib import Path
 
 import httpx
 import pandas as pd
-from pydantic import FilePath
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.attribution.attribution_data_loader import AttributionDataLoader
 from graal.attribution.attribution_populator import AttributionPopulator
 from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
-from graal.custom_types import ColumnsToWorkOn, InputFileConfig, Seconds
+from graal.custom_types import ColumnsToWorkOn, InputFileConfig
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.populate_summaries import SummaryHandler
 from graal.summary.llm_clients import (
     AlbertAPIClient,
-    FakeLLMAPIClient,
     LLMAPIClient,
-    OllamaAPIClient,
 )
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
@@ -108,28 +106,38 @@ def derive_columns_to_work_on_from_anebaled_features(
     return columns_to_work_on
 
 
+# ruff: noqa: C901
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
-    GRAAL_CONFIG_FILE = FilePath(
+    GRAAL_CONFIG_FILE = Path(
         f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 28 Nov 2024.xlsx"
     )
-    PREPROCESSED_INADMISSIBLE_FILE = FilePath(
+    PREPROCESSED_INADMISSIBLE_FILE = Path(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
-    PRE_PROCESSED_OLD_AMENDMENTS_FILE = FilePath(
+    PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
         f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl"
     )
-    ONE_YEAR_IN_SECONDS: Seconds = 365 * 24 * 60 * 60
 
-    INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
-        FilePath(f"{DATA_FOLDER}/input_ppl/lecture-an-17-475-PO838901.json"): {
+    INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
+        Path(f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO420120.json"): {
+            # TODO: Change these options because they are not right
             "default_processing_timestamp": int(
                 datetime(2024, month=11, day=27).timestamp()
             ),
-            "origin_project": "PPL Retraites",
+            "origin_project": "PLFSS",
             "project_name_timestamp_delta": 0,
         },
     }
+    # INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
+    #     Path(f"{DATA_FOLDER}/input_ppl/lecture-an-17-475-PO838901.json"): {
+    #         "default_processing_timestamp": int(
+    #             datetime(2024, month=11, day=27).timestamp()
+    #         ),
+    #         "origin_project": "PPL Retraites",
+    #         "project_name_timestamp_delta": 0,
+    #     },
+    # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_LFI"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
@@ -154,12 +162,13 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     attribution_mappings_excel = pd.read_excel(GRAAL_CONFIG_FILE, sheet_name=None)
 
     llm_api_clients: list[LLMAPIClient] = []
-    # for _ in range(5):
+    # for _ in range(7):
     #     ollama_api_client = OllamaAPIClient(
     #         endpoint=Url(os.environ["OLLAMA_ENDPOINT"]),
     #         model_name=os.environ["OLLAMA_MODEL_NAME"],
     #         user=os.environ["OLLAMA_USER"],
     #         password=os.environ["OLLAMA_PASSWORD"],
+    #         timeout=30,
     #     )
     #     llm_api_clients.append(ollama_api_client)
 
@@ -294,7 +303,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         intermediate_amdts_df = attributor.populate()
 
     if args.similarity_search:
-        old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)
+        old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)  # nosec
         logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
         new_amendments_df = intermediate_amdts_df
         saved_new_amendments_df = new_amendments_df.copy()
@@ -335,7 +344,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         intermediate_amdts_df = AllotmentHandler.populate(
             original_amendments_df=preprocessed_original_amdt_df,
             pipeline_result_amdt_df=intermediate_amdts_df,
-            allotted_amdt_clusters=allotted_amdt_clusters,
+            allotted_amdt_clusters=allotted_amdt_clusters,  # type: ignore
             columns_to_copy=[
                 "Réponse",
                 "Sort",
