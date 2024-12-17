@@ -5,7 +5,7 @@ from typing import Optional
 
 import pandas as pd
 
-from graal.custom_types import Prompt
+from graal.custom_types import Acronym, Prompt
 from graal.summary.amendment_summarizer import AmendmentSummarizer
 from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
@@ -18,7 +18,7 @@ logging.config.fileConfig("logging.conf")
 class SummaryHandler:
     def __init__(
         self,
-        acronym_mapping: dict[str, str],
+        acronym_mapping: dict[Acronym, str],
         amendments_df: pd.DataFrame,
         summary_gen_load_balancer: SummaryGenerationLoadBalancer,
         config_prompt: Prompt,

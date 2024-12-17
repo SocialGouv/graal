@@ -5,7 +5,7 @@ from typing import Callable
 import pandas as pd
 
 from graal.clustering.cluster_finder import AmendmentsClusterFinder
-from graal.custom_types import IntIndex
+from graal.custom_types import Acronym, IntIndex
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -24,7 +24,7 @@ class AllotmentHandler:
 
     @staticmethod
     def preprocess_amendments(
-        amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
+        amendments_df: pd.DataFrame, acronym_mapping: dict[Acronym, str]
     ) -> pd.DataFrame:
         prepared_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
             amendments_df=amendments_df, columns_to_clear=["Allotissement"]

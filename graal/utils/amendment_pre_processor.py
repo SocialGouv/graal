@@ -12,7 +12,7 @@ from typing import Any, Iterable, Optional
 import pandas as pd
 from pydantic import FilePath
 
-from graal.custom_types import ColumnName
+from graal.custom_types import Acronym, ColumnName
 from graal.utils.text_utils import extract_plain_text_from_html, normalize_text
 
 
@@ -39,13 +39,13 @@ class AmendmentPreProcessor:
                 df["origin_project"] = "<Inconnue>"
 
             df["timestamp"] = df["date_derniere_modif"].apply(
-                lambda x: int(
+                lambda x, default_ts=default_processing_timestamp: int(
                     datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f")
                     .replace(tzinfo=timezone.utc)
                     .timestamp()
                 )
                 if x not in [None, ""]
-                else default_processing_timestamp
+                else default_ts
             )
             project_name_timestamp_delta = (
                 file_config[file_name].get("project_name_timestamp_delta", 0)
@@ -112,7 +112,7 @@ class AmendmentPreProcessor:
         return concatenated_df
 
     @staticmethod
-    def load_acronyms(config_df: pd.DataFrame) -> dict[str, str]:
+    def load_acronyms(config_df: pd.DataFrame) -> dict[Acronym, str]:
         acronym_mapping = dict(zip(config_df["Acronyme"], config_df["Développement"]))
         return acronym_mapping
 
@@ -273,7 +273,7 @@ class AmendmentPreProcessor:
     @staticmethod
     def replace_acronyms(
         amendments_df: pd.DataFrame,
-        acronym_mapping: dict[str, str],
+        acronym_mapping: dict[Acronym, str],
         columns_to_normalize: list[ColumnName],
     ) -> pd.DataFrame:
         for column in columns_to_normalize:
