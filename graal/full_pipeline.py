@@ -120,12 +120,13 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO420120.json"): {
-            # TODO: Change these options because they are not right
+        Path(
+            f"{DATA_FOLDER}/input_ppl_fin_vie/BDD_Séance publique_PJL fin de vie.xlsx"
+        ): {
             "default_processing_timestamp": int(
-                datetime(2024, month=11, day=27).timestamp()
+                datetime(2024, month=6, day=10).timestamp()
             ),
-            "origin_project": "PLFSS",
+            "origin_project": "PPL Fin de vie",
             "project_name_timestamp_delta": 0,
         },
     }
@@ -139,7 +140,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #     },
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_LFI"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -191,9 +192,12 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     intermediate_amdts_df = None
 
-    amendments_df = AmendmentPreProcessor.load_amendments_json(
+    amendments_df = AmendmentPreProcessor.load_amendments_excel(
         list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
     )
+    # amendments_df = AmendmentPreProcessor.load_amendments_json(
+    #     list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
+    # )
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
@@ -329,7 +333,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Corps amdt": 0.4,
             },
             fuzzy_match_similarity_thresholds={
-                "Exposé amdt": 0.4,
+                "Exposé amdt": 0.9,
                 "Corps amdt": 0.9,
             },
             similarity_threshold_overrides={
@@ -375,7 +379,8 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     if args.summary_generation:
         regex_pattern = r"amendements? d.?appel"
         mask = intermediate_amdts_df["Exposé amdt"].apply(
-            lambda x: re.search(regex_pattern, x, re.IGNORECASE) is not None
+            lambda x: isinstance(x, str)
+            and re.search(regex_pattern, x, re.IGNORECASE) is not None
         ) & (intermediate_amdts_df["Objet amdt"] != "Supprimer cet article.")
         intermediate_amdts_df.loc[mask, "Objet amdt"] = (
             "APPEL : " + intermediate_amdts_df.loc[mask, "Objet amdt"]
