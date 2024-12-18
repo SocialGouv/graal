@@ -14,6 +14,7 @@ IntIndex = int
 LLMName = str
 Metadata = Union[str, int, float]
 Prompt = str
+RateLimitPerMinute = int
 Seconds = int
 Timestamp = int
 TxtContent = str
