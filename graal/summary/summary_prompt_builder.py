@@ -18,7 +18,7 @@ class SummaryPromptBuilder:
     ) -> Prompt:
         prompt = f"""
 Contexte :
-Tu es un juriste spécialisé en droit de la sécurité sociale en France. Ta tâche est de résumer un amendement en respectant une neutralité politique.
+Tu es un juriste spécialisé en droit de la santé en France. Ta tâche est de résumer un amendement en respectant une neutralité politique.
 
 Instructions :
 

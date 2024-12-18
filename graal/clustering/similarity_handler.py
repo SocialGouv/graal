@@ -93,7 +93,6 @@ class SimilarityHandler:
             df_to_compare = filter_func(
                 preprocessed_old_amendments_df, preprocessed_new_amendments_df
             )
-            logging.warning(f"df_to_compare {df_to_compare}")
             similarity_evaluator = SimilarityFinder(
                 old_amendments_df=df_to_compare,
                 new_amendments_df=preprocessed_new_amendments_df,
