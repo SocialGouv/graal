@@ -187,7 +187,10 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     # llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
-        clients=llm_api_clients, queue_timeout=4, max_retries=5
+        clients=llm_api_clients,
+        queue_timeout=4,
+        max_retries=5,
+        rate_limiting_config={"albert": 10},
     )
 
     intermediate_amdts_df = None

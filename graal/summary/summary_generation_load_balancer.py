@@ -3,8 +3,10 @@ import queue
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
+from graal.custom_types import LLMType, RateLimitPerMinute
 from graal.summary.llm_clients import LLMAPIClient
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
+from graal.utils.rate_limiter import TokenBucketRateLimiter
 
 
 class SummaryGenerationLoadBalancer:
@@ -12,6 +14,7 @@ class SummaryGenerationLoadBalancer:
         self,
         clients: List[LLMAPIClient],
         queue_timeout: float,
+        rate_limiting_config: dict[LLMType, RateLimitPerMinute],
         max_retries: int = 3,
     ):
         self.clients = clients
@@ -21,6 +24,10 @@ class SummaryGenerationLoadBalancer:
         self.max_retries = max_retries
         self.summary_count = 0  # Initialize summary count
         self.queue_timeout = queue_timeout
+        self.rate_limiters = {
+            type: TokenBucketRateLimiter(rate_limit)
+            for type, rate_limit in rate_limiting_config.items()
+        }
 
     def _obtain_client(self) -> LLMAPIClient:
         try:
@@ -38,6 +45,9 @@ class SummaryGenerationLoadBalancer:
         while retries < self.max_retries:
             try:
                 client = self._obtain_client()
+                if client.type in self.rate_limiters:
+                    self.rate_limiters[client.type].acquire()
+
             except TimeoutError as e:
                 logging.error(e)
                 raise TimeoutError(

@@ -13,14 +13,16 @@ from graal.custom_types import (
     APIKey,
     CredentialsPassword,
     CredentialsUsername,
+    LLMType,
     TxtContent,
 )
 
 
 class LLMAPIClient(ABC):
-    def __init__(self, prefix: str = ""):
-        self.name = f"{prefix}_" + "".join(
-            random.choices("abcdefghijklmnopqrstuvwxyz", k=5)
+    def __init__(self, type: LLMType):
+        self.type = type
+        self.name = f"{type}_" + "".join(
+            random.choices("abcdefghijklmnopqrstuvwxyz", k=5)  # nosec
         )
 
     @abstractmethod
@@ -37,7 +39,7 @@ class OllamaAPIClient(LLMAPIClient):
         password: str,
         timeout: int = 10,
     ):
-        super().__init__(prefix="ollama")
+        super().__init__(type="ollama")
         self.model_name = model_name
         self.endpoint = endpoint
         self.user = user
@@ -71,7 +73,7 @@ class OllamaAPIClient(LLMAPIClient):
 
 class ChatGPTAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, api_key: APIKey):
-        super().__init__(prefix="chatgpt")
+        super().__init__(type="chatgpt")
         self.model_name = model_name
         self.api_key = api_key
         self.client = OpenAI(api_key=api_key)
@@ -91,7 +93,7 @@ class ChatGPTAPIClient(LLMAPIClient):
 
 class VllmAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, vllm_endpoint: Url, user: str, password: str):
-        super().__init__(prefix="vllm")
+        super().__init__(type="vllm")
         self.model_name = model_name
         self.vllm_endpoint = vllm_endpoint
         self.user = user
@@ -125,7 +127,7 @@ class LLMInferenceAPIClient(LLMAPIClient):
         url: str,
         auth: Optional[Tuple[CredentialsUsername, CredentialsPassword]] = None,
     ):
-        super().__init__(prefix="llm_inference")
+        super().__init__(type="llm_inference")
         self.url = url
         self.auth = auth
 
@@ -150,11 +152,11 @@ class LLMInferenceAPIClient(LLMAPIClient):
 
 class FakeLLMAPIClient(LLMAPIClient):
     def __init__(self):
-        super().__init__(prefix="fake")
+        super().__init__(type="fake")
 
     def generate_text(self, _prompt: TxtContent) -> str:
         # Generate a random summary
-        summary = random.choice(
+        summary = random.choice(  # nosec
             [
                 "Lorem ipsum dolor sit amet",
                 "Consectetur adipiscing elit",
@@ -166,7 +168,7 @@ class FakeLLMAPIClient(LLMAPIClient):
 
 class AlbertAPIClient(LLMAPIClient):
     def __init__(self, model_name: str, base_url: httpx.URL, api_key: APIKey):
-        super().__init__(prefix="albert")
+        super().__init__(type="albert")
         self.model_name = model_name
         self.client = OpenAI(base_url=base_url, api_key=api_key)
 
