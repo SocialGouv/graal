@@ -1,17 +1,25 @@
 import logging
 import logging.config
-import pickle
+import pickle  # nosec
 import re
 from itertools import cycle
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
-from pydantic import FilePath
 
-from graal.custom_types import ColumnName, IntIndex, LLMName, Prompt
+from graal.custom_types import (
+    ColumnName,
+    IntIndex,
+    LLMName,
+    LLMType,
+    Prompt,
+    RateLimitPerMinute,
+)
 from graal.summary.llm_clients import LLMAPIClient
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
+from graal.utils.rate_limiter import TokenBucketRateLimiter
 
 logging.config.fileConfig("logging.conf")
 
@@ -21,6 +29,7 @@ class BlindEvalProject:
         self,
         amendments_df: pd.DataFrame,
         metrics: list[ColumnName],
+        rate_limiting_config: dict[LLMType, RateLimitPerMinute],
         config_prompt: Prompt,
     ):
         self.amendments_df = amendments_df
@@ -30,6 +39,10 @@ class BlindEvalProject:
         self.mapping_obj_to_author: dict[int, dict[str, str]] = {}
         self.shuffled_indices = np.random.permutation(len(self.amendments_df)).tolist()
         self.config_prompt = config_prompt
+        self.rate_limiters = {
+            type: TokenBucketRateLimiter(rate_limit)
+            for type, rate_limit in rate_limiting_config.items()
+        }
 
     def add_next_n_rows(self, n: int, llm_clients: dict[LLMName, LLMAPIClient]):
         all_llms = list(llm_clients.keys())
@@ -56,11 +69,13 @@ class BlindEvalProject:
             )
 
             llm_source = next(llm_cycle)
-            llm_summary = llm_clients[llm_source].generate_text(prompt)
+            llm_client = llm_clients[llm_source]
+            if llm_client.type in self.rate_limiters:
+                self.rate_limiters[llm_client.type].acquire()
+            llm_summary = llm_client.generate_text(prompt)
 
-            summaries = np.random.permutation(
-                [(llm_summary, llm_source), (clean_expert_summary, "Expert")]
-            )
+            summaries = [(llm_summary, llm_source), (clean_expert_summary, "Expert")]
+            np.random.shuffle(summaries)
 
             self.data[self.latest_gen_idx] = {
                 "Objet 1": summaries[0][0],
@@ -80,18 +95,19 @@ class BlindEvalProject:
 
             self.latest_gen_idx += 1
 
-    def dump_to_disk(self, output_file: FilePath):
+    def dump_to_disk(self, output_file: Path):
         with open(output_file, "wb") as f:
             pickle.dump(self, f)
+            logging.info(f"Blind evaluation project saved to {output_file}")
 
     @classmethod
-    def load_from_disk(cls, input_file: FilePath):
+    def load_from_disk(cls, input_file: Path):
         with open(input_file, "rb") as f:
-            return pickle.load(f)
+            return pickle.load(f)  # nosec
 
     def to_excel(
         self,
-        output_file: FilePath,
+        output_file: Path,
         column_order: list[ColumnName],
         excluded_ids: list[IntIndex],
     ):
