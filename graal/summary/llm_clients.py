@@ -167,10 +167,13 @@ class FakeLLMAPIClient(LLMAPIClient):
 
 
 class AlbertAPIClient(LLMAPIClient):
-    def __init__(self, model_name: str, base_url: httpx.URL, api_key: APIKey):
+    def __init__(
+        self, model_name: str, base_url: httpx.URL, api_key: APIKey, timeout: int = 10
+    ):
         super().__init__(type="albert")
         self.model_name = model_name
         self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.timeout = timeout
 
     def generate_text(self, prompt: TxtContent) -> str:
         logging.info(f"{self.name} is generating a summary")
@@ -181,7 +184,7 @@ class AlbertAPIClient(LLMAPIClient):
             "stream": False,
             "temperature": 0,
             "n": 1,
-            "timeout": 10,
+            "timeout": self.timeout,
         }
 
         response = self.client.chat.completions.create(**data)
