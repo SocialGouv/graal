@@ -24,6 +24,9 @@ from graal.utils.rate_limiter import TokenBucketRateLimiter
 logging.config.fileConfig("logging.conf")
 
 
+CHOOSE_BEST_OBJECT_COLUMN = "Au regard des trois critères présentés et selon vous, quel est le meilleur objet ? (1 ou 2)"
+
+
 class BlindEvalProject:
     def __init__(
         self,
@@ -83,6 +86,7 @@ class BlindEvalProject:
                 "ID": self.latest_gen_idx,
                 "Exposé amdt": amendment["Exposé amdt"],
                 "Corps amdt": amendment["Corps amdt"],
+                f"{CHOOSE_BEST_OBJECT_COLUMN}": 0,
             }
 
             for metric in self.metrics:
