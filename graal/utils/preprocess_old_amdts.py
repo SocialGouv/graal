@@ -30,7 +30,6 @@ ATTRIBUTION_MAPPINGS_FILE = Path(f"{DATA_FOLDER}/mappings_attributions_nov_14.xl
 
 ONE_YEAR_IN_SECONDS: Seconds = 365 * 24 * 60 * 60
 
-
 PLFSS_FILE_CONFIG_JSON: dict[Path, InputFileConfig] = {
     Path(
         f"{DATA_FOLDER}/exports_lectures/PLFSS 2021 JSON/lecture-senat-2020-2021-101-PO78718.json"
@@ -247,7 +246,46 @@ PPL_FILE_CONFIG_EXCEL: dict[Path, InputFileConfig] = {
     },
 }
 
-ALL_INPUT_FILE_CONFIGS_EXCEL = {**PLFSS_FILE_CONFIG_EXCEL, **PPL_FILE_CONFIG_EXCEL}
+PLF_FILE_CONFIG_EXCEL: dict[Path, InputFileConfig] = {
+    Path(f"{DATA_FOLDER}/exports_lectures/PLF 2024/BDD_PLF_2024_SEN_L1_SP.xlsx"): {
+        "default_processing_timestamp": int(
+            datetime(2023, month=10, day=1).timestamp()
+        ),
+        "origin_project": "PLF",
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
+    },
+    Path(
+        f"{DATA_FOLDER}/exports_lectures/PLF 2025/BDD_PLF_2025_AN_L1_COM_Affaires_sociales.xlsx"
+    ): {
+        "default_processing_timestamp": int(
+            datetime(2024, month=10, day=1).timestamp()
+        ),
+        "origin_project": "PLF",
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
+    },
+    Path(
+        f"{DATA_FOLDER}/exports_lectures/PLF 2025/BDD_PLF_2025_AN_L1_COM_Finances.xlsx"
+    ): {
+        "default_processing_timestamp": int(
+            datetime(2024, month=11, day=1).timestamp()
+        ),
+        "origin_project": "PLF",
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
+    },
+    Path(f"{DATA_FOLDER}/exports_lectures/PLF 2025/BDD_PLF_2025_AN_L1_SP.xlsx"): {
+        "default_processing_timestamp": int(
+            datetime(2024, month=12, day=1).timestamp()
+        ),
+        "origin_project": "PLF",
+        "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
+    },
+}
+
+ALL_INPUT_FILE_CONFIGS_EXCEL = {
+    **PLFSS_FILE_CONFIG_EXCEL,
+    **PPL_FILE_CONFIG_EXCEL,
+    **PLF_FILE_CONFIG_EXCEL,
+}
 
 
 def remove_oldest_and_without_response(
@@ -281,6 +319,12 @@ def load_and_preprocess_amendments(
     amendments_df = AmendmentPreProcessor.concatenate_dataframes(
         amendments_df_json, amendments_df_excel
     )
+    for index, row in amendments_df.iterrows():
+        amendments_df.at[index, "Corps amdt"] = (
+            row["Corps amdt"]
+            if pd.notna(row["Corps amdt"]) and row["Corps amdt"] not in [None, ""]
+            else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
+        )
     return amendments_df
 
 
