@@ -162,7 +162,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     columns_to_work_on = derive_columns_to_work_on_from_anebaled_features(args)
 
-    attribution_mappings_excel = pd.read_excel(GRAAL_CONFIG_FILE, sheet_name=None)
+    config_excel = pd.read_excel(GRAAL_CONFIG_FILE, sheet_name=None)
 
     llm_api_clients: list[LLMAPIClient] = []
     # for _ in range(7):
@@ -256,9 +256,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         amendments_df = amendments_df[~amendments_df["Num amdt"].isin(amdt_nums)]
         print(f"Ignoring num amdts: {amdt_nums}")
 
-    acronym_mapping = AmendmentPreProcessor.load_acronyms(
-        attribution_mappings_excel["Acronymes"]
-    )
+    acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
     amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
         amendments_df=amendments_df,
         columns_to_filter=["Exposé amdt"],
@@ -305,7 +303,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
 
     if args.summary_generation:
-        config_prompt = attribution_mappings_excel["Prompt Objet"].to_string()
+        config_prompt = config_excel["Prompt Objet"].to_string()
         amdt_summary_populator = SummaryHandler(
             summary_gen_load_balancer=summary_gen_load_balancer,
             amendments_df=intermediate_amdts_df,
@@ -328,22 +326,20 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         attributor = AttributionPopulator(
             amendments_df=amdt_with_attribution_df,
             attribution_mappings_when_empty=AttributionDataLoader.load_default_attribution_mappings(
-                attribution_mappings_excel
+                config_excel
             ),
             codes_articles_df=AttributionDataLoader.load_codes_and_articles(
-                attribution_mappings_excel
+                config_excel
             ),
-            laws_articles_df=AttributionDataLoader.load_laws_and_articles(
-                attribution_mappings_excel
-            ),
+            laws_articles_df=AttributionDataLoader.load_laws_and_articles(config_excel),
             ordonnances_articles_df=AttributionDataLoader.load_ordonnances_and_articles(
-                attribution_mappings_excel
+                config_excel
             ),
             keywords_df=AttributionDataLoader.load_keywords(
-                excel_data=attribution_mappings_excel, acronym_mapping=acronym_mapping
+                excel_data=config_excel, acronym_mapping=acronym_mapping
             ),
             name_to_email_mapping=AttributionDataLoader.load_name_email_mappings(
-                attribution_mappings_excel
+                config_excel
             ),
             interstitial_only=args.attribution_interstitial_only,
         )
@@ -407,7 +403,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         opinion_populator = OpinionHandler(
             amendments_df=intermediate_amdts_df,
             group_to_default_opinion=AttributionDataLoader.load_group_to_default_opinion(
-                attribution_mappings_excel
+                config_excel
             ),
         )
         intermediate_amdts_df = opinion_populator.populate()
