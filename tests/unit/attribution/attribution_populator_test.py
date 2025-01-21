@@ -45,7 +45,7 @@ def test_match_codes_and_articles_to_amendments_body():
         laws_articles_df=pd.DataFrame(),
         ordonnances_articles_df=pd.DataFrame(),
         keywords_df=pd.DataFrame(),
-        name_to_email_mapping={
+        name_to_user_info_mapping={
             "Expert1": "expert1@example.com",
             "Expert2": "expert2@example.com",
             "Expert3": "expert3@example.com",
@@ -105,7 +105,7 @@ def test_match_laws_and_articles_to_amendments():
         laws_articles_df=laws_articles_df,
         ordonnances_articles_df=pd.DataFrame(),
         keywords_df=pd.DataFrame(),
-        name_to_email_mapping={
+        name_to_user_info_mapping={
             "Expert1": "expert1@example.com",
             "Expert2": "expert2@example.com",
             "Expert3": "expert3@example.com",
@@ -154,7 +154,7 @@ def test_filter_matching_entities_and_articles():
         laws_articles_df=pd.DataFrame(),
         ordonnances_articles_df=pd.DataFrame(),
         keywords_df=pd.DataFrame(),
-        name_to_email_mapping={
+        name_to_user_info_mapping={
             "Expert1": "expert1@example.com",
             "DefaultExpert": "default@example.com",
         },
@@ -200,7 +200,7 @@ def test_aggregate_matches_by_amendment():
         laws_articles_df=pd.DataFrame(),
         ordonnances_articles_df=pd.DataFrame(),
         keywords_df=pd.DataFrame(),
-        name_to_email_mapping={
+        name_to_user_info_mapping={
             "Expert1": "expert1@example.com",
             "DefaultExpert": "default@example.com",
         },
@@ -277,7 +277,7 @@ def test_parallel_keyword_fuzzy_matching(mock_pool):
         laws_articles_df=pd.DataFrame(),
         ordonnances_articles_df=pd.DataFrame(),
         keywords_df=pd.DataFrame(),
-        name_to_email_mapping={},
+        name_to_user_info_mapping={},
         interstitial_only=False,
     )
 
@@ -346,7 +346,7 @@ def test_match_keywords_to_amendments():
         laws_articles_df=pd.DataFrame(),
         ordonnances_articles_df=pd.DataFrame(),
         keywords_df=keywords_df,
-        name_to_email_mapping={
+        name_to_user_info_mapping={
             "Expert1": "expert1@example.com",
             "Expert2": "expert2@example.com",
             "Expert3": "expert3@example.com",

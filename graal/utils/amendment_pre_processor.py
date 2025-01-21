@@ -156,6 +156,7 @@ class AmendmentPreProcessor:
             "objet": "Objet amdt",
             "organe": "Organe",
             "reponse": "Réponse",
+            "pilot_entity": "Entité pilote",
             "sort": "Sort",
             "has_ever_been_on_dossier_de_banc": "A été dans le Dossier de Banc",
         }

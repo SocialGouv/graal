@@ -36,7 +36,7 @@ def test_integration_attribute_amendments():
     original_amendments_df = amendments_df.copy()
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df,
-        columns_to_clear=["Affectation (email)", "Affectation (nom)"],
+        columns_to_clear=["Affectation (email)", "Affectation (nom)", "Entité pilote"],
     )
     amendments_df["Corps amdt"] = original_amendments_df["Corps amdt"].apply(
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
@@ -56,7 +56,9 @@ def test_integration_attribute_amendments():
     attribution_mappings_when_empty = (
         AttributionDataLoader.load_default_attribution_mappings(config_excel)
     )
-    name_to_email_mapping = AttributionDataLoader.load_name_email_mappings(config_excel)
+    name_to_user_info_mapping = AttributionDataLoader.load_name_to_user_info_mappings(
+        config_excel
+    )
 
     attributor = AttributionPopulator(
         amendments_df=amendments_df,
@@ -65,7 +67,7 @@ def test_integration_attribute_amendments():
         laws_articles_df=laws_articles_df,
         ordonnances_articles_df=ordonnances_articles_df,
         keywords_df=keywords_df,
-        name_to_email_mapping=name_to_email_mapping,
+        name_to_user_info_mapping=name_to_user_info_mapping,
     )
     amendments_df = attributor.populate()
 
@@ -74,6 +76,7 @@ def test_integration_attribute_amendments():
         amdt_idx = matching_row["amdt_idx"]
         found_nom_matches = matching_row["Affectation (nom)"]
         found_email_matches = matching_row["Affectation (email)"]
+        found_pilot_entity_matches = matching_row["Entité pilote"]
 
         expected_nom_matches = original_amendments_df.loc[
             (original_amendments_df["amdt_idx"] == amdt_idx),
@@ -83,15 +86,22 @@ def test_integration_attribute_amendments():
             (original_amendments_df["amdt_idx"] == amdt_idx),
             "Affectation (email)",
         ].values[0]
+        expected_pilot_entity_matches = original_amendments_df.loc[
+            (original_amendments_df["amdt_idx"] == amdt_idx),
+            "Entité pilote",
+        ].values[0]
 
         if pd.isnull(expected_nom_matches):
             expected_nom_matches = ""
         if pd.isnull(expected_email_matches):
             expected_email_matches = ""
+        if pd.isnull(expected_pilot_entity_matches):
+            expected_pilot_entity_matches = ""
 
         if (
             found_nom_matches != expected_nom_matches
             or found_email_matches != expected_email_matches
+            or found_pilot_entity_matches != expected_pilot_entity_matches
         ):
             diff_df = pd.concat(
                 [
@@ -101,8 +111,10 @@ def test_integration_attribute_amendments():
                             "amdt_idx": [amdt_idx],
                             "found_nom": [found_nom_matches],
                             "found_email": [found_email_matches],
+                            "found_pilot_entity": [found_pilot_entity_matches],
                             "expected_nom": [expected_nom_matches],
                             "expected_email": [expected_email_matches],
+                            "expected_pilot_entity": [expected_pilot_entity_matches],
                         }
                     ),
                 ]
