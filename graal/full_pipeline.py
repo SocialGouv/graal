@@ -338,7 +338,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             keywords_df=AttributionDataLoader.load_keywords(
                 excel_data=config_excel, acronym_mapping=acronym_mapping
             ),
-            name_to_email_mapping=AttributionDataLoader.load_name_email_mappings(
+            name_to_user_info_mapping=AttributionDataLoader.load_name_to_user_info_mappings(
                 config_excel
             ),
             interstitial_only=args.attribution_interstitial_only,

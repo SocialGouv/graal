@@ -25,7 +25,7 @@ class AttributionPopulator:
         laws_articles_df: pd.DataFrame,
         ordonnances_articles_df: pd.DataFrame,
         keywords_df: pd.DataFrame,
-        name_to_email_mapping: dict[str, str],
+        name_to_user_info_mapping: dict[str, str],
         interstitial_only: bool = False,
     ):
         # Initialize sets and max lengths for codes, laws, and ordonnances
@@ -98,7 +98,7 @@ class AttributionPopulator:
         self.ordonnances_set = ordonnances_set
         self.keywords_df = keywords_df
         self.attribution_mappings_when_empty = attribution_mappings_when_empty
-        self.name_to_email_mapping = name_to_email_mapping
+        self.name_to_user_info_mapping = name_to_user_info_mapping
         self.interstitial_only = interstitial_only
 
     @staticmethod
@@ -273,7 +273,7 @@ class AttributionPopulator:
         """Group matching rows by amendment index."""
         return (
             matching_rows_df.groupby("amdt_idx")
-            .agg({"Affectation (nom)": lambda x: list(sorted(set(x)))})
+            .agg({"Affectation (nom)": lambda x: sorted(set(x))})
             .reset_index()
         )
 
@@ -465,7 +465,12 @@ class AttributionPopulator:
         ].apply(lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None)
         relevant_amendments_df["Affectation (email)"] = relevant_amendments_df[
             "Affectation (nom)"
-        ].apply(lambda x: self.name_to_email_mapping.get(x, ""))
+        ].apply(lambda x: self.name_to_user_info_mapping.get(x, {}).get("Mail", ""))
+        relevant_amendments_df["Entité pilote"] = relevant_amendments_df[
+            "Affectation (nom)"
+        ].apply(
+            lambda x: self.name_to_user_info_mapping.get(x, {}).get("Entité pilote", "")
+        )
 
         # Ensure 'amdt_idx' is set as the index for both DataFrames
         relevant_amendments_df.set_index("amdt_idx", inplace=True)

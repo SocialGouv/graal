@@ -1,7 +1,13 @@
+import logging
+import logging.config
+
 import pandas as pd
 
 from graal.custom_types import EntityType
 from graal.utils.text_utils import AttributionTextNormalizer
+
+logging.config.fileConfig("logging.conf")
+logger = logging.getLogger(__name__)
 
 
 class AttributionDataLoader:
@@ -73,13 +79,26 @@ class AttributionDataLoader:
         return keywords_df
 
     @staticmethod
-    def load_name_email_mappings(excel_data: dict) -> dict[str, str]:
-        """Load name and email mappings from the "Prénom Nom Mail" sheet."""
-        name_email_df = excel_data["Prénom Nom Mail"]
-        name_email_mappings = dict(
-            zip(name_email_df["Prénom Nom"], name_email_df["Mail"])
-        )
-        return name_email_mappings
+    def load_name_to_user_info_mappings(excel_data: dict) -> dict[str, str]:
+        """Load name and user info (email, entité pilote) mappings from the "Prénom Nom Mail" sheet."""
+        user_info_df = excel_data["Prénom Nom Mail"]
+        user_info_df.fillna("", inplace=True)
+        # Check for duplicated "Prénom Nom" values and log a warning
+        duplicated_names = user_info_df[
+            user_info_df.duplicated(subset=["Prénom Nom"], keep=False)
+        ]
+        if not duplicated_names.empty:
+            logger.warning(
+                f"Warning: Duplicated 'Prénom Nom' values found: {duplicated_names['Prénom Nom'].unique()}"
+            )
+
+        # Drop duplicates, keeping the first instance
+        user_info_df = user_info_df.drop_duplicates(subset=["Prénom Nom"], keep="first")
+
+        user_info_mappings = user_info_df.set_index("Prénom Nom")[
+            ["Mail", "Entité pilote"]
+        ].to_dict(orient="index")
+        return user_info_mappings
 
     @staticmethod
     def load_default_attribution_mappings(excel_data: dict) -> list[str]:

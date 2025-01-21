@@ -1,4 +1,3 @@
-import logging
 from unittest.mock import Mock
 
 import pandas as pd
@@ -15,13 +14,16 @@ from graal.summary.summary_generation_load_balancer import (
 def mock_client():
     client = Mock(spec=LLMAPIClient)
     client.name = "mock_client"
+    client.type = "mock_type"
     client.generate_text.side_effect = lambda _: "mock_summary"
     return client
 
 
 @pytest.fixture
 def load_balancer(mock_client):
-    return SummaryGenerationLoadBalancer(clients=[mock_client], queue_timeout=3.0)
+    return SummaryGenerationLoadBalancer(
+        clients=[mock_client], queue_timeout=3.0, rate_limiting_config={}
+    )
 
 
 @pytest.fixture
