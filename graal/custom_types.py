@@ -19,7 +19,9 @@ Seconds = int
 Timestamp = int
 TxtContent = str
 
-LLMType = Literal["ollama", "chatgpt", "vllm", "llm_inference", "fake", "albert"]
+LLMType = Literal[
+    "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
+]
 
 ProjectName = Literal[
     "PLFSS",

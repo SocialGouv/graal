@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 
 import httpx
 import requests
+from llamaapi import LlamaAPI
 from openai import OpenAI
 from pydantic_core import Url
 
@@ -28,6 +29,27 @@ class LLMAPIClient(ABC):
     @abstractmethod
     def generate_text(self, prompt):
         pass
+
+
+class LLaMaAPIClient(LLMAPIClient):
+    def __init__(self, model_name: str, api_token: APIKey):
+        super().__init__(type="llama")
+        self.model_name = model_name
+        self.api_token = api_token
+        self.client = LlamaAPI(api_token)
+
+    def generate_text(self, prompt: TxtContent) -> str:
+        logging.info(f"{self.name} is generating a summary")
+
+        data = {
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": f"{prompt}"}],
+            "temperature": 0,
+            "stream": False,
+        }
+
+        response = self.client.run(data)
+        return response.json()["choices"][0]["message"]["content"]
 
 
 class OllamaAPIClient(LLMAPIClient):
@@ -71,24 +93,30 @@ class OllamaAPIClient(LLMAPIClient):
             return f"Failed to get a response. Status code: {response.status_code}"
 
 
-class ChatGPTAPIClient(LLMAPIClient):
-    def __init__(self, model_name: str, api_key: APIKey):
-        super().__init__(type="chatgpt")
+class OpenAIAPIClient(LLMAPIClient):
+    def __init__(
+        self,
+        model_name: str,
+        api_key: APIKey,
+        base_url: Optional[httpx.URL] = None,
+    ):
+        super().__init__(type="openai")
         self.model_name = model_name
         self.api_key = api_key
-        self.client = OpenAI(api_key=api_key)
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url=base_url if base_url else httpx.URL("https://api.openai.com/v1"),
+        )
 
     def generate_text(self, prompt: TxtContent) -> str:
         logging.info(f"{self.name} is generating a summary")
 
-        data = {
-            "model": self.model_name,
-            "messages": [{"role": "user", "content": f"{prompt}"}],
-            "temperature": 0,
-        }
-
-        response = self.client.chat.completions.create(**data)
-        return response.choices[0].message.content
+        response = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": f"{prompt}"}],
+            temperature=0,
+        )
+        return response.choices[0].message.content or ""
 
 
 class VllmAPIClient(LLMAPIClient):
