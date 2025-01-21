@@ -8,5 +8,6 @@
     "no_value_overwrite": false,
     "placeholder_amdt_body": false,
     "similarity_search": true,
-    "summary_generation": true
+    "summary_generation": true,
+    "mission_titre_court_filter": ""
 }

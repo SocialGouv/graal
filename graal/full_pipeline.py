@@ -44,6 +44,7 @@ from graal.summary.llm_clients import (
 )
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.preprocess_old_amdts import ONE_YEAR_IN_SECONDS
 from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
@@ -120,14 +121,14 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(
-            f"{DATA_FOLDER}/input_ppl_fin_vie/BDD_Séance publique_PJL fin de vie.xlsx"
-        ): {
+        Path(f"{DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"): {
             "default_processing_timestamp": int(
-                datetime(2024, month=6, day=10).timestamp()
+                datetime(2024, month=12, day=29).timestamp()
             ),
-            "origin_project": "PPL Fin de vie",
-            "project_name_timestamp_delta": 0,
+            "origin_project": "PLF",
+            # "origin_project": "PPL Fin de vie",
+            "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
+            # "project_name_timestamp_delta": 0,
         },
     }
     # INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
@@ -140,7 +141,8 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #     },
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie"
+    # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_plf"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -172,6 +174,21 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #         timeout=30,
     #     )
     #     llm_api_clients.append(ollama_api_client)
+    # for _ in range(6):
+    #     llama_api_client = LLaMaAPIClient(
+    #         model_name=os.environ["LLAMA_MODEL_NAME"],
+    #         api_token=os.environ["LLAMA_API_KEY"],
+    #     )
+    #     llm_api_clients.append(llama_api_client)
+    # for _ in range(6):
+    #     open_ai_api_client = OpenAIAPIClient(
+    #         api_key=os.environ["SCALEWAY_API_KEY"],
+    #         base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
+    #         model_name=os.getenv(
+    #             "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    #         ),
+    #     )
+    #     llm_api_clients.append(open_ai_api_client)
 
     for _ in range(6):
         albert_api_client = AlbertAPIClient(
@@ -190,17 +207,36 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         clients=llm_api_clients,
         queue_timeout=4,
         max_retries=5,
-        rate_limiting_config={"albert": 10},
+        rate_limiting_config={"albert": 100},
     )
 
     intermediate_amdts_df = None
 
-    amendments_df = AmendmentPreProcessor.load_amendments_excel(
-        list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
-    )
-    # amendments_df = AmendmentPreProcessor.load_amendments_json(
+    # amendments_df = AmendmentPreProcessor.load_amendments_excel(
     #     list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
     # )
+
+    amendments_df = AmendmentPreProcessor.load_amendments_json(
+        list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
+    )
+
+    if (
+        args.mission_titre_court_filter
+        and len(args.mission_titre_court_filter.strip()) > 0
+    ):
+        amendments_df["mission_titre_court"] = (
+            amendments_df["mission_titre_court"]
+            .str.normalize("NFKD")
+            .str.encode("ascii", errors="ignore")
+            .str.decode("utf-8")
+            .str.lower()
+        )
+        amendments_df = amendments_df[
+            amendments_df["mission_titre_court"].str.startswith(
+                args.mission_titre_court_filter
+            )
+        ]
+
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
@@ -222,6 +258,10 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     acronym_mapping = AmendmentPreProcessor.load_acronyms(
         attribution_mappings_excel["Acronymes"]
+    )
+    amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+        amendments_df=amendments_df,
+        columns_to_filter=["Exposé amdt"],
     )
     amendments_df = AmendmentPreProcessor.replace_acronyms(
         amendments_df=amendments_df,
