@@ -196,6 +196,21 @@ make integration_test
 
 Some files are omitted by the coverage and you can find them in the pyproject.toml file under `tool.coverage.run.omit`
 
+## LLM hosted on remote machine
+
+If we are not using Albert, we are probably running Ollama on an OVH machine at the moment.
+
+To ssh on the machine : `ssh -i /Users/{you}/.ssh/{private_key} ubuntu@{IP_of_remote_machine}`
+
+Then you can analyze what the machine is doing with :
+
+```bash
+cd /opt/ollama
+tail -f init.log
+docker compose logs
+nvidia-smi
+```
+
 ## Contributing
 
 Please refer to the project's coding standards and best practices when contributing. Make sure to write tests for new functionality and update existing tests when necessary.
