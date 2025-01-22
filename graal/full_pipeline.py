@@ -220,10 +220,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
     )
 
-    if (
-        args.mission_titre_court_filter
-        and len(args.mission_titre_court_filter.strip()) > 0
-    ):
+    if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
         amendments_df["mission_titre_court"] = (
             amendments_df["mission_titre_court"]
             .str.normalize("NFKD")
@@ -232,8 +229,10 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             .str.lower()
         )
         amendments_df = amendments_df[
-            amendments_df["mission_titre_court"].str.startswith(
-                args.mission_titre_court_filter
+            amendments_df["mission_titre_court"].apply(
+                lambda x: any(
+                    x.startswith(prefix) for prefix in args.mission_short_title_filter
+                )
             )
         ]
 
