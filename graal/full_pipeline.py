@@ -371,7 +371,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Corps amdt": 0.4,
             },
             fuzzy_match_similarity_thresholds={
-                "Exposé amdt": 0.9,
+                "Exposé amdt": 0.4,
                 "Corps amdt": 0.9,
             },
             similarity_threshold_overrides={
