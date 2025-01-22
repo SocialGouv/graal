@@ -9,5 +9,5 @@
     "placeholder_amdt_body": false,
     "similarity_search": true,
     "summary_generation": true,
-    "mission_titre_court_filter": ""
+    "mission_short_title_filter": []
 }
