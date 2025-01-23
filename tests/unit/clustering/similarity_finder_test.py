@@ -82,13 +82,11 @@ def test_find_best_matches():
     )
     assert closest_docs == {
         6: {
-            "best_matching_comparison_value": -3000,
             "similarity_ratio": 1.0,
             "best_matching_doc_amdt_idx": 1,
             "column_used_for_comparison": "Exposé amdt",
         },
         8: {
-            "best_matching_comparison_value": -3000,
             "best_matching_doc_amdt_idx": 1,
             "similarity_ratio": 0.7368421052631579,
             "column_used_for_comparison": "Exposé amdt",
@@ -129,7 +127,6 @@ def test_find_best_matching_docs():
 
     expected_output = {
         97: {
-            "best_matching_comparison_value": -1,
             "best_matching_doc_amdt_idx": 1,
             "similarity_ratio": 1.0,
         },
@@ -169,12 +166,10 @@ def test_find_best_matching_docs_with_preference_for_non_empty_responses():
 
     expected_output = {
         97: {
-            "best_matching_comparison_value": -1,
             "best_matching_doc_amdt_idx": 4,
             "similarity_ratio": 0.9629629629629629,
         },
         98: {
-            "best_matching_comparison_value": -2,
             "best_matching_doc_amdt_idx": 2,
             "similarity_ratio": 1.0,
         },

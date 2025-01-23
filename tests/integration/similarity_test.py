@@ -1,10 +1,12 @@
 import logging
 from datetime import datetime
+from typing import Callable, Optional
 
 import pandas as pd
 from pydantic import FilePath
 
 from graal.clustering.similarity_handler import SimilarityHandler
+from graal.custom_types import ColumnName
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -23,6 +25,9 @@ def run_test(
     clustering_similarity_thresholds: dict,
     fuzzy_match_similarity_thresholds: dict,
     similarity_threshold_overrides: dict,
+    column_filtering_funcs: Optional[
+        dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
+    ] = None,
 ) -> None:
     CONFIG_FILE = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
 
@@ -68,6 +73,7 @@ def run_test(
         clustering_similarity_thresholds=clustering_similarity_thresholds,
         fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides=similarity_threshold_overrides,
+        column_filtering_funcs=column_filtering_funcs,
     )
 
     # COMPUTE THE DIFFERENCE
@@ -172,4 +178,7 @@ def test_integration_similarity_body():
         clustering_similarity_thresholds,
         fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides={},
+        column_filtering_funcs={
+            "Corps amdt": SimilarityHandler.filter_old_amendments_by_project
+        },
     )

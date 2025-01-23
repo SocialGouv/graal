@@ -47,12 +47,6 @@ class AmendmentPreProcessor:
                 if x not in [None, ""]
                 else default_ts
             )
-            project_name_timestamp_delta = (
-                file_config[file_name].get("project_name_timestamp_delta", 0)
-                if file_config
-                else 0
-            )
-            df["timestamp"] += project_name_timestamp_delta
 
             df_accumulator.append(df)
 
@@ -78,14 +72,7 @@ class AmendmentPreProcessor:
                 default_processing_timestamp = 0
                 df["origin_project"] = "<Inconnue>"
 
-            project_name_timestamp_delta = (
-                file_config[file_name].get("project_name_timestamp_delta", 0)
-                if file_config
-                else 0
-            )
-            df["timestamp"] = (
-                default_processing_timestamp + project_name_timestamp_delta
-            )
+            df["timestamp"] = default_processing_timestamp
 
             df_accumulator.append(df)
 

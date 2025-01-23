@@ -44,7 +44,6 @@ from graal.summary.llm_clients import (
 )
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.preprocess_old_amdts import ONE_YEAR_IN_SECONDS
 from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
@@ -125,10 +124,8 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             "default_processing_timestamp": int(
                 datetime(2024, month=12, day=29).timestamp()
             ),
-            "origin_project": "PLF",
+            "origin_project": "PLF 2025",
             # "origin_project": "PPL Fin de vie",
-            "project_name_timestamp_delta": ONE_YEAR_IN_SECONDS,
-            # "project_name_timestamp_delta": 0,
         },
     }
     # INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
@@ -137,7 +134,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #             datetime(2024, month=11, day=27).timestamp()
     #         ),
     #         "origin_project": "PPL Retraites",
-    #         "project_name_timestamp_delta": 0,
     #     },
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
@@ -378,7 +374,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Exposé amdt": {"amendement redactionnel": 0.95},
             },
             column_filtering_funcs={
-                "Corps amdt": SimilarityHandler.filter_old_amendments_by_project_and_year,
+                "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
             },
         )
 

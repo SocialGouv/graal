@@ -16,25 +16,22 @@ def sample_data():
             "Organe": ["Organe 1", "Organe 2", "Organe 3"],
             "Réponse": ["Response 1", "Response 2", "Response 3"],
             "Sort": ["Sort 1", "Irrecevable 123", "Sort 3"],
-            "origin_project": ["PLFSS", "PLACSS", "PLFSS"],
+            "origin_project": ["PLFSS 2022", "PLACSS 2023", "PLFSS 2023"],
         }
     )
     closest_amdts = {
         97: {
             "best_matching_doc_amdt_idx": 1,
             "best_matching_doc_lecture": "A",
-            "best_matching_comparison_value": -1640995200,  # 2022
             "column_used_for_comparison": "Exposé amdt",
         },
         98: {
             "best_matching_doc_amdt_idx": 2,
             "best_matching_doc_lecture": "B",
-            "best_matching_comparison_value": -1609459200,  # 2021
             "column_used_for_comparison": "Exposé amdt",
         },
         99: {
             "best_matching_doc_amdt_idx": 3,
-            "best_matching_comparison_value": -1577836800,  # 2020
             "column_used_for_comparison": "Exposé amdt",
         },
     }
@@ -76,7 +73,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[1, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLACSS 2021
+        Réponse copiée de : PLACSS 2023
         Numéro d'amendement : 2
         Lecture : B
         Organe : Organe 2
@@ -90,7 +87,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[2, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 2020
+        Réponse copiée de : PLFSS 2023
         Numéro d'amendement : 3
         Lecture : C
         Organe : Organe 3
@@ -113,7 +110,7 @@ def test_populate():
             "Réponse": ["", "", ""],
             "Sort": ["", "", ""],
             "timestamp": [0, 0, 0],
-            "origin_project": ["PLFSS", "PLACSS", "PLFSS"],
+            "origin_project": ["PLFSS 2010", "PLACSS 1900", "PLFSS 1963"],
         }
     )
 
@@ -129,7 +126,7 @@ def test_populate():
             "Exposé amdt": ["Exposé 1", "Exposé 2", "Exposé 3"],
             "Corps amdt": ["Corps 1", "Corps 2", "Corps 3"],
             "timestamp": [0, 0, 0],
-            "origin_project": ["PLFSS", "PLACSS", "PLFSS"],
+            "origin_project": ["PLFSS 2024", "PLACSS 2020", "PLFSS 1988"],
         }
     )
 
@@ -155,7 +152,7 @@ def test_populate():
     assert (
         result_df.loc[0, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 1970
+        Réponse copiée de : PLFSS 2024
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1
@@ -165,7 +162,7 @@ def test_populate():
     assert (
         result_df.loc[1, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLACSS 1970
+        Réponse copiée de : PLACSS 2020
         Numéro d'amendement : 2
         Lecture : B
         Organe : Organe 2
@@ -176,7 +173,7 @@ def test_populate():
     assert (
         result_df.loc[2, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 1970
+        Réponse copiée de : PLFSS 1988
         Numéro d'amendement : 3
         Lecture : C
         Organe : Organe 3
@@ -193,7 +190,7 @@ def test_populate():
     assert result_df.loc[2, "Sort"] == ""
 
 
-def test_populate_same_body_but_different_project_or_year_should_not_match():
+def test_populate_same_body_but_different_project_should_not_match():
     preprocessed_new_amendments_df = pd.DataFrame(
         {
             "Num amdt": [1, 2],
@@ -204,7 +201,7 @@ def test_populate_same_body_but_different_project_or_year_should_not_match():
             "Réponse": ["", ""],
             "Sort": ["", ""],
             "timestamp": [0, 0],
-            "origin_project": ["PLFSS", "PLFSS"],
+            "origin_project": ["PLFSS 2024", "PLFSS 2024"],
         }
     )
 
@@ -219,8 +216,8 @@ def test_populate_same_body_but_different_project_or_year_should_not_match():
             "Corps amdt": ["Corps 1", "Corps 2", "Corps 2"],
             "Sort": ["Sort 1", "Sort 2", "Sort 3"],
             "Réponse": ["Response 1", "Response 2", "Response 3"],
-            "timestamp": [0, 0, 999999999],
-            "origin_project": ["PLFSS", "PLACSS", "PLFSS"],
+            "timestamp": [1737587137, 0, 0],
+            "origin_project": ["PLFSS 2024", "PLACSS 2024", "PLFSS 2025"],
         }
     )
 
@@ -233,7 +230,7 @@ def test_populate_same_body_but_different_project_or_year_should_not_match():
     similarity_threshold_overrides = {}
 
     column_filtering_funcs = {
-        "Corps amdt": SimilarityHandler.filter_old_amendments_by_project_and_year,
+        "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
     }
 
     result_df = SimilarityHandler.populate(
@@ -249,7 +246,7 @@ def test_populate_same_body_but_different_project_or_year_should_not_match():
     assert (
         result_df.loc[0, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 1970
+        Réponse copiée de : PLFSS 2024
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1
