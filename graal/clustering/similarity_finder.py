@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -71,13 +71,12 @@ class SimilarityFinder:
                 "You need to prefilter similar documents (with `prefilter_similar_docs`) before finding the best matches."
             )
         old_amdt_data = {
-            "text": {
-                old_amdt_idx: old_amdt_text
-                for old_amdt_idx, old_amdt_text in zip(
+            "text": dict(
+                zip(
                     self.old_amendments_df["amdt_idx"],
                     self.old_amendments_df[column_used_for_similarity],
                 )
-            },
+            ),
             "comparison_value": {
                 old_amdt_idx: -old_amdt_date
                 for old_amdt_idx, old_amdt_date in zip(
@@ -85,22 +84,20 @@ class SimilarityFinder:
                     self.old_amendments_df["timestamp"],
                 )
             },
-            "response": {
-                old_amdt_idx: old_amdt_response
-                for old_amdt_idx, old_amdt_response in zip(
+            "response": dict(
+                zip(
                     self.old_amendments_df["amdt_idx"],
                     self.old_amendments_df["Réponse"],
                 )
-            },
+            ),
         }
         new_amdt_data = {
-            "text": {
-                old_amdt_idx: old_amdt_text
-                for old_amdt_idx, old_amdt_text in zip(
+            "text": dict(
+                zip(
                     self.new_amendments_df["amdt_idx"],
                     self.new_amendments_df[column_used_for_similarity],
                 )
-            }
+            )
         }
         logging.info("Looking for best matches on pre-filtered amendments...")
         closest_docs = self.find_best_matching_docs(
@@ -205,7 +202,6 @@ class SimilarityFinder:
 
             if best_doc_amdt_idx is not None:
                 closest_docs[new_amdt_idx] = {
-                    "best_matching_comparison_value": min_comparison_value,
                     "best_matching_doc_amdt_idx": best_doc_amdt_idx,
                     "similarity_ratio": best_similarity_ratio,
                 }

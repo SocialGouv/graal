@@ -1,7 +1,6 @@
 import logging
 import logging.config
 import textwrap
-from datetime import datetime
 from typing import Callable, Optional
 
 import pandas as pd
@@ -44,27 +43,19 @@ class SimilarityHandler:
         return amendments_df
 
     @staticmethod
-    def filter_old_amendments_by_project_and_year(
+    def filter_old_amendments_by_project(
         preprocessed_old_amendments_df: pd.DataFrame,
         preprocessed_new_amendments_df: pd.DataFrame,
     ) -> pd.DataFrame:
         """
-        Filters old amendments by project and year based on the corresponding values in the first row of
+        Filters old amendments by project based on the corresponding values in the first row of
         new amendments.
         """
         first_new_amendment = preprocessed_new_amendments_df.iloc[0]
         origin_project = first_new_amendment["origin_project"]
-        timestamp = first_new_amendment["timestamp"]
-        year = datetime.fromtimestamp(timestamp).year
 
         return preprocessed_old_amendments_df[
             (preprocessed_old_amendments_df["origin_project"] == origin_project)
-            & (
-                preprocessed_old_amendments_df["timestamp"].apply(
-                    lambda x: datetime.fromtimestamp(x).year
-                )
-                == year
-            )
         ]
 
     @staticmethod
@@ -93,6 +84,11 @@ class SimilarityHandler:
             df_to_compare = filter_func(
                 preprocessed_old_amendments_df, preprocessed_new_amendments_df
             )
+            if df_to_compare.empty:
+                logging.warning(
+                    f"No old amendments to compare for column {column}. Skipping..."
+                )
+                continue
             similarity_evaluator = SimilarityFinder(
                 old_amendments_df=df_to_compare,
                 new_amendments_df=preprocessed_new_amendments_df,
@@ -161,8 +157,6 @@ class SimilarityHandler:
                 matching_num_amdt = matching_amendment["Num amdt"].values[0]
                 matching_lecture = matching_amendment["Lecture"].values[0]
                 matching_organe = matching_amendment["Organe"].values[0]
-                matching_timestamp = -closest_doc["best_matching_comparison_value"]
-                matching_year = datetime.fromtimestamp(matching_timestamp).year
 
                 # Update target DataFrame with the matched details
                 current_comments = target_df.loc[amdt_idx_mask, "Commentaires"].values[
@@ -174,7 +168,7 @@ class SimilarityHandler:
                     target_df.loc[amdt_idx_mask, "Commentaires"] = ""
 
                 target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
-                        Réponse copiée de : {matching_origin_project} {matching_year}
+                        Réponse copiée de : {matching_origin_project}
                         Numéro d'amendement : {matching_num_amdt}
                         Lecture : {matching_lecture}
                         Organe : {matching_organe}

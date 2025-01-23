@@ -23,16 +23,6 @@ LLMType = Literal[
     "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
 ]
 
-ProjectName = Literal[
-    "PLFSS",
-    "PLF",
-    "PLACSS",
-    "LFRSS",
-    "PPL LIOT abrogation réforme des retraites",
-    "PPL Retraites",
-    "PPL Fin de vie",
-]
-
 
 class ColumnsToWorkOn(TypedDict):
     to_preserve_orig_value: set[str]
@@ -48,5 +38,4 @@ class EntityType(Enum):
 
 class InputFileConfig(TypedDict):
     default_processing_timestamp: Timestamp
-    origin_project: ProjectName
-    project_name_timestamp_delta: Seconds
+    origin_project: str

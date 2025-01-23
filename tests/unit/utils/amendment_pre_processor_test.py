@@ -418,7 +418,6 @@ def test_load_amendments_json(mocker):
         "file1.json": {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PLFSS",
-            "project_name_timestamp_delta": 365 * 24 * 60 * 60,  # 365 days in seconds
         },
         "file2.json": {
             "default_processing_timestamp": 1234567890,
@@ -427,7 +426,6 @@ def test_load_amendments_json(mocker):
         "file3.json": {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PLACSS",
-            "project_name_timestamp_delta": -365 * 24 * 60 * 60,  # 365 days in seconds
         },
     }
 
@@ -453,12 +451,12 @@ def test_load_amendments_json(mocker):
                 "PLACSS",
             ],
             "timestamp": [
-                1672531201 + 365 * 24 * 60 * 60,
-                1234567890 + 365 * 24 * 60 * 60,
                 1672531201,
                 1234567890,
-                1672531201 - 365 * 24 * 60 * 60,
-                1234567890 - 365 * 24 * 60 * 60,
+                1672531201,
+                1234567890,
+                1672531201,
+                1234567890,
             ],
             "amdt_idx": [0, 1, 2, 3, 4, 5],
         }
@@ -493,7 +491,6 @@ def test_load_amendments_excel(mocker):
         "file1.xlsx": {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PLFSS",
-            "project_name_timestamp_delta": 365 * 24 * 60 * 60,  # 365 days in seconds
         },
         "file2.xlsx": {
             "default_processing_timestamp": 1234567890,
@@ -514,8 +511,8 @@ def test_load_amendments_excel(mocker):
             "some_field": ["value1", "value2", "value3", "value4"],
             "origin_project": ["PLFSS", "PLFSS", "PPL Retraites", "PPL Retraites"],
             "timestamp": [
-                1234567890 + 365 * 24 * 60 * 60,
-                1234567890 + 365 * 24 * 60 * 60,
+                1234567890,
+                1234567890,
                 1234567890,
                 1234567890,
             ],
