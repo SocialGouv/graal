@@ -96,7 +96,7 @@ class AttributionDataLoader:
         user_info_df = user_info_df.drop_duplicates(subset=["Prénom Nom"], keep="first")
 
         user_info_mappings = user_info_df.set_index("Prénom Nom")[
-            ["Mail", "Entité pilote"]
+            ["Mail", "Entité Pilote"]
         ].to_dict(orient="index")
         return user_info_mappings
 

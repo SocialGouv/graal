@@ -24,7 +24,7 @@ def test_integration_attribute_amendments():
 
     acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
     amendments_df = pd.read_excel(TEST_FILE)
-    # amendments_df = amendments_df[amendments_df["amdt_idx"] == 24]
+    # amendments_df = amendments_df[amendments_df["amdt_idx"] == 46]
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df=amendments_df
     )
@@ -36,7 +36,7 @@ def test_integration_attribute_amendments():
     original_amendments_df = amendments_df.copy()
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df,
-        columns_to_clear=["Affectation (email)", "Affectation (nom)", "Entité pilote"],
+        columns_to_clear=["Affectation (email)", "Affectation (nom)", "Entité Pilote"],
     )
     amendments_df["Corps amdt"] = original_amendments_df["Corps amdt"].apply(
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
@@ -53,6 +53,7 @@ def test_integration_attribute_amendments():
     keywords_df = AttributionDataLoader.load_keywords(
         excel_data=config_excel, acronym_mapping=acronym_mapping
     )
+    logging.info(f"keywords_df {keywords_df}")
     attribution_mappings_when_empty = (
         AttributionDataLoader.load_default_attribution_mappings(config_excel)
     )
@@ -76,7 +77,7 @@ def test_integration_attribute_amendments():
         amdt_idx = matching_row["amdt_idx"]
         found_nom_matches = matching_row["Affectation (nom)"]
         found_email_matches = matching_row["Affectation (email)"]
-        found_pilot_entity_matches = matching_row["Entité pilote"]
+        found_pilot_entity_matches = matching_row["Entité Pilote"]
 
         expected_nom_matches = original_amendments_df.loc[
             (original_amendments_df["amdt_idx"] == amdt_idx),
@@ -88,7 +89,7 @@ def test_integration_attribute_amendments():
         ].values[0]
         expected_pilot_entity_matches = original_amendments_df.loc[
             (original_amendments_df["amdt_idx"] == amdt_idx),
-            "Entité pilote",
+            "Entité Pilote",
         ].values[0]
 
         if pd.isnull(expected_nom_matches):

@@ -28,7 +28,7 @@ def excel_data():
             {
                 "Prénom Nom": ["John Doe", "Jane Smith"],
                 "Mail": ["john.doe@example.com", "jane.smith@example.com"],
-                "Entité pilote": ["JABC", "JABC"],
+                "Entité Pilote": ["JABC", "JABC"],
             }
         ),
         "Attribution par défaut": pd.DataFrame(
@@ -81,8 +81,8 @@ def test_load_keywords(excel_data, mocker):
 def test_load_name_to_user_info_mappings(excel_data):
     result = AttributionDataLoader.load_name_to_user_info_mappings(excel_data)
     expected = {
-        "John Doe": {"Mail": "john.doe@example.com", "Entité pilote": "JABC"},
-        "Jane Smith": {"Mail": "jane.smith@example.com", "Entité pilote": "JABC"},
+        "John Doe": {"Mail": "john.doe@example.com", "Entité Pilote": "JABC"},
+        "Jane Smith": {"Mail": "jane.smith@example.com", "Entité Pilote": "JABC"},
     }
     assert result == expected
 

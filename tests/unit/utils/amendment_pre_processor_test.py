@@ -245,6 +245,7 @@ def test_clear_columns_to_be_overridden():
             "Objet amdt": ["Objet 1", "Objet 2"],
             "Affectation (email)": ["email 1", "email 2"],
             "Affectation (nom)": ["nom 1", "nom 2"],
+            "Entité Pilote": ["Entité 1", "Entité 2"],
             "Allotissement": [2, 1],
         }
     )
@@ -255,6 +256,7 @@ def test_clear_columns_to_be_overridden():
             "Objet amdt": ["Objet 1", "Objet 2"],
             "Affectation (email)": [None, None],
             "Affectation (nom)": [None, None],
+            "Entité Pilote": [None, None],
             "Allotissement": [None, None],
         }
     )
@@ -262,7 +264,12 @@ def test_clear_columns_to_be_overridden():
     amendment_processor = AmendmentPreProcessor
     prepared_df = amendment_processor.clear_columns_to_be_overridden(
         df,
-        columns_to_clear=["Allotissement", "Affectation (email)", "Affectation (nom)"],
+        columns_to_clear=[
+            "Allotissement",
+            "Affectation (email)",
+            "Affectation (nom)",
+            "Entité Pilote",
+        ],
     )
 
     pd.testing.assert_frame_equal(

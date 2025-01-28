@@ -466,10 +466,10 @@ class AttributionPopulator:
         relevant_amendments_df["Affectation (email)"] = relevant_amendments_df[
             "Affectation (nom)"
         ].apply(lambda x: self.name_to_user_info_mapping.get(x, {}).get("Mail", ""))
-        relevant_amendments_df["Entité pilote"] = relevant_amendments_df[
+        relevant_amendments_df["Entité Pilote"] = relevant_amendments_df[
             "Affectation (nom)"
         ].apply(
-            lambda x: self.name_to_user_info_mapping.get(x, {}).get("Entité pilote", "")
+            lambda x: self.name_to_user_info_mapping.get(x, {}).get("Entité Pilote", "")
         )
 
         # Ensure 'amdt_idx' is set as the index for both DataFrames
