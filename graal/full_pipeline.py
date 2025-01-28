@@ -39,8 +39,8 @@ from graal.custom_types import ColumnsToWorkOn, InputFileConfig
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.populate_summaries import SummaryHandler
 from graal.summary.llm_clients import (
-    AlbertAPIClient,
     LLMAPIClient,
+    OpenAIAPIClient,
 )
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
@@ -83,9 +83,12 @@ def derive_columns_to_work_on_from_anebaled_features(
             [
                 "Affectation (email)",
                 "Affectation (nom)",
+                "Entité Pilote",
             ]
         )
-        columns_to_clear.update(["Affectation (email)", "Affectation (nom)"])
+        columns_to_clear.update(
+            ["Affectation (email)", "Affectation (nom)", "Entité Pilote"]
+        )
 
     if args.similarity_search:
         columns_to_preserve.update(
@@ -110,7 +113,7 @@ def derive_columns_to_work_on_from_anebaled_features(
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     GRAAL_CONFIG_FILE = Path(
-        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 28 Nov 2024.xlsx"
+        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - 23 Jan 2025.xlsx"
     )
     PREPROCESSED_INADMISSIBLE_FILE = Path(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
@@ -120,11 +123,11 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(f"{DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"): {
+        Path(f"{DATA_FOLDER}/input_plfss/lecture-an-17-622-PO420120.json"): {
             "default_processing_timestamp": int(
-                datetime(2024, month=12, day=29).timestamp()
+                datetime(2025, month=1, day=23).timestamp()
             ),
-            "origin_project": "PLF 2025",
+            "origin_project": "PLFSS 2025",
             # "origin_project": "PPL Fin de vie",
         },
     }
@@ -138,7 +141,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_plf"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_plfss_23_jan_2025_2"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -148,6 +151,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         "Réponse",
         "Affectation (email)",
         "Affectation (nom)",
+        "Entité Pilote",
         "Avis du Gouvernement",
         "Groupe",
         "Num article",
@@ -176,27 +180,27 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #         api_token=os.environ["LLAMA_API_KEY"],
     #     )
     #     llm_api_clients.append(llama_api_client)
-    # for _ in range(6):
-    #     open_ai_api_client = OpenAIAPIClient(
-    #         api_key=os.environ["SCALEWAY_API_KEY"],
-    #         base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
-    #         model_name=os.getenv(
-    #             "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
-    #         ),
-    #     )
-    #     llm_api_clients.append(open_ai_api_client)
-
     for _ in range(6):
-        albert_api_client = AlbertAPIClient(
-            base_url=httpx.URL(
-                os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
-            ),
-            api_key=os.environ["ETALAB_API_KEY"],
+        open_ai_api_client = OpenAIAPIClient(
+            api_key=os.environ["SCALEWAY_API_KEY"],
+            base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
             model_name=os.getenv(
-                "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+                "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
             ),
         )
-        llm_api_clients.append(albert_api_client)
+        llm_api_clients.append(open_ai_api_client)
+
+    # for _ in range(6):
+    #     albert_api_client = AlbertAPIClient(
+    #         base_url=httpx.URL(
+    #             os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
+    #         ),
+    #         api_key=os.environ["ETALAB_API_KEY"],
+    #         model_name=os.getenv(
+    #             "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    #         ),
+    #     )
+    #     llm_api_clients.append(albert_api_client)
 
     # llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
@@ -400,6 +404,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Avis du Gouvernement",
                 "Affectation (email)",
                 "Affectation (nom)",
+                "Entité Pilote",
             ],
         )
 
