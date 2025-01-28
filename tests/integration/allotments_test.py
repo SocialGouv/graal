@@ -73,6 +73,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
             "Avis du Gouvernement",
             "Affectation (email)",
             "Affectation (nom)",
+            "Entité Pilote",
         ],
     )
 
