@@ -61,7 +61,7 @@ addopts = [
     "--cov-report=json:coverage.json",
     "--cov-report=",
     "--capture=no",
-    "--log-cli-level=INFO",
+    "--log-cli-level=DEBUG",
     "--color=yes",
 ]
 
@@ -91,6 +91,7 @@ ignore = [
 [tool.mypy]
 ignore_missing_imports = true
 disable_error_code = ["call-overload", "import-untyped"]
+check_untyped_defs = true
 
 [tool.bandit]
 tests = ["B201", "B301"]

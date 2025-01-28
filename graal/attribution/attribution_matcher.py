@@ -1,3 +1,4 @@
+import re
 from typing import Set
 
 from graal.custom_types import ColumnName
@@ -9,10 +10,21 @@ class AttributionMatcher:
         amendment: dict, column_name_to_match: ColumnName, keywords: Set[str]
     ) -> list[dict[str, str]]:
         """Perform fuzzy matching of keywords against amendment text."""
-        amdt_words = amendment[column_name_to_match].split()
+        split_pattern = r"[\s\n\r\t\f'.,;:!?\"(){}<>-\[\]]+"
+        amendment_text = amendment[column_name_to_match]
+        amdt_words = [
+            word
+            for word in re.split(split_pattern, amendment_text)
+            if len(word.strip()) > 0
+        ]
+
         results = []
         for keyword in keywords:
-            keyword_words = keyword.split()
+            keyword_words = [
+                word
+                for word in re.split(split_pattern, keyword)
+                if len(word.strip()) > 0
+            ]
             for word in keyword_words:
                 # As soon as a word matches, make sure all the following words match, in order. If all of them do then record it.
                 start_indexes = [i for i, w in enumerate(amdt_words) if w == word]
