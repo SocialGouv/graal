@@ -215,6 +215,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.load_amendments_json(
         list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
     )
+    # amendments_df = amendments_df[amendments_df["amdt_idx"] == 2]
 
     if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
         amendments_df["mission_titre_court"] = (
@@ -313,10 +314,18 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
             "Corps amdt"
         ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
-        # TESTING TESTING
-        amdt_with_attribution_df.loc[:, "Exposé amdt"] = preprocessed_original_amdt_df[
+
+        amdt_with_attribution_df.loc[:, "Exposé amdt"] = amdt_with_attribution_df[
             "Exposé amdt"
         ].apply(lambda x: AttributionTextNormalizer.ignore_predefined_sentences(str(x)))
+
+        amdt_with_attribution_df.loc[:, "Exposé amdt"] = amdt_with_attribution_df[
+            "Exposé amdt"
+        ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
+
+        logging.info(
+            f'amdt_with_attribution_df.loc[:, "Exposé amdt"] {amdt_with_attribution_df["Exposé amdt"].iloc[0]}'
+        )
 
         attributor = AttributionPopulator(
             amendments_df=amdt_with_attribution_df,
