@@ -300,7 +300,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
         )
         allotted_amdt_clusters = AllotmentHandler.get_clusters(
-            normalized_amdt_df=normalized_for_allot_df
+            normalized_amdt_df=normalized_for_allot_df, group_by_columns=["Num article"]
         )
         logging.info(
             f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
