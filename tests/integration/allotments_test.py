@@ -58,7 +58,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     )
 
     allotted_amdt_clusters = AllotmentHandler.get_clusters(
-        normalized_amdt_df=normalized_amdt_df
+        normalized_amdt_df=normalized_amdt_df, group_by_columns=["Lecture"]
     )
 
     normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
