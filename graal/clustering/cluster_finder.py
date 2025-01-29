@@ -32,7 +32,6 @@ class AmendmentsClusterFinder:
 
     def _transform_group(self, group_key: tuple) -> None:
         """Transform strings to TF-IDF vectors for a specific group"""
-        logging.info(f"Transforming data for group: {group_key}...")
         df_group = self.amendments_df[
             (
                 self.amendments_df[self.group_by_columns]
@@ -44,7 +43,6 @@ class AmendmentsClusterFinder:
 
     def _compute_distance_matrix(self, group_key: tuple) -> None:
         """Compute cosine similarity matrix for a specific group"""
-        logging.info(f"Computing cosine similarity matrix for group: {group_key}...")
         similarity_matrix = cosine_similarity(self.vectors_per_group[group_key])
         distance_matrix = 1 - similarity_matrix
         distance_matrix[distance_matrix < 0] = 0  # Ensure no negative values
@@ -63,7 +61,6 @@ class AmendmentsClusterFinder:
         for group_key in group_keys:
             self._transform_group(group_key)
             self._compute_distance_matrix(group_key)
-            logging.info(f"Finding clusters for group: {group_key}...")
             dbscan = DBSCAN(metric="precomputed", eps=eps, min_samples=min_samples)
             clusters = dbscan.fit_predict(self.distance_matrix_per_group[group_key])
 
@@ -88,9 +85,6 @@ class AmendmentsClusterFinder:
             self.tfidf_clusters_per_group[group_key] = [
                 cluster for cluster in clustered_strings.values() if len(cluster) > 1
             ]
-            logging.info(
-                f"Number of clusters for group {group_key}: {len(self.tfidf_clusters_per_group[group_key])}\n"
-            )
 
         return self.tfidf_clusters_per_group
 
@@ -104,9 +98,6 @@ class AmendmentsClusterFinder:
             .itertuples(index=False, name=None)
         )
         for group_key in group_keys:
-            logging.info(
-                f'Refining clusters for group "{group_key}" with Damerau-Levenshtein distance...'
-            )
             df_group = self.amendments_df[
                 (
                     self.amendments_df[self.group_by_columns]
@@ -158,8 +149,5 @@ class AmendmentsClusterFinder:
                 )
 
             self.final_clusters_per_group[group_key] = refined_clusters
-            logging.info(
-                f"Number of refined clusters for group {group_key}: {len(self.final_clusters_per_group[group_key])}\n"
-            )
 
         return self.final_clusters_per_group

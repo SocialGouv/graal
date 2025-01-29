@@ -300,7 +300,7 @@ def load_and_preprocess_amendments(
 
 def process_amendments(amendments_df: pd.DataFrame) -> pd.DataFrame:
     allotted_amdt_clusters = AllotmentHandler.get_clusters(
-        amendments_df, group_by_columns=["Lecture"]
+        amendments_df, group_by_columns=["Lecture", "origin_project", "Num article"]
     )
     return AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
         normalized_amdt_df=amendments_df,
