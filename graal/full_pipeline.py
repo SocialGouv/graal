@@ -327,10 +327,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             "Exposé amdt"
         ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
 
-        logging.info(
-            f'amdt_with_attribution_df.loc[:, "Exposé amdt"] {amdt_with_attribution_df["Exposé amdt"].iloc[0]}'
-        )
-
         attributor = AttributionPopulator(
             amendments_df=amdt_with_attribution_df,
             attribution_mappings_when_empty=AttributionDataLoader.load_default_attribution_mappings(
