@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from unidecode import unidecode
 
 from graal.attribution.attribution_data_loader import (
     AttributionDataLoader,
@@ -10,7 +11,7 @@ from graal.attribution.attribution_populator import (
     AttributionPopulator,
 )
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import AttributionTextNormalizer
+from graal.utils.text_utils import AttributionTextNormalizer, remove_gage_sentences
 
 
 def test_integration_attribute_amendments():
@@ -37,6 +38,12 @@ def test_integration_attribute_amendments():
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df,
         columns_to_clear=["Affectation (email)", "Affectation (nom)", "Entité Pilote"],
+    )
+    amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
+        lambda text: remove_gage_sentences(unidecode(text))
+    )
+    amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
+        lambda text: remove_gage_sentences(unidecode(text))
     )
     amendments_df["Corps amdt"] = original_amendments_df["Corps amdt"].apply(
         lambda x: AttributionTextNormalizer.normalize_text(str(x))

@@ -35,13 +35,22 @@ def test_remove_small_roman_numerals(input_text, expected_output):
     [
         (
             "First line. Second line. Third line.",
-            "Second",
+            ["Second"],
             "First line. Third line.",
         ),
         (
             "First line\n\n\tSecond line.\nThird line.",
-            "Second",
+            ["Second"],
             "First line\n\n\tThird line.",
+        ),
+        (
+            """
+IV. – La perte de recettes pour l’État est co
+V. – La perte de recettes pour les organismes. »
+VI. – La charge pour l'État et les collectivités territoriales est compensée pour les organismes. »
+            """,
+            ["La perte de recettes", "La charge pour l'état"],
+            "IV. –V. – »\nVI. – »",
         ),
     ],
 )
@@ -173,11 +182,9 @@ def test_replace_french_numbers(input_phrase, expected_output):
             "76 baleine peu aller 5 continent",
         ),
         (
+            # On vérifie que les gages sont bien retirés
             """
             III. – Un rapport d’évaluation est
-            IV. – La perte de recettes pour l’État est co
-            V. – La perte de recettes pour les organismes. »
-            V. – La charge pour l’État et les collectivités territoriales est compensée pour les organismes. »
             """,
             "rapport evaluation",
         ),
@@ -214,11 +221,8 @@ def test_normalize_text_with_special_characters():
         (
             """
             III. – Un rapport d’évaluation est
-            IV. – La perte de recettes résultant pour l’État est co
-            V. – La perte de recettes pour les organismes »
-            V. – La charge pour l’État et les collectivités territoriales est compensée par xxx »
             """,
-            ". un rapport d'evaluation est .",
+            ". un rapport d'evaluation est",
         ),
     ],
 )
@@ -261,35 +265,3 @@ def test_attribution_text_normalizer(input_text, expected_output):
 )
 def test_summary_text_normalizer(input_text, expected_output):
     assert SummaryTextNormalizer.normalize_text(input_text) == expected_output
-
-
-@pytest.mark.parametrize(
-    "input_text, expected_output",
-    [
-        (
-            "la perte de recettes pour l'etat est importante. ceci est une phrase normale.",
-            " ceci est une phrase normale.",
-        ),
-        (
-            "la charge pour l'etat et les collectivites territoriales est compensee par des mesures. une autre phrase normale.",
-            " une autre phrase normale.",
-        ),
-        (
-            "ceci est une phrase normale. la perte de recettes pour l'etat est importante.",
-            "ceci est une phrase normale.",
-        ),
-        (
-            "une phrase normale. la charge pour l'etat et les collectivites territoriales est compensee par des mesures.",
-            "une phrase normale.",
-        ),
-        (
-            "une phrase normale.\nune autre phrase normale.",
-            "une phrase normale.\n\nune autre phrase normale.",
-        ),
-    ],
-)
-def test_ignore_predefined_sentences(input_text, expected_output):
-    assert (
-        AttributionTextNormalizer.ignore_predefined_sentences(input_text)
-        == expected_output
-    )

@@ -1,4 +1,6 @@
 import html
+import logging
+import logging.config
 import re
 from typing import Optional
 
@@ -9,11 +11,15 @@ from unidecode import unidecode
 
 from graal.custom_types import TxtContent
 
+logging.config.fileConfig("logging.conf")
 FRENCH_IRREGULAR_PLURALS = {
     "travaux": "travail",
     "vitraux": "vitrail",
     "yeux": "œil",
     "chacals": "chacal",
+    "messieurs": "monsieur",
+    "mesdames": "madame",
+    "mesdemoiselles": "mademoiselle",
 }
 
 # We want this to work after dashes and accents have been removed so we don't write them here.
@@ -101,7 +107,7 @@ def remove_french_plurals(word):
         return word[:-1]
     if word.endswith("aux") and not word.endswith("eaux"):
         return word[:-3] + "al"
-    if word.endswith("x") and word not in FRENCH_IRREGULAR_PLURALS:
+    if word.endswith("x"):
         return word[:-1]
     return word
 
@@ -112,8 +118,19 @@ def remove_small_roman_numerals(text: str) -> str:
 
 
 def remove_sentences_starting_with(
-    text: str, patterns: list[str], delimiter_pattern: str = r"[\.\n][\.\s]*"
+    text: str, start_patterns: list[str], delimiter_pattern: str = r"[\.\!\?\n\t–\-]+"
 ) -> str:
+    """
+    Remove sentences starting with any of the given patterns from the given text.
+
+    Parameters:
+    text (str): The input text from which sentences will be removed.
+    patterns (list[str]): A list of patterns. Sentences starting with any of these patterns will be removed.
+    delimiter_pattern (str): A regex pattern used to split the text into sentences. Default is r"(?:[\\.\\!\\?\\s]+)".
+
+    Returns:
+    str: The text with the specified sentences removed.
+    """
     sentences = [s for s in re.split(f"({delimiter_pattern})", text) if s]
     filtered_sentences = []
     skip_next = False
@@ -126,7 +143,7 @@ def remove_sentences_starting_with(
         sentence = sentences[i]
         if any(
             sentence.strip().lower().startswith(pattern.strip().lower())
-            for pattern in patterns
+            for pattern in start_patterns
         ):
             skip_next = True  # Skip the delimiter
         else:
@@ -154,16 +171,6 @@ def normalize_text(text: Optional[str]) -> str:
     # Remove most special characters
     text = re.sub(r"[^a-zA-Z0-9\s\-%]", "", text)
 
-    text = remove_sentences_starting_with(
-        text,
-        patterns=[
-            unidecode("la perte de recettes"),
-            unidecode(
-                "la charge pour l état et les collectivités territoriales est compensée"
-            ),
-        ],
-    )
-
     text = remove_stop_words(text)
     text = digitize_small_french_numbers(text)
     text = " ".join(remove_french_plurals(word) for word in text.split())
@@ -183,6 +190,16 @@ def extract_plain_text_from_html(encoded_html: str) -> None:
     return plain_text
 
 
+def remove_gage_sentences(text: str) -> str:
+    return remove_sentences_starting_with(
+        text,
+        start_patterns=[
+            unidecode("la perte de recettes"),
+            unidecode("la charge pour l'état"),
+        ],
+    )
+
+
 class AttributionTextNormalizer:
     @staticmethod
     def normalize_text(text: TxtContent) -> TxtContent:
@@ -198,22 +215,8 @@ class AttributionTextNormalizer:
         )
         # Remove extra whitespaces
         text = re.sub(r"\s+", " ", text)
-        text = AttributionTextNormalizer.ignore_predefined_sentences(text)
 
         return text
-
-    @staticmethod
-    def ignore_predefined_sentences(text: TxtContent) -> TxtContent:
-        return remove_sentences_starting_with(
-            text,
-            patterns=[
-                unidecode("la perte de recettes"),
-                unidecode(
-                    "la charge pour l'état et les collectivités territoriales est compensée"
-                ),
-            ],
-            delimiter_pattern=r"(?<! art)(?<! l)\.|(\n)",
-        )
 
 
 class SummaryTextNormalizer:
