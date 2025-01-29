@@ -29,6 +29,7 @@ from pathlib import Path
 
 import httpx
 import pandas as pd
+from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.attribution.attribution_data_loader import AttributionDataLoader
@@ -44,7 +45,10 @@ from graal.summary.llm_clients import (
 )
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import AttributionTextNormalizer
+from graal.utils.text_utils import (
+    AttributionTextNormalizer,
+    remove_gage_sentences,
+)
 
 logging.config.fileConfig("logging.conf")
 
@@ -266,6 +270,15 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         acronym_mapping=acronym_mapping,
         columns_to_normalize=["Exposé amdt", "Corps amdt"],
     )
+
+    amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
+        lambda text: remove_gage_sentences(unidecode(text))
+    )
+
+    amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
+        lambda text: remove_gage_sentences(unidecode(text))
+    )
+
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
         amendments_df=amendments_df,
         columns_to_clear=columns_to_work_on["to_clear"],
@@ -318,10 +331,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
             "Corps amdt"
         ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
-
-        amdt_with_attribution_df.loc[:, "Exposé amdt"] = amdt_with_attribution_df[
-            "Exposé amdt"
-        ].apply(lambda x: AttributionTextNormalizer.ignore_predefined_sentences(str(x)))
 
         amdt_with_attribution_df.loc[:, "Exposé amdt"] = amdt_with_attribution_df[
             "Exposé amdt"

@@ -1,10 +1,12 @@
 import logging
 
 import pandas as pd
+from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.sheet_data_loader import SheetDataLoader
+from graal.utils.text_utils import remove_gage_sentences
 
 
 def load_test_file_to_compare(
@@ -44,6 +46,9 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         amendments_df=normalized_amdt_df,
         acronym_mapping=acronym_mapping,
         columns_to_normalize=["Exposé amdt", "Corps amdt"],
+    )
+    normalized_amdt_df["Corps amdt"] = normalized_amdt_df["Corps amdt"].apply(
+        lambda text: remove_gage_sentences(unidecode(text))
     )
     normalized_amdt_df = AmendmentPreProcessor.handle_common_amendment_bodies(
         amendments_df=normalized_amdt_df
