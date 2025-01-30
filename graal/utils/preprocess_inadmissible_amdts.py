@@ -52,7 +52,7 @@ def main():
         suffixes=("_tmp", ""),
         how="left",
     )
-    amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+    amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
         amendments_df=amendments_df, columns_to_filter=["Corps amdt"]
     )
     amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(

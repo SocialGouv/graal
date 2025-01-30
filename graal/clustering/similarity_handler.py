@@ -25,7 +25,7 @@ class SimilarityHandler:
             acronym_mapping=acronym_mapping,
             columns_to_normalize=["Exposé amdt", "Corps amdt"],
         )
-        amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+        amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
             amendments_df=amendments_df,
             columns_to_filter=["Exposé amdt", "Corps amdt", "Num article"],
         )
@@ -79,7 +79,7 @@ class SimilarityHandler:
         merged_closest_amdts: dict[int, dict] = {}
 
         for column in columns_to_process:
-            # In some cases we don't want to look for similarity in all old amendments so we have this filter here
+            # In some cases we want to look for similarity only in a subset of the old amendments (origin_project) for example
             filter_func = column_filtering_funcs.get(column, lambda x, _y: x)
             df_to_compare = filter_func(
                 preprocessed_old_amendments_df, preprocessed_new_amendments_df
@@ -89,18 +89,18 @@ class SimilarityHandler:
                     f"No old amendments to compare for column {column}. Skipping..."
                 )
                 continue
-            similarity_evaluator = SimilarityFinder(
+            similarity_finder = SimilarityFinder(
                 old_amendments_df=df_to_compare,
                 new_amendments_df=preprocessed_new_amendments_df,
             )
-            clusters = similarity_evaluator.clusterize_similar_amdts(
+            clusters = similarity_finder.clusterize_similar_amdts(
                 column_used_for_clustering=column,
                 clustering_similarity_threshold=clustering_similarity_thresholds.get(
                     column, default_clustering_similarity_threshold
                 ),
             )
 
-            closest_amdts = similarity_evaluator.find_best_matches(
+            closest_amdts = similarity_finder.find_best_matches(
                 column_used_for_similarity=column,
                 clusters=clusters,
                 fuzzy_match_similarity_threshold=fuzzy_match_similarity_thresholds.get(

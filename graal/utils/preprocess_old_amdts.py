@@ -289,6 +289,9 @@ def load_and_preprocess_amendments(
     amendments_df = AmendmentPreProcessor.concatenate_dataframes(
         amendments_df_json, amendments_df_excel
     )
+    amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
+        amendments_df, ["Réponse"]
+    )
     for index, row in amendments_df.iterrows():
         amendments_df.at[index, "Corps amdt"] = (
             row["Corps amdt"]

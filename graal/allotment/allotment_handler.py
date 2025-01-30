@@ -34,7 +34,7 @@ class AllotmentHandler:
             acronym_mapping=acronym_mapping,
             columns_to_normalize=["Corps amdt"],
         )
-        prepared_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+        prepared_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
             amendments_df=prepared_df, columns_to_filter=["Corps amdt"]
         )
         prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
