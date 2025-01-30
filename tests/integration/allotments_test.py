@@ -17,7 +17,7 @@ def load_test_file_to_compare(
 
 
 def test_populate_allotments_ratio_matching_allotments() -> None:
-    CONFIG_FILE = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
+    CONFIG_FILE = "tests/integration/test_data/Fichier de configuration GRAAL - Test integrations.xlsx"
 
     config_excel = pd.read_excel(CONFIG_FILE, sheet_name=None)
     acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
