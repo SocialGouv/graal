@@ -145,7 +145,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_plfss_23_jan_2025_2"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_plfss_23_jan_2025_3"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -223,7 +223,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.load_amendments_json(
         list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
     )
-    # amendments_df = amendments_df[amendments_df["amdt_idx"] == 2]
 
     if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
         amendments_df["mission_titre_court"] = (
@@ -244,6 +243,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
+    # amendments_df = amendments_df[amendments_df["Num amdt"] == 169]
     original_amdt_df = amendments_df.copy()
 
     if args.placeholder_amdt_body:
@@ -261,7 +261,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         print(f"Ignoring num amdts: {amdt_nums}")
 
     acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
-    amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+    amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
         amendments_df=amendments_df,
         columns_to_filter=["Exposé amdt"],
     )
@@ -287,11 +287,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     preprocessed_original_amdt_df = amendments_df.copy()
 
     if args.allotments:
-        normalized_for_allot_df = (
-            AmendmentPreProcessor.remove_empty_rows_for_given_columns(
-                amendments_df=intermediate_amdts_df,
-                columns_to_filter=["Corps amdt"],
-            )
+        normalized_for_allot_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
+            amendments_df=intermediate_amdts_df,
+            columns_to_filter=["Corps amdt"],
         )
         normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=normalized_for_allot_df
@@ -363,7 +361,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
         new_amendments_df = intermediate_amdts_df
         saved_new_amendments_df = new_amendments_df.copy()
-        new_amendments_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+        new_amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
             amendments_df=new_amendments_df,
             columns_to_filter=["Exposé amdt", "Corps amdt"],
         )
@@ -393,6 +391,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             },
             column_filtering_funcs={
                 "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
+            },
+            column_group_by_columns={
+                "Corps amdt": ["Num article"],
             },
         )
 

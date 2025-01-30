@@ -184,3 +184,73 @@ def test_find_best_matching_docs_with_preference_for_non_empty_responses():
     )
 
     assert closest_docs == expected_output
+
+
+def test_clusterize_similar_amdts_with_group_by_columns():
+    old_amendments_df = pd.DataFrame(
+        {
+            "Exposé amdt": [
+                "Cet amendement aborde le ABC et le DEF",
+                "Cet amendement aborde le GHI",
+                "Cet amendement aborde le JKL et le MNO",
+                "Un amendement qui n'a rien à voir",
+            ],
+            "amdt_idx": [1, 2, 3, 4],
+            "Num article": [1, 1, 2, 2],
+        }
+    )
+    new_amendments_df = pd.DataFrame(
+        {
+            "Exposé amdt": [
+                "Cet amendement aborde le JKL",
+                "Cet amendement aborde le ABC et le DEF",
+                "no match",
+                "Cet amendement aborde le DEF",
+            ],
+            "amdt_idx": [5, 6, 7, 8],
+            "Num article": [2, 1, 1, 1],
+        }
+    )
+    similarity_finder = SimilarityFinder(
+        old_amendments_df, new_amendments_df, group_by_columns=["Num article"]
+    )
+    similar_doc_indices = similarity_finder.clusterize_similar_amdts(
+        clustering_similarity_threshold=0.7
+    )
+    assert similar_doc_indices == {5: [3], 6: [1], 8: [1]}
+
+
+def test_clusterize_similar_amdts_with_multiple_group_by_columns():
+    old_amendments_df = pd.DataFrame(
+        {
+            "Exposé amdt": [
+                "Cet amendement aborde le ABC et le DEF",
+                "Cet amendement aborde le GHI",
+                "Cet amendement aborde le JKL et le MNO",
+                "Un amendement qui n'a rien à voir",
+            ],
+            "amdt_idx": [1, 2, 3, 4],
+            "Num article": [1, 1, 2, 2],
+            "Auteur": ["A", "B", "A", "B"],
+        }
+    )
+    new_amendments_df = pd.DataFrame(
+        {
+            "Exposé amdt": [
+                "Cet amendement aborde le JKL",
+                "Cet amendement aborde le ABC et le DEF",
+                "no match",
+                "Cet amendement aborde le DEF",
+            ],
+            "amdt_idx": [5, 6, 7, 8],
+            "Num article": [2, 1, 1, 1],
+            "Auteur": ["A", "A", "B", "A"],
+        }
+    )
+    similarity_finder = SimilarityFinder(
+        old_amendments_df, new_amendments_df, group_by_columns=["Num article", "Auteur"]
+    )
+    similar_doc_indices = similarity_finder.clusterize_similar_amdts(
+        clustering_similarity_threshold=0.7
+    )
+    assert similar_doc_indices == {5: [3], 6: [1], 8: [1]}

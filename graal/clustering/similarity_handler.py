@@ -66,6 +66,7 @@ class SimilarityHandler:
         clustering_similarity_thresholds: dict[ColumnName, float],
         fuzzy_match_similarity_thresholds: dict[ColumnName, float],
         similarity_threshold_overrides: dict[ColumnName, dict[str, float]],
+        column_group_by_columns: dict[ColumnName, list[ColumnName]],
         default_clustering_similarity_threshold: float = 0.4,
         default_fuzzy_match_similarity_threshold: float = 0.9,
         column_filtering_funcs: Optional[
@@ -92,6 +93,7 @@ class SimilarityHandler:
             similarity_finder = SimilarityFinder(
                 old_amendments_df=df_to_compare,
                 new_amendments_df=preprocessed_new_amendments_df,
+                group_by_columns=column_group_by_columns.get(column, None),
             )
             clusters = similarity_finder.clusterize_similar_amdts(
                 column_used_for_clustering=column,

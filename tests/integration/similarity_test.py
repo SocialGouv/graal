@@ -89,6 +89,7 @@ def run_test(
         fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides=similarity_threshold_overrides,
         column_filtering_funcs=column_filtering_funcs,
+        column_group_by_columns={},
     )
 
     # COMPUTE THE DIFFERENCE
