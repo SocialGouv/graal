@@ -105,6 +105,11 @@ class AttributionPopulator:
     def update_with_keyword_matches(
         row: pd.Series, keyword_matches_df: pd.DataFrame, column_name: str
     ) -> pd.Series:
+        """
+        Update the "Affectation (nom)" column of the given row with the keyword matches from the keyword_matches_df.
+        If the row already has attributions, the function will only update the attributions if there is an intersection
+        between the current attributions and the keyword matches.
+        """
         current_attribution_names = row.get("Affectation (nom)", [])
 
         # If there is only one attribution, no need to update it
