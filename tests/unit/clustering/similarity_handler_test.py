@@ -147,6 +147,7 @@ def test_populate():
         clustering_similarity_thresholds=clustering_similarity_thresholds,
         fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides=similarity_threshold_overrides,
+        column_group_by_columns={},
     )
 
     assert (
@@ -241,6 +242,7 @@ def test_populate_same_body_but_different_project_should_not_match():
         fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides=similarity_threshold_overrides,
         column_filtering_funcs=column_filtering_funcs,
+        column_group_by_columns={},
     )
 
     assert (

@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,38 +15,81 @@ class SimilarityFinder:
         self,
         old_amendments_df: pd.DataFrame,
         new_amendments_df: pd.DataFrame,
+        group_by_columns: Optional[list[str]] = None,
     ):
         self.old_amendments_df = old_amendments_df
         self.new_amendments_df = new_amendments_df
+        self.group_by_columns = group_by_columns
 
     def clusterize_similar_amdts(
         self,
         column_used_for_clustering: str = "Exposé amdt",
-        clustering_similarity_threshold=0.60,
+        clustering_similarity_threshold: float = 0.60,
     ) -> dict[IntIndex, list[IntIndex]]:
         """
         Clusterize similar documents using TF-IDF comparison on the `column_used_for_clustering` field from both old and new amendments.
 
         Returns: A dictionary representing clusters of documents, where keys are the amdt_idx of new
         amendments and values are lists of amdt_idx of similar old amendments. This will be used to
-        identify the best matches in subsequent steps. This will be used to identify the best matches in subsequent steps.
+        identify the best matches in subsequent steps.
         """
         logging.info(
             f'Pre-filtering similar "{column_used_for_clustering}" for optimization...'
         )
-        clusters = SimilarityFinder.tf_idf_filtering(
-            old_amdt_values=self.old_amendments_df[column_used_for_clustering].tolist(),
-            new_amd_values=self.new_amendments_df[column_used_for_clustering].tolist(),
-            threshold=clustering_similarity_threshold,
-        )
-        # Transform indices into corresponding amdt_idx
-        clusters = {
-            self.new_amendments_df.iloc[new_idx]["amdt_idx"]: [
-                self.old_amendments_df.iloc[old_idx]["amdt_idx"]
-                for old_idx in old_indices
-            ]
-            for new_idx, old_indices in clusters.items()
-        }
+
+        if self.group_by_columns:
+            grouped_old_df = self.old_amendments_df.groupby(
+                self.group_by_columns
+                if len(self.group_by_columns) > 1
+                else self.group_by_columns[0]
+            )
+            grouped_new_df = self.new_amendments_df.groupby(
+                self.group_by_columns
+                if len(self.group_by_columns) > 1
+                else self.group_by_columns[0]
+            )
+            clusters = {}
+
+            for group_key, old_group_df in grouped_old_df:
+                if group_key in grouped_new_df.groups:
+                    new_group_df = grouped_new_df.get_group(group_key)
+                    group_clusters = SimilarityFinder.tf_idf_filtering(
+                        old_amdt_values=old_group_df[
+                            column_used_for_clustering
+                        ].tolist(),
+                        new_amd_values=new_group_df[
+                            column_used_for_clustering
+                        ].tolist(),
+                        threshold=clustering_similarity_threshold,
+                    )
+                    # Transform indices into corresponding amdt_idx
+                    group_clusters = {
+                        new_group_df.iloc[new_idx]["amdt_idx"]: [
+                            old_group_df.iloc[old_idx]["amdt_idx"]
+                            for old_idx in old_indices
+                        ]
+                        for new_idx, old_indices in group_clusters.items()
+                    }
+                    clusters.update(group_clusters)
+        else:
+            clusters = SimilarityFinder.tf_idf_filtering(
+                old_amdt_values=self.old_amendments_df[
+                    column_used_for_clustering
+                ].tolist(),
+                new_amd_values=self.new_amendments_df[
+                    column_used_for_clustering
+                ].tolist(),
+                threshold=clustering_similarity_threshold,
+            )
+            # Transform indices into corresponding amdt_idx
+            clusters = {
+                self.new_amendments_df.iloc[new_idx]["amdt_idx"]: [
+                    self.old_amendments_df.iloc[old_idx]["amdt_idx"]
+                    for old_idx in old_indices
+                ]
+                for new_idx, old_indices in clusters.items()
+            }
+
         list_lengths = [len(docs) for docs in clusters.values()]
         if list_lengths:
             average_length = sum(list_lengths) / len(list_lengths)
