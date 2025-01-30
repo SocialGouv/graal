@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Callable, Optional
 
 import pandas as pd
@@ -30,8 +31,9 @@ def run_test(
     column_filtering_funcs: Optional[
         dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
     ] = None,
+    column_group_by_columns: Optional[dict[ColumnName, list[ColumnName]]] = None,
 ) -> None:
-    CONFIG_FILE = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
+    CONFIG_FILE = "tests/integration/test_data/Fichier de configuration GRAAL - Test integrations.xlsx"
 
     config_excel = pd.read_excel(CONFIG_FILE, sheet_name=None)
 
@@ -89,7 +91,7 @@ def run_test(
         fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides=similarity_threshold_overrides,
         column_filtering_funcs=column_filtering_funcs,
-        column_group_by_columns={},
+        column_group_by_columns=column_group_by_columns or {},
     )
 
     # COMPUTE THE DIFFERENCE
@@ -163,7 +165,7 @@ def run_test(
 
 
 def test_integration_similarity_expose():
-    file_path = "tests/integration/test_data/test_similarities_expose.xlsx"
+    file_path = Path("tests/integration/test_data/test_similarities_expose.xlsx")
     clustering_similarity_thresholds = {
         "Exposé amdt": 0.2,
     }
@@ -182,7 +184,7 @@ def test_integration_similarity_expose():
 
 
 def test_integration_similarity_body():
-    file_path = "tests/integration/test_data/test_similarities_body.xlsx"
+    file_path = Path("tests/integration/test_data/test_similarities_body.xlsx")
     clustering_similarity_thresholds = {
         "Corps amdt": 0.4,
     }
@@ -196,5 +198,8 @@ def test_integration_similarity_body():
         similarity_threshold_overrides={},
         column_filtering_funcs={
             "Corps amdt": SimilarityHandler.filter_old_amendments_by_project
+        },
+        column_group_by_columns={
+            "Corps amdt": ["Num article"],
         },
     )
