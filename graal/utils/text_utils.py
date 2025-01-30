@@ -208,6 +208,7 @@ class AttributionTextNormalizer:
         text = unidecode(text.strip().lower())
         # Replace dashes with a space unless they are surrounded by numbers
         text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
+        # Replace various Unicode space characters with a regular space
         text = re.sub(
             r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000]",
             " ",
