@@ -117,7 +117,7 @@ def derive_columns_to_work_on_from_anebaled_features(
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     GRAAL_CONFIG_FILE = Path(
-        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - latest.xlsx"
+        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
     )
     PREPROCESSED_INADMISSIBLE_FILE = Path(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
@@ -127,9 +127,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(f"{DATA_FOLDER}/input_plfss/lecture-an-17-325-PO838901.json"): {
+        Path(f"{DATA_FOLDER}/input_plfss/lecture-an-17-622-PO420120.json"): {
             "default_processing_timestamp": int(
-                datetime(2025, month=1, day=30).timestamp()
+                datetime(2025, month=1, day=23).timestamp()
             ),
             "origin_project": "PLFSS 2025",
             # "origin_project": "PPL Fin de vie",
@@ -145,7 +145,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_plfss_30_jan_2025"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/comparaison_semaine_dernière"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -243,7 +243,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
-    # amendments_df = amendments_df[amendments_df["Num amdt"] == 1027]
+    # amendments_df = amendments_df[amendments_df["Num amdt"] == 614]
     original_amdt_df = amendments_df.copy()
 
     if args.placeholder_amdt_body:

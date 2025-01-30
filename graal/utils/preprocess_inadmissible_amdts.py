@@ -22,7 +22,7 @@ def main():
     )
 
     ATTRIBUTION_MAPPINGS_FILE = (
-        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - latest.xlsx"
+        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
     )
     attribution_mappings_excel = pd.read_excel(
         ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
