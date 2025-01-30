@@ -26,7 +26,9 @@ logging.config.fileConfig("logging.conf")
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
 OUTPUT_FILE = Path(f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl")
-ATTRIBUTION_MAPPINGS_FILE = Path(f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx")
+ATTRIBUTION_MAPPINGS_FILE = Path(
+    f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - latest.xlsx"
+)
 
 ONE_YEAR_IN_SECONDS: Seconds = 365 * 24 * 60 * 60
 

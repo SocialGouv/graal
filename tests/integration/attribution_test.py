@@ -16,7 +16,7 @@ from graal.utils.text_utils import AttributionTextNormalizer, remove_gage_senten
 
 def test_integration_attribute_amendments():
     TEST_FILE = "tests/integration/test_data/test_attribution.xlsx"
-    CONFIG_FILE = "tests/integration/test_data/mappings_attributions_for_tests.xlsx"
+    CONFIG_FILE = "tests/integration/test_data/Fichier de configuration GRAAL - Test integrations.xlsx"
 
     # Make sure that random choices are always the same in this test
     np.random.seed(42)

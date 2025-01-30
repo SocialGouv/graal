@@ -21,7 +21,9 @@ def main():
         f"{DATA_FOLDER}/export_plfss_commission/export_1ere_commission_2025.json"
     )
 
-    ATTRIBUTION_MAPPINGS_FILE = f"{DATA_FOLDER}/mappings_attributions_nov_14.xlsx"
+    ATTRIBUTION_MAPPINGS_FILE = (
+        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - latest.xlsx"
+    )
     attribution_mappings_excel = pd.read_excel(
         ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
     )

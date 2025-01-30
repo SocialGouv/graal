@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
-from graal.populate_summaries import AmendmentSummarizer
+from graal.summary.summary_handler import AmendmentSummarizer
 from graal.summary.llm_clients import LLMAPIClient
 from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
