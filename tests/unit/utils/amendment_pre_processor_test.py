@@ -72,7 +72,7 @@ def test_remove_useless_amendments():
         }
     )
     processor = AmendmentPreProcessor
-    result_df = processor.remove_empty_rows_for_given_columns(
+    result_df = processor.drop_empty_rows_in_columns(
         amendments_df=df, columns_to_filter=["Corps amdt"]
     )
 

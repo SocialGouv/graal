@@ -247,10 +247,13 @@ class AmendmentPreProcessor:
         return amendments_df
 
     @staticmethod
-    def remove_empty_rows_for_given_columns(
+    def drop_empty_rows_in_columns(
         amendments_df: pd.DataFrame,
         columns_to_filter: list[ColumnName],
     ) -> pd.DataFrame:
+        """
+        Drop rows where the specified columns are empty or contain only whitespace.
+        """
         for column in columns_to_filter:
             amendments_df.dropna(subset=column, inplace=True)
             amendments_df = amendments_df[

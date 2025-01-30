@@ -39,7 +39,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     original_amendments_df["Allotissement"] = None
     normalized_amdt_df = original_amendments_df.copy()
 
-    normalized_amdt_df = AmendmentPreProcessor.remove_empty_rows_for_given_columns(
+    normalized_amdt_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
         amendments_df=normalized_amdt_df, columns_to_filter=["Corps amdt"]
     )
     normalized_amdt_df = AmendmentPreProcessor.replace_acronyms(
