@@ -1,3 +1,6 @@
+import logging
+import logging.config
+
 import pandas as pd
 
 from graal.custom_types import IntIndex, Prompt
@@ -6,6 +9,8 @@ from graal.summary.summary_generation_load_balancer import (
 )
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
 from graal.utils.text_utils import SummaryTextNormalizer
+
+logging.config.fileConfig("logging.conf")
 
 
 class AmendmentSummarizer:
@@ -74,6 +79,9 @@ class AmendmentSummarizer:
         if (
             cleaned_explanatory_statement.startswith(
                 SummaryTextNormalizer.normalize_text("Amendement rédactionnel.")
+            )
+            or cleaned_explanatory_statement.startswith(
+                SummaryTextNormalizer.normalize_text("Rédactionnel.")
             )
             or SummaryTextNormalizer.normalize_text("correction d'erreur matérielle")
             in cleaned_explanatory_statement
