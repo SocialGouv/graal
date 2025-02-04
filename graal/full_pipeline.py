@@ -70,7 +70,7 @@ def parse_arguments():
     return load_config(args.config)
 
 
-def derive_columns_to_work_on_from_anebaled_features(
+def derive_columns_to_work_on_from_enabled_features(
     args: argparse.Namespace,
 ) -> ColumnsToWorkOn:
     columns_to_clear = {"Commentaires"}
@@ -164,7 +164,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         "amdt_idx",
     ]
 
-    columns_to_work_on = derive_columns_to_work_on_from_anebaled_features(args)
+    columns_to_work_on = derive_columns_to_work_on_from_enabled_features(args)
 
     config_excel = pd.read_excel(GRAAL_CONFIG_FILE, sheet_name=None)
 
