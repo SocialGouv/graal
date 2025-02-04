@@ -143,6 +143,67 @@ for _ in range(6):
 llm_api_clients.append(FakeLLMAPIClient())
 ```
 
+## Similarity Data Base
+
+The system includes functionality to build a DB with old amendments for similarity search. This preprocessed data is used to find similarities between new and old amendments in the pipeline.
+
+### Running the Script
+
+You can run the script with specific projects or all projects:
+
+```bash
+# Process specific projects (e.g., PLFSS and PLACSS)
+python graal/utils/build_similarity_db.py --projects PLFSS PLACSS
+
+# Process all available projects
+python graal/utils/build_similarity_db.py
+```
+
+### Adding New Projects
+
+To add support for a new project type:
+
+1. Create a new configuration file in `graal/utils/config/` (e.g., `my_project_config.py`) following this pattern:
+
+```python
+from pathlib import Path
+from .base_config import ProjectConfig, InputFileConfig, create_timestamp, get_data_path
+
+def get_my_project_config() -> ProjectConfig:
+    """Get MyProject configuration."""
+
+    json_configs: dict[Path, InputFileConfig] = {
+        get_data_path("exports_lectures/MyProject/file1.json"): {
+            "default_processing_timestamp": create_timestamp(2024, 1, 1),
+            "origin_project": "MyProject 2024",
+        },
+    }
+
+    excel_configs: dict[Path, InputFileConfig] = {
+        get_data_path("exports_lectures/MyProject/file1.xlsx"): {
+            "default_processing_timestamp": create_timestamp(2024, 1, 1),
+            "origin_project": "MyProject 2024",
+        },
+    }
+
+    return ProjectConfig(json_configs=json_configs, excel_configs=excel_configs)
+```
+
+1. Add your project to `ProjectConfigManager.AVAILABLE_PROJECTS` in `graal/utils/config/project_config_manager.py`:
+
+```python
+AVAILABLE_PROJECTS = {
+    "PLFSS": get_plfss_config,
+    "PLACSS": get_placss_config,
+    # ... other projects ...
+    "MY_PROJECT": get_my_project_config,  # Add your project here
+}
+```
+
+```bash
+python graal/utils/build_similarity_db.py --projects MY_PROJECT
+```
+
 ## Run through Docker
 
 Build image:
