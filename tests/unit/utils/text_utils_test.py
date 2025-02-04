@@ -246,8 +246,8 @@ def test_attribution_text_normalizer(input_text, expected_output):
             "special characters like !?., should be removed.",
         ),
         (
-            "Accented characters like é, à, and ü should be kept.",
-            "accented characters like é, à, and ü should be kept.",
+            "Accented characters like é, à, and ü should be replaced.",
+            "accented characters like e, a, and u should be replaced.",
         ),
         (
             " Leading and trailing spaces should be trimmed.   ",

@@ -222,9 +222,10 @@ class AmendmentPreProcessor:
         """
 
         very_common_patterns = [
-            "amendement rédactionnel",
+            r"amendement rédactionnel",
+            r"Rédactionnel\.",
         ]
-        combined_pattern = "|".join(very_common_patterns)
+        combined_pattern = r"|".join(very_common_patterns)
 
         # Create mask with regex. It does not need to be an exact match
         mask = (

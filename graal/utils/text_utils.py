@@ -227,7 +227,8 @@ class SummaryTextNormalizer:
         Pre-process the user text to safely integrate into an LLM prompt.
         """
 
-        cleaned_text = re.sub(r"[’]", "'", text)
+        cleaned_text = unidecode(text)
+        cleaned_text = re.sub(r"[’]", "'", cleaned_text)
 
         cleaned_text = cleaned_text.replace("\n", " ").replace("\r", "").lower()
         cleaned_text = re.sub(
