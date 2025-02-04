@@ -16,11 +16,13 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import Acronym, InputFileConfig, IntIndex, Seconds
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.text_utils import remove_gage_sentences
 
 logging.config.fileConfig("logging.conf")
 
@@ -293,6 +295,12 @@ def load_and_preprocess_amendments(
     )
     amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
         amendments_df, ["Réponse"]
+    )
+    amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
+        lambda text: remove_gage_sentences(unidecode(text))
+    )
+    amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
+        lambda text: remove_gage_sentences(unidecode(text))
     )
     for index, row in amendments_df.iterrows():
         amendments_df.at[index, "Corps amdt"] = (
