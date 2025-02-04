@@ -1,6 +1,6 @@
 import pandas as pd
 
-from graal.utils.preprocess_old_amdts import (
+from graal.utils.build_similarity_db import (
     remove_oldest_and_without_response,
 )
 
