@@ -13,7 +13,7 @@ import os
 import pickle  # nosec
 import time
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 import pandas as pd
 from unidecode import unidecode
@@ -28,13 +28,13 @@ from graal.utils.text_utils import remove_gage_sentences
 logging.config.fileConfig("logging.conf")
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
-OUTPUT_FILE = Path(f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl")
+DEFAULT_OUTPUT_FILE = Path(f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl")
 ATTRIBUTION_MAPPINGS_FILE = Path(
     f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
 )
 
 
-def parse_args() -> List[str]:
+def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Preprocess old amendments for similarity search."
@@ -45,8 +45,14 @@ def parse_args() -> List[str]:
         choices=list(ProjectConfigManager.AVAILABLE_PROJECTS.keys()),
         help="List of projects to include (e.g., PLFSS PLACSS). If not specified, includes all projects.",
     )
+    parser.add_argument(
+        "--output",
+        type=str,
+        help="Output pickle file path (default: data/preprocessed/pre_processed_old_amdts.pkl)",
+        default=DEFAULT_OUTPUT_FILE,
+    )
     args = parser.parse_args()
-    return args.projects
+    return args.projects, Path(args.output)
 
 
 def remove_oldest_and_without_response(
@@ -65,21 +71,34 @@ def load_and_preprocess_amendments(
     file_configs_excel: dict[Path, Any],
     acronym_mapping: dict[Acronym, str],
 ) -> pd.DataFrame:
-    amendments_df_json = AmendmentPreProcessor.load_amendments_json(
-        list(file_configs_json.keys()), file_configs_json
-    )
-    amendments_df_json = SimilarityHandler.preprocess_for_similarity(
-        amendments_df_json, acronym_mapping
-    )
-    amendments_df_excel = AmendmentPreProcessor.load_amendments_excel(
-        list(file_configs_excel.keys()), file_configs_excel
-    )
-    amendments_df_excel = SimilarityHandler.preprocess_for_similarity(
-        amendments_df_excel, acronym_mapping
-    )
-    amendments_df = AmendmentPreProcessor.concatenate_dataframes(
-        amendments_df_json, amendments_df_excel
-    )
+    if file_configs_json:
+        amendments_df_json = AmendmentPreProcessor.load_amendments_json(
+            list(file_configs_json.keys()), file_configs_json
+        )
+        amendments_df_json = SimilarityHandler.preprocess_for_similarity(
+            amendments_df_json, acronym_mapping
+        )
+    else:
+        amendments_df_json = pd.DataFrame()
+    if file_configs_excel:
+        amendments_df_excel = AmendmentPreProcessor.load_amendments_excel(
+            list(file_configs_excel.keys()), file_configs_excel
+        )
+        amendments_df_excel = SimilarityHandler.preprocess_for_similarity(
+            amendments_df_excel, acronym_mapping
+        )
+    else:
+        amendments_df_excel = pd.DataFrame()
+
+    if not amendments_df_json.empty and not amendments_df_excel.empty:
+        amendments_df = AmendmentPreProcessor.concatenate_dataframes(
+            amendments_df_json, amendments_df_excel
+        )
+    elif not amendments_df_json.empty:
+        amendments_df = amendments_df_json
+    else:
+        amendments_df = amendments_df_excel
+
     amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
         amendments_df, ["Réponse"]
     )
@@ -117,7 +136,7 @@ def save_processed_amendments(df: pd.DataFrame, output_file: Path):
 
 def main():
     # Parse command line arguments
-    project_names = parse_args()
+    project_names, output_file = parse_args()
 
     # Load project configurations
     project_config = ProjectConfigManager.get_project_configs(project_names)
@@ -142,7 +161,7 @@ def main():
     logging.info(
         f"Number of old amendments available for similarity search: {len(processed_df)}"
     )
-    save_processed_amendments(processed_df, OUTPUT_FILE)
+    save_processed_amendments(processed_df, output_file)
 
 
 if __name__ == "__main__":

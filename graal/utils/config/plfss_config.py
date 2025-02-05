@@ -3,7 +3,8 @@ PLFSS-specific configuration for amendment preprocessing.
 """
 
 from pathlib import Path
-from .base_config import ProjectConfig, InputFileConfig, create_timestamp, get_data_path
+
+from .base_config import InputFileConfig, ProjectConfig, create_timestamp, get_data_path
 
 
 def get_plfss_config() -> ProjectConfig:
@@ -35,26 +36,22 @@ def get_plfss_config() -> ProjectConfig:
             "origin_project": "PLFSS 2022",
         },
         get_data_path(
-            "exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-118-PO78718.json"
+            "exports_lectures/PLFSS 2022/lecture-senat-2021-2022-118-PO78718.json"
         ): {
             "default_processing_timestamp": create_timestamp(2022, 7, 1),
             "origin_project": "PLFSS 2023",
         },
         get_data_path(
-            "exports_lectures/PLFSS 2022 - JSON/lecture-senat-2021-2022-189-PO78718.json"
+            "exports_lectures/PLFSS 2022/lecture-senat-2021-2022-189-PO78718.json"
         ): {
             "default_processing_timestamp": create_timestamp(2022, 7, 1),
             "origin_project": "PLFSS 2023",
         },
-        get_data_path(
-            "exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4685-PO717460.json"
-        ): {
+        get_data_path("exports_lectures/PLFSS 2022/lecture-an-15-4685-PO717460.json"): {
             "default_processing_timestamp": create_timestamp(2022, 7, 1),
             "origin_project": "PLFSS 2023",
         },
-        get_data_path(
-            "exports_lectures/PLFSS 2022 - JSON/lecture-an-15-4523-PO717460.json"
-        ): {
+        get_data_path("exports_lectures/PLFSS 2022/lecture-an-15-4523-PO717460.json"): {
             "default_processing_timestamp": create_timestamp(2022, 7, 1),
             "origin_project": "PLFSS 2023",
         },

@@ -157,8 +157,16 @@ class SimilarityHandler:
                 # Extract the matching details
                 matching_origin_project = matching_amendment["origin_project"].values[0]
                 matching_num_amdt = matching_amendment["Num amdt"].values[0]
-                matching_lecture = matching_amendment["Lecture"].values[0]
-                matching_organe = matching_amendment["Organe"].values[0]
+                matching_lecture = (
+                    matching_amendment["Lecture"].values[0]
+                    if "Lecture" in matching_amendment.columns
+                    else ""
+                )
+                matching_organe = (
+                    matching_amendment["Organe"].values[0]
+                    if "Organe" in matching_amendment.columns
+                    else ""
+                )
 
                 # Update target DataFrame with the matched details
                 current_comments = target_df.loc[amdt_idx_mask, "Commentaires"].values[

@@ -4,15 +4,17 @@ Project configuration manager for amendment preprocessing.
 This module provides functionality to load and combine configurations from different projects.
 """
 
-from typing import Dict, List, Optional
 from pathlib import Path
+from typing import Dict, List, Optional
 
-from .base_config import ProjectConfig, InputFileConfig
-from .plfss_config import get_plfss_config
-from .placss_config import get_placss_config
-from .lfrss_config import get_lfrss_config
-from .ppl_config import get_ppl_config
-from .plf_config import get_plf_config
+from graal.utils.config.base_config import InputFileConfig, ProjectConfig
+from graal.utils.config.lfrss_config import get_lfrss_config
+from graal.utils.config.placss_config import get_placss_config
+from graal.utils.config.plf_config import get_plf_config
+from graal.utils.config.plfss_config import get_plfss_config
+from graal.utils.config.ppl_config import get_ppl_config
+from graal.utils.config.test_hyp_A import get_test_hyp_A_config
+from graal.utils.config.test_hyp_B import get_test_hyp_B_config
 
 
 class ProjectConfigManager:
@@ -24,6 +26,8 @@ class ProjectConfigManager:
         "LFRSS": get_lfrss_config,
         "PPL": get_ppl_config,
         "PLF": get_plf_config,
+        "TEST_A": get_test_hyp_A_config,
+        "TEST_B": get_test_hyp_B_config,
     }
 
     @classmethod
