@@ -99,8 +99,13 @@ def load_and_preprocess_amendments(
     else:
         amendments_df = amendments_df_excel
 
+    logging.info(f"Loaded {len(amendments_df)} old amendments")
+
     amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
         amendments_df, ["Réponse"]
+    )
+    logging.info(
+        f"Number of old amendments after dropping empty rows: {len(amendments_df)}"
     )
     amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
         lambda text: remove_gage_sentences(unidecode(text))
@@ -115,17 +120,6 @@ def load_and_preprocess_amendments(
             else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
         )
     return amendments_df
-
-
-def process_amendments(amendments_df: pd.DataFrame) -> pd.DataFrame:
-    allotted_amdt_clusters = AllotmentHandler.get_clusters(
-        amendments_df, group_by_columns=["Lecture", "origin_project", "Num article"]
-    )
-    return AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
-        normalized_amdt_df=amendments_df,
-        allotted_amdt_clusters=allotted_amdt_clusters,
-        removal_strategy_func=remove_oldest_and_without_response,
-    )
 
 
 def save_processed_amendments(df: pd.DataFrame, output_file: Path):
@@ -157,11 +151,20 @@ def main():
         project_config.excel_configs,
         acronym_mapping=acronym_mapping,
     )
-    processed_df = process_amendments(amendments_df)
-    logging.info(
-        f"Number of old amendments available for similarity search: {len(processed_df)}"
+
+    allotted_amdt_clusters = AllotmentHandler.get_clusters(
+        amendments_df, group_by_columns=["Lecture", "origin_project", "Num article"]
     )
-    save_processed_amendments(processed_df, output_file)
+    filtered_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
+        normalized_amdt_df=amendments_df,
+        allotted_amdt_clusters=allotted_amdt_clusters,
+        removal_strategy_func=remove_oldest_and_without_response,
+    )
+
+    logging.info(
+        f"Number of old amendments available for similarity search: {len(filtered_amdt_df)}"
+    )
+    save_processed_amendments(filtered_amdt_df, output_file)
 
 
 if __name__ == "__main__":
