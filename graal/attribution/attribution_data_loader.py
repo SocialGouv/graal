@@ -79,7 +79,7 @@ class AttributionDataLoader:
         return keywords_df
 
     @staticmethod
-    def load_name_to_user_info_mappings(excel_data: dict) -> dict[str, str]:
+    def load_name_to_user_info_mappings(excel_data: dict) -> dict[str, dict[str, str]]:
         """Load name and user info (email, entité pilote) mappings from the "Prénom Nom Mail" sheet."""
         user_info_df = excel_data["Prénom Nom Mail"]
         user_info_df.fillna("", inplace=True)
