@@ -5,6 +5,8 @@ and keyword or sentence matching to identify relevant entities and articles with
 and assigns attributions accordingly.
 """
 
+import logging
+import logging.config
 import re
 from multiprocessing import Pool, cpu_count
 from typing import Any
@@ -14,6 +16,8 @@ import pandas as pd
 
 from graal.attribution.attribution_matcher import AttributionMatcher
 from graal.custom_types import ColumnName, EntityType
+
+logging.config.fileConfig("logging.conf")
 
 
 class AttributionPopulator:
@@ -25,7 +29,7 @@ class AttributionPopulator:
         laws_articles_df: pd.DataFrame,
         ordonnances_articles_df: pd.DataFrame,
         keywords_df: pd.DataFrame,
-        name_to_user_info_mapping: dict[str, str],
+        name_to_user_info_mapping: dict[str, dict[str, str]],
         interstitial_only: bool = False,
     ):
         # Initialize sets and max lengths for codes, laws, and ordonnances
@@ -129,6 +133,8 @@ class AttributionPopulator:
             if isinstance(keyword_attribution, list)
             else [keyword_attribution]
             if isinstance(keyword_attribution, str)
+            else keyword_attribution.to_list()
+            if isinstance(keyword_attribution, pd.Series)
             else []
         )
 
