@@ -15,6 +15,7 @@ from graal.utils.config.plfss_config import get_plfss_config
 from graal.utils.config.ppl_config import get_ppl_config
 from graal.utils.config.test_hyp_A import get_test_hyp_A_config
 from graal.utils.config.test_hyp_B import get_test_hyp_B_config
+from graal.utils.config.test_hyp_C import get_test_hyp_C_config
 
 
 class ProjectConfigManager:
@@ -28,6 +29,7 @@ class ProjectConfigManager:
         "PLF": get_plf_config,
         "TEST_A": get_test_hyp_A_config,
         "TEST_B": get_test_hyp_B_config,
+        "TEST_C": get_test_hyp_C_config,
     }
 
     @classmethod

@@ -123,15 +123,15 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
-        f"{DATA_FOLDER}/preprocessed/sim_db_test_hyp_b.pkl"
+        f"{DATA_FOLDER}/preprocessed/sim_db_test_hyp_c.pkl"
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(f"{DATA_FOLDER}/input_plfss/PLFSS_2024_L1_AN_SP.json"): {
+        Path(f"{DATA_FOLDER}/input_plfss/PLFSS_2025_L1_SEN_SP.json"): {
             "default_processing_timestamp": int(
-                datetime(2023, month=6, day=2).timestamp()
+                datetime(2024, month=6, day=2).timestamp()
             ),
-            "origin_project": "PLFSS 2024",
+            "origin_project": "PLFSS 2025",
         },
     }
     # INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
@@ -144,7 +144,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/test_attrib"
+    OUTPUT_FILE_PREFIX = (
+        f"{DATA_FOLDER}/resultat_récurrence_hypothèse_C_PLFSS_2025_L1_SEN_SP"
+    )
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
