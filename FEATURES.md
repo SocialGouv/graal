@@ -1,5 +1,86 @@
 # Fonctionnalités de GRAAL
 
+## Fonctionnalité d'Allotissement
+
+La fonctionnalité d'allotissement permet d'identifier et de regrouper automatiquement les amendements identiques ou quasi-identiques. Cette fonctionnalité est particulièrement utile pour traiter efficacement les amendements déposés en plusieurs exemplaires par différents groupes parlementaires.
+
+### Prétraitement du Texte
+
+Avant d'analyser les amendements pour l'allotissement, le système effectue plusieurs étapes de préparation :
+
+1. **Normalisation du texte**
+   - Expansion des acronymes selon un mappage prédéfini
+   - Nettoyage des textes d'amendement :
+     - Suppression des phrases de "gage"
+     - Normalisation des espaces et de la ponctuation
+
+2. **Traitement des cas spéciaux**
+   - Gestion des corps d'amendements vides
+   - Standardisation du format des textes
+
+### Processus de Clustering
+
+1. **Regroupement Initial**
+   Le système regroupe d'abord les amendements selon des critères de base :
+   - Numéro d'article
+   - Projet d'origine
+   - Lecture parlementaire
+
+2. **Analyse en Deux Étapes**
+
+   a) **Première Étape : Clustering TF-IDF**
+   - Vectorisation des textes des amendements
+   - Calcul des matrices de similarité cosinus
+   - Application de DBSCAN pour identifier les clusters initiaux
+
+   b) **Seconde Étape : Raffinement**
+   - Utilisation de la distance de Damerau-Levenshtein
+   - Calcul des distances normalisées entre les textes
+   - Second passage de DBSCAN pour affiner les clusters
+   - Vérification fine des différences textuelles
+
+3. **Filtrage des Clusters**
+   - Conservation uniquement des clusters d'au moins 2 amendements
+
+### Gestion des Amendements Allotis
+
+1. **Sélection du Représentant**
+   Pour chaque groupe d'amendements identiques :
+   - Conservation d'un amendement représentatif
+   - Par défaut, le premier amendement du groupe est conservé
+
+2. **Propagation des Informations**
+   Le système copie automatiquement certaines informations depuis l'amendement représentatif vers tous les amendements du groupe en fin de traitement :
+   - Réponse
+   - Sort
+   - Commentaires
+   - Objet de l'amendement
+   - Avis du Gouvernement
+   - Affectations (email, nom, entité)
+
+### Optimisations et Performance
+
+1. **Optimisation des Comparaisons**
+   - Utilisation de TF-IDF pour un premier filtrage rapide
+   - Application de la distance de Damerau-Levenshtein uniquement sur les groupes présélectionnés
+   - Parallélisation des calculs de distance
+
+2. **Gestion de la Mémoire**
+   - Traitement par groupes d'amendements
+   - Optimisation des structures de données
+   - Nettoyage des données temporaires
+
+3. **Flexibilité**
+   - Seuils de similarité ajustables
+   - Stratégies de sélection configurables
+   - Support de différents formats d'entrée
+
+Ce processus automatisé permet d'assurer que :
+
+- Les amendements identiques sont rapidement identifiés et regroupés
+- Le traitement est cohérent et uniforme pour tous les amendements
+- Les informations sont correctement propagées au sein des groupes
+
 ## Fonctionnalité d'Attribution
 
 Lorsqu'un amendement est soumis, le système doit déterminer qui doit le réviser. Plutôt que de laisser une personne lire chaque amendement et décider manuellement, la fonctionnalité d'attribution automatise ce processus en analysant des informations spécifiques dans l'amendement.
