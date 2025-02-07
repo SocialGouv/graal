@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Any, Literal, TypedDict, Union
 
-AmendementTxt = str
 Acronym = str
+AmendementTxt = str
 APIKey = str
 CollectionMetadata = dict[str, Any]
 ColumnName = str
@@ -11,13 +11,16 @@ CredentialsUsername = str
 ExpertiseDesc = str
 ExpertiseID = str  # hash of ExpertDesc
 IntIndex = int
+Keyword = str
 LLMName = str
 Metadata = Union[str, int, float]
+PLFProgramName = str
 Prompt = str
 RateLimitPerMinute = int
 Seconds = int
 Timestamp = int
 TxtContent = str
+UserName = str
 
 LLMType = Literal[
     "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
