@@ -4,12 +4,14 @@ import numpy as np
 import pandas as pd
 from unidecode import unidecode
 
-from graal.attribution.example_usage import setup_plfss_attribution
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.text_utils import AttributionTextNormalizer, remove_gage_sentences
+from graal.attribution.project_configurations import (
+    build_plfss_attribution_handler,
+)
 
 
-def test_integration_attribute_amendments():
+def test_integration_plfss_attribution():
     TEST_FILE = "tests/integration/test_data/test_attribution.xlsx"
     CONFIG_FILE = "tests/integration/test_data/Fichier de configuration GRAAL - Test integrations.xlsx"
 
@@ -47,7 +49,7 @@ def test_integration_attribute_amendments():
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
     )
 
-    attribution_handler = setup_plfss_attribution(config_excel, acronym_mapping)
+    attribution_handler = build_plfss_attribution_handler(config_excel)
 
     amendments_df = attribution_handler.process_amendments(amendments_df)
 

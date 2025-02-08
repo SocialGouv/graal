@@ -33,7 +33,9 @@ from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.attribution.attribution_data_loader import AttributionDataLoader
-from graal.attribution.example_usage import setup_plfss_attribution
+from graal.attribution.project_configurations import (
+    get_attribution_handler_builder_func,
+)
 from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn, InputFileConfig
@@ -333,9 +335,12 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             "Exposé amdt"
         ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
 
-        attribution_handler = setup_plfss_attribution(config_excel, acronym_mapping)
+        builder_func = get_attribution_handler_builder_func(
+            args.attribution_project_name
+        )
+        attribution_handler = builder_func(config_excel)
 
-        if args.interstitial_only:
+        if args.attribution_interstitial_only:
             relevant_amendments_df = amendments_df[
                 amendments_df["Num article"].str.lower().str.startswith("article add.")
             ].copy()

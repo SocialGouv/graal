@@ -1,12 +1,16 @@
 """Matcher implementation for legal document-based matching (codes, laws, ordonnances)."""
 
+import logging
+import logging.config
 import re
-from typing import Any, Dict, List, Pattern, Set
+from typing import Any, Pattern
 
 import pandas as pd
 
 from graal.attribution.matchers.base_matcher import BaseMatcher
 from graal.custom_types import AttributionMatcherType, ColumnName, LegalDocumentType
+
+logging.config.fileConfig("logging.conf")
 
 
 class LegalDocumentMatcher(BaseMatcher):
@@ -16,8 +20,7 @@ class LegalDocumentMatcher(BaseMatcher):
         self,
         document_type: LegalDocumentType,
         documents_df: pd.DataFrame,
-        articles_set: Set[str],
-        columns_to_match_on: set[ColumnName],
+        allowed_columns: set[ColumnName],
         matcher_type: AttributionMatcherType,
     ):
         """
@@ -34,12 +37,11 @@ class LegalDocumentMatcher(BaseMatcher):
         super().__init__(matcher_type=matcher_type)
         self.document_type = document_type
         self.documents_df = documents_df
-        self.articles_set = articles_set
-        self.columns_to_match_on = columns_to_match_on or {"Corps amdt"}
+        self.allowed_columns = allowed_columns or {"Corps amdt"}
         self.document_patterns = self._compile_document_patterns()
         self.article_pattern = self._compile_article_pattern()
 
-    def _compile_document_patterns(self) -> List[Pattern[str]]:
+    def _compile_document_patterns(self) -> list[Pattern[str]]:
         """Compile regex patterns for legal document matching."""
         documents_set = set(self.documents_df["value"])
 
@@ -70,7 +72,7 @@ class LegalDocumentMatcher(BaseMatcher):
         latin_ordinal_pattern = re.compile(r"(?:\d+(?:-\d+)*)(?:\s(.+))?")
         latin_ordinals_set = {
             match.group(1)
-            for article in self.articles_set
+            for article in self.documents_df["Articles"]
             if (match := latin_ordinal_pattern.match(article)) and match.group(1)
         }
         possible_ordinals_pattern = "|".join(sorted(latin_ordinals_set, reverse=True))
@@ -79,8 +81,8 @@ class LegalDocumentMatcher(BaseMatcher):
         )
 
     def match(
-        self, amendment: Dict[str, Any], column_name: str
-    ) -> List[Dict[str, str]]:
+        self, amendment: dict[str, Any], column_name: str
+    ) -> list[dict[str, str]]:
         """
         Match legal documents and articles against amendment text.
 
@@ -91,7 +93,7 @@ class LegalDocumentMatcher(BaseMatcher):
         Returns:
             List of dictionaries containing match information
         """
-        if column_name not in self.columns_to_match_on:
+        if column_name not in self.allowed_columns:
             return []
         normalized_text = amendment[column_name]
 
@@ -109,7 +111,7 @@ class LegalDocumentMatcher(BaseMatcher):
         article_matches = set(re.findall(self.article_pattern, normalized_text))
         matched_articles = {
             article.strip() for article in article_matches
-        }.intersection(self.articles_set)
+        }.intersection(self.documents_df["Articles"])
 
         if not matched_articles:
             return []
@@ -137,7 +139,7 @@ class LegalDocumentMatcher(BaseMatcher):
 
         return results
 
-    def get_attribution_comment(self, matches: List[Dict[str, str]]) -> str:
+    def get_attribution_comment(self, matches: list[dict[str, str]]) -> str:
         """
         Generate a comment explaining the legal document-based attribution.
 

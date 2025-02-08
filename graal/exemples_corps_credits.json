@@ -1,0 +1,22 @@
+[
+    {
+        "amdt_idx": 0,
+        "Corps amdt": "<p>1 Modifier ainsi les autorisations d\u2019engagement et les cr\u00e9dits de paiement :<\/p>\n<table class=\"credits\">\n    <caption>(en euros)<\/caption>\n    <thead>\n        <tr>\n            <th>Programmes<\/th>\n            <th>+<\/th>\n            <th>-<\/th>\n        <\/tr>\n    <\/thead>\n    <tbody>\n            <tr>\n                <td>Pr\u00e9vention, s\u00e9curit\u00e9 sanitaire et offre de soins<\/td>\n                <td>0<\/td>\n                <td>0<\/td>\n            <\/tr>\n            <tr>\n                <td>Protection maladie<\/td>\n                <td>0<\/td>\n                <td>1249592126<\/td>\n            <\/tr>\n            <tr>\n                <td>Reversement \u00e0 la s\u00e9curit\u00e9 sociale des recettes de la Facilit\u00e9 pour la Relance et la R\u00e9silience (FRR) europ\u00e9enne au titre du volet \u00ab S\u00e9gur investissement \u00bb du plan national de relance et de r\u00e9silience (PNRR)<\/td>\n                <td>0<\/td>\n                <td>0<\/td>\n            <\/tr>\n        <tr>\n            <td>Totaux<\/td>\n            <td>0<\/td>\n            <td>1249592126<\/td>\n        <\/tr>\n        <tr>\n            <td>Solde<\/td>\n            <td colspan=\"2\">-1249592126<\/td>\n        <\/tr>\n    <\/tbody>\n<\/table>\n",
+        "Exposé amdt": "mot clé 1"
+    },
+    {
+        "amdt_idx": 1,
+        "Corps amdt": "<p>2 Modifier ainsi les autorisations d\u2019engagement et les cr\u00e9dits de paiement :<\/p>\n<table class=\"credits\">\n    <caption>(en euros)<\/caption>\n    <thead>\n        <tr>\n            <th>Programmes<\/th>\n            <th>+<\/th>\n            <th>-<\/th>\n        <\/tr>\n    <\/thead>\n    <tbody>\n            <tr>\n                <td>Action de la France en Europe et dans le monde<\/td>\n                <td>0<\/td>\n                <td>220000000<\/td>\n            <\/tr>\n            <tr>\n                <td>Diplomatie culturelle et d&#39;influence<\/td>\n                <td>0<\/td>\n                <td>0<\/td>\n            <\/tr>\n            <tr>\n                <td>Fran\u00e7ais \u00e0 l&#39;\u00e9tranger et affaires consulaires<\/td>\n                <td>0<\/td>\n                <td>0<\/td>\n            <\/tr>\n            <tr>\n                <td>Aide d\u2019urgence pour les Territoires palestiniens (ligne nouvelle)<\/td>\n                <td>220000000<\/td>\n                <td>0<\/td>\n            <\/tr>\n        <tr>\n            <td>Totaux<\/td>\n            <td>220000000<\/td>\n            <td>220000000<\/td>\n        <\/tr>\n        <tr>\n            <td>Solde<\/td>\n            <td colspan=\"2\">0<\/td>\n        <\/tr>\n    <\/tbody>\n<\/table>\n",
+        "Exposé amdt": "mot clé 2"
+    },
+    {
+        "amdt_idx": 2,
+        "Corps amdt": "<p>3 Modifier ainsi les autorisations d\u2019engagement et les cr\u00e9dits de paiement :<\/p>\n<table class=\"credits\">\n    <caption>(en euros)<\/caption>\n    <thead>\n        <tr>\n            <th>Programmes<\/th>\n            <th>+<\/th>\n            <th>-<\/th>\n        <\/tr>\n    <\/thead>\n    <tbody>\n            <tr>\n                <td>Pr\u00e9vention, s\u00e9curit\u00e9 sanitaire et offre de soins<\/td>\n                <td>10000<\/td>\n                <td>0<\/td>\n            <\/tr>\n            <tr>\n                <td>Protection maladie<\/td>\n                <td>0<\/td>\n                <td>1249592126<\/td>\n            <\/tr>\n            <tr>\n                <td>Reversement \u00e0 la s\u00e9curit\u00e9 sociale des recettes de la Facilit\u00e9 pour la Relance et la R\u00e9silience (FRR) europ\u00e9enne au titre du volet \u00ab S\u00e9gur investissement \u00bb du plan national de relance et de r\u00e9silience (PNRR)<\/td>\n                <td>0<\/td>\n                <td>0<\/td>\n            <\/tr>\n        <tr>\n            <td>Totaux<\/td>\n            <td>0<\/td>\n            <td>1249592126<\/td>\n        <\/tr>\n        <tr>\n            <td>Solde<\/td>\n            <td colspan=\"2\">-1249592126<\/td>\n        <\/tr>\n    <\/tbody>\n<\/table>\n",
+        "Exposé amdt": "mot clé 3"
+    },
+    {
+        "amdt_idx": 3,
+        "Corps amdt": "<p>A corps without credits<\/p>",
+        "Exposé amdt": "mot clé 3"
+    }
+]

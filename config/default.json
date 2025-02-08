@@ -3,6 +3,7 @@
     "already_processed_amdt_nums_path": "",
     "attribution_interstitial_only": false,
     "attribution": true,
+    "attribution_project_name": "PLFSS",
     "default_opinion": true,
     "handle_inadmissible_amendments": false,
     "no_value_overwrite": false,

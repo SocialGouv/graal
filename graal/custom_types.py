@@ -28,6 +28,8 @@ AttributionMatcherType = Literal[
 LLMType = Literal[
     "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
 ]
+AttributionColumns = Literal["Exposé amdt", "Corps amdt"]
+ProjectName = Literal["PLFSS", "PLF"]
 
 
 class ColumnsToWorkOn(TypedDict):
