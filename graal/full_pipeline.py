@@ -33,7 +33,7 @@ from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.attribution.attribution_data_loader import AttributionDataLoader
-from graal.attribution.attribution_populator import AttributionPopulator
+from graal.attribution.example_usage import setup_plfss_attribution
 from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn, InputFileConfig
@@ -123,7 +123,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
-        f"{DATA_FOLDER}/preprocessed/sim_db_test_hyp_c.pkl"
+        f"{DATA_FOLDER}/preprocessed/plfss_similarity_db.pkl"
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
@@ -144,9 +144,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = (
-        f"{DATA_FOLDER}/resultat_récurrence_hypothèse_C_PLFSS_2025_L1_SEN_SP"
-    )
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_attrib_after"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -335,27 +333,18 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             "Exposé amdt"
         ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
 
-        attributor = AttributionPopulator(
-            amendments_df=amdt_with_attribution_df,
-            attribution_mappings_when_empty=AttributionDataLoader.load_default_attribution_mappings(
-                config_excel
-            ),
-            codes_articles_df=AttributionDataLoader.load_codes_and_articles(
-                config_excel
-            ),
-            laws_articles_df=AttributionDataLoader.load_laws_and_articles(config_excel),
-            ordonnances_articles_df=AttributionDataLoader.load_ordonnances_and_articles(
-                config_excel
-            ),
-            keywords_df=AttributionDataLoader.load_keywords(
-                excel_data=config_excel, acronym_mapping=acronym_mapping
-            ),
-            name_to_user_info_mapping=AttributionDataLoader.load_name_to_user_info_mappings(
-                config_excel
-            ),
-            interstitial_only=args.attribution_interstitial_only,
+        attribution_handler = setup_plfss_attribution(config_excel, acronym_mapping)
+
+        if args.interstitial_only:
+            relevant_amendments_df = amendments_df[
+                amendments_df["Num article"].str.lower().str.startswith("article add.")
+            ].copy()
+        else:
+            relevant_amendments_df = amendments_df.copy()
+
+        intermediate_amdts_df = attribution_handler.process_amendments(
+            relevant_amendments_df
         )
-        intermediate_amdts_df = attributor.populate()
 
     if args.similarity_search:
         old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)  # nosec
