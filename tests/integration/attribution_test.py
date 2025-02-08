@@ -4,12 +4,7 @@ import numpy as np
 import pandas as pd
 from unidecode import unidecode
 
-from graal.attribution.attribution_data_loader import (
-    AttributionDataLoader,
-)
-from graal.attribution.attribution_populator import (
-    AttributionPopulator,
-)
+from graal.attribution.example_usage import setup_plfss_attribution
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.text_utils import AttributionTextNormalizer, remove_gage_sentences
 
@@ -52,32 +47,9 @@ def test_integration_attribute_amendments():
         lambda x: AttributionTextNormalizer.normalize_text(str(x))
     )
 
-    codes_articles_df = AttributionDataLoader.load_codes_and_articles(config_excel)
-    laws_articles_df = AttributionDataLoader.load_laws_and_articles(config_excel)
-    ordonnances_articles_df = AttributionDataLoader.load_ordonnances_and_articles(
-        config_excel
-    )
-    keywords_df = AttributionDataLoader.load_keywords(
-        excel_data=config_excel, acronym_mapping=acronym_mapping
-    )
-    logging.info(f"keywords_df {keywords_df}")
-    attribution_mappings_when_empty = (
-        AttributionDataLoader.load_default_attribution_mappings(config_excel)
-    )
-    name_to_user_info_mapping = AttributionDataLoader.load_name_to_user_info_mappings(
-        config_excel
-    )
+    attribution_handler = setup_plfss_attribution(config_excel, acronym_mapping)
 
-    attributor = AttributionPopulator(
-        amendments_df=amendments_df,
-        attribution_mappings_when_empty=attribution_mappings_when_empty,
-        codes_articles_df=codes_articles_df,
-        laws_articles_df=laws_articles_df,
-        ordonnances_articles_df=ordonnances_articles_df,
-        keywords_df=keywords_df,
-        name_to_user_info_mapping=name_to_user_info_mapping,
-    )
-    amendments_df = attributor.populate()
+    amendments_df = attribution_handler.process_amendments(amendments_df)
 
     diff_df = pd.DataFrame()
     for _, matching_row in amendments_df.iterrows():
