@@ -11,6 +11,7 @@ from typing import Optional
 import pandas as pd
 
 from graal.attribution.matchers.base_matcher import BaseMatcher
+from graal.custom_types import AttributionColumns
 
 logging.config.fileConfig("logging.conf")
 
@@ -23,7 +24,7 @@ class AttributionHandler:
         matchers: list[BaseMatcher],
         default_attributions: list[str],
         name_to_user_info_mapping: dict[str, dict[str, str]],
-        columns_to_match: Optional[list[str]] = None,
+        columns_to_match_on: Optional[list[AttributionColumns]] = None,
     ):
         """
         Initialize the AttributionHandler.
@@ -37,7 +38,7 @@ class AttributionHandler:
         self.matchers = matchers
         self.default_attributions = default_attributions
         self.name_to_user_info_mapping = name_to_user_info_mapping
-        self.columns_to_match = columns_to_match or ["Corps amdt", "Exposé amdt"]
+        self.columns_to_match_on = columns_to_match_on or ["Corps amdt", "Exposé amdt"]
 
     def _get_matches_for_amendment(
         self, amendment: dict, column_name: str
@@ -116,7 +117,7 @@ class AttributionHandler:
         # Get matches from all matchers across specified columns
         amendment = shared_result_dict[idx]
         all_matches = []
-        for column in self.columns_to_match:
+        for column in self.columns_to_match_on:
             if column in amendment:
                 matches = self._get_matches_for_amendment(amendment, column)
                 if matches:

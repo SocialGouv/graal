@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import pandas as pd
 
 from graal.attribution.matchers.base_matcher import BaseMatcher
-from graal.custom_types import ColumnName
+from graal.custom_types import AttributionColumns
 
 
 class KeywordMatcher(BaseMatcher):
@@ -15,7 +15,7 @@ class KeywordMatcher(BaseMatcher):
     def __init__(
         self,
         keywords_df: pd.DataFrame,
-        columns_to_match_on: set[ColumnName],
+        allowed_columns: set[AttributionColumns],
     ):
         """
         Initialize the KeywordMatcher.
@@ -24,7 +24,7 @@ class KeywordMatcher(BaseMatcher):
             keywords_df: DataFrame containing keywords and their attributions
         """
         super().__init__(matcher_type="KEYWORD")
-        self.columns_to_match_on = columns_to_match_on
+        self.allowed_columns = allowed_columns
         self.keywords_df = keywords_df
         self.keywords = set(keywords_df["Mots clés"].dropna())
         self.split_pattern = r"[\s\n\r\t\f'.,;:!?\"(){}<>-\[\]]+"
@@ -42,7 +42,7 @@ class KeywordMatcher(BaseMatcher):
         Returns:
             List of dictionaries containing match information
         """
-        if column_name not in self.columns_to_match_on:
+        if column_name not in self.allowed_columns:
             return []
 
         amendment_text = amendment[column_name]
