@@ -3,7 +3,7 @@ import logging.config
 
 import pandas as pd
 
-from graal.custom_types import EntityType
+from graal.custom_types import LegalDocumentType
 from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
@@ -15,21 +15,21 @@ class AttributionDataLoader:
     def load_codes_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize codes and articles from the data."""
         return AttributionDataLoader.load_articles_by_type(
-            excel_data, EntityType.CODE.value
+            excel_data, LegalDocumentType.CODE.value
         )
 
     @staticmethod
     def load_laws_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize laws and articles from the data."""
         return AttributionDataLoader.load_articles_by_type(
-            excel_data, EntityType.LAW.value
+            excel_data, LegalDocumentType.LAW.value
         )
 
     @staticmethod
     def load_ordonnances_and_articles(excel_data: dict) -> pd.DataFrame:
         """Load and normalize ordonnances and articles from the data."""
         return AttributionDataLoader.load_articles_by_type(
-            excel_data, EntityType.ORDONNANCE.value
+            excel_data, LegalDocumentType.ORDONNANCE.value
         )
 
     @staticmethod

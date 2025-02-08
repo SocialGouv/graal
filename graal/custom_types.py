@@ -22,6 +22,9 @@ Timestamp = int
 TxtContent = str
 UserName = str
 
+AttributionMatcherType = Literal[
+    "LEGAL_DOCUMENT_CODE", "LEGAL_DOCUMENT_LAW", "LEGAL_DOCUMENT_ORDONNANCE", "KEYWORD"
+]
 LLMType = Literal[
     "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
 ]
@@ -32,8 +35,7 @@ class ColumnsToWorkOn(TypedDict):
     to_clear: set[str]
 
 
-# List of patterns for each entity type
-class EntityType(Enum):
+class LegalDocumentType(Enum):
     CODE = "code"
     LAW = "loi"
     ORDONNANCE = "ordonnance"
