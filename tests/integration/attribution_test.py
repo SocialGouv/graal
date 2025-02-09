@@ -1,14 +1,15 @@
 import logging
+import random
 
 import numpy as np
 import pandas as pd
 from unidecode import unidecode
 
-from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import AttributionTextNormalizer, remove_gage_sentences
 from graal.attribution.project_configurations import (
     build_plfss_attribution_handler,
 )
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.text_utils import AttributionTextNormalizer, remove_gage_sentences
 
 
 def test_integration_plfss_attribution():
@@ -17,6 +18,7 @@ def test_integration_plfss_attribution():
 
     # Make sure that random choices are always the same in this test
     np.random.seed(42)
+    random.seed(42)
 
     config_excel = pd.read_excel(CONFIG_FILE, sheet_name=None)
 

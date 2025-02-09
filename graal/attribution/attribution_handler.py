@@ -36,6 +36,7 @@ class AttributionHandler:
             columns_to_match: List of column names to match against (default: ["Corps amdt", "Exposé amdt"])
         """
         self.matchers = matchers
+        self.cpu_count = cpu_count()
         self.default_attributions = default_attributions
         self.name_to_user_info_mapping = name_to_user_info_mapping
         self.columns_to_match_on = columns_to_match_on or ["Corps amdt", "Exposé amdt"]
@@ -170,7 +171,7 @@ class AttributionHandler:
         amendments = amendments_df.to_dict(orient="records")
         shared_result_dict = manager.dict(dict(enumerate(amendments)))
 
-        with Pool(cpu_count()) as pool:
+        with Pool(self.cpu_count) as pool:
             pool.starmap(
                 self._process_single_amendments,
                 [(idx, shared_result_dict) for idx in range(len(amendments))],
