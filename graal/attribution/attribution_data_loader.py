@@ -3,7 +3,7 @@ import logging.config
 
 import pandas as pd
 
-from graal.custom_types import LegalDocumentType
+from graal.custom_types import LegalDocumentType, PLFProgramName, UserName
 from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
@@ -52,6 +52,22 @@ class AttributionDataLoader:
         return articles_df
 
     @staticmethod
+    def load_programs(config_excel: dict) -> dict[PLFProgramName, UserName]:
+        program_to_attribution: dict[PLFProgramName, UserName] = {}
+        # Load program mappings from config if available
+        if "Responsables de programme" in config_excel:
+            programs_df = config_excel["Responsables de programme"]
+            for _, row in programs_df.iterrows():
+                if pd.notna(row["Programme budgétaire"]) and pd.notna(
+                    row["Prénom Nom"]
+                ):
+                    program = AttributionTextNormalizer.normalize_text(
+                        row["Programme budgétaire"]
+                    )
+                    program_to_attribution[program] = row["Prénom Nom"]
+        return program_to_attribution
+
+    @staticmethod
     def load_keywords(
         excel_data: dict, acronym_mapping: dict[str, str]
     ) -> pd.DataFrame:
@@ -80,8 +96,8 @@ class AttributionDataLoader:
 
     @staticmethod
     def load_name_to_user_info_mappings(excel_data: dict) -> dict[str, dict[str, str]]:
-        """Load name and user info (email, entité pilote) mappings from the "Prénom Nom Mail" sheet."""
-        user_info_df = excel_data["Prénom Nom Mail"]
+        """Load name and user info (email, entité pilote) mappings from the "Infos Agents" sheet."""
+        user_info_df = excel_data["Infos Agents"]
         user_info_df.fillna("", inplace=True)
         # Check for duplicated "Prénom Nom" values and log a warning
         duplicated_names = user_info_df[
