@@ -98,6 +98,7 @@ class AttributionHandler:
                 full_comment = f"{full_comment}\n{comment}"
 
         # Add other matches
+        other_possible_matches_comment = ""
         for matcher in self.matchers:
             related_matches = [
                 match
@@ -106,10 +107,14 @@ class AttributionHandler:
             ]
             if related_matches:
                 comment = matcher.get_attribution_comment(related_matches)
-                full_comment = (
-                    f"{full_comment}\n\nAutres affectations possibles:\n{comment}"
+                other_possible_matches_comment = (
+                    f"{other_possible_matches_comment}\n{comment}"
+                    if len(other_possible_matches_comment) > 0
+                    else comment
                 )
 
+        if len(other_possible_matches_comment) > 0:
+            full_comment = f"{full_comment}\n\nAutres affectations possibles:\n{other_possible_matches_comment}"
         return full_comment
 
     def _process_single_amendments(
