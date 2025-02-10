@@ -23,12 +23,16 @@ TxtContent = str
 UserName = str
 
 AttributionMatcherType = Literal[
-    "LEGAL_DOCUMENT_CODE", "LEGAL_DOCUMENT_LAW", "LEGAL_DOCUMENT_ORDONNANCE", "KEYWORD"
+    "LEGAL_DOCUMENT_CODE",
+    "LEGAL_DOCUMENT_LAW",
+    "LEGAL_DOCUMENT_ORDONNANCE",
+    "KEYWORD",
+    "CREDIT_TABLE",
 ]
 LLMType = Literal[
     "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
 ]
-AttributionColumns = Literal["Exposé amdt", "Corps amdt"]
+AttributionColumns = Literal["Exposé amdt", "Corps amdt", "Corps amdt original"]
 ProjectName = Literal["PLFSS", "PLF"]
 
 
