@@ -119,7 +119,7 @@ def derive_columns_to_work_on_from_enabled_features(
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     GRAAL_CONFIG_FILE = Path(
-        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
+        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
     )
     PREPROCESSED_INADMISSIBLE_FILE = Path(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
@@ -129,7 +129,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(f"{DATA_FOLDER}/input_plfss/PLFSS_2025_L1_SEN_SP.json"): {
+        Path(f"{DATA_FOLDER}/input_plf/L1 AN séance publique du PLF pour 2025.json"): {
             "default_processing_timestamp": int(
                 datetime(2024, month=6, day=2).timestamp()
             ),
@@ -146,7 +146,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_attrib_after"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_attribution_PLF"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -162,6 +162,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         "Num article",
         "Exposé amdt",
         "Corps amdt",
+        "mission_titre_court",
         "amdt_idx",
     ]
 
