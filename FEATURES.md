@@ -312,15 +312,17 @@ La fonctionnalité de recherche de similarités permet d'identifier automatiquem
    Le système utilise une approche en deux étapes pour identifier les similarités :
 
    a) **Pré-filtrage par TF-IDF**
-   - Vectorisation des textes (corps et exposés)
-   - Calcul des similarités cosinus
+    TF-IDF (Term Frequency-Inverse Document Frequency) est une méthode utilisée pour évaluer l'importance d'un mot dans un document par rapport à un ensemble de documents. Le principe est que plus un mot est rare dans l'ensemble des documents, plus il est significatif et son score est élevé.
+
+   - Vectorisation des textes (corps et exposés) : Chaque document est représenté par un vecteur où chaque dimension correspond à un mot du vocabulaire, et la valeur dans chaque dimension est le score TF-IDF du mot dans le document
+   - Calcul des similarités cosinus : Détermine le degré de similarité entre les vecteurs de 2 documents. Plus les vecteurs sont proches, plus les documents sont similaires
    - Création de clusters d'amendements potentiellement similaires
    - Optimisation par regroupement selon :
      - Le numéro d'article
      - Le projet d'origine
 
    b) **Comparaison Fine**
-   - Utilisation de la distance de Damerau-Levenshtein
+   - Utilisation de la distance de Damerau-Levenshtein : mesure le nombre de lettres qui diffèrent entre deux textes
    - Calcul d'un ratio de similarité précis
    - Application de seuils de similarité différents selon le type d'amendement
 
