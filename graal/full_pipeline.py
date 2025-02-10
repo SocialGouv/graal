@@ -38,7 +38,7 @@ from graal.attribution.project_configurations import (
 )
 from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
-from graal.custom_types import ColumnsToWorkOn, InputFileConfig
+from graal.custom_types import ColumnsToWorkOn, InputFileConfig, IntIndex
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.summary.llm_clients import (
     LLMAPIClient,
@@ -245,7 +245,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
-    # amendments_df = amendments_df[amendments_df["Num amdt"] == 614]
+    # amendments_df = amendments_df[amendments_df["Num amdt"].isin([1578, 1950, 4022])]
     original_amdt_df = amendments_df.copy()
 
     if args.placeholder_amdt_body:
@@ -288,43 +288,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     intermediate_amdts_df = amendments_df
     preprocessed_original_amdt_df = amendments_df.copy()
 
-    if args.allotments:
-        normalized_for_allot_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
-            amendments_df=intermediate_amdts_df,
-            columns_to_filter=["Corps amdt"],
-        )
-        normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-            amendments_df=normalized_for_allot_df
-        )
-        normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
-            amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
-        )
-        allotted_amdt_clusters = AllotmentHandler.get_clusters(
-            normalized_amdt_df=normalized_for_allot_df, group_by_columns=["Num article"]
-        )
-        logging.info(
-            f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
-        )
-
-        intermediate_amdts_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
-            normalized_amdt_df=normalized_for_allot_df,
-            allotted_amdt_clusters=allotted_amdt_clusters,
-        )
-
-        logging.info(
-            f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
-        )
-
-    if args.summary_generation:
-        config_prompt = config_excel["Prompt Objet"].to_string()
-        amdt_summary_populator = SummaryHandler(
-            summary_gen_load_balancer=summary_gen_load_balancer,
-            amendments_df=intermediate_amdts_df,
-            acronym_mapping=acronym_mapping,
-            summary_column="Objet amdt",
-            config_prompt=config_prompt,
-        )
-        intermediate_amdts_df = amdt_summary_populator.populate()
+    amdt_allotment_strategy_func = AllotmentHandler.default_removal_strategy_func
 
     if args.attribution:
         amdt_with_attribution_df = intermediate_amdts_df
@@ -351,6 +315,82 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         intermediate_amdts_df = attribution_handler.process_amendments(
             relevant_amendments_df
         )
+
+        default_attributions = AttributionDataLoader.load_default_attribution_mappings(
+            config_excel
+        )
+
+        def build_attribution_allot_filter_func(default_attributions):
+            def removal_func(amendments_df: pd.DataFrame, cluster: list[IntIndex]):
+                affectation_series = amendments_df.loc[
+                    amendments_df["amdt_idx"].isin(cluster)
+                    & ~amendments_df["Affectation (nom)"].isin(default_attributions),
+                    "Affectation (nom)",
+                ]
+                if affectation_series.empty:
+                    return cluster[1:]
+                most_common_affectation = affectation_series.value_counts().idxmax()
+                affectation_df = amendments_df.loc[
+                    (amendments_df["Affectation (nom)"] == most_common_affectation)
+                    & (amendments_df["amdt_idx"].isin(cluster)),
+                    "amdt_idx",
+                ]
+                if not affectation_df.empty:
+                    amdt_idx_with_most_common_affectation = affectation_df.iloc[0]
+                else:
+                    amdt_idx_with_most_common_affectation = None
+
+                to_remove = [
+                    idx
+                    for idx in cluster
+                    if idx != amdt_idx_with_most_common_affectation
+                ]
+                return to_remove
+
+            return removal_func
+
+        amdt_allotment_strategy_func = build_attribution_allot_filter_func(
+            default_attributions
+        )
+
+    if args.allotments:
+        normalized_for_allot_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
+            amendments_df=intermediate_amdts_df,
+            columns_to_filter=["Corps amdt"],
+        )
+        normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
+            amendments_df=normalized_for_allot_df
+        )
+        normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
+            amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
+        )
+        allotted_amdt_clusters = AllotmentHandler.get_clusters(
+            normalized_amdt_df=normalized_for_allot_df, group_by_columns=["Num article"]
+        )
+        logging.info(
+            f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
+        )
+
+        intermediate_amdts_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
+            normalized_amdt_df=normalized_for_allot_df,
+            allotted_amdt_clusters=allotted_amdt_clusters,
+            removal_strategy_func=amdt_allotment_strategy_func,
+        )
+
+        logging.info(
+            f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
+        )
+
+    if args.summary_generation:
+        config_prompt = config_excel["Prompt Objet"].to_string()
+        amdt_summary_populator = SummaryHandler(
+            summary_gen_load_balancer=summary_gen_load_balancer,
+            amendments_df=intermediate_amdts_df,
+            acronym_mapping=acronym_mapping,
+            summary_column="Objet amdt",
+            config_prompt=config_prompt,
+        )
+        intermediate_amdts_df = amdt_summary_populator.populate()
 
     if args.similarity_search:
         old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)  # nosec
