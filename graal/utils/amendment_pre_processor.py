@@ -110,6 +110,8 @@ class AmendmentPreProcessor:
             + " "
             + amendements_df["legislature"].astype(str)
         )
+        # We need to have access to the HTML in some cases so we keep it in a new column
+        amendements_df["Corps amdt original"] = amendements_df["corps"]
         amendements_df["corps"] = amendements_df["corps"].apply(
             extract_plain_text_from_html
         )

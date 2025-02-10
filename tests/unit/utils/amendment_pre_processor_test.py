@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -218,6 +219,7 @@ def test_clean_up_original_amendments():
             "Sort": ["Sort 1", "Sort 2"],
             "Num article": ["Article 1", "Article 2"],
             "Corps amdt": ["Corps 1", "Corps 2"],
+            "Corps amdt original": ["<p>Corps 1</p>", "<p>Corps 2</p>"],
             "Exposé amdt": ["Expose 1", "Expose 2"],
             "Allotissement": ["1,2", "18,29"],
         }
@@ -419,17 +421,17 @@ def test_load_amendments_json(mocker):
         side_effect=lambda x: x,
     )
 
-    input_files = ["file1.json", "file2.json", "file3.json"]
+    input_files = [Path("file1.json"), Path("file2.json"), Path("file3.json")]
     file_config = {
-        "file1.json": {
+        Path("file1.json"): {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PLFSS",
         },
-        "file2.json": {
+        Path("file2.json"): {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PPL Retraites",
         },
-        "file3.json": {
+        Path("file3.json"): {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PLACSS",
         },
@@ -492,13 +494,13 @@ def test_load_amendments_excel(mocker):
         ],
     )
 
-    input_files = ["file1.xlsx", "file2.xlsx"]
+    input_files = [Path("file1.xlsx"), Path("file2.xlsx")]
     file_config = {
-        "file1.xlsx": {
+        Path("file1.xlsx"): {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PLFSS",
         },
-        "file2.xlsx": {
+        Path("file2.xlsx"): {
             "default_processing_timestamp": 1234567890,
             "origin_project": "PPL Retraites",
         },

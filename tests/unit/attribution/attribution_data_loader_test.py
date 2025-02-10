@@ -24,7 +24,7 @@ def excel_data():
                 "Mots clés": ["Keyword 1", "Testing with the BLA acronym", "Keyword 2"],
             }
         ),
-        "Prénom Nom Mail": pd.DataFrame(
+        "Infos Agents": pd.DataFrame(
             {
                 "Prénom Nom": ["John Doe", "Jane Smith"],
                 "Mail": ["john.doe@example.com", "jane.smith@example.com"],
