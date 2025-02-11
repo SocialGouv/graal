@@ -133,12 +133,15 @@ class AllotmentHandler:
                 )
 
                 if valid_columns_to_copy:
-                    amdt_row_with_values = original_amendments_df.loc[
-                        cluster_mask
-                        & original_amendments_df[valid_columns_to_copy]
+                    amdt_row_with_values = (
+                        original_amendments_df.loc[cluster_mask, valid_columns_to_copy]
                         .notnull()
-                        .all(axis=1)
-                    ].iloc[0]
+                        .sum(axis=1)
+                        .idxmax()
+                    )
+                    amdt_row_with_values = original_amendments_df.loc[
+                        amdt_row_with_values
+                    ]
                     original_amendments_df.loc[cluster_mask, valid_columns_to_copy] = (
                         amdt_row_with_values[valid_columns_to_copy].values
                     )
