@@ -119,7 +119,7 @@ def derive_columns_to_work_on_from_enabled_features(
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
     GRAAL_CONFIG_FILE = Path(
-        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
+        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
     )
     PREPROCESSED_INADMISSIBLE_FILE = Path(
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
@@ -129,7 +129,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(f"{DATA_FOLDER}/input_plf/L1 AN séance publique du PLF pour 2025.json"): {
+        # Path(f"{DATA_FOLDER}/input_plf/L1 AN séance publique du PLF pour 2025.json"): {
+        Path(f"{DATA_FOLDER}/input_plfss/L1 Sénat SP du PLFSS 2025.json"): {
+            # Path(f"{DATA_FOLDER}/input_plfss/PLFSS_2025_L1_SEN_SP.json"): {
             "default_processing_timestamp": int(
                 datetime(2024, month=6, day=2).timestamp()
             ),
@@ -146,7 +148,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_attribution_PLF"
+    OUTPUT_FILE_PREFIX = (
+        f"{DATA_FOLDER}/test_objet_new_llama_L1_Sénat_SP_PLFSS_2025_allotit"
+    )
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -191,7 +195,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             api_key=os.environ["SCALEWAY_API_KEY"],
             base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
             model_name=os.getenv(
-                "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+                "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.3-70B-Instruct"
             ),
         )
         llm_api_clients.append(open_ai_api_client)
@@ -245,7 +249,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
-    # amendments_df = amendments_df[amendments_df["Num amdt"].isin([1578, 1950, 4022])]
+    # amendments_df = amendments_df[amendments_df["Num amdt"].isin([196, 923, 1111])]
     original_amdt_df = amendments_df.copy()
 
     if args.placeholder_amdt_body:
