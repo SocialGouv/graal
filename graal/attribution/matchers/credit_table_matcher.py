@@ -100,7 +100,7 @@ class CreditTableMatcher(BaseMatcher):
             add_possible_attributions(credit_table["-"] > 0)
 
         # Case 3: Positive values in both + and - columns
-        if (credit_table["+"] > 0).any() and (credit_table["-"] > 0).any():
+        if (credit_table["-"] > 0).any():
             add_possible_attributions(credit_table["+"] > 0)
 
         return [
