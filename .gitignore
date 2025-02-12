@@ -22,5 +22,6 @@ coverage.json
 diff_attribution.csv
 diff_similarity.csv
 grouped_matching.csv
+*.pkl
 
 *_vector_db
