@@ -114,7 +114,7 @@ class AttributionHandler:
                 )
 
         if len(other_possible_matches_comment) > 0:
-            full_comment = f"{full_comment}\n\nAutres affectations possibles:\n{other_possible_matches_comment}"
+            full_comment = f"{full_comment}\n\nAutres affectations possibles:\n{other_possible_matches_comment}\n"
         return full_comment
 
     def _process_single_amendments(
