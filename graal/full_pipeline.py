@@ -75,6 +75,13 @@ def parse_arguments():
 def derive_columns_to_work_on_from_enabled_features(
     args: argparse.Namespace,
 ) -> ColumnsToWorkOn:
+    """
+    Derive columns to work on based on enabled features in the configuration.
+
+    Returns:
+        ColumnsToWorkOn: An object containing sets of column names to preserve or clear
+        based on enabled features in the configuration.
+    """
     columns_to_clear = {"Commentaires"}
     columns_to_preserve = set()
     if args.allotments:
