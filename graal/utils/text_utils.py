@@ -214,6 +214,10 @@ class AttributionTextNormalizer:
             " ",
             text,
         )
+        split_pattern = r"[\s\n\r\t\f'.,;:!?\"(){}<>-\[\]]+"
+        text = "".join(
+            remove_french_plurals(word) for word in re.split(f"({split_pattern})", text)
+        )
         # Remove extra whitespaces
         text = re.sub(r"\s+", " ", text)
 
