@@ -48,7 +48,7 @@ class LegalDocumentMatcher(BaseMatcher):
         if self.document_type == LegalDocumentType.CODE:
             return [
                 re.compile(
-                    rf"code\s(?:general\sdes|des|du|de|de\sla|d')?\s?((?:{'|'.join(documents_set)}))"
+                    rf"code\s(?:general\sdes?|des?|du|de\sla|d')?\s?((?:{'|'.join(documents_set)}))"
                 )
             ]
         elif self.document_type == LegalDocumentType.LAW:
