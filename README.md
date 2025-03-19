@@ -67,6 +67,10 @@ export OLLAMA_ENDPOINT=https://<ip_address>.nip.io/api/generate
 export OLLAMA_USER=<user>
 export OLLAMA_PASSWORD=<password>
 export OLLAMA_MODEL_NAME="llama3.1:70b"
+
+export SCALEWAY_BASE_URL="https://<UUID_SCALEWAY>.ifr.fr-par.scaleway.com/v1"
+export SCALEWAY_MODEL_NAME="meta/llama-3.3-70b-instruct:bf16"
+export SCALEWAY_API_KEY="<API_KEY>"
 ```
 
 **NB:** You can still test GRAAL without using Albert or Ollama by using the FakeLLMAPIClient. See [pipeline](#pipeline)
@@ -115,7 +119,7 @@ See [config/default.json](config/default.json) for the configuration we use most
 
 Additionally, some parameters in the [graal/full_pipeline.py](graal/full_pipeline.py) script are currently hardcoded. You will need to modify the file directly (work in progress).
 
-For instance, to enable or disable the use of Ollama, Albert API, or the FakeLLMAPIClient (which outputs random Latin sentences), you can comment or uncomment the corresponding lines in this section of the code:
+For instance, to enable or disable the use of Ollama, Albert API, Scaleway API, or the FakeLLMAPIClient (which outputs random Latin sentences), you can comment or uncomment the corresponding lines in this section of the code:
 
 ```python
 llm_api_clients = []
@@ -139,6 +143,16 @@ for _ in range(6):
         ),
     )
     llm_api_clients.append(albert_api_client)
+
+for _ in range(6):
+    open_ai_api_client = OpenAIAPIClient(
+        api_key=os.environ["SCALEWAY_API_KEY"],
+        base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
+        model_name=os.getenv(
+            "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.3-70B-Instruct"
+        ),
+    )
+    llm_api_clients.append(open_ai_api_client)
 
 llm_api_clients.append(FakeLLMAPIClient())
 ```
