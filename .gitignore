@@ -25,3 +25,4 @@ grouped_matching.csv
 *.pkl
 
 *_vector_db
+.DS_Store

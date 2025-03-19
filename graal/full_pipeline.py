@@ -41,6 +41,8 @@ from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn, InputFileConfig, IntIndex
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.summary.llm_clients import (
+    AlbertAPIClient,
+    FakeLLMAPIClient,
     LLMAPIClient,
     OpenAIAPIClient,
 )
@@ -132,17 +134,17 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
-        f"{DATA_FOLDER}/preprocessed/plfss_similarity_db.pkl"
+        f"{DATA_FOLDER}/preprocessed/tototiti.pkl"
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
         # Path(f"{DATA_FOLDER}/input_plf/L1 AN séance publique du PLF pour 2025.json"): {
-        Path(f"{DATA_FOLDER}/input_plfss/L1 Sénat SP du PLFSS 2025.json"): {
+        Path(f"{DATA_FOLDER}/exports_lectures/PPL fin de vie 2024/BDD_Commission_PJL fin de vie.xlsx"): {
             # Path(f"{DATA_FOLDER}/input_plfss/PLFSS_2025_L1_SEN_SP.json"): {
             "default_processing_timestamp": int(
                 datetime(2024, month=6, day=2).timestamp()
             ),
-            "origin_project": "PLFSS 2025",
+            "origin_project": "PPL fin de vie 2024",
         },
     }
     # INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
@@ -156,7 +158,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
     OUTPUT_FILE_PREFIX = (
-        f"{DATA_FOLDER}/test_objet_new_llama_L1_Sénat_SP_PLFSS_2025_allotit"
+        f"{DATA_FOLDER}/test_gary_ppl"
     )
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
@@ -173,7 +175,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         "Num article",
         "Exposé amdt",
         "Corps amdt",
-        "mission_titre_court",
+        # "mission_titre_court",
         "amdt_idx",
     ]
 
@@ -197,27 +199,27 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     #         api_token=os.environ["LLAMA_API_KEY"],
     #     )
     #     llm_api_clients.append(llama_api_client)
-    for _ in range(6):
-        open_ai_api_client = OpenAIAPIClient(
-            api_key=os.environ["SCALEWAY_API_KEY"],
-            base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
-            model_name=os.getenv(
-                "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.3-70B-Instruct"
-            ),
-        )
-        llm_api_clients.append(open_ai_api_client)
-
     # for _ in range(6):
-    #     albert_api_client = AlbertAPIClient(
-    #         base_url=httpx.URL(
-    #             os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
-    #         ),
-    #         api_key=os.environ["ETALAB_API_KEY"],
+    #     open_ai_api_client = OpenAIAPIClient(
+    #         api_key=os.environ["SCALEWAY_API_KEY"],
+    #         base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
     #         model_name=os.getenv(
-    #             "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    #             "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.3-70B-Instruct"
     #         ),
     #     )
-    #     llm_api_clients.append(albert_api_client)
+    #     llm_api_clients.append(open_ai_api_client)
+
+    for _ in range(6):
+        albert_api_client = AlbertAPIClient(
+            base_url=httpx.URL(
+                os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
+            ),
+            api_key=os.environ["ETALAB_API_KEY"],
+            model_name=os.getenv(
+                "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
+            ),
+        )
+        llm_api_clients.append(albert_api_client)
 
     # llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
@@ -229,13 +231,13 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     intermediate_amdts_df = None
 
-    # amendments_df = AmendmentPreProcessor.load_amendments_excel(
-    #     list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
-    # )
-
-    amendments_df = AmendmentPreProcessor.load_amendments_json(
+    amendments_df = AmendmentPreProcessor.load_amendments_excel(
         list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
     )
+
+    # amendments_df = AmendmentPreProcessor.load_amendments_json(
+    #     list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
+    # )
 
     if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
         amendments_df["mission_titre_court"] = (
