@@ -29,7 +29,7 @@ We use poetry to handle dependencies and the python virtual environment. Make su
 Run the poetry shell to work in:
 
 ```bash
-poetry shell
+eval $(poetry env activate)
 ```
 
 ### Install Python Dependencies
