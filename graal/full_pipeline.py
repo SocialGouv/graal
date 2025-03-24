@@ -158,7 +158,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
     # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
     OUTPUT_FILE_PREFIX = (
-        f"{DATA_FOLDER}/test_gary_ppl"
+        f"{DATA_FOLDER}/test_gary_ppl2"
     )
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
