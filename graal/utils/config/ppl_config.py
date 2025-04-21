@@ -3,7 +3,8 @@ PPL-specific configuration for amendment preprocessing.
 """
 
 from pathlib import Path
-from .base_config import ProjectConfig, InputFileConfig, create_timestamp, get_data_path
+
+from .base_config import InputFileConfig, ProjectConfig, create_timestamp, get_data_path
 
 
 def get_ppl_config() -> ProjectConfig:
@@ -29,6 +30,12 @@ def get_ppl_config() -> ProjectConfig:
             "exports_lectures/PPL fin de vie 2024/BDD_Commission_PJL fin de vie.xlsx"
         ): {
             "default_processing_timestamp": create_timestamp(2024, 5, 18),
+            "origin_project": "PPL Fin de vie 2024",
+        },
+        get_data_path(
+            "exports_lectures/PPL fin de vie 2024/BDD_Séance publique_PJL fin de vie.xlsx"
+        ): {
+            "default_processing_timestamp": create_timestamp(2024, 5, 19),
             "origin_project": "PPL Fin de vie 2024",
         },
     }
