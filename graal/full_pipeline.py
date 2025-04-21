@@ -132,32 +132,21 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
-        f"{DATA_FOLDER}/preprocessed/plfss_similarity_db.pkl"
+        # f"{DATA_FOLDER}/preprocessed/plfss_similarity_db.pkl"
+        f"{DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        # Path(f"{DATA_FOLDER}/input_plf/L1 AN séance publique du PLF pour 2025.json"): {
-        Path(f"{DATA_FOLDER}/input_plfss/L1 Sénat SP du PLFSS 2025.json"): {
-            # Path(f"{DATA_FOLDER}/input_plfss/PLFSS_2025_L1_SEN_SP.json"): {
+        # Path(f"{DATA_FOLDER}/input_plfss/lecture-an-17-622-PO838901.json"): {
+        Path(f"{DATA_FOLDER}/input_ppl_fin_vie/AN_Séance publique_PPL_SPA.json"): {
             "default_processing_timestamp": int(
-                datetime(2024, month=6, day=2).timestamp()
+                datetime(year=2025, month=4, day=5).timestamp()
             ),
-            "origin_project": "PLFSS 2025",
-        },
+            "origin_project": "PPL Fin de vie 2025",
+        }
     }
-    # INPUT_FILES_CONFIG: dict[FilePath, InputFileConfig] = {
-    #     Path(f"{DATA_FOLDER}/input_ppl/lecture-an-17-475-PO838901.json"): {
-    #         "default_processing_timestamp": int(
-    #             datetime(2024, month=11, day=27).timestamp()
-    #         ),
-    #         "origin_project": "PPL Retraites",
-    #     },
-    # }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    # OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/resultat_traitement_ppl_fin_vie_test_scaleway"
-    OUTPUT_FILE_PREFIX = (
-        f"{DATA_FOLDER}/test_objet_new_llama_L1_Sénat_SP_PLFSS_2025_allotit"
-    )
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/résultats_ppl_SPA_2025"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -173,7 +162,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         "Num article",
         "Exposé amdt",
         "Corps amdt",
-        "mission_titre_court",
+        # "mission_titre_court",
         "amdt_idx",
     ]
 
