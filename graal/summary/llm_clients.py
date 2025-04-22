@@ -110,6 +110,7 @@ class VllmAPIClient(LLMAPIClient):
         vllm_endpoint: Url,
         user: str,
         password: str,
+        timeout: int = 10,
         name: Optional[str] = None,
     ):
         super().__init__(type="vllm", name=name)
@@ -117,6 +118,7 @@ class VllmAPIClient(LLMAPIClient):
         self.vllm_endpoint = vllm_endpoint
         self.user = user
         self.password = password
+        self.timeout = timeout
 
     def generate_text(self, prompt: TxtContent) -> str:
         url = self.vllm_endpoint
@@ -128,6 +130,7 @@ class VllmAPIClient(LLMAPIClient):
             "prompt": prompt,
             "max_tokens": 1024,
             "temperature": 0,
+            "timeout": self.timeout,
         }
 
         response = requests.post(url, headers=headers, json=data, auth=auth, timeout=10)

@@ -1,9 +1,14 @@
 """Unit tests for CreditTableMatcher."""
 
+import logging
+import logging.config
+
 import pandas as pd
 import pytest
 
 from graal.attribution.matchers.credit_table_matcher import CreditTableMatcher
+
+logging.config.fileConfig("logging.conf")
 
 
 @pytest.fixture
