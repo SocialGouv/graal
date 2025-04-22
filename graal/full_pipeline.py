@@ -344,17 +344,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
         )
 
-    if args.summary_generation:
-        config_prompt = config_excel["Prompt Objet"].to_string()
-        amdt_summary_populator = SummaryHandler(
-            summary_gen_load_balancer=summary_gen_load_balancer,
-            amendments_df=intermediate_amdts_df,
-            acronym_mapping=acronym_mapping,
-            summary_column="Objet amdt",
-            config_prompt=config_prompt,
-        )
-        intermediate_amdts_df = amdt_summary_populator.populate()
-
     if args.similarity_search:
         old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)  # nosec
         logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
@@ -395,6 +384,17 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Corps amdt": ["Num article"],
             },
         )
+
+    if args.summary_generation:
+        config_prompt = config_excel["Prompt Objet"].to_string()
+        amdt_summary_populator = SummaryHandler(
+            summary_gen_load_balancer=summary_gen_load_balancer,
+            amendments_df=intermediate_amdts_df,
+            acronym_mapping=acronym_mapping,
+            summary_column="Objet amdt",
+            config_prompt=config_prompt,
+        )
+        intermediate_amdts_df = amdt_summary_populator.populate()
 
     if args.allotments:
         intermediate_amdts_df = AllotmentHandler.populate(
