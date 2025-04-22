@@ -100,13 +100,28 @@ def derive_columns_to_work_on_from_enabled_features(
         )
 
     if args.similarity_search:
-        columns_to_preserve.update(
-            [
-                "Sort",
-                "Réponse",
-            ]
+        # Extract similarity search configuration
+        similarity_config = (
+            args.similarity_search
+            if isinstance(args.similarity_search, dict)
+            else {"enabled": False}
         )
-        columns_to_clear.update(["Sort", "Réponse"])
+
+        # Only add columns if similarity search is enabled
+        if similarity_config.get("enabled", False):
+            columns_to_copy_config = similarity_config.get("columns_to_copy", {})
+
+            # Add columns that are enabled for copying to preserve and clear lists
+            columns_to_preserve_list = []
+            columns_to_clear_list = []
+
+            for column, config in columns_to_copy_config.items():
+                if config.get("enabled", False):
+                    columns_to_preserve_list.append(column)
+                    columns_to_clear_list.append(column)
+
+            columns_to_preserve.update(columns_to_preserve_list)
+            columns_to_clear.update(columns_to_clear_list)
 
     if args.default_opinion:
         columns_to_preserve.update(["Avis du Gouvernement"])
@@ -345,6 +360,23 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
 
     if args.similarity_search:
+        # Extract similarity search configuration
+        similarity_config = (
+            args.similarity_search
+            if isinstance(args.similarity_search, dict)
+            else {"enabled": False}
+        )
+
+        # Get columns to copy configuration with defaults (all disabled)
+        columns_to_copy_config = similarity_config.get(
+            "columns_to_copy",
+            {
+                "Réponse": {"enabled": False},
+                "Sort": {"enabled": False, "condition": "irrecevable"},
+                "Objet": {"enabled": False},
+            },
+        )
+
         old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)  # nosec
         logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
         new_amendments_df = intermediate_amdts_df
@@ -383,6 +415,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             column_group_by_columns={
                 "Corps amdt": ["Num article"],
             },
+            columns_to_copy_config=columns_to_copy_config,
         )
 
     if args.summary_generation:

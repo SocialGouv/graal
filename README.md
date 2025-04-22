@@ -151,6 +151,39 @@ Supported client types:
 - `vllm`: vLLM API
 
 
+#### Similarity Search Configuration
+
+You can configure the similarity search feature using the `similarity_search` section in your configuration file:
+
+```json
+{
+    "similarity_search": {
+        "enabled": true,
+        "columns_to_copy": {
+            "Réponse": {
+                "enabled": true
+            },
+            "Sort": {
+                "enabled": true,
+                "condition": "irrecevable"
+            },
+            "Objet": {
+                "enabled": false
+            }
+        }
+    }
+}
+```
+
+Parameters:
+
+- `enabled`: Enable or disable the similarity search feature
+- `columns_to_copy`: Specify which columns should be copied from similar amendments
+  - Each column can have the following settings:
+    - `enabled`: Whether to copy this column from similar amendments
+    - `condition`: Optional condition that must be met to copy the column (e.g., only copy "Sort" when it contains "irrecevable")
+
+
 ## Similarity Data Base
 
 The system includes functionality to build a DB with old amendments for similarity search. This preprocessed data is used to find similarities between new and old amendments in the pipeline.

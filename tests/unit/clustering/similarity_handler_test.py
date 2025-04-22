@@ -1,4 +1,5 @@
 import textwrap
+from typing import Callable, Optional
 
 import pandas as pd
 import pytest
@@ -50,10 +51,17 @@ def sample_data():
 
 def test_copy_matches_to_amendments_df(sample_data):
     old_amendments_df, closest_amdts, target_df = sample_data
+    # Use default configuration
+    columns_config = {
+        "Réponse": {"enabled": True},
+        "Sort": {"enabled": True, "condition": "irrecevable"},
+        "Objet": {"enabled": False},
+    }
     result_df = SimilarityHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
+        columns_config=columns_config,
     )
 
     assert result_df.loc[0, "Réponse"] == "Response 1"
@@ -97,6 +105,41 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert result_df.loc[2, "Sort"] == ""
 
 
+def test_copy_matches_to_amendments_df_with_custom_config(sample_data):
+    old_amendments_df, closest_amdts, target_df = sample_data
+
+    # Add Objet column to test data
+    old_amendments_df["Objet"] = ["Objet 1", "Objet 2", "Objet 3"]
+    target_df["Objet"] = ["", "", ""]
+
+    # Test with custom configuration - only copy Objet, disable Réponse and Sort
+    columns_config = {
+        "Réponse": {"enabled": False},
+        "Sort": {"enabled": False},
+        "Objet": {"enabled": True},
+    }
+
+    result_df = SimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+        columns_config=columns_config,
+    )
+
+    # Verify Objet was copied but not Réponse or Sort
+    assert result_df.loc[0, "Objet"] == "Objet 1"
+    assert result_df.loc[1, "Objet"] == "Objet 2"
+    assert result_df.loc[2, "Objet"] == "Objet 3"
+
+    assert result_df.loc[0, "Réponse"] == ""
+    assert result_df.loc[1, "Réponse"] == ""
+    assert result_df.loc[2, "Réponse"] == ""
+
+    assert result_df.loc[0, "Sort"] == ""
+    assert result_df.loc[1, "Sort"] == ""
+    assert result_df.loc[2, "Sort"] == ""
+
+
 def test_populate():
     preprocessed_new_amendments_df = pd.DataFrame(
         {
@@ -120,6 +163,7 @@ def test_populate():
             "Num amdt": [1, 2, 3],
             "amdt_idx": [1, 2, 3],
             "Lecture": ["A", "B", "C"],
+            "Objet": ["Objet 1", "Objet 2", "Objet 3"],
             "Organe": ["Organe 1", "Organe 2", "Organe 3"],
             "Réponse": ["Response 1", "Response 2", "Response 3"],
             "Sort": ["Sort 1", "Irrecevable 123", "Sort 3"],
@@ -130,15 +174,22 @@ def test_populate():
         }
     )
 
-    clustering_similarity_thresholds = {
-        "Exposé amdt": 1,
-        "Corps amdt": 1,
+    clustering_similarity_thresholds: dict[str, float] = {
+        "Exposé amdt": 1.0,
+        "Corps amdt": 1.0,
     }
-    fuzzy_match_similarity_thresholds = {
-        "Exposé amdt": 1,
-        "Corps amdt": 1,
+    fuzzy_match_similarity_thresholds: dict[str, float] = {
+        "Exposé amdt": 1.0,
+        "Corps amdt": 1.0,
     }
-    similarity_threshold_overrides = {}
+    similarity_threshold_overrides: dict[str, dict[str, float]] = {}
+
+    # Use default configuration
+    columns_to_copy_config = {
+        "Réponse": {"enabled": True},
+        "Sort": {"enabled": True, "condition": "irrecevable"},
+        "Objet": {"enabled": True},
+    }
 
     result_df = SimilarityHandler.populate(
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
@@ -148,6 +199,7 @@ def test_populate():
         fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides=similarity_threshold_overrides,
         column_group_by_columns={},
+        columns_to_copy_config=columns_to_copy_config,
     )
 
     assert (
@@ -190,6 +242,10 @@ def test_populate():
     assert result_df.loc[1, "Sort"] == "Irrecevable 123"
     assert result_df.loc[2, "Sort"] == ""
 
+    assert result_df.loc[0, "Objet"] == "Objet 1"
+    assert result_df.loc[1, "Objet"] == "Objet 2"
+    assert result_df.loc[2, "Objet"] == "Objet 3"
+
 
 def test_populate_same_body_but_different_project_should_not_match():
     preprocessed_new_amendments_df = pd.DataFrame(
@@ -222,16 +278,25 @@ def test_populate_same_body_but_different_project_should_not_match():
         }
     )
 
-    clustering_similarity_thresholds = {
-        "Corps amdt": 1,
+    clustering_similarity_thresholds: dict[str, float] = {
+        "Corps amdt": 1.0,
     }
-    fuzzy_match_similarity_thresholds = {
-        "Corps amdt": 1,
+    fuzzy_match_similarity_thresholds: dict[str, float] = {
+        "Corps amdt": 1.0,
     }
-    similarity_threshold_overrides = {}
+    similarity_threshold_overrides: dict[str, dict[str, float]] = {}
 
-    column_filtering_funcs = {
+    column_filtering_funcs: Optional[
+        dict[str, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
+    ] = {
         "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
+    }
+
+    # Use default configuration
+    columns_to_copy_config = {
+        "Réponse": {"enabled": True},
+        "Sort": {"enabled": True, "condition": "irrecevable"},
+        "Objet": {"enabled": False},
     }
 
     result_df = SimilarityHandler.populate(
@@ -243,6 +308,7 @@ def test_populate_same_body_but_different_project_should_not_match():
         similarity_threshold_overrides=similarity_threshold_overrides,
         column_filtering_funcs=column_filtering_funcs,
         column_group_by_columns={},
+        columns_to_copy_config=columns_to_copy_config,
     )
 
     assert (

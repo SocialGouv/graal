@@ -32,6 +32,7 @@ def run_test(
         dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
     ] = None,
     column_group_by_columns: Optional[dict[ColumnName, list[ColumnName]]] = None,
+    columns_to_copy_config: Optional[dict] = None,
 ) -> None:
     CONFIG_FILE = "tests/integration/test_data/Fichier de configuration GRAAL - Test integrations.xlsx"
 
@@ -83,6 +84,14 @@ def run_test(
         )
     )
 
+    # Default configuration if none provided
+    if columns_to_copy_config is None:
+        columns_to_copy_config = {
+            "Réponse": {"enabled": True},
+            "Sort": {"enabled": True, "condition": "irrecevable"},
+            "Objet": {"enabled": False},
+        }
+
     new_amendments_with_copies_df = SimilarityHandler.populate(
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
@@ -92,6 +101,7 @@ def run_test(
         similarity_threshold_overrides=similarity_threshold_overrides,
         column_filtering_funcs=column_filtering_funcs,
         column_group_by_columns=column_group_by_columns or {},
+        columns_to_copy_config=columns_to_copy_config,
     )
 
     # COMPUTE THE DIFFERENCE
