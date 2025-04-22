@@ -2,54 +2,30 @@ import json
 import logging
 import random
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
+from typing import Optional
 
 import httpx
 import requests
-from llamaapi import LlamaAPI
 from openai import OpenAI
 from pydantic_core import Url
 
 from graal.custom_types import (
     APIKey,
-    CredentialsPassword,
-    CredentialsUsername,
     LLMType,
     TxtContent,
 )
 
 
 class LLMAPIClient(ABC):
-    def __init__(self, type: LLMType):
+    def __init__(self, type: LLMType, name: Optional[str] = None):
         self.type = type
-        self.name = f"{type}_" + "".join(
+        self.name = f"{name or type}_" + "".join(
             random.choices("abcdefghijklmnopqrstuvwxyz", k=5)  # nosec
         )
 
     @abstractmethod
     def generate_text(self, prompt):
         pass
-
-
-class LLaMaAPIClient(LLMAPIClient):
-    def __init__(self, model_name: str, api_token: APIKey):
-        super().__init__(type="llama")
-        self.model_name = model_name
-        self.api_token = api_token
-        self.client = LlamaAPI(api_token)
-
-    def generate_text(self, prompt: TxtContent) -> str:
-        logging.info(f"{self.name} is generating a summary")
-
-        data = {
-            "model": self.model_name,
-            "messages": [{"role": "user", "content": f"{prompt}"}],
-            "temperature": 0,
-            "stream": False,
-        }
-
-        response = self.client.run(data)
-        return response.json()["choices"][0]["message"]["content"]
 
 
 class OllamaAPIClient(LLMAPIClient):
@@ -60,8 +36,9 @@ class OllamaAPIClient(LLMAPIClient):
         user: str,
         password: str,
         timeout: int = 10,
+        name: Optional[str] = None,
     ):
-        super().__init__(type="ollama")
+        super().__init__(type="ollama", name=name)
         self.model_name = model_name
         self.endpoint = endpoint
         self.user = user
@@ -98,30 +75,44 @@ class OpenAIAPIClient(LLMAPIClient):
         self,
         model_name: str,
         api_key: APIKey,
-        base_url: Optional[httpx.URL] = None,
+        base_url: httpx.URL,
+        timeout: int = 10,
+        name: Optional[str] = None,
     ):
-        super().__init__(type="openai")
+        super().__init__(type="openai", name=name)
         self.model_name = model_name
-        self.api_key = api_key
         self.client = OpenAI(
+            base_url=base_url,
             api_key=api_key,
-            base_url=base_url if base_url else httpx.URL("https://api.openai.com/v1"),
         )
+        self.timeout = timeout
 
     def generate_text(self, prompt: TxtContent) -> str:
         logging.info(f"{self.name} is generating a summary")
 
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": f"{prompt}"}],
-            temperature=0,
-        )
+        data = {
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": f"{prompt}"}],
+            "stream": False,
+            "temperature": 0,
+            "n": 1,
+            "timeout": self.timeout,
+        }
+
+        response = self.client.chat.completions.create(**data)
         return response.choices[0].message.content or ""
 
 
 class VllmAPIClient(LLMAPIClient):
-    def __init__(self, model_name: str, vllm_endpoint: Url, user: str, password: str):
-        super().__init__(type="vllm")
+    def __init__(
+        self,
+        model_name: str,
+        vllm_endpoint: Url,
+        user: str,
+        password: str,
+        name: Optional[str] = None,
+    ):
+        super().__init__(type="vllm", name=name)
         self.model_name = model_name
         self.vllm_endpoint = vllm_endpoint
         self.user = user
@@ -144,43 +135,12 @@ class VllmAPIClient(LLMAPIClient):
         return summary
 
 
-class LLMInferenceAPIClient(LLMAPIClient):
-    """
-    This is a client that can talk to our own LLM inference API.
-    See https://github.com/SocialGouv/llm-inference-server to set it up.
-    """
-
+class FakeLLMAPIClient(LLMAPIClient):
     def __init__(
         self,
-        url: str,
-        auth: Optional[Tuple[CredentialsUsername, CredentialsPassword]] = None,
+        name: Optional[str] = None,
     ):
-        super().__init__(type="llm_inference")
-        self.url = url
-        self.auth = auth
-
-    def generate_text(self, prompt: TxtContent) -> str:
-        headers = {"Content-Type": "application/json"}
-
-        # Create the payload for the request
-        payload = {"prompts": [prompt]}
-
-        response = requests.post(
-            self.url, json=payload, headers=headers, auth=self.auth, timeout=10
-        )
-
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Extract and return the generated text
-            generated_texts = response.json().get("generated_texts", [])
-            return generated_texts[0]
-        else:
-            return f"Failed to get a response. Status code: {response.status_code}"
-
-
-class FakeLLMAPIClient(LLMAPIClient):
-    def __init__(self):
-        super().__init__(type="fake")
+        super().__init__(type="fake", name=name)
 
     def generate_text(self, _prompt: TxtContent) -> str:
         # Generate a random summary
@@ -192,28 +152,3 @@ class FakeLLMAPIClient(LLMAPIClient):
             ]
         )
         return summary
-
-
-class AlbertAPIClient(LLMAPIClient):
-    def __init__(
-        self, model_name: str, base_url: httpx.URL, api_key: APIKey, timeout: int = 10
-    ):
-        super().__init__(type="albert")
-        self.model_name = model_name
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
-        self.timeout = timeout
-
-    def generate_text(self, prompt: TxtContent) -> str:
-        logging.info(f"{self.name} is generating a summary")
-
-        data = {
-            "model": self.model_name,
-            "messages": [{"role": "user", "content": f"{prompt}"}],
-            "stream": False,
-            "temperature": 0,
-            "n": 1,
-            "timeout": self.timeout,
-        }
-
-        response = self.client.chat.completions.create(**data)
-        return response.choices[0].message.content
