@@ -72,6 +72,7 @@ class SimilarityHandler:
         column_filtering_funcs: Optional[
             dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
         ] = None,
+        columns_to_copy_config: Optional[dict] = None,
     ) -> pd.DataFrame:
         if column_filtering_funcs is None:
             column_filtering_funcs = {}
@@ -126,14 +127,26 @@ class SimilarityHandler:
             target_df=original_new_amendments_df,
             old_amendments_df=preprocessed_old_amendments_df,
             closest_amdts=merged_closest_amdts,
+            columns_config=columns_to_copy_config,
         )
 
         return new_amendments_with_copies_df
 
     @staticmethod
     def copy_matches_to_amendments_df(
-        target_df: pd.DataFrame, old_amendments_df: pd.DataFrame, closest_amdts: dict
+        target_df: pd.DataFrame,
+        old_amendments_df: pd.DataFrame,
+        closest_amdts: dict,
+        columns_config: Optional[dict] = None,
     ) -> pd.DataFrame:
+        # Default configuration if none provided
+        if columns_config is None:
+            columns_config = {
+                "Réponse": {"enabled": True},
+                "Sort": {"enabled": True, "condition": "irrecevable"},
+                "Objet": {"enabled": False},
+            }
+
         # Iterate over the closest documents
         for new_amdt_idx, closest_doc in closest_amdts.items():
             amdt_idx_mask = target_df["amdt_idx"] == new_amdt_idx
@@ -149,11 +162,6 @@ class SimilarityHandler:
             matching_amendment = old_amendments_df.loc[old_amendment_mask]
 
             if not matching_amendment.empty:
-                # Copy the response if available
-                target_df.loc[amdt_idx_mask.values, "Réponse"] = matching_amendment[
-                    "Réponse"
-                ].values[0]
-
                 # Extract the matching details
                 matching_origin_project = matching_amendment["origin_project"].values[0]
                 matching_num_amdt = matching_amendment["Num amdt"].values[0]
@@ -185,13 +193,27 @@ class SimilarityHandler:
                         Colonne similaire : {column_used_for_comparison}
                     """).strip()
 
-                # Check and copy the "Sort" value if it contains "Irrecevable"
-                old_sort_value = matching_amendment["Sort"].values[0]
-                if pd.notna(old_sort_value) and "irrecevable" in old_sort_value.lower():
-                    target_df.loc[amdt_idx_mask, "Sort"] = old_sort_value
-                    target_df.loc[amdt_idx_mask, "Commentaires"] += "\n"
-                    target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
-                            Sort copié : {old_sort_value}
-                        """).strip()
+                # Process each configured column
+                for column_name, column_config in columns_config.items():
+                    # Skip disabled columns
+                    if not column_config.get("enabled", False):
+                        continue
+
+                    # Check if the column exists in the matching amendment
+                    if column_name in matching_amendment.columns:
+                        old_value = matching_amendment[column_name].values[0]
+
+                        # Check if there's a condition for copying
+                        if "condition" in column_config and pd.notna(old_value):
+                            condition = column_config["condition"]
+                            if condition.lower() in str(old_value).lower():
+                                target_df.loc[amdt_idx_mask, column_name] = old_value
+                                # Add to comments
+                                target_df.loc[amdt_idx_mask, "Commentaires"] += (
+                                    f"\n{column_name} copié : {old_value}"
+                                )
+                        else:
+                            # No condition, just copy
+                            target_df.loc[amdt_idx_mask, column_name] = old_value
 
         return target_df

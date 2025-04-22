@@ -8,12 +8,26 @@
     "handle_inadmissible_amendments": false,
     "no_value_overwrite": false,
     "placeholder_amdt_body": false,
-    "similarity_search": true,
+    "similarity_search": {
+        "enabled": true,
+        "columns_to_copy": {
+            "Réponse": {
+                "enabled": true
+            },
+            "Sort": {
+                "enabled": true,
+                "condition": "irrecevable"
+            },
+            "Objet": {
+                "enabled": false
+            }
+        }
+    },
     "summary_generation": true,
     "mission_short_title_filter": [],
     "llm_clients": {
-        "fake": {
-            "nb_instances": 1,
+        "scaleway": {
+            "nb_instances": 6,
             "timeout": 30
         }
     }
