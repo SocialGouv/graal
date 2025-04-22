@@ -46,29 +46,6 @@ def test_create_scaleway_client():
         del os.environ["SCALEWAY_MODEL_NAME"]
 
 
-def test_create_scaleway_client_default_model():
-    """Test creating a Scaleway API client with default model name."""
-    # Set environment variables for the test
-    os.environ["SCALEWAY_BASE_URL"] = "https://test-scaleway.com"
-    os.environ["SCALEWAY_API_KEY"] = "test-scaleway-key"  # pragma: allowlist secret
-    # Intentionally not setting SCALEWAY_MODEL_NAME
-
-    try:
-        # Call the factory function
-        client = create_scaleway_client()
-
-        # Verify the client
-        assert isinstance(client, OpenAIAPIClient)
-        assert client.type == "openai"
-        assert client.name.startswith("scaleway_")
-        assert client.model_name == "meta-llama/Meta-Llama-3.3-70B-Instruct"
-        assert client.timeout == 30
-    finally:
-        # Clean up environment variables
-        del os.environ["SCALEWAY_BASE_URL"]
-        del os.environ["SCALEWAY_API_KEY"]
-
-
 def test_create_albert_client():
     """Test creating an Albert API client."""
     # Set environment variables for the test

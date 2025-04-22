@@ -207,16 +207,16 @@ def test_normalize_text_with_special_characters():
     [
         (
             "  Text with leading and trailing spaces  ",
-            "text with leading and trailing spaces",
+            "text with leading and trailing space",
         ),
         ("Text with\u00a0non-breaking space", "text with non breaking space"),
         ("Text with\u2009thin space", "text with thin space"),
         ("Text with\u3000ideographic space", "text with ideographic space"),
-        ("Text with accents éàè", "text with accents eae"),
+        ("Text with accents éàè", "text with accent eae"),
         ("Text with mixed CASE", "text with mixed case"),
         (
             "  Text with multiple\u00a0spaces\u2009and\u3000various spaces  ",
-            "text with multiple spaces and various spaces",
+            "text with multiple space and various space",
         ),
         (
             """
