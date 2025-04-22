@@ -113,49 +113,43 @@ make run-no-overwrite
 
 ### Config
 
-Each feature mentioned above can be enabled or disabled through the configuration file. Some features also require specific text values to be set.
+Each feature mentioned above can be enabled or disabled through the configuration file.
 
 See [config/default.json](config/default.json) for the configuration we use most of the time.
 
-Additionally, some parameters in the [graal/full_pipeline.py](graal/full_pipeline.py) script are currently hardcoded. You will need to modify the file directly (work in progress).
+#### LLM Client Configuration
 
-For instance, to enable or disable the use of Ollama, Albert API, Scaleway API, or the FakeLLMAPIClient (which outputs random Latin sentences), you can comment or uncomment the corresponding lines in this section of the code:
+You can configure LLM clients using the `llm_clients` section in your configuration file:
 
-```python
-llm_api_clients = []
-for _ in range(10):
-    ollama_api_client = OllamaAPIClient(
-        endpoint=os.getenv("OLLAMA_ENDPOINT"),
-        model_name=os.getenv("OLLAMA_MODEL_NAME"),
-        user=os.getenv("OLLAMA_USER"),
-        password=os.getenv("OLLAMA_PASSWORD"),
-    )
-    llm_api_clients.append(ollama_api_client)
-
-for _ in range(6):
-    albert_api_client = AlbertAPIClient(
-        base_url=os.getenv(
-            "ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1"
-        ),
-        api_key=os.getenv("ETALAB_API_KEY"),
-        model_name=os.getenv(
-            "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
-        ),
-    )
-    llm_api_clients.append(albert_api_client)
-
-for _ in range(6):
-    open_ai_api_client = OpenAIAPIClient(
-        api_key=os.environ["SCALEWAY_API_KEY"],
-        base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
-        model_name=os.getenv(
-            "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.3-70B-Instruct"
-        ),
-    )
-    llm_api_clients.append(open_ai_api_client)
-
-llm_api_clients.append(FakeLLMAPIClient())
+```json
+{
+    "llm_clients": {
+        "scaleway": {
+            "nb_instances": 6,
+            "timeout": 30
+        },
+        "albert": {
+            "nb_instances": 3,
+            "rate_limiting": 100
+        }
+    }
+}
 ```
+
+Each client type can have the following parameters:
+
+- `nb_instances`: Number of client instances to create (required)
+- `timeout`: Request timeout in seconds (optional, defaults to 30)
+- `rate_limiting`: Rate limit in requests per minute (optional)
+
+Supported client types:
+
+- `scaleway`: Scaleway API
+- `albert`: Albert API from Etalab
+- `ollama`: Ollama API
+- `fake`: Fake client for testing
+- `vllm`: vLLM API
+
 
 ## Similarity Data Base
 

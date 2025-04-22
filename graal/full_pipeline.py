@@ -27,7 +27,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import httpx
 import pandas as pd
 from unidecode import unidecode
 
@@ -40,10 +39,7 @@ from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHand
 from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn, InputFileConfig, IntIndex
 from graal.opinion.opinion_handler import OpinionHandler
-from graal.summary.llm_clients import (
-    LLMAPIClient,
-    OpenAIAPIClient,
-)
+from graal.summary.llm_factory import create_llm_api_clients, get_rate_limiting_config
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.summary.summary_handler import SummaryHandler
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
@@ -170,50 +166,17 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     config_excel = pd.read_excel(GRAAL_CONFIG_FILE, sheet_name=None)
 
-    llm_api_clients: list[LLMAPIClient] = []
-    # for _ in range(7):
-    #     ollama_api_client = OllamaAPIClient(
-    #         endpoint=Url(os.environ["OLLAMA_ENDPOINT"]),
-    #         model_name=os.environ["OLLAMA_MODEL_NAME"],
-    #         user=os.environ["OLLAMA_USER"],
-    #         password=os.environ["OLLAMA_PASSWORD"],
-    #         timeout=30,
-    #     )
-    #     llm_api_clients.append(ollama_api_client)
-    # for _ in range(6):
-    #     llama_api_client = LLaMaAPIClient(
-    #         model_name=os.environ["LLAMA_MODEL_NAME"],
-    #         api_token=os.environ["LLAMA_API_KEY"],
-    #     )
-    #     llm_api_clients.append(llama_api_client)
-    for _ in range(6):
-        open_ai_api_client = OpenAIAPIClient(
-            api_key=os.environ["SCALEWAY_API_KEY"],
-            base_url=httpx.URL(os.environ["SCALEWAY_BASE_URL"]),
-            model_name=os.getenv(
-                "SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.3-70B-Instruct"
-            ),
-        )
-        llm_api_clients.append(open_ai_api_client)
+    # Create LLM API clients based on configuration
+    llm_api_clients = create_llm_api_clients(vars(args))
 
-    # for _ in range(6):
-    #     albert_api_client = AlbertAPIClient(
-    #         base_url=httpx.URL(
-    #             os.getenv("ETALAB_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
-    #         ),
-    #         api_key=os.environ["ETALAB_API_KEY"],
-    #         model_name=os.getenv(
-    #             "ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"
-    #         ),
-    #     )
-    #     llm_api_clients.append(albert_api_client)
+    # Get rate limiting configuration
+    rate_limiting_config = get_rate_limiting_config(vars(args))
 
-    # llm_api_clients.append(FakeLLMAPIClient())
     summary_gen_load_balancer = SummaryGenerationLoadBalancer(
         clients=llm_api_clients,
         queue_timeout=4,
         max_retries=5,
-        rate_limiting_config={"albert": 100},
+        rate_limiting_config=rate_limiting_config,
     )
 
     intermediate_amdts_df = None

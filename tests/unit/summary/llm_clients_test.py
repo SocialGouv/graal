@@ -2,11 +2,11 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from pydantic_core import Url
 from requests.models import Response
 
 from graal.custom_types import TxtContent
 from graal.summary.llm_clients import (
-    LLMInferenceAPIClient,
     VllmAPIClient,
 )
 
@@ -15,17 +15,9 @@ from graal.summary.llm_clients import (
 def vllm_client():
     return VllmAPIClient(
         model_name="test-model",
-        vllm_endpoint="https://test-host/v1/completions",
+        vllm_endpoint=Url("https://test-host/v1/completions"),
         user="test-user",
-        password="test-password",
-    )
-
-
-@pytest.fixture
-def llm_inference_client():
-    return LLMInferenceAPIClient(
-        url="https://test-inference-api/v1/generate",
-        auth=("fake_user", "fake_password"),
+        password="test-password",  # noqa: S106
     )
 
 

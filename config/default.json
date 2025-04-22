@@ -10,5 +10,11 @@
     "placeholder_amdt_body": false,
     "similarity_search": true,
     "summary_generation": true,
-    "mission_short_title_filter": []
+    "mission_short_title_filter": [],
+    "llm_clients": {
+        "fake": {
+            "nb_instances": 1,
+            "timeout": 30
+        }
+    }
 }
