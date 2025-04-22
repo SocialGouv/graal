@@ -67,7 +67,7 @@ class CreditTableMatcher(BaseMatcher):
         df["Programmes"] = df["Programmes"].apply(
             lambda text: AttributionTextNormalizer.normalize_text(str(text))
         )
-        df = df[~df["Programmes"].str.lower().isin(["totaux", "solde"])]
+        df = df[~df["Programmes"].str.lower().isin(["total", "solde"])]
         return df
 
     def _get_attribution_for_credit_table(  # noqa: C901

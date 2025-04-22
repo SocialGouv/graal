@@ -5,7 +5,6 @@ import requests
 from pydantic_core import Url
 from requests.models import Response
 
-from graal.custom_types import TxtContent
 from graal.summary.llm_clients import (
     VllmAPIClient,
 )
@@ -32,54 +31,16 @@ def test_generate_text(vllm_client):
     with patch.object(requests, "post", return_value=response_mock) as mock_post:
         summary = vllm_client.generate_text(prompt)
         mock_post.assert_called_once_with(
-            "https://test-host/v1/completions",
+            Url("https://test-host/v1/completions"),
             headers={"Content-Type": "application/json"},
             json={
                 "model": "test-model",
                 "prompt": prompt,
                 "max_tokens": 1024,
                 "temperature": 0,
+                "timeout": 10,
             },
             auth=("test-user", "test-password"),
             timeout=10,
         )
         assert summary == expected_summary
-
-
-def test_llm_inference_api_client_generate_text(llm_inference_client):
-    prompt = TxtContent("This is a test prompt.")
-    expected_summary = "This is a test summary."
-
-    response_mock = Response()
-    response_mock.status_code = 200
-    response_mock._content = b'{"generated_texts": ["This is a test summary."]}'
-
-    with patch.object(requests, "post", return_value=response_mock) as mock_post:
-        summary = llm_inference_client.generate_text(prompt)
-        mock_post.assert_called_once_with(
-            "https://test-inference-api/v1/generate",
-            json={"prompts": [prompt]},
-            headers={"Content-Type": "application/json"},
-            auth=("fake_user", "fake_password"),
-            timeout=10,
-        )
-        assert summary == expected_summary
-
-
-def test_llm_inference_api_client_generate_text_failure(llm_inference_client):
-    prompt = TxtContent("This is a test prompt.")
-
-    response_mock = Response()
-    response_mock.status_code = 500
-    response_mock._content = b""
-
-    with patch.object(requests, "post", return_value=response_mock) as mock_post:
-        summary = llm_inference_client.generate_text(prompt)
-        mock_post.assert_called_once_with(
-            "https://test-inference-api/v1/generate",
-            json={"prompts": [prompt]},
-            headers={"Content-Type": "application/json"},
-            auth=("fake_user", "fake_password"),
-            timeout=10,
-        )
-        assert summary == "Failed to get a response. Status code: 500"

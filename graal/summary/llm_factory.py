@@ -3,6 +3,8 @@ Factory module for creating LLM API clients based on configuration.
 """
 # mypy: ignore-errors
 
+import logging
+import logging.config
 import os
 from typing import Any, Dict, List, cast
 
@@ -17,6 +19,8 @@ from graal.summary.llm_clients import (
     OpenAIAPIClient,
     VllmAPIClient,
 )
+
+logging.config.fileConfig("logging.conf")
 
 
 def create_scaleway_client(timeout: int = 30) -> LLMAPIClient:
@@ -64,7 +68,7 @@ def create_fake_client() -> LLMAPIClient:
     return FakeLLMAPIClient(name="fake")
 
 
-def create_vllm_client() -> LLMAPIClient:
+def create_vllm_client(timeout: int = 30) -> LLMAPIClient:
     """Create a VLLM API client."""
     return VllmAPIClient(
         model_name=os.environ["VLLM_MODEL_NAME"],
@@ -72,6 +76,7 @@ def create_vllm_client() -> LLMAPIClient:
         user=os.environ["VLLM_USER"],
         password=os.environ["VLLM_PASSWORD"],
         name="vllm",
+        timeout=timeout,
     )
 
 
@@ -101,15 +106,15 @@ def create_llm_api_clients(config: Dict[str, Any]) -> List[LLMAPIClient]:
 
         for _ in range(nb_instances):
             if client_type == "scaleway":
-                llm_api_clients.append(create_scaleway_client())
+                llm_api_clients.append(create_scaleway_client(timeout=timeout))
             elif client_type == "ollama":
-                llm_api_clients.append(create_ollama_client(timeout))
+                llm_api_clients.append(create_ollama_client(timeout=timeout))
             elif client_type == "albert":
-                llm_api_clients.append(create_albert_client(timeout))
+                llm_api_clients.append(create_albert_client(timeout=timeout))
             elif client_type == "fake":
                 llm_api_clients.append(create_fake_client())
             elif client_type == "vllm":
-                llm_api_clients.append(create_vllm_client())
+                llm_api_clients.append(create_vllm_client(timeout=timeout))
             else:
                 raise ValueError(
                     f"Unsupported LLM client type: {client_type}. Supported types are: 'scaleway', 'ollama', 'albert', 'fake', 'vllm'."
