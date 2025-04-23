@@ -39,6 +39,7 @@ from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHand
 from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn, InputFileConfig, IntIndex
 from graal.opinion.opinion_handler import OpinionHandler
+from graal.similarities.similarities_handler import SimilaritiesHandler
 from graal.summary.llm_factory import create_llm_api_clients, get_rate_limiting_config
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.summary.summary_handler import SummaryHandler
@@ -375,6 +376,60 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
         logging.info(
             f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
+        )
+
+    # Extract similarities_within_lectures configuration
+    similarities_config = args.similarities_within_lectures
+    similarities_enabled = similarities_config.get("enabled", False)
+
+    if similarities_enabled:
+        similarities_column = similarities_config.get("column", None)
+        if similarities_column is None:
+            raise ValueError(
+                "Similarities column must be specified in the configuration under 'column'."
+            )
+        similarity_threshold = similarities_config.get("similarity_threshold", 0.8)
+
+        normalized_for_similarities_df = (
+            AmendmentPreProcessor.drop_empty_rows_in_columns(
+                amendments_df=intermediate_amdts_df,
+                columns_to_filter=[similarities_column],
+            )
+        )
+        normalized_for_similarities_df = (
+            AmendmentPreProcessor.handle_common_amendment_bodies(
+                amendments_df=normalized_for_similarities_df
+            )
+        )
+        normalized_for_similarities_df = AmendmentPreProcessor.normalize_amendments(
+            amendments_df=normalized_for_similarities_df,
+            columns_to_normalize=[similarities_column],
+        )
+
+        cluster_finder, tfidf_clusters = SimilaritiesHandler.create_tfidf_clusters(
+            normalized_amdt_df=normalized_for_similarities_df,
+            group_by_columns=["Num article"],
+            eps=tf_idf_threshold,
+        )
+
+        similar_amdt_clusters = SimilaritiesHandler.apply_levenshtein_refinement(
+            cluster_finder=cluster_finder,
+            threshold=similarity_threshold,
+        )
+
+        similarity_percentages = SimilaritiesHandler.calculate_similarity_percentages(
+            normalized_amdt_df=normalized_for_similarities_df,
+            allotted_amdt_clusters=similar_amdt_clusters,
+        )
+
+        intermediate_amdts_df = SimilaritiesHandler.update_comments_with_similarities(
+            amendments_df=intermediate_amdts_df,
+            similarity_percentages=similarity_percentages,
+            threshold=similarity_threshold,
+        )
+
+        logging.info(
+            f"Updated comments with similarity information for {len(similarity_percentages)} amendments"
         )
 
     if args.similarity_search:
