@@ -80,7 +80,7 @@ def derive_columns_to_work_on_from_enabled_features(
     """
     columns_to_clear = {"Commentaires"}
     columns_to_preserve = set()
-    if args.allotments:
+    if args.allotments.get("enabled", False):
         columns_to_clear.update(["Allotissement"])
 
     if args.summary_generation:
@@ -331,22 +331,37 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             default_attributions
         )
 
-    if args.allotments:
+    # Extract allotment configuration
+    allotment_config = args.allotments
+    allotment_enabled = allotment_config.get("enabled", False)
+    tf_idf_threshold = getattr(args, "tf_idf_threshold", 0.0001)
+
+    if allotment_enabled:
+        allotment_column = allotment_config.get("column", None)
+        if allotment_column is None:
+            raise ValueError(
+                "Allotment column must be specified in the configuration under 'column'."
+            )
+        similarity_threshold = allotment_config.get("similarity_threshold", 0.0001)
         normalized_for_allot_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
             amendments_df=intermediate_amdts_df,
-            columns_to_filter=["Corps amdt"],
+            columns_to_filter=[allotment_column],
         )
         normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=normalized_for_allot_df
         )
         normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
-            amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
+            amendments_df=normalized_for_allot_df,
+            columns_to_normalize=[allotment_column],
         )
         cluster_finder, tfidf_clusters = AllotmentHandler.create_tfidf_clusters(
-            normalized_amdt_df=normalized_for_allot_df, group_by_columns=["Num article"]
+            normalized_amdt_df=normalized_for_allot_df,
+            group_by_columns=["Num article"],
+            eps=tf_idf_threshold,
         )
         allotted_amdt_clusters = AllotmentHandler.apply_levenshtein_refinement(
-            cluster_finder=cluster_finder
+            cluster_finder=cluster_finder,
+            threshold=similarity_threshold,
         )
         logging.info(
             f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"

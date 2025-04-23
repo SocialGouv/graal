@@ -57,8 +57,15 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         amendments_df=normalized_amdt_df, columns_to_normalize=["Corps amdt"]
     )
 
+    # Use the same thresholds as in the configuration
+    tf_idf_threshold = 0.4
+    similarity_threshold = 0.0001
+
     allotted_amdt_clusters = AllotmentHandler.get_clusters(
-        normalized_amdt_df=normalized_amdt_df, group_by_columns=["Lecture"]
+        normalized_amdt_df=normalized_amdt_df,
+        group_by_columns=["Lecture"],
+        eps=tf_idf_threshold,
+        threshold=similarity_threshold,
     )
 
     normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(

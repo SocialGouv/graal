@@ -50,7 +50,7 @@ class AllotmentHandler:
     def create_tfidf_clusters(
         normalized_amdt_df: pd.DataFrame,
         group_by_columns: list[str],
-        eps: float = 0.0001,
+        eps: float = 0.4,
     ) -> tuple[AmendmentsClusterFinder, dict[tuple, list[list[IntIndex]]]]:
         """Create initial clusters using TF-IDF and DBSCAN"""
         logging.info("Creating initial clusters of similar amendments using TF-IDF")
@@ -76,13 +76,20 @@ class AllotmentHandler:
     def get_clusters(
         normalized_amdt_df: pd.DataFrame,
         group_by_columns: list[str],
+        eps: float = 0.4,
+        threshold: float = 0.0001,
     ) -> dict[tuple, list[list[IntIndex]]]:
         """Get clusters of similar amendments (combined TF-IDF and refinement)"""
         logging.info("Get clusters of similar amendments")
         cluster_finder, _ = AllotmentHandler.create_tfidf_clusters(
-            normalized_amdt_df=normalized_amdt_df, group_by_columns=group_by_columns
+            normalized_amdt_df=normalized_amdt_df,
+            group_by_columns=group_by_columns,
+            eps=eps,
         )
-        return AllotmentHandler.apply_levenshtein_refinement(cluster_finder)
+        return AllotmentHandler.apply_levenshtein_refinement(
+            cluster_finder=cluster_finder,
+            threshold=threshold,
+        )
 
     @staticmethod
     def default_removal_strategy_func(

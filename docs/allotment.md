@@ -26,11 +26,11 @@ Avant d'analyser les amendements pour l'allotissement, le système effectue plus
 
 2. **Analyse de Similarité**
 
-   Le système utilise une approche de clustering avec un seuil de similarité très strict (0.0001) pour identifier les amendements identiques ou quasi-identiques. Cette analyse est effectuée sur le corps des amendements uniquement, après normalisation et nettoyage du texte.
+   Le système utilise une approche de clustering avec des seuils de similarité configurables pour identifier les amendements identiques ou quasi-identiques. Cette analyse est effectuée sur la colonne spécifiée dans la configuration (par défaut "Corps amdt"), après normalisation et nettoyage du texte.
 
    Le processus se déroule en deux phases :
-   - Une première phase de clustering pour identifier les groupes initiaux
-   - Une phase de raffinement qui vérifie la similarité au sein des groupes identifiés
+   - Une première phase de clustering TF-IDF pour identifier les groupes initiaux, utilisant le seuil `tf_idf_threshold` (configurable dans le fichier de configuration)
+   - Une phase de raffinement qui vérifie la similarité au sein des groupes identifiés en utilisant la distance de Damerau-Levenshtein avec le seuil `similarity_threshold` (également configurable)
 
 ## Gestion des Amendements Allotis
 
@@ -70,3 +70,27 @@ Ce processus automatisé permet d'assurer que :
 - Les amendements identiques sont rapidement identifiés et regroupés
 - Le traitement est cohérent et uniforme pour tous les amendements
 - Les informations sont correctement propagées au sein des groupes
+
+## Configuration
+
+La fonctionnalité d'allotissement peut être configurée via le fichier `config/default.json` avec les options suivantes :
+
+```json
+{
+    "tf_idf_threshold": 0.4,
+    "allotments": {
+        "enabled": true,
+        "column": "Corps amdt",
+        "similarity_threshold": 0.0001
+    }
+}
+```
+
+### Options de Configuration
+
+- **tf_idf_threshold** : Seuil pour le clustering TF-IDF initial (valeur par défaut : 0.0001)
+- **allotments.enabled** : Active ou désactive la fonctionnalité d'allotissement
+- **allotments.column** : Colonne utilisée pour l'analyse de similarité (valeur par défaut : "Corps amdt")
+- **allotments.similarity_threshold** : Seuil de similarité pour la distance de Damerau-Levenshtein (valeur par défaut : 0.0001)
+
+Un seuil plus élevé pour `tf_idf_threshold` (par exemple 0.4) permet d'identifier des groupes d'amendements plus larges lors de la phase initiale, tandis qu'un seuil plus bas pour `similarity_threshold` (par exemple 0.0001) assure que seuls les amendements très similaires sont regroupés lors de la phase de raffinement.
