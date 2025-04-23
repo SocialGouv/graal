@@ -47,20 +47,42 @@ class AllotmentHandler:
         return prepared_df
 
     @staticmethod
+    def create_tfidf_clusters(
+        normalized_amdt_df: pd.DataFrame,
+        group_by_columns: list[str],
+        eps: float = 0.0001,
+    ) -> tuple[AmendmentsClusterFinder, dict[tuple, list[list[IntIndex]]]]:
+        """Create initial clusters using TF-IDF and DBSCAN"""
+        logging.info("Creating initial clusters of similar amendments using TF-IDF")
+        cluster_finder = AmendmentsClusterFinder(
+            amendments_df=normalized_amdt_df, group_by_columns=group_by_columns
+        )
+        tfidf_clusters = cluster_finder.find_similarity_clusters(eps=eps)
+        return cluster_finder, tfidf_clusters
+
+    @staticmethod
+    def apply_levenshtein_refinement(
+        cluster_finder: AmendmentsClusterFinder,
+        threshold: float = 0.0001,
+    ) -> dict[tuple, list[list[IntIndex]]]:
+        """Refine clusters using Damerau-Levenshtein distance"""
+        logging.info("Refining clusters using Damerau-Levenshtein distance")
+        refined_clusters = cluster_finder.refine_clusters_with_distance(
+            threshold=threshold
+        )
+        return refined_clusters
+
+    @staticmethod
     def get_clusters(
         normalized_amdt_df: pd.DataFrame,
         group_by_columns: list[str],
     ) -> dict[tuple, list[list[IntIndex]]]:
-        # Clustering
+        """Get clusters of similar amendments (combined TF-IDF and refinement)"""
         logging.info("Get clusters of similar amendments")
-        cluster_finder = AmendmentsClusterFinder(
-            amendments_df=normalized_amdt_df, group_by_columns=group_by_columns
+        cluster_finder, _ = AllotmentHandler.create_tfidf_clusters(
+            normalized_amdt_df=normalized_amdt_df, group_by_columns=group_by_columns
         )
-        cluster_finder.find_similarity_clusters(eps=0.0001)
-        allotted_amdt_clusters = cluster_finder.refine_clusters_with_distance(
-            threshold=0.0001
-        )
-        return allotted_amdt_clusters
+        return AllotmentHandler.apply_levenshtein_refinement(cluster_finder)
 
     @staticmethod
     def default_removal_strategy_func(
