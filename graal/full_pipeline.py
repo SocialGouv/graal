@@ -342,8 +342,11 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
             amendments_df=normalized_for_allot_df, columns_to_normalize=["Corps amdt"]
         )
-        allotted_amdt_clusters = AllotmentHandler.get_clusters(
+        cluster_finder, tfidf_clusters = AllotmentHandler.create_tfidf_clusters(
             normalized_amdt_df=normalized_for_allot_df, group_by_columns=["Num article"]
+        )
+        allotted_amdt_clusters = AllotmentHandler.apply_levenshtein_refinement(
+            cluster_finder=cluster_finder
         )
         logging.info(
             f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
