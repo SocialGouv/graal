@@ -1,5 +1,10 @@
 {
-    "allotments": true,
+    "tf_idf_threshold": 0.4,
+    "allotments": {
+        "enabled": true,
+        "column": "Corps amdt",
+        "similarity_threshold": 0.0001
+    },
     "already_processed_amdt_nums_path": "",
     "attribution_interstitial_only": false,
     "attribution": true,

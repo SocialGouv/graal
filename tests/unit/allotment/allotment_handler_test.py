@@ -13,7 +13,10 @@ def test_filter_amdts_to_keep_one_per_allotment():
     )
 
     # Sample allotment clusters
-    allotted_amdt_clusters = {"Lecture1": [[1, 2, 3], [4, 5]], "Lecture2": [[6, 7]]}
+    allotted_amdt_clusters: dict[tuple, list[list[int]]] = {
+        ("Lecture1",): [[1, 2, 3], [4, 5]],
+        ("Lecture2",): [[6, 7]],
+    }
 
     # Expected output: only the first amendment in each cluster should remain
     expected_filtered_df = pd.DataFrame(
@@ -70,9 +73,9 @@ def test_populate():
     )
 
     # Sample clusters dict
-    allotted_amdt_clusters = {
-        "Lecture1": [[1, 2, 3]],
-        "Lecture2": [[4, 5, 6]],
+    allotted_amdt_clusters: dict[tuple, list[list[int]]] = {
+        ("Lecture1",): [[1, 2, 3]],
+        ("Lecture2",): [[4, 5, 6]],
     }
 
     # Columns to copy
