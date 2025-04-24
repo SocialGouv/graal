@@ -149,8 +149,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        # Path(f"{DATA_FOLDER}/input_plfss/lecture-an-17-622-PO838901.json"): {
-        Path(f"{DATA_FOLDER}/input_ppl_fin_vie/AN_Séance publique_PPL_SPA.json"): {
+        Path(f"{DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_fin de vie.json"): {
             "default_processing_timestamp": int(
                 datetime(year=2025, month=4, day=5).timestamp()
             ),
@@ -158,7 +157,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         }
     }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/résultats_ppl_SPA_2025"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/résultats_AN_Commission_PPL_fin_de_vie_test_{datetime.now().strftime('%Y-%m-%d')}"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -332,33 +331,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             default_attributions
         )
 
-    # Extract allotment configuration
-    allotment_config = args.allotments
-    allotment_enabled = allotment_config.get("enabled", False)
     tf_idf_threshold = getattr(args, "tf_idf_threshold", 0.9999)
-
-    if allotment_enabled:
-        allotment_column = allotment_config.get("column", None)
-        if allotment_column is None:
-            raise ValueError(
-                "Allotment column must be specified in the configuration under 'column'."
-            )
-        similarity_threshold = allotment_config.get("similarity_threshold", 0.9999)
-
-        intermediate_amdts_df, allotted_amdt_clusters = (
-            AllotmentHandler.process_allotments(
-                amendments_df=intermediate_amdts_df,
-                allotment_column=allotment_column,
-                similarity_threshold=similarity_threshold,
-                group_by_columns=["Num article"],
-                eps=tf_idf_threshold,
-                removal_strategy_func=amdt_allotment_strategy_func,
-            )
-        )
-
-        logging.info(
-            f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
-        )
 
     # Extract similarities_within_lectures configuration
     similarities_config = args.similarities_within_lectures
@@ -383,6 +356,33 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
 
         logging.info("Updated comments with similarity information for amendments")
+
+    # Extract allotment configuration
+    allotment_config = args.allotments
+    allotment_enabled = allotment_config.get("enabled", False)
+
+    if allotment_enabled:
+        allotment_column = allotment_config.get("column", None)
+        if allotment_column is None:
+            raise ValueError(
+                "Allotment column must be specified in the configuration under 'column'."
+            )
+        similarity_threshold = allotment_config.get("similarity_threshold", 0.9999)
+
+        intermediate_amdts_df, allotted_amdt_clusters = (
+            AllotmentHandler.process_allotments(
+                amendments_df=intermediate_amdts_df,
+                allotment_column=allotment_column,
+                similarity_threshold=similarity_threshold,
+                group_by_columns=["Num article"],
+                eps=tf_idf_threshold,
+                removal_strategy_func=amdt_allotment_strategy_func,
+            )
+        )
+
+        logging.info(
+            f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
+        )
 
     if args.similarity_search:
         # Extract similarity search configuration
@@ -421,6 +421,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             preprocessed_old_amendments_df=old_amendments_df,
             preprocessed_new_amendments_df=new_amendments_df,
             original_new_amendments_df=saved_new_amendments_df,
+            # TODO: Make these configs come from the config file
             clustering_similarity_thresholds={
                 "Exposé amdt": 0.4,
                 "Corps amdt": 0.4,
