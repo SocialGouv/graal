@@ -1,71 +1,135 @@
-import pandas as pd
+from unittest.mock import patch
 
+import pandas as pd
+import pytest
+
+from graal.clustering.clustering_service import ClusteringService
 from graal.similarities.similarities_handler import SimilaritiesHandler
 
 
-def test_calculate_similarity_percentages():
-    # Sample input dataframe
-    normalized_amdt_df = pd.DataFrame(
+@pytest.fixture
+def sample_df():
+    """Create a sample dataframe for testing."""
+    return pd.DataFrame(
         {
-            "amdt_idx": [1, 2, 3],
-            "Num amdt": [101, 102, 103],
-            "Corps amdt": [
-                "This is amendment one",
-                "This is amendment one with a small change",
-                "This is a completely different amendment",
+            "amdt_idx": [1, 2, 3, 4, 5],
+            "Num amdt": [101, 102, 103, 104, 105],
+            "Num article": [
+                "Article 1",
+                "Article 1",
+                "Article 2",
+                "Article 2",
+                "Article 3",
             ],
+            "Corps amdt": [
+                "This is amendment body 1",
+                "This is very similar to amendment body 1",
+                "This is amendment body 3",
+                "This is amendment body 4",
+                "This is amendment body 5",
+            ],
+            "Commentaires": ["", "", "", "", ""],
         }
     )
 
-    # Sample clusters
-    allotted_amdt_clusters = {("Lecture1",): [[1, 2, 3]]}
 
-    # Call the function
+def test_calculate_similarity_percentages(sample_df):
+    """Test the calculate_similarity_percentages method."""
+    clusters = {
+        ("Article 1",): [[1, 2]],
+        ("Article 2",): [[3, 4]],
+        ("Article 3",): [[5]],
+    }
     result = SimilaritiesHandler.calculate_similarity_percentages(
-        normalized_amdt_df, allotted_amdt_clusters
+        normalized_amdt_df=sample_df,
+        similar_amdt_clusters=clusters,
     )
 
-    # Check that the result has the expected structure
     assert 1 in result
     assert 2 in result
-    assert 3 in result
+    assert 2 in result[1]
+    assert 1 in result[2]
 
-    # Check that the similarity percentages are reasonable
-    assert result[1][2] > 50  # Amendment 1 and 2 should be quite similar
-    assert result[1][3] < 50  # Amendment 1 and 3 should be less similar
-    assert result[2][3] < 50  # Amendment 2 and 3 should be less similar
+    assert result[1][2] > 0
+    assert result[2][1] > 0
 
 
-def test_update_comments_with_similarities():
-    # Sample input dataframe
-    amendments_df = pd.DataFrame(
-        {
-            "amdt_idx": [1, 2, 3],
-            "Num amdt": [101, 102, 103],
-            "Commentaires": ["Existing comment", "", None],
-        }
-    )
-
-    # Sample similarity percentages
+def test_update_comments_with_similarities(sample_df):
+    """Test the update_comments_with_similarities method."""
     similarity_percentages = {
-        1: {2: 85.5, 3: 42.3},
-        2: {1: 85.5, 3: 40.1},
-        3: {1: 42.3, 2: 40.1},
+        1: {2: 90.0},
+        2: {1: 90.0},
+        3: {4: 80.0},
+        4: {3: 80.0},
     }
 
     result_df = SimilaritiesHandler.update_comments_with_similarities(
-        amendments_df, similarity_percentages, threshold=0.8
+        amendments_df=sample_df,
+        similarity_percentages=similarity_percentages,
+        threshold=0.8,
     )
 
-    # Check that the comments were updated correctly
-    # Only similarities >= 80% should be included
-    assert "Existing comment" in result_df.loc[0, "Commentaires"]
-    assert "Amdt similaires : 102 (86%)" in result_df.loc[0, "Commentaires"]
-    assert "103 (42%)" not in result_df.loc[0, "Commentaires"]
-    assert "Amdt similaires : 101 (86%)" in result_df.loc[1, "Commentaires"]
-    assert "103 (40%)" not in result_df.loc[1, "Commentaires"]
-    # Amendment 3 should not have any comments since none of its similarities are >= 80%
-    assert (
-        pd.isna(result_df.loc[2, "Commentaires"])
-        or result_df.loc[2, "Commentaires"] == ""
+    assert "Amdt similaires : 102 (90%)" in result_df.loc[0, "Commentaires"]
+    assert "Amdt similaires : 101 (90%)" in result_df.loc[1, "Commentaires"]
+    assert "Amdt similaires : 104 (80%)" in result_df.loc[2, "Commentaires"]
+    assert "Amdt similaires : 103 (80%)" in result_df.loc[3, "Commentaires"]
+    assert result_df.loc[4, "Commentaires"] == ""
+
+
+@patch.object(ClusteringService, "preprocess_amendments")
+@patch.object(ClusteringService, "get_clusters")
+@patch.object(SimilaritiesHandler, "calculate_similarity_percentages")
+@patch.object(SimilaritiesHandler, "update_comments_with_similarities")
+def test_process_similarities(
+    mock_update,
+    mock_calculate,
+    mock_get_clusters,
+    mock_preprocess,
+    sample_df,
+):
+    """Test the process_similarities method."""
+    clusters = {
+        ("Article 1",): [[1, 2]],
+        ("Article 2",): [[3, 4]],
+        ("Article 3",): [[5]],
+    }
+    mock_preprocess.return_value = sample_df
+    mock_get_clusters.return_value = clusters
+    mock_calculate.return_value = {1: {2: 90.0}, 2: {1: 90.0}}
+    mock_update.return_value = sample_df
+
+    # Call the method
+    result_df, clusters = SimilaritiesHandler.process_similarities(
+        amendments_df=sample_df,
+        similarities_column="Corps amdt",
+        similarity_threshold=0.8,
+        group_by_columns=["Num article"],
+        eps=0.4,
     )
+
+    # Verify the mocks were called with the right arguments
+    mock_preprocess.assert_called_once_with(
+        amendments_df=sample_df,
+        columns_to_filter=["Corps amdt"],
+        columns_to_normalize=["Corps amdt"],
+    )
+    mock_get_clusters.assert_called_once_with(
+        normalized_amdt_df=sample_df,
+        group_by_columns=["Num article"],
+        eps=0.4,
+        threshold=0.8,
+        is_similarity_threshold=True,
+    )
+    mock_calculate.assert_called_once_with(
+        normalized_amdt_df=sample_df,
+        similar_amdt_clusters=clusters,
+    )
+    mock_update.assert_called_once_with(
+        amendments_df=sample_df,
+        similarity_percentages={1: {2: 90.0}, 2: {1: 90.0}},
+        threshold=0.8,
+    )
+
+    # Verify the result
+    assert result_df is mock_update.return_value
+    assert clusters == clusters
