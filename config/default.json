@@ -19,7 +19,7 @@
     "no_value_overwrite": false,
     "placeholder_amdt_body": false,
     "similarity_search": {
-        "enabled": false,
+        "enabled": true,
         "columns_to_copy": {
             "Réponse": {
                 "enabled": true
@@ -28,8 +28,8 @@
                 "enabled": true,
                 "condition": "irrecevable"
             },
-            "Objet": {
-                "enabled": false
+            "Objet amdt": {
+                "enabled": true
             }
         }
     },
