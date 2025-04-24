@@ -335,7 +335,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # Extract allotment configuration
     allotment_config = args.allotments
     allotment_enabled = allotment_config.get("enabled", False)
-    tf_idf_threshold = getattr(args, "tf_idf_threshold", 0.0001)
+    tf_idf_threshold = getattr(args, "tf_idf_threshold", 0.9999)
 
     if allotment_enabled:
         allotment_column = allotment_config.get("column", None)
@@ -343,7 +343,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             raise ValueError(
                 "Allotment column must be specified in the configuration under 'column'."
             )
-        similarity_threshold = allotment_config.get("similarity_threshold", 0.0001)
+        similarity_threshold = allotment_config.get("similarity_threshold", 0.9999)
 
         intermediate_amdts_df, allotted_amdt_clusters = (
             AllotmentHandler.process_allotments(
@@ -393,14 +393,12 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
 
         # Get columns to copy configuration with defaults (all disabled)
-        columns_to_copy_config = similarity_config.get(
-            "columns_to_copy",
-            {
-                "Réponse": {"enabled": False},
-                "Sort": {"enabled": False, "condition": "irrecevable"},
-                "Objet": {"enabled": False},
-            },
-        )
+        columns_to_copy_config = similarity_config.get("columns_to_copy", None)
+
+        if columns_to_copy_config is None:
+            raise ValueError(
+                "Columns to copy configuration must be specified in the configuration under 'columns_to_copy'."
+            )
 
         old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)  # nosec
         logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")

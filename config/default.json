@@ -3,7 +3,7 @@
     "allotments": {
         "enabled": true,
         "column": "Corps amdt",
-        "similarity_threshold": 0.0001
+        "similarity_threshold": 0.9999
     },
     "similarities_within_lectures": {
         "enabled": true,

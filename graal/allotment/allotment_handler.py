@@ -132,7 +132,7 @@ class AllotmentHandler:
     def process_allotments(
         amendments_df: pd.DataFrame,
         allotment_column: str,
-        similarity_threshold: float = 0.0001,
+        similarity_threshold: float = 0.9999,
         group_by_columns: Optional[List[str]] = None,
         eps: float = 0.4,
         acronym_mapping: Optional[Dict[Acronym, str]] = None,
@@ -171,8 +171,7 @@ class AllotmentHandler:
             normalized_amdt_df=normalized_df,
             group_by_columns=group_by_columns,
             eps=eps,
-            threshold=similarity_threshold,
-            is_similarity_threshold=False,
+            refinement_pct_threshold=similarity_threshold,
         )
 
         # Filter amendments

@@ -1,11 +1,11 @@
 import logging
 import logging.config
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
 from graal.clustering.cluster_finder import AmendmentsClusterFinder
-from graal.custom_types import IntIndex, Acronym
+from graal.custom_types import Acronym, IntIndex
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -68,27 +68,22 @@ class ClusteringService:
     @staticmethod
     def apply_levenshtein_refinement(
         cluster_finder: AmendmentsClusterFinder,
-        threshold: float,
-        is_similarity_threshold: bool = False,
+        pct_threshold: float,
     ) -> Dict[Tuple, List[List[IntIndex]]]:
         """
         Refine clusters using Damerau-Levenshtein distance
 
         Args:
             cluster_finder: The cluster finder instance
-            threshold: The threshold value
-            is_similarity_threshold: If True, threshold is a similarity percentage (0.0 to 1.0)
-                                    If False, threshold is a distance value
+            pct_threshold: The threshold value
         """
         logging.info("Refining clusters using Damerau-Levenshtein distance")
 
-        # Convert similarity threshold to distance threshold if needed
-        distance_threshold = threshold
-        if is_similarity_threshold:
-            distance_threshold = 1.0 - threshold
+        # Convert similarity % threshold to distance threshold
+        distance_threshold = 1.0 - pct_threshold
 
         refined_clusters = cluster_finder.refine_clusters_with_distance(
-            threshold=distance_threshold
+            distance_threshold=distance_threshold
         )
         return refined_clusters
 
@@ -97,8 +92,7 @@ class ClusteringService:
         normalized_amdt_df: pd.DataFrame,
         group_by_columns: List[str],
         eps: float = 0.4,
-        threshold: float = 0.0001,
-        is_similarity_threshold: bool = False,
+        refinement_pct_threshold: float = 99.99,
     ) -> Dict[Tuple, List[List[IntIndex]]]:
         """
         Get clusters of similar amendments (combined TF-IDF and refinement)
@@ -107,8 +101,7 @@ class ClusteringService:
             normalized_amdt_df: Preprocessed amendments dataframe
             group_by_columns: Columns to group by
             eps: Epsilon value for DBSCAN
-            threshold: Threshold for Levenshtein refinement
-            is_similarity_threshold: Whether threshold is a similarity percentage
+            refinement_pct_threshold: Threshold for Levenshtein refinement
         """
         logging.info("Get clusters of similar amendments")
         cluster_finder, _ = ClusteringService.create_tfidf_clusters(
@@ -118,6 +111,5 @@ class ClusteringService:
         )
         return ClusteringService.apply_levenshtein_refinement(
             cluster_finder=cluster_finder,
-            threshold=threshold,
-            is_similarity_threshold=is_similarity_threshold,
+            pct_threshold=refinement_pct_threshold,
         )

@@ -127,7 +127,7 @@ def test_find_similarity_clusters_messy_data(
 
 
 @pytest.mark.parametrize(
-    "lecture_group, threshold, expected_amdt_idx_clusters",
+    "lecture_group, distance_threshold, expected_amdt_idx_clusters",
     [
         ("A", 0.5, []),
         ("A", 0.2, []),
@@ -138,8 +138,10 @@ def test_find_similarity_clusters_messy_data(
     ],
 )
 def test_refine_clusters_with_distance(
-    cluster_finder, lecture_group, threshold, expected_amdt_idx_clusters
+    cluster_finder, lecture_group, distance_threshold, expected_amdt_idx_clusters
 ):
     cluster_finder.find_similarity_clusters(eps=0.5)
-    refined_clusters = cluster_finder.refine_clusters_with_distance(threshold=threshold)
+    refined_clusters = cluster_finder.refine_clusters_with_distance(
+        distance_threshold=distance_threshold
+    )
     assert refined_clusters[(lecture_group,)] == expected_amdt_idx_clusters
