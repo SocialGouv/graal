@@ -1,11 +1,11 @@
 import logging
 import logging.config
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 from rapidfuzz.distance import DamerauLevenshtein
 
-from graal.clustering.cluster_finder import AmendmentsClusterFinder
+from graal.clustering.clustering_service import ClusteringService
 from graal.custom_types import IntIndex
 
 logging.config.fileConfig("logging.conf")
@@ -15,45 +15,9 @@ class SimilaritiesHandler:
     """Handler for finding and processing similarities between amendments."""
 
     @staticmethod
-    def create_tfidf_clusters(
-        normalized_amdt_df: pd.DataFrame,
-        group_by_columns: List[str],
-        eps: float = 0.4,
-    ) -> Tuple[AmendmentsClusterFinder, Dict[Tuple, List[List[IntIndex]]]]:
-        """Create initial clusters using TF-IDF and DBSCAN"""
-        logging.info("Creating initial clusters of similar amendments using TF-IDF")
-        cluster_finder = AmendmentsClusterFinder(
-            amendments_df=normalized_amdt_df, group_by_columns=group_by_columns
-        )
-        tfidf_clusters = cluster_finder.find_similarity_clusters(eps=eps)
-        return cluster_finder, tfidf_clusters
-
-    @staticmethod
-    def apply_levenshtein_refinement(
-        cluster_finder: AmendmentsClusterFinder,
-        threshold: float = 0.8,
-    ) -> Dict[Tuple, List[List[IntIndex]]]:
-        """
-        Refine clusters using Damerau-Levenshtein distance
-
-        Args:
-            cluster_finder: The cluster finder instance
-            threshold: The similarity threshold as a percentage (0.0 to 1.0)
-                       where 1.0 means 100% similar
-        """
-        logging.info("Refining clusters using Damerau-Levenshtein distance")
-        # Convert percentage threshold to distance threshold
-        # Since similarity = (1 - distance), we need distance = (1 - similarity)
-        distance_threshold = 1.0 - threshold
-        refined_clusters = cluster_finder.refine_clusters_with_distance(
-            threshold=distance_threshold
-        )
-        return refined_clusters
-
-    @staticmethod
     def calculate_similarity_percentages(
         normalized_amdt_df: pd.DataFrame,
-        allotted_amdt_clusters: Dict[Tuple, List[List[IntIndex]]],
+        similar_amdt_clusters: Dict[Tuple, List[List[IntIndex]]],
     ) -> Dict[int, Dict[int, float]]:
         """
         Calculate similarity percentages between amendments in each cluster.
@@ -61,10 +25,10 @@ class SimilaritiesHandler:
         Returns a dictionary mapping each amendment index to a dictionary of
         similar amendment indices with their similarity percentages.
         """
-        logging.info("Calculating similarity percentages between amendments")
+        logging.info("Calculating similarity percentages between amendments...")
         similarity_percentages: dict[int, dict[int, float]] = {}
 
-        for clusters in allotted_amdt_clusters.values():
+        for clusters in similar_amdt_clusters.values():
             for cluster in clusters:
                 # Get the strings for the current cluster
                 cluster_df = normalized_amdt_df[
@@ -158,3 +122,59 @@ class SimilaritiesHandler:
                 )
 
         return result_df
+
+    @staticmethod
+    def process_similarities(
+        amendments_df: pd.DataFrame,
+        similarities_column: str,
+        similarity_threshold: float = 0.8,
+        group_by_columns: Optional[List[str]] = None,
+        eps: float = 0.4,
+    ) -> Tuple[pd.DataFrame, Dict[Tuple, List[List[IntIndex]]]]:
+        """
+        Process similarities in a single method that orchestrates the entire workflow
+
+        Args:
+            amendments_df: The dataframe containing amendments
+            similarities_column: The column to use for similarity calculation
+            similarity_threshold: Threshold for similarity (0.0 to 1.0)
+            group_by_columns: Columns to group by
+            eps: Epsilon value for DBSCAN
+
+        Returns:
+            Tuple containing:
+            - The dataframe with updated comments
+            - The clusters of similar amendments
+        """
+        # Preprocess amendments
+        if group_by_columns is None:
+            group_by_columns = ["Num article"]
+        normalized_df = ClusteringService.preprocess_amendments(
+            amendments_df=amendments_df,
+            columns_to_filter=[similarities_column],
+            columns_to_normalize=[similarities_column],
+        )
+
+        # Get clusters
+        similar_amdt_clusters = ClusteringService.get_clusters(
+            normalized_amdt_df=normalized_df,
+            group_by_columns=group_by_columns,
+            eps=eps,
+            threshold=similarity_threshold,
+            is_similarity_threshold=True,
+        )
+
+        # Calculate similarity percentages
+        similarity_percentages = SimilaritiesHandler.calculate_similarity_percentages(
+            normalized_amdt_df=normalized_df,
+            similar_amdt_clusters=similar_amdt_clusters,
+        )
+
+        # Update comments
+        result_df = SimilaritiesHandler.update_comments_with_similarities(
+            amendments_df=amendments_df,
+            similarity_percentages=similarity_percentages,
+            threshold=similarity_threshold,
+        )
+
+        return result_df, similar_amdt_clusters

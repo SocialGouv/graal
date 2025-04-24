@@ -344,34 +344,16 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Allotment column must be specified in the configuration under 'column'."
             )
         similarity_threshold = allotment_config.get("similarity_threshold", 0.0001)
-        normalized_for_allot_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
-            amendments_df=intermediate_amdts_df,
-            columns_to_filter=[allotment_column],
-        )
-        normalized_for_allot_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-            amendments_df=normalized_for_allot_df
-        )
-        normalized_for_allot_df = AmendmentPreProcessor.normalize_amendments(
-            amendments_df=normalized_for_allot_df,
-            columns_to_normalize=[allotment_column],
-        )
-        cluster_finder, tfidf_clusters = AllotmentHandler.create_tfidf_clusters(
-            normalized_amdt_df=normalized_for_allot_df,
-            group_by_columns=["Num article"],
-            eps=tf_idf_threshold,
-        )
-        allotted_amdt_clusters = AllotmentHandler.apply_levenshtein_refinement(
-            cluster_finder=cluster_finder,
-            threshold=similarity_threshold,
-        )
-        logging.info(
-            f"Number of amendments before filterting out allotted amendements : {len(normalized_for_allot_df)}"
-        )
 
-        intermediate_amdts_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
-            normalized_amdt_df=normalized_for_allot_df,
-            allotted_amdt_clusters=allotted_amdt_clusters,
-            removal_strategy_func=amdt_allotment_strategy_func,
+        intermediate_amdts_df, allotted_amdt_clusters = (
+            AllotmentHandler.process_allotments(
+                amendments_df=intermediate_amdts_df,
+                allotment_column=allotment_column,
+                similarity_threshold=similarity_threshold,
+                group_by_columns=["Num article"],
+                eps=tf_idf_threshold,
+                removal_strategy_func=amdt_allotment_strategy_func,
+            )
         )
 
         logging.info(
@@ -390,47 +372,17 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             )
         similarity_threshold = similarities_config.get("similarity_threshold", 0.8)
 
-        normalized_for_similarities_df = (
-            AmendmentPreProcessor.drop_empty_rows_in_columns(
+        intermediate_amdts_df, similar_amdt_clusters = (
+            SimilaritiesHandler.process_similarities(
                 amendments_df=intermediate_amdts_df,
-                columns_to_filter=[similarities_column],
+                similarities_column=similarities_column,
+                similarity_threshold=similarity_threshold,
+                group_by_columns=["Num article"],
+                eps=tf_idf_threshold,
             )
         )
-        normalized_for_similarities_df = (
-            AmendmentPreProcessor.handle_common_amendment_bodies(
-                amendments_df=normalized_for_similarities_df
-            )
-        )
-        normalized_for_similarities_df = AmendmentPreProcessor.normalize_amendments(
-            amendments_df=normalized_for_similarities_df,
-            columns_to_normalize=[similarities_column],
-        )
 
-        cluster_finder, tfidf_clusters = SimilaritiesHandler.create_tfidf_clusters(
-            normalized_amdt_df=normalized_for_similarities_df,
-            group_by_columns=["Num article"],
-            eps=tf_idf_threshold,
-        )
-
-        similar_amdt_clusters = SimilaritiesHandler.apply_levenshtein_refinement(
-            cluster_finder=cluster_finder,
-            threshold=similarity_threshold,
-        )
-
-        similarity_percentages = SimilaritiesHandler.calculate_similarity_percentages(
-            normalized_amdt_df=normalized_for_similarities_df,
-            allotted_amdt_clusters=similar_amdt_clusters,
-        )
-
-        intermediate_amdts_df = SimilaritiesHandler.update_comments_with_similarities(
-            amendments_df=intermediate_amdts_df,
-            similarity_percentages=similarity_percentages,
-            threshold=similarity_threshold,
-        )
-
-        logging.info(
-            f"Updated comments with similarity information for {len(similarity_percentages)} amendments"
-        )
+        logging.info("Updated comments with similarity information for amendments")
 
     if args.similarity_search:
         # Extract similarity search configuration

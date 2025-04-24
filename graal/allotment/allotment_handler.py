@@ -1,10 +1,10 @@
 import logging
 import logging.config
-from typing import Callable
+from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from graal.clustering.cluster_finder import AmendmentsClusterFinder
+from graal.clustering.clustering_service import ClusteringService
 from graal.custom_types import Acronym, IntIndex
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
@@ -12,6 +12,8 @@ logging.config.fileConfig("logging.conf")
 
 
 class AllotmentHandler:
+    """Handler for grouping amendments into allotments."""
+
     @staticmethod
     def preprocess_json_amendments(
         amendments_df: pd.DataFrame,
@@ -23,72 +25,21 @@ class AllotmentHandler:
         return amendments_df
 
     @staticmethod
-    def preprocess_amendments(
-        amendments_df: pd.DataFrame, acronym_mapping: dict[Acronym, str]
+    def preprocess_amendments_for_allotment(
+        amendments_df: pd.DataFrame,
+        acronym_mapping: Dict[Acronym, str],
+        column: str = "Corps amdt",
     ) -> pd.DataFrame:
+        """Specialized preprocessing for allotment."""
         prepared_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
             amendments_df=amendments_df, columns_to_clear=["Allotissement"]
         )
-        prepared_df = AmendmentPreProcessor.replace_acronyms(
+
+        return ClusteringService.preprocess_amendments(
             amendments_df=prepared_df,
+            columns_to_filter=[column],
+            columns_to_normalize=[column],
             acronym_mapping=acronym_mapping,
-            columns_to_normalize=["Corps amdt"],
-        )
-        prepared_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
-            amendments_df=prepared_df, columns_to_filter=["Corps amdt"]
-        )
-        prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-            amendments_df=prepared_df
-        )
-        prepared_df = AmendmentPreProcessor.normalize_amendments(
-            amendments_df=prepared_df, columns_to_normalize=["Corps amdt"]
-        )
-
-        return prepared_df
-
-    @staticmethod
-    def create_tfidf_clusters(
-        normalized_amdt_df: pd.DataFrame,
-        group_by_columns: list[str],
-        eps: float = 0.4,
-    ) -> tuple[AmendmentsClusterFinder, dict[tuple, list[list[IntIndex]]]]:
-        """Create initial clusters using TF-IDF and DBSCAN"""
-        logging.info("Creating initial clusters of similar amendments using TF-IDF")
-        cluster_finder = AmendmentsClusterFinder(
-            amendments_df=normalized_amdt_df, group_by_columns=group_by_columns
-        )
-        tfidf_clusters = cluster_finder.find_similarity_clusters(eps=eps)
-        return cluster_finder, tfidf_clusters
-
-    @staticmethod
-    def apply_levenshtein_refinement(
-        cluster_finder: AmendmentsClusterFinder,
-        threshold: float = 0.0001,
-    ) -> dict[tuple, list[list[IntIndex]]]:
-        """Refine clusters using Damerau-Levenshtein distance"""
-        logging.info("Refining clusters using Damerau-Levenshtein distance")
-        refined_clusters = cluster_finder.refine_clusters_with_distance(
-            threshold=threshold
-        )
-        return refined_clusters
-
-    @staticmethod
-    def get_clusters(
-        normalized_amdt_df: pd.DataFrame,
-        group_by_columns: list[str],
-        eps: float = 0.4,
-        threshold: float = 0.0001,
-    ) -> dict[tuple, list[list[IntIndex]]]:
-        """Get clusters of similar amendments (combined TF-IDF and refinement)"""
-        logging.info("Get clusters of similar amendments")
-        cluster_finder, _ = AllotmentHandler.create_tfidf_clusters(
-            normalized_amdt_df=normalized_amdt_df,
-            group_by_columns=group_by_columns,
-            eps=eps,
-        )
-        return AllotmentHandler.apply_levenshtein_refinement(
-            cluster_finder=cluster_finder,
-            threshold=threshold,
         )
 
     @staticmethod
@@ -176,3 +127,62 @@ class AllotmentHandler:
                     )
 
         return original_amendments_df
+
+    @staticmethod
+    def process_allotments(
+        amendments_df: pd.DataFrame,
+        allotment_column: str,
+        similarity_threshold: float = 0.0001,
+        group_by_columns: Optional[List[str]] = None,
+        eps: float = 0.4,
+        acronym_mapping: Optional[Dict[Acronym, str]] = None,
+        removal_strategy_func: Optional[Callable] = None,
+    ) -> Tuple[pd.DataFrame, Dict[Tuple, List[List[IntIndex]]]]:
+        """
+        Process allotments in a single method that orchestrates the entire workflow
+
+        Args:
+            amendments_df: The dataframe containing amendments
+            allotment_column: The column to use for allotment
+            similarity_threshold: Threshold for Levenshtein refinement
+            group_by_columns: Columns to group by
+            eps: Epsilon value for DBSCAN
+            acronym_mapping: Optional mapping of acronyms to full text
+            removal_strategy_func: Strategy for removing amendments from clusters
+
+        Returns:
+            Tuple containing:
+            - The filtered dataframe with one amendment per allotment
+            - The clusters of allotted amendments
+        """
+        # Preprocess amendments
+        if group_by_columns is None:
+            group_by_columns = ["Num article"]
+        normalized_df = ClusteringService.preprocess_amendments(
+            amendments_df=amendments_df,
+            columns_to_filter=[allotment_column],
+            columns_to_normalize=[allotment_column],
+            acronym_mapping=acronym_mapping,
+            columns_to_clear=["Allotissement"],
+        )
+
+        # Get clusters
+        allotted_amdt_clusters = ClusteringService.get_clusters(
+            normalized_amdt_df=normalized_df,
+            group_by_columns=group_by_columns,
+            eps=eps,
+            threshold=similarity_threshold,
+            is_similarity_threshold=False,
+        )
+
+        # Filter amendments
+        if removal_strategy_func is None:
+            removal_strategy_func = AllotmentHandler.default_removal_strategy_func
+
+        filtered_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
+            normalized_amdt_df=normalized_df,
+            allotted_amdt_clusters=allotted_amdt_clusters,
+            removal_strategy_func=removal_strategy_func,
+        )
+
+        return filtered_df, allotted_amdt_clusters
