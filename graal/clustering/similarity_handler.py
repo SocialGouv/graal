@@ -67,12 +67,12 @@ class SimilarityHandler:
         fuzzy_match_similarity_thresholds: dict[ColumnName, float],
         similarity_threshold_overrides: dict[ColumnName, dict[str, float]],
         column_group_by_columns: dict[ColumnName, list[ColumnName]],
+        columns_to_copy_config: dict,
         default_clustering_similarity_threshold: float = 0.4,
         default_fuzzy_match_similarity_threshold: float = 0.9,
         column_filtering_funcs: Optional[
             dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
         ] = None,
-        columns_to_copy_config: Optional[dict] = None,
     ) -> pd.DataFrame:
         if column_filtering_funcs is None:
             column_filtering_funcs = {}
@@ -137,15 +137,9 @@ class SimilarityHandler:
         target_df: pd.DataFrame,
         old_amendments_df: pd.DataFrame,
         closest_amdts: dict,
-        columns_config: Optional[dict] = None,
+        columns_config: dict,
     ) -> pd.DataFrame:
         # Default configuration if none provided
-        if columns_config is None:
-            columns_config = {
-                "Réponse": {"enabled": True},
-                "Sort": {"enabled": True, "condition": "irrecevable"},
-                "Objet": {"enabled": False},
-            }
 
         # Iterate over the closest documents
         for new_amdt_idx, closest_doc in closest_amdts.items():

@@ -4,6 +4,7 @@ import pandas as pd
 from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
+from graal.clustering.clustering_service import ClusteringService
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.sheet_data_loader import SheetDataLoader
 from graal.utils.text_utils import remove_gage_sentences
@@ -59,13 +60,13 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
 
     # Use the same thresholds as in the configuration
     tf_idf_threshold = 0.4
-    similarity_threshold = 0.0001
+    similarity_threshold = 0.9999
 
-    allotted_amdt_clusters = AllotmentHandler.get_clusters(
+    allotted_amdt_clusters = ClusteringService.get_clusters(
         normalized_amdt_df=normalized_amdt_df,
         group_by_columns=["Lecture"],
         eps=tf_idf_threshold,
-        threshold=similarity_threshold,
+        refinement_pct_threshold=similarity_threshold,
     )
 
     normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(

@@ -66,7 +66,7 @@ def test_update_comments_with_similarities(sample_df):
     result_df = SimilaritiesHandler.update_comments_with_similarities(
         amendments_df=sample_df,
         similarity_percentages=similarity_percentages,
-        threshold=0.8,
+        pct_threshold=0.8,
     )
 
     assert "Amdt similaires : 102 (90%)" in result_df.loc[0, "Commentaires"]
@@ -117,8 +117,7 @@ def test_process_similarities(
         normalized_amdt_df=sample_df,
         group_by_columns=["Num article"],
         eps=0.4,
-        threshold=0.8,
-        is_similarity_threshold=True,
+        refinement_pct_threshold=0.8,
     )
     mock_calculate.assert_called_once_with(
         normalized_amdt_df=sample_df,
@@ -127,7 +126,7 @@ def test_process_similarities(
     mock_update.assert_called_once_with(
         amendments_df=sample_df,
         similarity_percentages={1: {2: 90.0}, 2: {1: 90.0}},
-        threshold=0.8,
+        pct_threshold=0.8,
     )
 
     # Verify the result

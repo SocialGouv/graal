@@ -89,7 +89,7 @@ class AmendmentsClusterFinder:
         return self.tfidf_clusters_per_group
 
     def refine_clusters_with_distance(
-        self, threshold: float = 0.01
+        self, distance_threshold: float
     ) -> dict[tuple, list[list[int]]]:
         """Refine clusters using Damerau-Levenshtein distance"""
         group_keys = (
@@ -127,7 +127,9 @@ class AmendmentsClusterFinder:
                         damerau_distance_matrix[j][i] = normalized_distance
 
                 # Apply DBSCAN on the refined distance matrix
-                dbscan = DBSCAN(metric="precomputed", eps=threshold, min_samples=2)
+                dbscan = DBSCAN(
+                    metric="precomputed", eps=distance_threshold, min_samples=2
+                )
                 refined_cluster_labels = dbscan.fit_predict(damerau_distance_matrix)
 
                 # Extract refined clusters

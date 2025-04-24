@@ -64,7 +64,7 @@ class SimilaritiesHandler:
     def update_comments_with_similarities(
         amendments_df: pd.DataFrame,
         similarity_percentages: Dict[int, Dict[int, float]],
-        threshold: float = 0.8,
+        pct_threshold: float = 0.8,
     ) -> pd.DataFrame:
         """
         Update the 'Commentaires' column with similarity information.
@@ -78,12 +78,12 @@ class SimilaritiesHandler:
             similarity_percentages: Dictionary mapping amendment indices to
                                     dictionaries of similar amendment indices
                                     with their similarity percentages
-            threshold: The similarity threshold as a percentage (0.0 to 1.0)
+            pct_threshold: The similarity threshold as a percentage (0.0 to 1.0)
                        where 1.0 means 100% similar
         """
         logging.info("Updating comments with similarity information")
         result_df = amendments_df.copy()
-        threshold_percentage = threshold * 100  # Convert to percentage
+        pct_threshold = pct_threshold * 100  # Convert to percentage
 
         for amdt_idx, similarities in similarity_percentages.items():
             if not similarities:
@@ -98,7 +98,7 @@ class SimilaritiesHandler:
             similar_amdts = []
             for similar_idx, percentage in similarities.items():
                 # Only include amendments that meet the threshold
-                if percentage < threshold_percentage:
+                if percentage < pct_threshold:
                     continue
 
                 similar_amdt_row = result_df[result_df["amdt_idx"] == similar_idx]
@@ -160,8 +160,7 @@ class SimilaritiesHandler:
             normalized_amdt_df=normalized_df,
             group_by_columns=group_by_columns,
             eps=eps,
-            threshold=similarity_threshold,
-            is_similarity_threshold=True,
+            refinement_pct_threshold=similarity_threshold,
         )
 
         # Calculate similarity percentages
@@ -174,7 +173,7 @@ class SimilaritiesHandler:
         result_df = SimilaritiesHandler.update_comments_with_similarities(
             amendments_df=amendments_df,
             similarity_percentages=similarity_percentages,
-            threshold=similarity_threshold,
+            pct_threshold=similarity_threshold,
         )
 
         return result_df, similar_amdt_clusters

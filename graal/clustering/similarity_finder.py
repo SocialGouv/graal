@@ -60,7 +60,7 @@ class SimilarityFinder:
                         new_amd_values=new_group_df[
                             column_used_for_clustering
                         ].tolist(),
-                        threshold=clustering_similarity_threshold,
+                        pct_threshold=clustering_similarity_threshold,
                     )
                     # Transform indices into corresponding amdt_idx
                     group_clusters = {
@@ -79,7 +79,7 @@ class SimilarityFinder:
                 new_amd_values=self.new_amendments_df[
                     column_used_for_clustering
                 ].tolist(),
-                threshold=clustering_similarity_threshold,
+                pct_threshold=clustering_similarity_threshold,
             )
             # Transform indices into corresponding amdt_idx
             clusters = {
@@ -118,6 +118,7 @@ class SimilarityFinder:
                 zip(
                     self.old_amendments_df["amdt_idx"],
                     self.old_amendments_df[column_used_for_similarity],
+                    strict=False,
                 )
             ),
             "comparison_value": {
@@ -125,12 +126,14 @@ class SimilarityFinder:
                 for old_amdt_idx, old_amdt_date in zip(
                     self.old_amendments_df["amdt_idx"],
                     self.old_amendments_df["timestamp"],
+                    strict=False,
                 )
             },
             "response": dict(
                 zip(
                     self.old_amendments_df["amdt_idx"],
                     self.old_amendments_df["Réponse"],
+                    strict=False,
                 )
             ),
         }
@@ -139,6 +142,7 @@ class SimilarityFinder:
                 zip(
                     self.new_amendments_df["amdt_idx"],
                     self.new_amendments_df[column_used_for_similarity],
+                    strict=False,
                 )
             )
         }
@@ -163,7 +167,7 @@ class SimilarityFinder:
     def tf_idf_filtering(
         old_amdt_values: list[str],
         new_amd_values: list[str],
-        threshold: float = 0.4,
+        pct_threshold: float = 0.4,
     ) -> dict[IntIndex, list[IntIndex]]:
         # Combine old and new documents for TF-IDF vectorization
         all_docs = old_amdt_values + new_amd_values
@@ -182,7 +186,7 @@ class SimilarityFinder:
         # Find candidates using cosine similarity
         similar_doc_indices = {}
         for index, sim_vector in enumerate(cosine_sim_matrix):
-            similar_docs = np.where(sim_vector >= threshold)[0].tolist()
+            similar_docs = np.where(sim_vector >= pct_threshold)[0].tolist()
             if similar_docs:
                 similar_doc_indices[index] = similar_docs
 

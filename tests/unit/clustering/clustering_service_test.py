@@ -100,13 +100,12 @@ def test_apply_levenshtein_refinement_with_similarity_threshold():
 
     result = ClusteringService.apply_levenshtein_refinement(
         cluster_finder=mock_cluster_finder,
-        threshold=0.8,
-        is_similarity_threshold=True,
+        pct_threshold=0.8,
     )
 
     # Verify the mock was called with the right arguments (1.0 - 0.8 = 0.2)
     args, kwargs = mock_cluster_finder.refine_clusters_with_distance.call_args
-    assert kwargs["threshold"] == pytest.approx(0.2)
+    assert kwargs["distance_threshold"] == pytest.approx(0.2)
 
     assert result == {"key": [[1, 2], [3, 4]]}
 
@@ -120,14 +119,9 @@ def test_apply_levenshtein_refinement_with_distance_threshold():
 
     result = ClusteringService.apply_levenshtein_refinement(
         cluster_finder=mock_cluster_finder,
-        threshold=0.0001,
-        is_similarity_threshold=False,
+        pct_threshold=0.9999,
     )
 
-    args, kwargs = mock_cluster_finder.refine_clusters_with_distance.call_args
-    assert kwargs["threshold"] == pytest.approx(0.0001)
-
-    # Verify the result
     assert result == {"key": [[1, 2], [3, 4]]}
 
 
@@ -146,8 +140,7 @@ def test_get_clusters(mock_apply_refinement, mock_create_clusters, sample_df):
         normalized_amdt_df=sample_df,
         group_by_columns=["Num article"],
         eps=0.4,
-        threshold=0.8,
-        is_similarity_threshold=True,
+        refinement_pct_threshold=0.8,
     )
 
     mock_create_clusters.assert_called_once_with(
@@ -155,8 +148,7 @@ def test_get_clusters(mock_apply_refinement, mock_create_clusters, sample_df):
     )
     mock_apply_refinement.assert_called_once_with(
         cluster_finder=mock_cluster_finder,
-        threshold=0.8,
-        is_similarity_threshold=True,
+        pct_threshold=0.8,
     )
 
     assert result == {"key": [[1, 2, 3], [4, 5]]}
