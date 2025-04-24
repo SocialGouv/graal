@@ -68,7 +68,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[0, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 2022
+        Copie de Réponse, Sort depuis : PLFSS 2022
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1
@@ -81,7 +81,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[1, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLACSS 2023
+        Copie de Réponse, Sort depuis : PLACSS 2023
         Numéro d'amendement : 2
         Lecture : B
         Organe : Organe 2
@@ -95,7 +95,7 @@ def test_copy_matches_to_amendments_df(sample_data):
     assert (
         result_df.loc[2, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 2023
+        Copie de Réponse, Sort depuis : PLFSS 2023
         Numéro d'amendement : 3
         Lecture : C
         Organe : Organe 3
@@ -205,7 +205,7 @@ def test_populate():
     assert (
         result_df.loc[0, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 2024
+        Copie de Réponse, Sort, Objet depuis : PLFSS 2024
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1
@@ -215,7 +215,7 @@ def test_populate():
     assert (
         result_df.loc[1, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLACSS 2020
+        Copie de Réponse, Sort, Objet depuis : PLACSS 2020
         Numéro d'amendement : 2
         Lecture : B
         Organe : Organe 2
@@ -226,7 +226,7 @@ def test_populate():
     assert (
         result_df.loc[2, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 1988
+        Copie de Réponse, Sort, Objet depuis : PLFSS 1988
         Numéro d'amendement : 3
         Lecture : C
         Organe : Organe 3
@@ -314,7 +314,7 @@ def test_populate_same_body_but_different_project_should_not_match():
     assert (
         result_df.loc[0, "Commentaires"]
         == textwrap.dedent("""
-        Réponse copiée de : PLFSS 2024
+        Copie de Réponse, Sort depuis : PLFSS 2024
         Numéro d'amendement : 1
         Lecture : A
         Organe : Organe 1

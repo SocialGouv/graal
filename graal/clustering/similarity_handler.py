@@ -179,8 +179,19 @@ class SimilarityHandler:
                 else:
                     target_df.loc[amdt_idx_mask, "Commentaires"] = ""
 
+                # Determine which columns are enabled for copying
+                enabled_columns = [
+                    col_name
+                    for col_name, col_config in columns_config.items()
+                    if col_config.get("enabled", False)
+                ]
+
+                # Generate the appropriate prefix
+                columns_text = ", ".join(enabled_columns)
+                prefix = f"Copie de {columns_text} depuis"
+
                 target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
-                        Réponse copiée de : {matching_origin_project}
+                        {prefix} : {matching_origin_project}
                         Numéro d'amendement : {matching_num_amdt}
                         Lecture : {matching_lecture}
                         Organe : {matching_organe}
