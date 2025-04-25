@@ -67,6 +67,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         group_by_columns=["Lecture"],
         eps=tf_idf_threshold,
         refinement_pct_threshold=similarity_threshold,
+        text_column="Corps amdt",
     )
 
     normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(

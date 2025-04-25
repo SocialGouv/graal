@@ -79,7 +79,7 @@ def test_process_similarities(
     result_df = SimilaritiesHandler.process_similarities(
         amendments_df=sample_df,
         similarities_column="Corps amdt",
-        similarity_threshold=0.8,
+        pct_similarity_threshold=0.8,
         group_by_columns=["Num article"],
         eps=0.4,
     )
@@ -93,6 +93,7 @@ def test_process_similarities(
     mock_get_clusters.assert_called_once_with(
         normalized_amdt_df=sample_df,
         group_by_columns=["Num article"],
+        text_column="Corps amdt",
         eps=0.4,
         refinement_pct_threshold=0.8,
     )

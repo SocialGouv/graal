@@ -78,11 +78,14 @@ def test_create_tfidf_clusters(sample_df):
         cluster_finder, clusters = ClusteringService.create_tfidf_clusters(
             normalized_amdt_df=sample_df,
             group_by_columns=["Num article"],
+            text_column="Corps amdt",
             eps=0.4,
         )
 
         mock_constructor.assert_called_once_with(
-            amendments_df=sample_df, group_by_columns=["Num article"]
+            amendments_df=sample_df,
+            group_by_columns=["Num article"],
+            text_column="Corps amdt",
         )
 
         mock_cluster_finder.find_similarity_clusters.assert_called_once_with(eps=0.4)
@@ -162,12 +165,16 @@ def test_get_clusters(mock_apply_refinement, mock_create_clusters, sample_df):
     clusters, similarity_percentages = ClusteringService.get_clusters(
         normalized_amdt_df=sample_df,
         group_by_columns=["Num article"],
+        text_column="Corps amdt",
         eps=0.4,
         refinement_pct_threshold=0.8,
     )
 
     mock_create_clusters.assert_called_once_with(
-        normalized_amdt_df=sample_df, group_by_columns=["Num article"], eps=0.4
+        normalized_amdt_df=sample_df,
+        group_by_columns=["Num article"],
+        text_column="Corps amdt",
+        eps=0.4,
     )
     mock_apply_refinement.assert_called_once_with(
         cluster_finder=mock_cluster_finder,

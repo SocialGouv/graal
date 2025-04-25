@@ -31,7 +31,9 @@ def df():
 
 @pytest.fixture
 def cluster_finder(df):
-    cluster_finder = AmendmentsClusterFinder(df, group_by_columns=["Lecture"])
+    cluster_finder = AmendmentsClusterFinder(
+        df, group_by_columns=["Lecture"], text_column="Corps amdt"
+    )
     cluster_finder._vectorize_data()  # Ensure vectorizer is fitted before tests
     return cluster_finder
 
@@ -120,7 +122,9 @@ def test_find_similarity_clusters_messy_data(
         ],
     }
     df = pd.DataFrame(data)
-    cluster_finder = AmendmentsClusterFinder(df, group_by_columns=["Lecture"])
+    cluster_finder = AmendmentsClusterFinder(
+        df, group_by_columns=["Lecture"], text_column="Corps amdt"
+    )
     cluster_finder._vectorize_data()  # Ensure vectorizer is fitted before tests
     tfidf_clusters_per_lecture = cluster_finder.find_similarity_clusters(eps=eps)
     assert tfidf_clusters_per_lecture[(lecture_group,)] == expected_amdt_idx_clusters

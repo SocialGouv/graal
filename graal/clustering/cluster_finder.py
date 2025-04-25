@@ -15,9 +15,23 @@ from graal.custom_types import IntIndex
 class AmendmentsClusterFinder:
     """Find clusters of similar amendments using DBSCAN on TF-IDF vectors"""
 
-    def __init__(self, amendments_df: pd.DataFrame, group_by_columns: list[str]):
+    def __init__(
+        self,
+        amendments_df: pd.DataFrame,
+        group_by_columns: list[str],
+        text_column: str = "Corps amdt",
+    ):
+        """
+        Initialize the AmendmentsClusterFinder.
+
+        Args:
+            amendments_df: DataFrame containing amendments
+            group_by_columns: Columns to group by when finding clusters
+            text_column: Column containing the text to analyze for similarity (default: "Corps amdt")
+        """
         self.amendments_df = amendments_df.copy()
         self.group_by_columns = group_by_columns
+        self.text_column = text_column
         self.vectorizer = TfidfVectorizer()
         self.vectors_per_group: dict[tuple, spmatrix] = {}
         self.distance_matrix_per_group: dict[tuple, ndarray] = {}
@@ -25,9 +39,11 @@ class AmendmentsClusterFinder:
         self.final_clusters_per_group: dict[tuple, list[list[IntIndex]]] = {}
 
     def _vectorize_data(self) -> None:
-        """Convert strings to TF-IDF vectors for all Corps amdt"""
-        logging.info("Converting strings to TF-IDF vectors for all data...\n")
-        strings = self.amendments_df["Corps amdt"].tolist()
+        """Convert strings to TF-IDF vectors for all text data"""
+        logging.info(
+            f"Converting strings to TF-IDF vectors for all data from column {self.text_column}...\n"
+        )
+        strings = self.amendments_df[self.text_column].tolist()
         self.vectorizer.fit(strings)
 
     def _transform_group(self, group_key: tuple) -> None:
@@ -38,7 +54,7 @@ class AmendmentsClusterFinder:
                 == pd.Series(group_key, index=self.group_by_columns)
             ).all(axis=1)
         ]
-        strings = df_group["Corps amdt"].tolist()
+        strings = df_group[self.text_column].tolist()
         self.vectors_per_group[group_key] = self.vectorizer.transform(strings)
 
     def _compute_distance_matrix(self, group_key: tuple) -> None:
@@ -48,6 +64,7 @@ class AmendmentsClusterFinder:
         distance_matrix[distance_matrix < 0] = 0  # Ensure no negative values
         self.distance_matrix_per_group[group_key] = distance_matrix
 
+    # TODO: Refactor callers so this can be used as a static method.
     def find_similarity_clusters(
         self, eps: float = 0.5, min_samples: int = 2
     ) -> dict[tuple, list[list[int]]]:
@@ -199,7 +216,9 @@ class AmendmentsClusterFinder:
             Tuple of refined clusters and updated similarity percentages
         """
         # Get the strings and corresponding amdt_idx for the current cluster
-        strings = df_group[df_group["amdt_idx"].isin(cluster)]["Corps amdt"].tolist()
+        strings = df_group[df_group["amdt_idx"].isin(cluster)][
+            self.text_column
+        ].tolist()
         cluster_amdt_idx = df_group[df_group["amdt_idx"].isin(cluster)][
             "amdt_idx"
         ].tolist()
