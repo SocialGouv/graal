@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Literal, TypedDict, Union
+from typing import Any, Dict, List, Literal, TypedDict, Union
 
 Acronym = str
 AmendementTxt = str
@@ -21,6 +21,17 @@ Seconds = int
 Timestamp = int
 TxtContent = str
 UserName = str
+
+
+class SimilarAmendment(TypedDict):
+    """Information about a similar amendment."""
+
+    amdt_num: int  # The amendment number (not index)
+    similarity_percentage: float  # Similarity percentage (0-100)
+
+
+# Maps amendment index to a list of similar amendments
+SimilarityResult = Dict[int, List[SimilarAmendment]]
 
 AttributionMatcherType = Literal[
     "LEGAL_DOCUMENT_CODE",

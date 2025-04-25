@@ -351,17 +351,15 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         similarity_threshold = similarities_config.get("similarity_threshold", 0.8)
         logging.warning(f"similarity_threshold {similarity_threshold}")
 
-        intermediate_amdts_df, similar_amdt_clusters = (
-            SimilaritiesHandler.process_similarities(
-                amendments_df=intermediate_amdts_df,
-                similarities_column=similarities_column,
-                pct_similarity_threshold=similarity_threshold,
-                group_by_columns=["Num article"],
-                eps=tf_idf_threshold,
-            )
+        similarity_results = SimilaritiesHandler.find_similar_amendments(
+            amendments_df=intermediate_amdts_df,
+            similarities_column=similarities_column,
+            pct_similarity_threshold=similarity_threshold,
+            group_by_columns=["Num article"],
+            eps=tf_idf_threshold,
         )
 
-        logging.info("Updated comments with similarity information for amendments")
+        logging.info("Retrieved similarity information for amendments")
 
     # Extract allotment configuration
     allotment_config = args.allotments
@@ -475,6 +473,34 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Entité Pilote",
             ],
         )
+
+        # After allotment is done, update the comments with similarity information
+        if similarities_enabled and similarity_results:
+            for amdt_idx, similar_amdts in similarity_results.items():
+                # Skip if the amendment was removed during allotment
+                if amdt_idx not in intermediate_amdts_df["amdt_idx"].values:
+                    continue
+
+                # Format the comment
+                similarity_comment = SimilaritiesHandler.format_similarity_comment(
+                    similar_amdts
+                )
+
+                # Update the 'Commentaires' column
+                current_comment = intermediate_amdts_df.loc[
+                    intermediate_amdts_df["amdt_idx"] == amdt_idx, "Commentaires"
+                ].iloc[0]
+
+                if pd.isna(current_comment) or current_comment == "":
+                    new_comment = similarity_comment
+                else:
+                    new_comment = f"{current_comment}\n{similarity_comment}"
+
+                intermediate_amdts_df.loc[
+                    intermediate_amdts_df["amdt_idx"] == amdt_idx, "Commentaires"
+                ] = new_comment
+
+            logging.info("Updated comments with similarity information after allotment")
 
     if args.default_opinion:
         opinion_populator = OpinionHandler(
