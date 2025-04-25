@@ -33,27 +33,6 @@ def sample_df():
     )
 
 
-def test_calculate_similarity_percentages(sample_df):
-    """Test the calculate_similarity_percentages method."""
-    clusters = {
-        ("Article 1",): [[1, 2]],
-        ("Article 2",): [[3, 4]],
-        ("Article 3",): [[5]],
-    }
-    result = SimilaritiesHandler.calculate_similarity_percentages(
-        normalized_amdt_df=sample_df,
-        similar_amdt_clusters=clusters,
-    )
-
-    assert 1 in result
-    assert 2 in result
-    assert 2 in result[1]
-    assert 1 in result[2]
-
-    assert result[1][2] > 0
-    assert result[2][1] > 0
-
-
 def test_update_comments_with_similarities(sample_df):
     """Test the update_comments_with_similarities method."""
     similarity_percentages = {
@@ -66,7 +45,6 @@ def test_update_comments_with_similarities(sample_df):
     result_df = SimilaritiesHandler.update_comments_with_similarities(
         amendments_df=sample_df,
         similarity_percentages=similarity_percentages,
-        pct_threshold=0.8,
     )
 
     assert "Amdt similaires : 102 (90%)" in result_df.loc[0, "Commentaires"]
@@ -78,11 +56,9 @@ def test_update_comments_with_similarities(sample_df):
 
 @patch.object(ClusteringService, "preprocess_amendments")
 @patch.object(ClusteringService, "get_clusters")
-@patch.object(SimilaritiesHandler, "calculate_similarity_percentages")
 @patch.object(SimilaritiesHandler, "update_comments_with_similarities")
 def test_process_similarities(
     mock_update,
-    mock_calculate,
     mock_get_clusters,
     mock_preprocess,
     sample_df,
@@ -93,13 +69,14 @@ def test_process_similarities(
         ("Article 2",): [[3, 4]],
         ("Article 3",): [[5]],
     }
+    similarity_percentages = {1: {2: 90.0}, 2: {1: 90.0}}
+
     mock_preprocess.return_value = sample_df
-    mock_get_clusters.return_value = clusters
-    mock_calculate.return_value = {1: {2: 90.0}, 2: {1: 90.0}}
+    mock_get_clusters.return_value = (clusters, similarity_percentages)
     mock_update.return_value = sample_df
 
     # Call the method
-    result_df, clusters = SimilaritiesHandler.process_similarities(
+    result_df = SimilaritiesHandler.process_similarities(
         amendments_df=sample_df,
         similarities_column="Corps amdt",
         similarity_threshold=0.8,
@@ -119,16 +96,10 @@ def test_process_similarities(
         eps=0.4,
         refinement_pct_threshold=0.8,
     )
-    mock_calculate.assert_called_once_with(
-        normalized_amdt_df=sample_df,
-        similar_amdt_clusters=clusters,
-    )
     mock_update.assert_called_once_with(
         amendments_df=sample_df,
-        similarity_percentages={1: {2: 90.0}, 2: {1: 90.0}},
-        pct_threshold=0.8,
+        similarity_percentages=similarity_percentages,
     )
 
     # Verify the result
     assert result_df is mock_update.return_value
-    assert clusters == clusters

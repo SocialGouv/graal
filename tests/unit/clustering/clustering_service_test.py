@@ -94,11 +94,12 @@ def test_create_tfidf_clusters(sample_df):
 def test_apply_levenshtein_refinement_with_similarity_threshold():
     """Test the apply_levenshtein_refinement method with a similarity threshold."""
     mock_cluster_finder = MagicMock()
-    mock_cluster_finder.refine_clusters_with_distance.return_value = {
-        "key": [[1, 2], [3, 4]]
-    }
+    mock_cluster_finder.refine_clusters_with_distance.return_value = (
+        {"key": [[1, 2], [3, 4]]},
+        {1: {2: 90.0}, 2: {1: 90.0}, 3: {4: 85.0}, 4: {3: 85.0}},
+    )
 
-    result = ClusteringService.apply_levenshtein_refinement(
+    clusters, similarity_percentages = ClusteringService.apply_levenshtein_refinement(
         cluster_finder=mock_cluster_finder,
         pct_threshold=0.8,
     )
@@ -107,22 +108,35 @@ def test_apply_levenshtein_refinement_with_similarity_threshold():
     args, kwargs = mock_cluster_finder.refine_clusters_with_distance.call_args
     assert kwargs["distance_threshold"] == pytest.approx(0.2)
 
-    assert result == {"key": [[1, 2], [3, 4]]}
+    assert clusters == {"key": [[1, 2], [3, 4]]}
+    assert similarity_percentages == {
+        1: {2: 90.0},
+        2: {1: 90.0},
+        3: {4: 85.0},
+        4: {3: 85.0},
+    }
 
 
 def test_apply_levenshtein_refinement_with_distance_threshold():
     """Test the apply_levenshtein_refinement method with a distance threshold."""
     mock_cluster_finder = MagicMock()
-    mock_cluster_finder.refine_clusters_with_distance.return_value = {
-        "key": [[1, 2], [3, 4]]
-    }
+    mock_cluster_finder.refine_clusters_with_distance.return_value = (
+        {"key": [[1, 2], [3, 4]]},
+        {1: {2: 99.99}, 2: {1: 99.99}, 3: {4: 99.99}, 4: {3: 99.99}},
+    )
 
-    result = ClusteringService.apply_levenshtein_refinement(
+    clusters, similarity_percentages = ClusteringService.apply_levenshtein_refinement(
         cluster_finder=mock_cluster_finder,
         pct_threshold=0.9999,
     )
 
-    assert result == {"key": [[1, 2], [3, 4]]}
+    assert clusters == {"key": [[1, 2], [3, 4]]}
+    assert similarity_percentages == {
+        1: {2: 99.99},
+        2: {1: 99.99},
+        3: {4: 99.99},
+        4: {3: 99.99},
+    }
 
 
 @patch.object(ClusteringService, "create_tfidf_clusters")
@@ -134,9 +148,18 @@ def test_get_clusters(mock_apply_refinement, mock_create_clusters, sample_df):
         mock_cluster_finder,
         {"key": [[1, 2], [3, 4]]},
     )
-    mock_apply_refinement.return_value = {"key": [[1, 2, 3], [4, 5]]}
+    mock_apply_refinement.return_value = (
+        {"key": [[1, 2, 3], [4, 5]]},
+        {
+            1: {2: 90.0, 3: 85.0},
+            2: {1: 90.0, 3: 80.0},
+            3: {1: 85.0, 2: 80.0},
+            4: {5: 95.0},
+            5: {4: 95.0},
+        },
+    )
 
-    result = ClusteringService.get_clusters(
+    clusters, similarity_percentages = ClusteringService.get_clusters(
         normalized_amdt_df=sample_df,
         group_by_columns=["Num article"],
         eps=0.4,
@@ -151,4 +174,11 @@ def test_get_clusters(mock_apply_refinement, mock_create_clusters, sample_df):
         pct_threshold=0.8,
     )
 
-    assert result == {"key": [[1, 2, 3], [4, 5]]}
+    assert clusters == {"key": [[1, 2, 3], [4, 5]]}
+    assert similarity_percentages == {
+        1: {2: 90.0, 3: 85.0},
+        2: {1: 90.0, 3: 80.0},
+        3: {1: 85.0, 2: 80.0},
+        4: {5: 95.0},
+        5: {4: 95.0},
+    }

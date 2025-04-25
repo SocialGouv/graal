@@ -62,7 +62,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     tf_idf_threshold = 0.4
     similarity_threshold = 0.9999
 
-    allotted_amdt_clusters = ClusteringService.get_clusters(
+    allotted_amdt_clusters, _ = ClusteringService.get_clusters(
         normalized_amdt_df=normalized_amdt_df,
         group_by_columns=["Lecture"],
         eps=tf_idf_threshold,

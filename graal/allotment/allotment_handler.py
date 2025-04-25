@@ -167,7 +167,7 @@ class AllotmentHandler:
         )
 
         # Get clusters
-        allotted_amdt_clusters = ClusteringService.get_clusters(
+        allotted_amdt_clusters, _ = ClusteringService.get_clusters(
             normalized_amdt_df=normalized_df,
             group_by_columns=group_by_columns,
             eps=eps,

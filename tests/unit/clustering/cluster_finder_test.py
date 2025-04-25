@@ -141,7 +141,7 @@ def test_refine_clusters_with_distance(
     cluster_finder, lecture_group, distance_threshold, expected_amdt_idx_clusters
 ):
     cluster_finder.find_similarity_clusters(eps=0.5)
-    refined_clusters = cluster_finder.refine_clusters_with_distance(
+    refined_clusters, _ = cluster_finder.refine_clusters_with_distance(
         distance_threshold=distance_threshold
     )
     assert refined_clusters[(lecture_group,)] == expected_amdt_idx_clusters
