@@ -69,23 +69,30 @@ class ClusteringService:
     def apply_levenshtein_refinement(
         cluster_finder: AmendmentsClusterFinder,
         pct_threshold: float,
-    ) -> Dict[Tuple, List[List[IntIndex]]]:
+    ) -> Tuple[Dict[Tuple, List[List[IntIndex]]], Dict[int, Dict[int, float]]]:
         """
         Refine clusters using Damerau-Levenshtein distance
 
         Args:
             cluster_finder: The cluster finder instance
             pct_threshold: The threshold value
+
+        Returns:
+            A tuple containing:
+            - Dictionary of refined clusters
+            - Dictionary of similarity percentages between amendments
         """
         logging.info("Refining clusters using Damerau-Levenshtein distance")
 
         # Convert similarity % threshold to distance threshold
         distance_threshold = 1.0 - pct_threshold
 
-        refined_clusters = cluster_finder.refine_clusters_with_distance(
-            distance_threshold=distance_threshold
+        refined_clusters, similarity_percentages = (
+            cluster_finder.refine_clusters_with_distance(
+                distance_threshold=distance_threshold
+            )
         )
-        return refined_clusters
+        return refined_clusters, similarity_percentages
 
     @staticmethod
     def get_clusters(
@@ -93,7 +100,7 @@ class ClusteringService:
         group_by_columns: List[str],
         eps: float = 0.4,
         refinement_pct_threshold: float = 99.99,
-    ) -> Dict[Tuple, List[List[IntIndex]]]:
+    ) -> Tuple[Dict[Tuple, List[List[IntIndex]]], Dict[int, Dict[int, float]]]:
         """
         Get clusters of similar amendments (combined TF-IDF and refinement)
 
@@ -102,6 +109,11 @@ class ClusteringService:
             group_by_columns: Columns to group by
             eps: Epsilon value for DBSCAN
             refinement_pct_threshold: Threshold for Levenshtein refinement
+
+        Returns:
+            A tuple containing:
+            - Dictionary of clusters
+            - Dictionary of similarity percentages between amendments
         """
         logging.info("Get clusters of similar amendments")
         cluster_finder, _ = ClusteringService.create_tfidf_clusters(
@@ -109,7 +121,10 @@ class ClusteringService:
             group_by_columns=group_by_columns,
             eps=eps,
         )
-        return ClusteringService.apply_levenshtein_refinement(
-            cluster_finder=cluster_finder,
-            pct_threshold=refinement_pct_threshold,
+        clusters, similarity_percentages = (
+            ClusteringService.apply_levenshtein_refinement(
+                cluster_finder=cluster_finder,
+                pct_threshold=refinement_pct_threshold,
+            )
         )
+        return clusters, similarity_percentages

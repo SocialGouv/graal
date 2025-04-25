@@ -88,68 +88,164 @@ class AmendmentsClusterFinder:
 
         return self.tfidf_clusters_per_group
 
+    def _get_group_dataframe(self, group_key: tuple) -> pd.DataFrame:
+        """Get dataframe filtered by group key"""
+        return self.amendments_df[
+            (
+                self.amendments_df[self.group_by_columns]
+                == pd.Series(group_key, index=self.group_by_columns)
+            ).all(axis=1)
+        ]
+
+    def _calculate_distance_matrix_and_similarities(
+        self,
+        strings: list[str],
+        cluster_amdt_idx: list[int],
+        similarity_percentages: dict[int, dict[int, float]],
+    ) -> tuple[np.ndarray, dict[int, dict[int, float]]]:
+        """
+        Calculate Damerau-Levenshtein distance matrix and similarity percentages
+
+        Args:
+            strings: List of amendment text strings
+            cluster_amdt_idx: List of amendment indices
+            similarity_percentages: Dictionary to store similarity percentages
+
+        Returns:
+            Tuple of distance matrix and updated similarity percentages
+        """
+        n = len(strings)
+        damerau_distance_matrix = np.zeros((n, n))
+
+        # Calculate distances and store similarity percentages
+        for i in range(n):
+            amdt_i = cluster_amdt_idx[i]
+            if amdt_i not in similarity_percentages:
+                similarity_percentages[amdt_i] = {}
+
+            for j in range(n):
+                if i == j:
+                    continue
+
+                amdt_j = cluster_amdt_idx[j]
+                distance = DamerauLevenshtein.distance(strings[i], strings[j])
+                normalized_distance = distance / max(len(strings[i]), len(strings[j]))
+
+                # Store similarity percentage
+                similarity_percentage = (1 - normalized_distance) * 100
+                similarity_percentages[amdt_i][amdt_j] = similarity_percentage
+
+                # Only need to fill the distance matrix for i < j
+                if i < j:
+                    damerau_distance_matrix[i][j] = normalized_distance
+                    damerau_distance_matrix[j][i] = normalized_distance
+
+        return damerau_distance_matrix, similarity_percentages
+
+    def _apply_dbscan_and_extract_clusters(
+        self,
+        distance_matrix: np.ndarray,
+        cluster_amdt_idx: list[int],
+        distance_threshold: float,
+    ) -> list[list[int]]:
+        """
+        Apply DBSCAN on distance matrix and extract refined clusters
+
+        Args:
+            distance_matrix: Precomputed distance matrix
+            cluster_amdt_idx: List of amendment indices
+            distance_threshold: Threshold for DBSCAN clustering
+
+        Returns:
+            List of refined clusters (each cluster is a list of amendment indices)
+        """
+        # Apply DBSCAN on the refined distance matrix
+        dbscan = DBSCAN(metric="precomputed", eps=distance_threshold, min_samples=2)
+        refined_cluster_labels = dbscan.fit_predict(distance_matrix)
+
+        # Extract refined clusters
+        refined_clustered_strings: dict[int, list[IntIndex]] = {}
+        for idx, label in enumerate(refined_cluster_labels):
+            if label == -1:  # Ignore noise points
+                continue
+            if label not in refined_clustered_strings:
+                refined_clustered_strings[label] = []
+            refined_clustered_strings[label].append(cluster_amdt_idx[idx])
+
+        # Filter out singleton clusters
+        return [
+            refined_cluster
+            for refined_cluster in refined_clustered_strings.values()
+            if len(refined_cluster) > 1
+        ]
+
+    def _process_cluster(
+        self,
+        df_group: pd.DataFrame,
+        cluster: list[int],
+        similarity_percentages: dict[int, dict[int, float]],
+        distance_threshold: float,
+    ) -> tuple[list[list[int]], dict[int, dict[int, float]]]:
+        """
+        Process a single cluster to find refined clusters
+
+        Args:
+            df_group: Dataframe filtered by group key
+            cluster: List of amendment indices in the cluster
+            similarity_percentages: Dictionary to store similarity percentages
+            distance_threshold: Threshold for DBSCAN clustering
+
+        Returns:
+            Tuple of refined clusters and updated similarity percentages
+        """
+        # Get the strings and corresponding amdt_idx for the current cluster
+        strings = df_group[df_group["amdt_idx"].isin(cluster)]["Corps amdt"].tolist()
+        cluster_amdt_idx = df_group[df_group["amdt_idx"].isin(cluster)][
+            "amdt_idx"
+        ].tolist()
+
+        # Calculate distance matrix and similarity percentages
+        distance_matrix, updated_similarities = (
+            self._calculate_distance_matrix_and_similarities(
+                strings, cluster_amdt_idx, similarity_percentages
+            )
+        )
+
+        # Apply DBSCAN and extract refined clusters
+        refined_clusters = self._apply_dbscan_and_extract_clusters(
+            distance_matrix, cluster_amdt_idx, distance_threshold
+        )
+
+        return refined_clusters, updated_similarities
+
     def refine_clusters_with_distance(
         self, distance_threshold: float
-    ) -> dict[tuple, list[list[int]]]:
-        """Refine clusters using Damerau-Levenshtein distance"""
+    ) -> tuple[dict[tuple, list[list[int]]], dict[int, dict[int, float]]]:
+        """
+        Refine clusters using Damerau-Levenshtein distance
+
+        Returns:
+            A tuple containing:
+            - Dictionary of refined clusters
+            - Dictionary of similarity percentages between amendments
+        """
         group_keys = (
             self.amendments_df[self.group_by_columns]
             .drop_duplicates()
             .itertuples(index=False, name=None)
         )
+        similarity_percentages: dict[int, dict[int, float]] = {}
+
         for group_key in group_keys:
-            df_group = self.amendments_df[
-                (
-                    self.amendments_df[self.group_by_columns]
-                    == pd.Series(group_key, index=self.group_by_columns)
-                ).all(axis=1)
-            ]
-
+            df_group = self._get_group_dataframe(group_key)
             refined_clusters = []
+
             for cluster in self.tfidf_clusters_per_group[group_key]:
-                # Get the strings and corresponding amdt_idx for the current cluster
-                strings = df_group[df_group["amdt_idx"].isin(cluster)][
-                    "Corps amdt"
-                ].tolist()
-                cluster_amdt_idx = df_group[df_group["amdt_idx"].isin(cluster)][
-                    "amdt_idx"
-                ].tolist()
-                n = len(strings)
-                damerau_distance_matrix = np.zeros((n, n))
-
-                for i in range(n):
-                    for j in range(i + 1, n):
-                        distance = DamerauLevenshtein.distance(strings[i], strings[j])
-                        normalized_distance = distance / max(
-                            len(strings[i]), len(strings[j])
-                        )
-                        damerau_distance_matrix[i][j] = normalized_distance
-                        damerau_distance_matrix[j][i] = normalized_distance
-
-                # Apply DBSCAN on the refined distance matrix
-                dbscan = DBSCAN(
-                    metric="precomputed", eps=distance_threshold, min_samples=2
+                cluster_refined, similarity_percentages = self._process_cluster(
+                    df_group, cluster, similarity_percentages, distance_threshold
                 )
-                refined_cluster_labels = dbscan.fit_predict(damerau_distance_matrix)
-
-                # Extract refined clusters
-                refined_clustered_strings: dict[int, list[IntIndex]] = {}
-                for idx, label in enumerate(refined_cluster_labels):
-                    if label == -1:  # Ignore noise points
-                        continue
-                    if label not in refined_clustered_strings:
-                        refined_clustered_strings[label] = []
-                    refined_clustered_strings[label].append(cluster_amdt_idx[idx])
-
-                # Filter out singleton clusters
-                refined_clusters.extend(
-                    [
-                        refined_cluster
-                        for refined_cluster in refined_clustered_strings.values()
-                        if len(refined_cluster) > 1
-                    ]
-                )
+                refined_clusters.extend(cluster_refined)
 
             self.final_clusters_per_group[group_key] = refined_clusters
 
-        return self.final_clusters_per_group
+        return self.final_clusters_per_group, similarity_percentages

@@ -1,12 +1,10 @@
 import logging
 import logging.config
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import pandas as pd
-from rapidfuzz.distance import DamerauLevenshtein
 
 from graal.clustering.clustering_service import ClusteringService
-from graal.custom_types import IntIndex
 
 logging.config.fileConfig("logging.conf")
 
@@ -15,56 +13,9 @@ class SimilaritiesHandler:
     """Handler for finding and processing similarities between amendments."""
 
     @staticmethod
-    def calculate_similarity_percentages(
-        normalized_amdt_df: pd.DataFrame,
-        similar_amdt_clusters: Dict[Tuple, List[List[IntIndex]]],
-    ) -> Dict[int, Dict[int, float]]:
-        """
-        Calculate similarity percentages between amendments in each cluster.
-
-        Returns a dictionary mapping each amendment index to a dictionary of
-        similar amendment indices with their similarity percentages.
-        """
-        logging.info("Calculating similarity percentages between amendments...")
-        similarity_percentages: dict[int, dict[int, float]] = {}
-
-        for clusters in similar_amdt_clusters.values():
-            for cluster in clusters:
-                # Get the strings for the current cluster
-                cluster_df = normalized_amdt_df[
-                    normalized_amdt_df["amdt_idx"].isin(cluster)
-                ]
-                strings = cluster_df["Corps amdt"].tolist()
-                amdt_indices = cluster_df["amdt_idx"].tolist()
-
-                n = len(strings)
-
-                # Calculate Damerau-Levenshtein distances
-                for i in range(n):
-                    if amdt_indices[i] not in similarity_percentages:
-                        similarity_percentages[amdt_indices[i]] = {}
-
-                    for j in range(n):
-                        if i == j:
-                            continue
-
-                        distance = DamerauLevenshtein.distance(strings[i], strings[j])
-                        normalized_distance = distance / max(
-                            len(strings[i]), len(strings[j])
-                        )
-                        similarity_percentage = (1 - normalized_distance) * 100
-
-                        similarity_percentages[amdt_indices[i]][amdt_indices[j]] = (
-                            similarity_percentage
-                        )
-
-        return similarity_percentages
-
-    @staticmethod
     def update_comments_with_similarities(
         amendments_df: pd.DataFrame,
         similarity_percentages: Dict[int, Dict[int, float]],
-        pct_threshold: float = 0.8,
     ) -> pd.DataFrame:
         """
         Update the 'Commentaires' column with similarity information.
@@ -83,7 +34,6 @@ class SimilaritiesHandler:
         """
         logging.info("Updating comments with similarity information")
         result_df = amendments_df.copy()
-        pct_threshold = pct_threshold * 100  # Convert to percentage
 
         for amdt_idx, similarities in similarity_percentages.items():
             if not similarities:
@@ -93,18 +43,16 @@ class SimilaritiesHandler:
             current_amdt_row = result_df[result_df["amdt_idx"] == amdt_idx]
             if current_amdt_row.empty:
                 continue
+            current_num = current_amdt_row["Num amdt"].iloc[0]
 
             # Get the amendment numbers for the similar amendments that meet the threshold
             similar_amdts = []
             for similar_idx, percentage in similarities.items():
-                # Only include amendments that meet the threshold
-                if percentage < pct_threshold:
-                    continue
-
                 similar_amdt_row = result_df[result_df["amdt_idx"] == similar_idx]
                 if not similar_amdt_row.empty:
                     similar_num = similar_amdt_row["Num amdt"].iloc[0]
-                    similar_amdts.append(f"{similar_num} ({percentage:.0f}%)")
+                    if similar_num != current_num:
+                        similar_amdts.append(f"{similar_num} ({percentage:.0f}%)")
 
             if similar_amdts:
                 # Format the comment
@@ -130,7 +78,7 @@ class SimilaritiesHandler:
         similarity_threshold: float = 0.8,
         group_by_columns: Optional[List[str]] = None,
         eps: float = 0.4,
-    ) -> Tuple[pd.DataFrame, Dict[Tuple, List[List[IntIndex]]]]:
+    ) -> pd.DataFrame:
         """
         Process similarities in a single method that orchestrates the entire workflow
 
@@ -155,25 +103,21 @@ class SimilaritiesHandler:
             columns_to_normalize=[similarities_column],
         )
 
-        # Get clusters
-        similar_amdt_clusters = ClusteringService.get_clusters(
+        # Get clusters and similarity percentages
+        similar_amdt_clusters, similarity_percentages = ClusteringService.get_clusters(
             normalized_amdt_df=normalized_df,
             group_by_columns=group_by_columns,
             eps=eps,
             refinement_pct_threshold=similarity_threshold,
         )
 
-        # Calculate similarity percentages
-        similarity_percentages = SimilaritiesHandler.calculate_similarity_percentages(
-            normalized_amdt_df=normalized_df,
-            similar_amdt_clusters=similar_amdt_clusters,
-        )
+        # Log similarity percentages
+        logging.warning(f"similarity_percentages {similarity_percentages}")
 
         # Update comments
         result_df = SimilaritiesHandler.update_comments_with_similarities(
             amendments_df=amendments_df,
             similarity_percentages=similarity_percentages,
-            pct_threshold=similarity_threshold,
         )
 
-        return result_df, similar_amdt_clusters
+        return result_df
