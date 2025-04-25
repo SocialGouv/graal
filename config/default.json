@@ -28,7 +28,7 @@
                 "enabled": true,
                 "condition": "irrecevable"
             },
-            "Objet amdt" : {
+            "Objet amdt": {
                 "enabled": true
             }
         }
