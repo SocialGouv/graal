@@ -55,12 +55,30 @@ class ClusteringService:
     def create_tfidf_clusters(
         normalized_amdt_df: pd.DataFrame,
         group_by_columns: List[str],
+        text_column: str,
         eps: float = 0.4,
     ) -> Tuple[AmendmentsClusterFinder, Dict[Tuple, List[List[IntIndex]]]]:
-        """Create initial clusters using TF-IDF and DBSCAN"""
-        logging.info("Creating initial clusters of similar amendments using TF-IDF")
+        """
+        Create initial clusters using TF-IDF and DBSCAN
+
+        Args:
+            normalized_amdt_df: Preprocessed amendments dataframe
+            group_by_columns: Columns to group by
+            text_column: Column containing the text to analyze for similarity
+            eps: Epsilon value for DBSCAN
+
+        Returns:
+            A tuple containing:
+            - The cluster finder instance
+            - Dictionary of clusters
+        """
+        logging.info(
+            f"Creating initial clusters of similar amendments using TF-IDF on column {text_column}"
+        )
         cluster_finder = AmendmentsClusterFinder(
-            amendments_df=normalized_amdt_df, group_by_columns=group_by_columns
+            amendments_df=normalized_amdt_df,
+            group_by_columns=group_by_columns,
+            text_column=text_column,
         )
         tfidf_clusters = cluster_finder.find_similarity_clusters(eps=eps)
         return cluster_finder, tfidf_clusters
@@ -98,6 +116,7 @@ class ClusteringService:
     def get_clusters(
         normalized_amdt_df: pd.DataFrame,
         group_by_columns: List[str],
+        text_column: str,
         eps: float = 0.4,
         refinement_pct_threshold: float = 99.99,
     ) -> Tuple[Dict[Tuple, List[List[IntIndex]]], Dict[int, Dict[int, float]]]:
@@ -107,6 +126,7 @@ class ClusteringService:
         Args:
             normalized_amdt_df: Preprocessed amendments dataframe
             group_by_columns: Columns to group by
+            text_column: Column containing the text to analyze for similarity
             eps: Epsilon value for DBSCAN
             refinement_pct_threshold: Threshold for Levenshtein refinement
 
@@ -115,10 +135,11 @@ class ClusteringService:
             - Dictionary of clusters
             - Dictionary of similarity percentages between amendments
         """
-        logging.info("Get clusters of similar amendments")
+        logging.info(f"Get clusters of similar amendments using column {text_column}")
         cluster_finder, _ = ClusteringService.create_tfidf_clusters(
             normalized_amdt_df=normalized_amdt_df,
             group_by_columns=group_by_columns,
+            text_column=text_column,
             eps=eps,
         )
         clusters, similarity_percentages = (

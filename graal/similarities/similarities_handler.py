@@ -75,7 +75,7 @@ class SimilaritiesHandler:
     def process_similarities(
         amendments_df: pd.DataFrame,
         similarities_column: str,
-        similarity_threshold: float = 0.8,
+        pct_similarity_threshold: float = 0.8,
         group_by_columns: Optional[List[str]] = None,
         eps: float = 0.4,
     ) -> pd.DataFrame:
@@ -84,15 +84,13 @@ class SimilaritiesHandler:
 
         Args:
             amendments_df: The dataframe containing amendments
-            similarities_column: The column to use for similarity calculation
-            similarity_threshold: Threshold for similarity (0.0 to 1.0)
+            similarities_column: The column to use for similarity calculation and text analysis
+            pct_similarity_threshold: Threshold for similarity (0.0 to 1.0)
             group_by_columns: Columns to group by
             eps: Epsilon value for DBSCAN
 
         Returns:
-            Tuple containing:
-            - The dataframe with updated comments
-            - The clusters of similar amendments
+            The dataframe with updated comments containing similarity information
         """
         # Preprocess amendments
         if group_by_columns is None:
@@ -107,8 +105,9 @@ class SimilaritiesHandler:
         similar_amdt_clusters, similarity_percentages = ClusteringService.get_clusters(
             normalized_amdt_df=normalized_df,
             group_by_columns=group_by_columns,
+            text_column=similarities_column,
             eps=eps,
-            refinement_pct_threshold=similarity_threshold,
+            refinement_pct_threshold=pct_similarity_threshold,
         )
 
         # Log similarity percentages

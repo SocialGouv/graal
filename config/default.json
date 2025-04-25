@@ -1,7 +1,7 @@
 {
     "tf_idf_threshold": 0.4,
     "allotments": {
-        "enabled": true,
+        "enabled": false,
         "column": "Corps amdt",
         "similarity_threshold": 0.9999
     },

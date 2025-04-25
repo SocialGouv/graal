@@ -223,7 +223,12 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
-    # amendments_df = amendments_df[amendments_df["Num amdt"].isin([196, 923, 1111])]
+    # amendments_df = amendments_df[
+    #     amendments_df["Num amdt"].isin(
+    #         [11, 110]
+    #     )
+    # ]
+
     original_amdt_df = amendments_df.copy()
 
     if args.placeholder_amdt_body:
@@ -331,7 +336,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             default_attributions
         )
 
-    tf_idf_threshold = getattr(args, "tf_idf_threshold", 0.9999)
+    tf_idf_threshold = getattr(args, "tf_idf_threshold", 0.4)
 
     # Extract similarities_within_lectures configuration
     similarities_config = args.similarities_within_lectures
@@ -344,12 +349,13 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Similarities column must be specified in the configuration under 'column'."
             )
         similarity_threshold = similarities_config.get("similarity_threshold", 0.8)
+        logging.warning(f"similarity_threshold {similarity_threshold}")
 
         intermediate_amdts_df, similar_amdt_clusters = (
             SimilaritiesHandler.process_similarities(
                 amendments_df=intermediate_amdts_df,
                 similarities_column=similarities_column,
-                similarity_threshold=similarity_threshold,
+                pct_similarity_threshold=similarity_threshold,
                 group_by_columns=["Num article"],
                 eps=tf_idf_threshold,
             )
@@ -453,7 +459,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
         intermediate_amdts_df = amdt_summary_populator.populate()
 
-    if args.allotments:
+    if allotment_enabled:
         intermediate_amdts_df = AllotmentHandler.populate(
             original_amendments_df=preprocessed_original_amdt_df,
             pipeline_result_amdt_df=intermediate_amdts_df,
