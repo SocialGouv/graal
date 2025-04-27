@@ -172,6 +172,7 @@ class AllotmentHandler:
             group_by_columns=group_by_columns,
             eps=eps,
             refinement_pct_threshold=similarity_threshold,
+            text_column=allotment_column,
         )
 
         # Filter amendments

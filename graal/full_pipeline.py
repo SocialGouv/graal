@@ -494,7 +494,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             if pd.isna(current_comment) or current_comment == "":
                 new_comment = similarity_comment
             else:
-                new_comment = f"{current_comment}\n{similarity_comment}"
+                new_comment = f"{similarity_comment}\n{current_comment}"
 
             intermediate_amdts_df.loc[
                 intermediate_amdts_df["amdt_idx"] == amdt_idx, "Commentaires"
