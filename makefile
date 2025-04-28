@@ -19,8 +19,3 @@ similarity-db-all:
 run:
 	python graal/full_pipeline.py --config=config/default.json
 
-run-test:
-	python graal/full_pipeline.py --config=config/testing.json
-
-run-no-overwrite:
-	python graal/full_pipeline.py --config=config/no_overwrite.json

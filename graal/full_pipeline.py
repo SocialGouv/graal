@@ -149,15 +149,16 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        Path(f"{DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_fin de vie.json"): {
+        # Path(f"{DATA_FOLDER}/input_plf/senat_test_28_avr_2025.json"): {
+        Path(f"{DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_SPA.json"): {
             "default_processing_timestamp": int(
-                datetime(year=2025, month=4, day=5).timestamp()
+                datetime(year=2025, month=4, day=28).timestamp()
             ),
             "origin_project": "PPL Fin de vie 2025",
         }
     }
     # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/résultats_AN_Commission_PPL_fin_de_vie_test_{datetime.now().strftime('%Y-%m-%d')}"
+    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/résultats_AN_Commission_PPL_SPA_test_{datetime.now().strftime('%Y-%m-%d')}"
     COLUMNS_TO_OUTPUT_IN_EXCEL = [
         "Num amdt",
         "Commentaires",
@@ -349,7 +350,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Similarities column must be specified in the configuration under 'column'."
             )
         similarity_threshold = similarities_config.get("similarity_threshold", 0.8)
-        logging.warning(f"similarity_threshold {similarity_threshold}")
 
         similarity_results = SimilaritiesHandler.find_similar_amendments(
             amendments_df=intermediate_amdts_df,

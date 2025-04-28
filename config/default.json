@@ -6,15 +6,14 @@
         "similarity_threshold": 0.9999
     },
     "similarities_within_lectures": {
-        "enabled": true,
+        "enabled": false,
         "column": "Exposé amdt",
         "similarity_threshold": 0.8
     },
     "already_processed_amdt_nums_path": "",
     "attribution_interstitial_only": false,
-    "attribution": false,
+    "attribution": true,
     "attribution_project_name": "PLFSS",
-    "default_opinion": false,
     "handle_inadmissible_amendments": false,
     "no_value_overwrite": false,
     "placeholder_amdt_body": false,
@@ -29,11 +28,11 @@
                 "condition": "irrecevable"
             },
             "Objet amdt": {
-                "enabled": true
+                "enabled": false
             }
         }
     },
-    "summary_generation": false,
+    "summary_generation": true,
     "mission_short_title_filter": [],
     "llm_clients": {
         "scaleway": {

@@ -71,9 +71,6 @@ class SimilaritiesHandler:
             refinement_pct_threshold=pct_similarity_threshold,
         )
 
-        # Log similarity percentages
-        logging.warning(f"similarity_percentages {similarity_percentages}")
-
         # Convert to the desired return format
         result: SimilarityResult = {}
 
