@@ -17,5 +17,4 @@ similarity-db-all:
 	poetry run python graal/utils/build_similarity_db.py
 
 run:
-	python graal/full_pipeline.py --config=config/default.json
-
+	python graal/full_pipeline.py --config=config/default.yaml

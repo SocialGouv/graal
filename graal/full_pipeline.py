@@ -18,7 +18,6 @@ Key functionalities include:
 """
 
 import argparse
-import json
 import logging
 import logging.config
 import os
@@ -28,6 +27,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+import yaml
 from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
@@ -53,8 +53,28 @@ logging.config.fileConfig("logging.conf")
 
 
 def load_config(config_path: str) -> argparse.Namespace:
+    """
+    Load configuration from a YAML file.
+
+    Args:
+        config_path: Path to the configuration file (.yaml or .yml)
+
+    Returns:
+        Configuration as an argparse.Namespace object
+
+    Raises:
+        ValueError: If the file extension is not supported
+    """
+    file_extension = Path(config_path).suffix.lower()
+
     with open(config_path, "r", encoding="UTF-8") as file:
-        config = json.load(file)
+        if file_extension in [".yaml", ".yml"]:
+            config = yaml.safe_load(file)
+        else:
+            raise ValueError(
+                f"Unsupported configuration file format: {file_extension}. Only YAML (.yaml, .yml) is supported."
+            )
+
     return argparse.Namespace(**config)
 
 
@@ -63,7 +83,10 @@ def parse_arguments():
         description="Process amendments related to the French legislative process."
     )
     parser.add_argument(
-        "--config", type=str, required=True, help="Path to the JSON configuration file."
+        "--config",
+        type=str,
+        required=True,
+        help="Path to the configuration file (.yaml or .yml).",
     )
     args = parser.parse_args()
     return load_config(args.config)
