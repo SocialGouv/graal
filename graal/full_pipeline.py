@@ -197,13 +197,19 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     intermediate_amdts_df = None
 
-    # amendments_df = AmendmentPreProcessor.load_amendments_excel(
-    #     list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
-    # )
+    file_path = next(iter(INPUT_FILES_CONFIG.keys()))
+    suffix = file_path.suffix.lower()
 
-    amendments_df = AmendmentPreProcessor.load_amendments_json(
-        list(INPUT_FILES_CONFIG.keys()), INPUT_FILES_CONFIG
-    )
+    if suffix in [".xlsx", ".xls"]:
+        amendments_df = AmendmentPreProcessor.load_amendments_excel(
+            [file_path], INPUT_FILES_CONFIG
+        )
+    elif suffix == ".json":
+        amendments_df = AmendmentPreProcessor.load_amendments_json(
+            [file_path], INPUT_FILES_CONFIG
+        )
+    else:
+        raise ValueError(f"Unsupported file type: {suffix}")
 
     if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
         amendments_df["mission_titre_court"] = (
