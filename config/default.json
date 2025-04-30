@@ -39,5 +39,41 @@
             "nb_instances": 6,
             "timeout": 30
         }
+    },
+    "paths": {
+        "graal_config_file": "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx",
+        "preprocessed_inadmissible_file": "${DATA_FOLDER}/preprocessed/inadmissible_commission.pkl",
+        "preprocessed_old_amendments_file": "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
+    },
+    "input_files": [
+        {
+            "path": "${DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_SPA.json",
+            "default_processing_timestamp": {
+                "year": 2025,
+                "month": 4,
+                "day": 28
+            },
+            "origin_project": "PPL Fin de vie 2025"
+        }
+    ],
+    "output": {
+        "file_prefix_template": "${DATA_FOLDER}/résultats_AN_Commission_PPL_SPA_test_%Y-%m-%d",
+        "columns": [
+            "Num amdt",
+            "Commentaires",
+            "Allotissement",
+            "Objet amdt",
+            "Sort",
+            "Réponse",
+            "Affectation (email)",
+            "Affectation (nom)",
+            "Entité Pilote",
+            "Avis du Gouvernement",
+            "Groupe",
+            "Num article",
+            "Exposé amdt",
+            "Corps amdt",
+            "amdt_idx"
+        ]
     }
 }

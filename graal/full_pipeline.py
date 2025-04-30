@@ -137,46 +137,52 @@ def derive_columns_to_work_on_from_enabled_features(
 # ruff: noqa: C901
 def run_processing_pipeline(args: argparse.Namespace) -> None:
     DATA_FOLDER = os.getenv("DATA_FOLDER")
+
+    # Extract path configurations from args
     GRAAL_CONFIG_FILE = Path(
-        f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
+        args.paths["graal_config_file"].replace("${DATA_FOLDER}", DATA_FOLDER)
     )
     PREPROCESSED_INADMISSIBLE_FILE = Path(
-        f"{DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
+        args.paths["preprocessed_inadmissible_file"].replace(
+            "${DATA_FOLDER}", DATA_FOLDER
+        )
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
-        # f"{DATA_FOLDER}/preprocessed/plfss_similarity_db.pkl"
-        f"{DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
+        args.paths["preprocessed_old_amendments_file"].replace(
+            "${DATA_FOLDER}", DATA_FOLDER
+        )
     )
 
-    INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {
-        # Path(f"{DATA_FOLDER}/input_plf/senat_test_28_avr_2025.json"): {
-        Path(f"{DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_SPA.json"): {
-            "default_processing_timestamp": int(
-                datetime(year=2025, month=4, day=28).timestamp()
-            ),
-            "origin_project": "PPL Fin de vie 2025",
+    # Build INPUT_FILES_CONFIG from args.input_files
+    INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {}
+    for input_file_config in args.input_files:
+        file_path = Path(
+            input_file_config["path"].replace("${DATA_FOLDER}", DATA_FOLDER)
+        )
+
+        # Convert timestamp dict to datetime and then to timestamp
+        timestamp_dict = input_file_config["default_processing_timestamp"]
+        timestamp = int(
+            datetime(
+                year=timestamp_dict["year"],
+                month=timestamp_dict["month"],
+                day=timestamp_dict["day"],
+            ).timestamp()
+        )
+
+        INPUT_FILES_CONFIG[file_path] = {
+            "default_processing_timestamp": timestamp,
+            "origin_project": input_file_config["origin_project"],
         }
-    }
-    # The results will be in OUTPUT_FILE_PREFIX.xlsx and OUTPUT_FILE_PREFIX.csv
-    OUTPUT_FILE_PREFIX = f"{DATA_FOLDER}/résultats_AN_Commission_PPL_SPA_test_{datetime.now().strftime('%Y-%m-%d')}"
-    COLUMNS_TO_OUTPUT_IN_EXCEL = [
-        "Num amdt",
-        "Commentaires",
-        "Allotissement",
-        "Objet amdt",
-        "Sort",
-        "Réponse",
-        "Affectation (email)",
-        "Affectation (nom)",
-        "Entité Pilote",
-        "Avis du Gouvernement",
-        "Groupe",
-        "Num article",
-        "Exposé amdt",
-        "Corps amdt",
-        # "mission_titre_court",
-        "amdt_idx",
-    ]
+
+    # Format output file prefix with current date
+    OUTPUT_FILE_PREFIX = args.output["file_prefix_template"].replace(
+        "${DATA_FOLDER}", DATA_FOLDER
+    )
+    OUTPUT_FILE_PREFIX = datetime.now().strftime(OUTPUT_FILE_PREFIX)
+
+    # Get columns to output from args
+    COLUMNS_TO_OUTPUT_IN_EXCEL = args.output["columns"]
 
     columns_to_work_on = derive_columns_to_work_on_from_enabled_features(args)
 
