@@ -98,7 +98,7 @@ These features work together to ensure that amendments are processed accurately 
 To run the full pipeline:
 
 ```bash
-python graal/full_pipeline.py --config=config/default.json
+python graal/full_pipeline.py --config=config/default.yaml
 # OR
 make run
 ```
@@ -106,7 +106,7 @@ make run
 To run the full pipeline without overwriting work already done in Signale:
 
 ```bash
-python graal/full_pipeline.py --config=config/no_overwrite.json
+python graal/full_pipeline.py --config=config/no_overwrite.yaml
 # OR
 make run-no-overwrite
 ```
@@ -115,25 +115,43 @@ make run-no-overwrite
 
 Each feature mentioned above can be enabled or disabled through the configuration file.
 
-See [config/default.json](config/default.json) for the configuration we use most of the time.
+The system uses YAML configuration format:
+
+```bash
+python graal/full_pipeline.py --config=config/default.yaml
+```
+
+See [config/default.yaml](config/default.yaml) for the configuration we use most of the time.
+
+**Example YAML Configuration**:
+
+```yaml
+# GRAAL Configuration File
+# This file contains all configuration parameters for the GRAAL amendment processing system
+
+# Threshold for TF-IDF similarity calculations
+tf_idf_threshold: 0.4
+
+# Allotment configuration - groups amendments by similarity
+allotments:
+  enabled: true
+  column: "Corps amdt"  # Column used for similarity comparison
+  similarity_threshold: 0.9999  # Threshold above which amendments are considered similar
+```
 
 #### LLM Client Configuration
 
 You can configure LLM clients using the `llm_clients` section in your configuration file:
 
-```json
-{
-    "llm_clients": {
-        "scaleway": {
-            "nb_instances": 6,
-            "timeout": 30
-        },
-        "albert": {
-            "nb_instances": 3,
-            "rate_limiting": 100
-        }
-    }
-}
+```yaml
+# LLM client configuration
+llm_clients:
+  scaleway:
+    nb_instances: 6
+    timeout: 30
+  albert:
+    nb_instances: 3
+    rate_limiting: 100
 ```
 
 Each client type can have the following parameters:
@@ -155,24 +173,18 @@ Supported client types:
 
 You can configure the similarity search feature using the `similarity_search` section in your configuration file:
 
-```json
-{
-    "similarity_search": {
-        "enabled": true,
-        "columns_to_copy": {
-            "Réponse": {
-                "enabled": true
-            },
-            "Sort": {
-                "enabled": true,
-                "condition": "irrecevable"
-            },
-            "Objet": {
-                "enabled": false
-            }
-        }
-    }
-}
+```yaml
+# Similarity search configuration
+similarity_search:
+  enabled: true
+  columns_to_copy:
+    Réponse:
+      enabled: true
+    Sort:
+      enabled: true
+      condition: "irrecevable"
+    Objet:
+      enabled: false
 ```
 
 Parameters:

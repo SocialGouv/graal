@@ -1,0 +1,96 @@
+# GRAAL Configuration File
+# This file contains all configuration parameters for the GRAAL amendment processing system
+
+# Threshold for TF-IDF similarity calculations
+tf_idf_threshold: 0.4
+
+# Allotment configuration - groups amendments by similarity
+allotments:
+  enabled: false
+  column: "Corps amdt"  # Column used for similarity comparison
+  similarity_threshold: 0.9999  # Threshold above which amendments are considered similar
+
+# Configuration for finding similarities within lecture documents
+similarities_within_lectures:
+  enabled: false
+  column: "Exposé amdt"  # Column used for similarity comparison
+  similarity_threshold: 0.8  # Threshold above which amendments are considered similar
+
+# Path to file containing already processed amendment numbers
+already_processed_amdt_nums_path: ""
+
+# Attribution settings
+attribution_interstitial_only: false
+attribution: true
+attribution_project_name: "PLFSS"
+handle_inadmissible_amendments: false
+no_value_overwrite: false
+placeholder_amdt_body: false
+
+# Similarity search configuration - finds similar amendments
+similarity_search:
+  enabled: false
+  columns_to_copy:  # Columns to copy from similar amendments
+    Réponse:
+      enabled: true
+    Sort:
+      enabled: true
+      condition: "irrecevable"  # Only copy if condition matches
+    "Objet amdt":
+      enabled: false
+
+# Enable summary generation for amendments
+summary_generation: false
+
+# Enable default opinion for amendments
+default_opinion: true
+
+# Filter for mission short titles
+mission_short_title_filter: []
+
+# LLM client configuration
+llm_clients:
+  scaleway:
+    nb_instances: 6
+    timeout: 30  # Timeout in seconds
+
+# File paths configuration
+paths:
+  # Path to GRAAL configuration Excel file
+  graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
+  # Path to preprocessed inadmissible amendments file
+  preprocessed_inadmissible_file: "${DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
+  # Path to preprocessed old amendments database
+  preprocessed_old_amendments_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
+
+# Input files configuration
+input_files:
+  - path: "${DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_SPA.json"
+    # Default timestamp to use for processing if not specified
+    default_processing_timestamp:
+      year: 2025
+      month: 4
+      day: 28
+    origin_project: "PPL Fin de vie 2025"
+
+# Output configuration
+output:
+  # Template for output file prefix, includes date formatting
+  file_prefix_template: "${DATA_FOLDER}/résultats_AN_Commission_PPL_SPA_test_%Y-%m-%d"
+  # Columns to include in output file
+  columns:
+    - "Num amdt"
+    - "Commentaires"
+    - "Allotissement"
+    - "Objet amdt"
+    - "Sort"
+    - "Réponse"
+    - "Affectation (email)"
+    - "Affectation (nom)"
+    - "Entité Pilote"
+    - "Avis du Gouvernement"
+    - "Groupe"
+    - "Num article"
+    - "Exposé amdt"
+    - "Corps amdt"
+    - "amdt_idx"
