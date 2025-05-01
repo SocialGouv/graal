@@ -6,7 +6,7 @@ tf_idf_threshold: 0.4
 
 # Allotment configuration - groups amendments by similarity
 allotments:
-  enabled: false
+  enabled: true
   column: "Corps amdt"  # Column used for similarity comparison
   similarity_threshold: 0.9999  # Threshold above which amendments are considered similar
 
@@ -22,7 +22,7 @@ already_processed_amdt_nums_path: ""
 # Attribution settings
 attribution_interstitial_only: false
 attribution: true
-attribution_project_name: "PLFSS"
+attribution_project_name: "PLF"
 handle_inadmissible_amendments: false
 no_value_overwrite: false
 placeholder_amdt_body: false
@@ -43,10 +43,10 @@ similarity_search:
 summary_generation: false
 
 # Enable default opinion for amendments
-default_opinion: true
+default_opinion: false
 
 # Filter for mission short titles
-mission_short_title_filter: []
+mission_short_title_filter: ["travail"]
 
 # LLM client configuration
 llm_clients:
@@ -57,7 +57,8 @@ llm_clients:
 # File paths configuration
 paths:
   # Path to GRAAL configuration Excel file
-  graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
+  # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
+  graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
   # Path to preprocessed inadmissible amendments file
   preprocessed_inadmissible_file: "${DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
   # Path to preprocessed old amendments database
@@ -65,18 +66,20 @@ paths:
 
 # Input files configuration
 input_files:
-  - path: "${DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_SPA.json"
+  # - path: "${DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_SPA.json"
+  - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
       year: 2025
       month: 4
       day: 28
-    origin_project: "PPL Fin de vie 2025"
+    # origin_project: "PPL Fin de vie 2025"
+    origin_project: "PLF 2025"
 
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
-  file_prefix_template: "${DATA_FOLDER}/résultats_AN_Commission_PPL_SPA_test_%Y-%m-%d"
+  file_prefix_template: "${DATA_FOLDER}/résultats_attribution_PLF_test_%Y-%m-%d"
   # Columns to include in output file
   columns:
     - "Num amdt"
@@ -94,3 +97,4 @@ output:
     - "Exposé amdt"
     - "Corps amdt"
     - "amdt_idx"
+    - "mission_titre_court"
