@@ -5,6 +5,7 @@ import logging.config
 
 import pandas as pd
 import pytest
+from bs4 import BeautifulSoup
 
 from graal.attribution.matchers.credit_table_matcher import CreditTableMatcher
 
@@ -325,3 +326,169 @@ def test_match_credit_both_columns(matcher):
         "programme 456 education nationale",
         "programme 789 recherche",
     }
+
+
+@pytest.fixture
+def complex_credit_table():
+    """Create a complex HTML credit table with 'Crédits de paiement' section."""
+    return """
+    <table>
+        <tbody>
+            <tr>
+                <td>
+                    <p><b>Programmes</b>
+                    </p>
+                </td>
+                <td colspan="2">
+                    <p><b>Autorisations d'engagement</b>
+                    </p>
+                </td>
+                <td colspan="2">
+                    <p><b>Crédits de paiement</b>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p> </p>
+                </td>
+                <td>
+                    <p>+</p>
+                </td>
+                <td>
+                    <p>-</p>
+                </td>
+                <td>
+                    <p>+</p>
+                </td>
+                <td>
+                    <p>-</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><b>Soutien aux prestations de l'aviation civile </b>
+                    </p>
+                    <p>dont titre 2</p>
+                </td>
+                <td>
+                    <p> </p>
+                </td>
+                <td>
+                    <p>9 399 999</p>
+                    <p><i>4 308 111</i>
+                    </p>
+                </td>
+                <td>
+                    <p>9 397 611</p>
+                    <p><i>4 308 569</i>
+                    </p>
+                </td>
+                <td>
+                    <p> </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><b>Navigation aérienne </b>
+                    </p>
+                </td>
+                <td>
+                    <p> </p>
+                </td>
+                <td>
+                    <p>10 000 000</p>
+                </td>
+                <td>
+                    <p> </p>
+                </td>
+                <td>
+                    <p>5 000 000</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><b>Transports aériens, surveillance et certification </b>
+                    </p>
+                </td>
+                <td>
+                    <p> </p>
+                </td>
+                <td>
+                    <p>4 200 000</p>
+                </td>
+                <td>
+                    <p> </p>
+                </td>
+                <td>
+                    <p>4 200 000</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><b>TOTAL</b>
+                    </p>
+                </td>
+                <td>
+                    <p><b> </b>
+                    </p>
+                </td>
+                <td>
+                    <p><b>23 597 611</b>
+                    </p>
+                </td>
+                <td>
+                    <p><b> </b>
+                    </p>
+                </td>
+                <td>
+                    <p><b>18 597 611</b>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><b>SOLDE</b>
+                    </p>
+                </td>
+                <td colspan="2">
+                    <p><b>- 23 597 611</b>
+                    </p>
+                </td>
+                <td colspan="2">
+                    <p><b>- 18 597 611</b>
+                    </p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    """
+
+
+def test_detect_table_format(matcher, basic_credit_table, complex_credit_table):
+    """Test detection of table format."""
+    # Test standard format detection
+    soup = BeautifulSoup(basic_credit_table, "html.parser")
+    assert matcher._detect_table_format(soup) == "standard"
+
+    # Test complex format detection
+    soup = BeautifulSoup(complex_credit_table, "html.parser")
+    assert matcher._detect_table_format(soup) == "complex"
+
+
+def test_extract_complex_html_table(matcher, complex_credit_table):
+    """Test extracting DataFrame from complex HTML table."""
+    df = matcher._extract_complex_html_table_as_df(complex_credit_table)
+
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["Programmes", "+", "-"]
+    assert len(df) == 3  # 3 program rows (excluding TOTAL and SOLDE)
+    assert df["+"].values.tolist() == [9397611, 0, 0]
+    assert df["-"].values.tolist() == [0, 5000000, 4200000]
+
+    # Check that the correct values were extracted
+    assert "soutien al prestation de l'aviation civile" in df["Programmes"].values[0]
+    assert "navigation aerienne" in df["Programmes"].values[1]
+    assert (
+        "transport aerien, surveillance et certification" in df["Programmes"].values[2]
+    )
