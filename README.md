@@ -98,7 +98,7 @@ These features work together to ensure that amendments are processed accurately 
 To run the full pipeline:
 
 ```bash
-python graal/full_pipeline.py --config=config/default.yaml
+python graal/full_pipeline.py --config=config/default.yml
 # OR
 make run
 ```
@@ -106,7 +106,7 @@ make run
 To run the full pipeline without overwriting work already done in Signale:
 
 ```bash
-python graal/full_pipeline.py --config=config/no_overwrite.yaml
+python graal/full_pipeline.py --config=config/no_overwrite.yml
 # OR
 make run-no-overwrite
 ```
@@ -118,10 +118,10 @@ Each feature mentioned above can be enabled or disabled through the configuratio
 The system uses YAML configuration format:
 
 ```bash
-python graal/full_pipeline.py --config=config/default.yaml
+python graal/full_pipeline.py --config=config/default.yml
 ```
 
-See [config/default.yaml](config/default.yaml) for the configuration we use most of the time.
+See [config/default.yml](config/default.yml) for the configuration we use most of the time.
 
 **Example YAML Configuration**:
 
