@@ -210,51 +210,53 @@ python graal/utils/build_similarity_db.py --projects PLFSS PLACSS
 
 # Process all available projects
 python graal/utils/build_similarity_db.py
+
+# Specify columns to drop empty rows from (default is ["Réponse"])
+python graal/utils/build_similarity_db.py --drop-empty-columns Réponse "Objet amdt"
+
+# Specify output file path
+python graal/utils/build_similarity_db.py --output data/preprocessed/custom_db.pkl
 ```
+
+The script supports the following command-line options:
+
+- `--projects`: List of projects to include (e.g., PLFSS PLACSS). If not specified, includes all projects.
+- `--output`: Output pickle file path (default: data/preprocessed/pre_processed_old_amdts.pkl)
+- `--drop-empty-columns`: List of columns to drop rows from if they are empty (default: ['Réponse'])
 
 ### Adding New Projects
 
 To add support for a new project type:
 
-1. Create a new configuration file in `graal/utils/config/` (e.g., `my_project_config.py`) following this pattern:
+1. Add the project configuration to the YAML file at `config/db_amendments/projects.yml` following this pattern:
 
-```python
-from pathlib import Path
-from .base_config import ProjectConfig, InputFileConfig, create_timestamp, get_data_path
+```yaml
+projects:
+  # Existing projects...
 
-def get_my_project_config() -> ProjectConfig:
-    """Get MyProject configuration."""
-
-    json_configs: dict[Path, InputFileConfig] = {
-        get_data_path("exports_lectures/MyProject/file1.json"): {
-            "default_processing_timestamp": create_timestamp(2024, 1, 1),
-            "origin_project": "MyProject 2024",
-        },
-    }
-
-    excel_configs: dict[Path, InputFileConfig] = {
-        get_data_path("exports_lectures/MyProject/file1.xlsx"): {
-            "default_processing_timestamp": create_timestamp(2024, 1, 1),
-            "origin_project": "MyProject 2024",
-        },
-    }
-
-    return ProjectConfig(json_configs=json_configs, excel_configs=excel_configs)
+  MY_PROJECT:  # Your project name in uppercase
+    json_configs:
+      - path: "exports_lectures/MyProject_2024/file1.json"
+        default_processing_timestamp:
+          year: 2024
+          month: 1
+          day: 1
+        origin_project: "MyProject 2024"
+    excel_configs:
+      - path: "exports_lectures/MyProject_2024/file2.xlsx"
+        default_processing_timestamp:
+          year: 2024
+          month: 1
+          day: 1
+        origin_project: "MyProject 2024"
 ```
 
-1. Add your project to `ProjectConfigManager.AVAILABLE_PROJECTS` in `graal/utils/config/project_config_manager.py`:
+That's it! No need to modify any Python code. The system will automatically load your project configuration from the YAML file.
 
-```python
-AVAILABLE_PROJECTS = {
-    "PLFSS": get_plfss_config,
-    "PLACSS": get_placss_config,
-    # ... other projects ...
-    "MY_PROJECT": get_my_project_config,  # Add your project here
-}
-```
+You can then run the script with your new project:
 
 ```bash
-python graal/utils/build_similarity_db.py --projects MY_PROJECT
+python graal/utils/build_similarity_db.py --projects MY_PROJECT --output data/preprocessed/my_project_db.pkl
 ```
 
 ## Run through Docker
