@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument(
         "--projects",
         nargs="*",
-        choices=list(ProjectConfigManager.AVAILABLE_PROJECTS.keys()),
+        choices=list(ProjectConfigManager.get_available_projects().keys()),
         help="List of projects to include (e.g., PLFSS PLACSS). If not specified, includes all projects.",
     )
     parser.add_argument(
@@ -51,8 +51,14 @@ def parse_args():
         help="Output pickle file path (default: data/preprocessed/pre_processed_old_amdts.pkl)",
         default=DEFAULT_OUTPUT_FILE,
     )
+    parser.add_argument(
+        "--drop-empty-columns",
+        nargs="+",
+        default=["Réponse"],
+        help="List of columns to drop rows from if they are empty (default: ['Réponse'])",
+    )
     args = parser.parse_args()
-    return args.projects, Path(args.output)
+    return args.projects, Path(args.output), args.drop_empty_columns
 
 
 def remove_oldest_and_without_response(
@@ -70,6 +76,7 @@ def load_and_preprocess_amendments(
     file_configs_json: dict[Path, Any],
     file_configs_excel: dict[Path, Any],
     acronym_mapping: dict[Acronym, str],
+    drop_empty_columns: list[str],
 ) -> pd.DataFrame:
     if file_configs_json:
         amendments_df_json = AmendmentPreProcessor.load_amendments_json(
@@ -102,7 +109,7 @@ def load_and_preprocess_amendments(
     logging.info(f"Loaded {len(amendments_df)} old amendments")
 
     amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
-        amendments_df, ["Réponse"]
+        amendments_df, drop_empty_columns
     )
     logging.info(
         f"Number of old amendments after dropping empty rows: {len(amendments_df)}"
@@ -130,7 +137,7 @@ def save_processed_amendments(df: pd.DataFrame, output_file: Path):
 
 def main():
     # Parse command line arguments
-    project_names, output_file = parse_args()
+    project_names, output_file, drop_empty_columns = parse_args()
 
     # Load project configurations
     project_config = ProjectConfigManager.get_project_configs(project_names)
@@ -150,14 +157,15 @@ def main():
         project_config.json_configs,
         project_config.excel_configs,
         acronym_mapping=acronym_mapping,
+        drop_empty_columns=drop_empty_columns,
     )
 
-    allotted_amdt_clusters = AllotmentHandler.get_clusters(
-        amendments_df, group_by_columns=["Lecture", "origin_project", "Num article"]
-    )
-    filtered_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
-        normalized_amdt_df=amendments_df,
-        allotted_amdt_clusters=allotted_amdt_clusters,
+    filtered_amdt_df, _ = AllotmentHandler.process_allotments(
+        amendments_df=amendments_df,
+        allotment_column="Corps amdt",
+        similarity_threshold=0.99,
+        group_by_columns=["Lecture", "origin_project", "Num article"],
+        eps=0.4,
         removal_strategy_func=remove_oldest_and_without_response,
     )
 
