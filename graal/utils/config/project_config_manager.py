@@ -82,6 +82,37 @@ class ProjectConfigManager:
             raise
 
     @classmethod
+    def _validate_project_config(cls, project_data: Dict[str, Any]) -> None:
+        """Validate project configuration data.
+
+        Args:
+            project_data: Dictionary containing project configuration data from YAML.
+
+        Raises:
+            ValueError: If the configuration is invalid.
+        """
+        required_keys = ["json_configs", "excel_configs"]
+        for key in required_keys:
+            if key not in project_data:
+                raise ValueError(
+                    f"Missing required key '{key}' in project configuration"
+                )
+
+        for config_type in ["json_configs", "excel_configs"]:
+            if not isinstance(project_data[config_type], list):
+                raise ValueError(f"'{config_type}' must be a list")
+
+            for i, config in enumerate(project_data[config_type]):
+                if "path" not in config:
+                    raise ValueError(f"Missing 'path' in {config_type}[{i}]")
+                if "default_processing_timestamp" not in config:
+                    raise ValueError(
+                        f"Missing 'default_processing_timestamp' in {config_type}[{i}]"
+                    )
+                if "origin_project" not in config:
+                    raise ValueError(f"Missing 'origin_project' in {config_type}[{i}]")
+
+    @classmethod
     def _create_project_config_from_yaml(
         cls, project_data: Dict[str, Any]
     ) -> ProjectConfig:
@@ -92,7 +123,12 @@ class ProjectConfigManager:
 
         Returns:
             ProjectConfig object.
+
+        Raises:
+            ValueError: If the configuration is invalid.
         """
+        # Validate the project configuration data
+        cls._validate_project_config(project_data)
         json_configs: dict[Path, InputFileConfig] = {}
         excel_configs: dict[Path, InputFileConfig] = {}
 
