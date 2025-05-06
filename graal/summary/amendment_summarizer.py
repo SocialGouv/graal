@@ -19,6 +19,7 @@ class AmendmentSummarizer:
         amendments_df: pd.DataFrame,
         summary_gen_load_balancer: SummaryGenerationLoadBalancer,
         config_prompt: Prompt,
+        should_overwrite: bool,
         summary_column: str = "Objet amdt",
         base_linear_backoff_sec: int = 10,
     ):
@@ -27,6 +28,7 @@ class AmendmentSummarizer:
         self.summary_column = summary_column
         self.config_prompt = config_prompt
         self.base_linear_backoff_sec = base_linear_backoff_sec
+        self.should_overwrite = should_overwrite
         self.row_to_amdt_idx = dict(enumerate(self.amendments_df["amdt_idx"]))
         self.amdt_idx_to_row = {v: k for k, v in self.row_to_amdt_idx.items()}
 
@@ -39,6 +41,16 @@ class AmendmentSummarizer:
             row = self.amendments_df.loc[
                 self.amendments_df["amdt_idx"] == amdt_idx
             ].iloc[0]
+
+            # Skip rows that already have content in the summary column when should_overwrite is False
+            current_summary = row[self.summary_column]
+            if (
+                not self.should_overwrite
+                and pd.notna(current_summary)
+                and current_summary.strip() != ""
+            ):
+                continue
+
             predefined_summary = self._get_predefined_summary(row)
 
             if predefined_summary:
@@ -60,7 +72,7 @@ class AmendmentSummarizer:
             summaries = self.summary_gen_load_balancer.rerun_long_results(
                 summaries, max_words=25
             )
-            for amdt_idx, summary in zip(amdt_indices, summaries):
+            for amdt_idx, summary in zip(amdt_indices, summaries, strict=False):
                 self._store_summary(amdt_idx, summary.strip())
 
         return self.amendments_df

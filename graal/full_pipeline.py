@@ -107,7 +107,10 @@ def derive_columns_to_work_on_from_enabled_features(
     if args.allotments.get("enabled", False):
         columns_to_clear.update(["Allotissement"])
 
-    if args.summary_generation:
+    # Handle both old boolean format and new dictionary format for summary_generation
+    summary_generation_enabled = args.summary_generation.get("enabled", False)
+
+    if summary_generation_enabled:
         columns_to_preserve.update(["Objet amdt"])
         columns_to_clear.update(["Objet amdt"])
 
@@ -481,7 +484,11 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             columns_to_copy_config=columns_to_copy_config,
         )
 
-    if args.summary_generation:
+    # Handle both old boolean format and new dictionary format for summary_generation
+    summary_generation_enabled = args.summary_generation.get("enabled", False)
+    should_overwrite = args.summary_generation.get("should_overwrite", True)
+
+    if summary_generation_enabled:
         config_prompt = config_excel["Prompt Objet"].to_string()
         amdt_summary_populator = SummaryHandler(
             summary_gen_load_balancer=summary_gen_load_balancer,
@@ -489,6 +496,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             acronym_mapping=acronym_mapping,
             summary_column="Objet amdt",
             config_prompt=config_prompt,
+            should_overwrite=should_overwrite,
         )
         intermediate_amdts_df = amdt_summary_populator.populate()
 

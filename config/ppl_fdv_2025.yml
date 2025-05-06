@@ -40,7 +40,9 @@ similarity_search:
       enabled: true
 
 # Enable summary generation for amendments
-summary_generation: false
+summary_generation:
+  enabled: true
+  should_overwrite: false
 
 # Enable default opinion for amendments
 default_opinion: false
