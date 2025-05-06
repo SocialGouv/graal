@@ -16,5 +16,8 @@ install:
 similarity-db-all:
 	poetry run python graal/utils/build_similarity_db.py
 
+build_simil_db_ppl_fdv:
+	poetry run python graal/utils/build_similarity_db.py --projects PPL_FIN_DE_VIE_2025 --output data/preprocessed/DB_PPL_FIN_DE_VIE_2025.pkl --drop-empty-columns "Objet amdt"
+
 run:
-	python graal/full_pipeline.py --config=config/default.yml
+	poetry run python graal/full_pipeline.py --config=config/default.yml
