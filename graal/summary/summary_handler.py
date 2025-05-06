@@ -22,6 +22,7 @@ class SummaryHandler:
         amendments_df: pd.DataFrame,
         summary_gen_load_balancer: SummaryGenerationLoadBalancer,
         config_prompt: Prompt,
+        should_overwrite: bool,
         summary_column: str = "Objet amdt",
     ):
         self.acronym_mapping = acronym_mapping
@@ -29,6 +30,7 @@ class SummaryHandler:
         self.summary_gen_load_balancer = summary_gen_load_balancer
         self.config_prompt = config_prompt
         self.summary_column = summary_column
+        self.should_overwrite = should_overwrite
 
     def preprocess(self) -> pd.DataFrame:
         self.amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
@@ -39,10 +41,14 @@ class SummaryHandler:
             acronym_mapping=self.acronym_mapping,
             columns_to_normalize=["Exposé amdt", "Corps amdt"],
         )
-        self.amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-            amendments_df=self.amendments_df, columns_to_clear=[self.summary_column]
-        )
-        self.amendments_df[self.summary_column] = ""
+
+        # Only clear the summary column if should_overwrite is True
+        if self.should_overwrite:
+            self.amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
+                amendments_df=self.amendments_df, columns_to_clear=[self.summary_column]
+            )
+            self.amendments_df[self.summary_column] = ""
+
         return self.amendments_df
 
     def populate(
@@ -55,6 +61,7 @@ class SummaryHandler:
             summary_gen_load_balancer=self.summary_gen_load_balancer,
             summary_column=self.summary_column,
             config_prompt=self.config_prompt,
+            should_overwrite=self.should_overwrite,
         )
 
         start_index = 0 if start_index is None else start_index

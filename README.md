@@ -196,6 +196,26 @@ Parameters:
     - `condition`: Optional condition that must be met to copy the column (e.g., only copy "Sort" when it contains "irrecevable")
 
 
+#### Summary Generation Configuration
+
+You can configure the summary generation feature using the `summary_generation` section in your configuration file:
+
+```yaml
+# Summary generation configuration
+summary_generation:
+  enabled: true
+  should_overwrite: false
+```
+
+Parameters:
+
+- `enabled`: Enable or disable the summary generation feature
+- `should_overwrite`: Controls how existing summaries are handled:
+  - When `true`: All summaries are regenerated, including existing ones
+  - When `false`: Only empty summaries are generated, existing summaries are preserved
+
+This is particularly useful when you want to preserve manually edited summaries or when you want to regenerate all summaries with an updated prompt or model.
+
 ## Similarity Data Base
 
 The system includes functionality to build a DB with old amendments for similarity search. This preprocessed data is used to find similarities between new and old amendments in the pipeline.

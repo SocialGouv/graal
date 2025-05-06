@@ -63,6 +63,25 @@ Avant de générer les résumés, le système effectue plusieurs étapes de pré
      - Ajout du préfixe "APPEL : " au résumé si l'exposé contient "amendement d'appel"
      - Exception pour les amendements de suppression
 
+## Configuration et Paramètres
+
+1. **Paramètre `should_overwrite`**
+   - Contrôle la gestion des résumés existants
+   - Valeurs possibles :
+     - `true` : Tous les résumés sont régénérés, y compris ceux qui existent déjà
+     - `false` : Seuls les résumés vides sont générés, les résumés existants sont préservés
+   - Configuration dans le fichier YAML :
+
+     ```yaml
+     summary_generation:
+       enabled: true
+       should_overwrite: false
+     ```
+
+   - Particulièrement utile pour :
+     - Préserver les résumés édités manuellement
+     - Régénérer tous les résumés avec un prompt ou un modèle mis à jour
+
 ## Gestion des Ressources
 
 1. **Load Balancing**

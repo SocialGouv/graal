@@ -3,11 +3,11 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
-from graal.summary.summary_handler import AmendmentSummarizer
 from graal.summary.llm_clients import LLMAPIClient
 from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
+from graal.summary.summary_handler import AmendmentSummarizer
 
 
 @pytest.fixture
@@ -62,6 +62,7 @@ def test_process_amendments(load_balancer, sample_amendments_df):
 def test_process_amendments_with_custom_summary_column(
     load_balancer, sample_amendments_df
 ):
+    sample_amendments_df["Objet Custom"] = ""
     summarizer = AmendmentSummarizer(
         sample_amendments_df,
         load_balancer,
@@ -69,7 +70,6 @@ def test_process_amendments_with_custom_summary_column(
         summary_column="Objet Custom",
     )
     summarizer.summarize(start_index=0, stop_index=3)
-
     assert sample_amendments_df.loc[0, "Objet Custom"] == "mock_summary"
     assert sample_amendments_df.loc[1, "Objet Custom"] == "mock_summary"
     assert sample_amendments_df.loc[2, "Objet Custom"] == "Supprimer cet article."
