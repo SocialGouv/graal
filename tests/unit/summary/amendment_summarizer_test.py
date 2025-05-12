@@ -50,6 +50,7 @@ def test_process_amendments(load_balancer, sample_amendments_df):
         load_balancer,
         config_prompt="",
         summary_column="Objet amdt",
+        should_overwrite=True,
     )
     summarizer.summarize(start_index=0, stop_index=3)
 
@@ -68,6 +69,7 @@ def test_process_amendments_with_custom_summary_column(
         load_balancer,
         config_prompt="",
         summary_column="Objet Custom",
+        should_overwrite=True,
     )
     summarizer.summarize(start_index=0, stop_index=3)
     assert sample_amendments_df.loc[0, "Objet Custom"] == "mock_summary"
@@ -82,6 +84,7 @@ def test_process_amendments_with_low_stop_index(load_balancer, sample_amendments
         load_balancer,
         config_prompt="",
         summary_column="Objet amdt",
+        should_overwrite=True,
     )
     summarizer.summarize(start_index=0, stop_index=2)
 
@@ -97,6 +100,7 @@ def test_process_amendments_with_high_start_index(load_balancer, sample_amendmen
         load_balancer,
         config_prompt="",
         summary_column="Objet amdt",
+        should_overwrite=True,
     )
     summarizer.summarize(start_index=5, stop_index=3)
 
@@ -117,7 +121,11 @@ def test_process_amendments_with_invalid_rows(load_balancer):
     df["Objet amdt"] = ""
 
     summarizer = AmendmentSummarizer(
-        df, load_balancer, summary_column="Objet amdt", config_prompt=""
+        df,
+        load_balancer,
+        summary_column="Objet amdt",
+        config_prompt="",
+        should_overwrite=True,
     )
     summarizer.summarize(start_index=0, stop_index=3)
 
