@@ -31,7 +31,7 @@ class CreditTableMatcher(BaseMatcher):
         Args:
             program_to_attribution: Mapping of program names to attributions
             allowed_columns: Set of column names to match against
-            credit_type_text: Text used to identify credit type in tables (e.g., "Crédits de paiement")
+            credit_type_text: Text used to identify credit type in tables
         """
         super().__init__(matcher_type="CREDIT_TABLE")
         self.program_to_attribution = program_to_attribution
@@ -126,7 +126,7 @@ class CreditTableMatcher(BaseMatcher):
 
     def _find_credits_value_indices(self, rows) -> tuple[int, int] | None:
         """
-        Find the column indices for the "Crédits de paiement" section.
+        Find the column indices for the `credit_type_text` section.
 
         Args:
             rows: List of table rows from BeautifulSoup
@@ -142,7 +142,7 @@ class CreditTableMatcher(BaseMatcher):
         normalized_credit_text = AttributionTextNormalizer.normalize_text(
             self.credit_type_text
         )
-        # Find the cell containing "Crédits de paiement"
+        # Find the cell containing `credit_type_text`
         for cell_idx, cell_text in enumerate(cells):
             if normalized_credit_text in cell_text:
                 return cell_idx * 2 - 1, cell_idx * 2
@@ -165,7 +165,7 @@ class CreditTableMatcher(BaseMatcher):
         ):  # Need at least header row, column names row, and one data row
             return None
 
-        # Find the column indices for "Crédits de paiement" section dynamically
+        # Find the column indices for `credit_type_text` section dynamically
         indices = self._find_credits_value_indices(rows)
 
         if indices is None:

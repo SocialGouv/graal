@@ -51,7 +51,7 @@ def build_plf_attribution_handler(
             CreditTableMatcher(
                 program_to_attribution=program_to_attribution,
                 allowed_columns={"Corps amdt original"},
-                credit_type_text="Crédits de paiement",
+                credit_type_text="Autorisations d’engagement",
             ),
         ],
         default_attributions=AttributionDataLoader.load_default_attribution_mappings(
