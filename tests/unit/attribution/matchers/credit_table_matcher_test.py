@@ -25,7 +25,11 @@ def program_mapping():
 @pytest.fixture
 def matcher(program_mapping):
     """Create a CreditTableMatcher instance."""
-    return CreditTableMatcher(program_mapping, allowed_columns={"Corps amdt original"})
+    return CreditTableMatcher(
+        program_mapping,
+        allowed_columns={"Corps amdt original"},
+        credit_type_text="Crédits de paiement",
+    )
 
 
 @pytest.fixture
@@ -188,7 +192,9 @@ def test_get_attribution_comment_single_match():
             "column": "Corps amdt original",
         }
     ]
-    matcher = CreditTableMatcher({}, allowed_columns=set())
+    matcher = CreditTableMatcher(
+        {}, allowed_columns=set(), credit_type_text="Crédits de paiement"
+    )
     comment = matcher.get_attribution_comment(matches)
 
     assert "Affectations par tableau de crédits" in comment
@@ -216,7 +222,9 @@ def test_get_attribution_comment_multiple_matches():
             "column": "Corps amdt original",
         },
     ]
-    matcher = CreditTableMatcher({}, allowed_columns=set())
+    matcher = CreditTableMatcher(
+        {}, allowed_columns=set(), credit_type_text="Crédits de paiement"
+    )
     comment = matcher.get_attribution_comment(matches)
 
     assert "Affectations par tableau de crédits" in comment

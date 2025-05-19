@@ -23,6 +23,7 @@ class CreditTableMatcher(BaseMatcher):
         self,
         program_to_attribution: dict[str, str],
         allowed_columns: set[AttributionColumns],
+        credit_type_text: str,
     ):
         """
         Initialize the CreditTableMatcher.
@@ -30,10 +31,12 @@ class CreditTableMatcher(BaseMatcher):
         Args:
             program_to_attribution: Mapping of program names to attributions
             allowed_columns: Set of column names to match against
+            credit_type_text: Text used to identify credit type in tables (e.g., "Crédits de paiement")
         """
         super().__init__(matcher_type="CREDIT_TABLE")
         self.program_to_attribution = program_to_attribution
         self.allowed_columns = allowed_columns
+        self.credit_type_text = credit_type_text
 
     def _detect_table_format(self, soup: BeautifulSoup) -> TableFormat:
         """
@@ -45,8 +48,8 @@ class CreditTableMatcher(BaseMatcher):
         Returns:
             String indicating the detected format: "standard" or "complex"
         """
-        # Check if the table contains "Crédits de paiement" text (complex format)
-        if soup.find(string=lambda text: text and "Crédits de paiement" in text):
+        # Check if the table contains the credit type text (complex format)
+        if soup.find(string=lambda text: text and self.credit_type_text in text):
             return "complex"
 
         # Check if the table has th elements (standard format)
@@ -137,7 +140,7 @@ class CreditTableMatcher(BaseMatcher):
             for cell in cells
         ]
         normalized_credit_text = AttributionTextNormalizer.normalize_text(
-            "Crédits de paiement"
+            self.credit_type_text
         )
         # Find the cell containing "Crédits de paiement"
         for cell_idx, cell_text in enumerate(cells):
