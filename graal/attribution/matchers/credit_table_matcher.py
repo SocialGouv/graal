@@ -13,7 +13,7 @@ from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
 
-TableFormat = Literal["standard", "complex"]
+TableFormat = Literal["DirectColumnFormat", "NestedHeaderFormat"]
 
 
 class CreditTableMatcher(BaseMatcher):
@@ -46,21 +46,23 @@ class CreditTableMatcher(BaseMatcher):
             soup: BeautifulSoup object containing the parsed HTML
 
         Returns:
-            String indicating the detected format: "standard" or "complex"
+            String indicating the detected format: "DirectColumnFormat" or "NestedHeaderFormat"
         """
-        # Check if the table contains the credit type text (complex format)
+        # Check if the table contains the credit type text (NestedHeaderFormat format)
         if soup.find(string=lambda text: text and self.credit_type_text in text):
-            return "complex"
+            return "NestedHeaderFormat"
 
-        # Check if the table has th elements (standard format)
+        # Check if the table has th elements (DirectColumnFormat format)
         if soup.find("th"):
-            return "standard"
+            return "DirectColumnFormat"
 
-        # Default to standard format if we can't determine
-        return "standard"
+        # Default to DirectColumnFormat format if we can't determine
+        return "DirectColumnFormat"
 
-    def _extract_html_table_as_df(self, html_content: str) -> pd.DataFrame | None:
-        """Extract and parse standard credit table from HTML content."""
+    def _extract_direct_column_html_table_as_df(
+        self, html_content: str
+    ) -> pd.DataFrame | None:
+        """Extract and parse DirectColumnFormat credit table from HTML content."""
         # Parse the HTML content
         soup = BeautifulSoup(html_content, "html.parser")
 
@@ -148,10 +150,10 @@ class CreditTableMatcher(BaseMatcher):
                 return cell_idx * 2 - 1, cell_idx * 2
         return None
 
-    def _extract_complex_html_table_as_df(
+    def _extract_nested_header_html_table_as_df(
         self, html_content: str
     ) -> pd.DataFrame | None:
-        """Extract and parse complex credit table with 'Crédits de paiement' section."""
+        """Extract and parse NestedHeaderFormat credit table with 'Crédits de paiement' section."""
         soup = BeautifulSoup(html_content, "html.parser")
 
         table = soup.find("table")
@@ -206,7 +208,7 @@ class CreditTableMatcher(BaseMatcher):
             plus_values.append(plus_value)
             minus_values.append(minus_value)
 
-        # Create DataFrame with the same structure as the standard format
+        # Create DataFrame with the same structure as the DirectColumnFormat format
         return self._create_credit_dataframe(programmes, plus_values, minus_values)
 
     def _normalize_programme_table(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -289,10 +291,10 @@ class CreditTableMatcher(BaseMatcher):
         # Detect table format and extract accordingly
         table_format = self._detect_table_format(soup)
 
-        if table_format == "complex":
-            credit_table = self._extract_complex_html_table_as_df(html_content)
+        if table_format == "NestedHeaderFormat":
+            credit_table = self._extract_nested_header_html_table_as_df(html_content)
         else:
-            credit_table = self._extract_html_table_as_df(html_content)
+            credit_table = self._extract_direct_column_html_table_as_df(html_content)
 
         if credit_table is None:
             return []
