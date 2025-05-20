@@ -33,8 +33,8 @@ def matcher(program_mapping):
 
 
 @pytest.fixture
-def basic_credit_table():
-    """Create a basic HTML credit table."""
+def direct_column_credit_table():
+    """Create a DirectColumnFormat HTML credit table."""
     return """
     <table>
         <tr>
@@ -56,9 +56,9 @@ def basic_credit_table():
     """
 
 
-def test_extract_html_table(matcher, basic_credit_table):
+def test__extract_direct_column_html_table_as_df(matcher, direct_column_credit_table):
     """Test extracting DataFrame from HTML table."""
-    df = matcher._extract_html_table_as_df(basic_credit_table)
+    df = matcher._extract_direct_column_html_table_as_df(direct_column_credit_table)
 
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["Programmes", "+", "-"]
@@ -67,9 +67,9 @@ def test_extract_html_table(matcher, basic_credit_table):
     assert df["-"].dtype == "int"
 
 
-def test_extract_html_table_no_table(matcher):
+def test__extract_direct_column_html_table_as_df_no_table(matcher):
     """Test handling HTML content with no table."""
-    df = matcher._extract_html_table_as_df("<div>No table here</div>")
+    df = matcher._extract_direct_column_html_table_as_df("<div>No table here</div>")
     assert df is None
 
 
@@ -337,8 +337,8 @@ def test_match_credit_both_columns(matcher):
 
 
 @pytest.fixture
-def complex_credit_table():
-    """Create a complex HTML credit table with 'Crédits de paiement' section."""
+def nested_header_credit_table():
+    """Create a NestedHeaderFormat HTML credit table with 'Crédits de paiement' section."""
     return """
     <table>
         <tbody>
@@ -473,20 +473,22 @@ def complex_credit_table():
     """
 
 
-def test_detect_table_format(matcher, basic_credit_table, complex_credit_table):
+def test_detect_table_format(
+    matcher, direct_column_credit_table, nested_header_credit_table
+):
     """Test detection of table format."""
-    # Test standard format detection
-    soup = BeautifulSoup(basic_credit_table, "html.parser")
-    assert matcher._detect_table_format(soup) == "standard"
+    # Test DirectColumnFormat format detection
+    soup = BeautifulSoup(direct_column_credit_table, "html.parser")
+    assert matcher._detect_table_format(soup) == "DirectColumnFormat"
 
-    # Test complex format detection
-    soup = BeautifulSoup(complex_credit_table, "html.parser")
-    assert matcher._detect_table_format(soup) == "complex"
+    # Test NestedHeaderFormat format detection
+    soup = BeautifulSoup(nested_header_credit_table, "html.parser")
+    assert matcher._detect_table_format(soup) == "NestedHeaderFormat"
 
 
-def test_extract_complex_html_table(matcher, complex_credit_table):
-    """Test extracting DataFrame from complex HTML table."""
-    df = matcher._extract_complex_html_table_as_df(complex_credit_table)
+def test_extract_nested_header_html_table(matcher, nested_header_credit_table):
+    """Test extracting DataFrame from NestedHeaderFormat HTML table."""
+    df = matcher._extract_nested_header_html_table_as_df(nested_header_credit_table)
 
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["Programmes", "+", "-"]
