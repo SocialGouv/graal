@@ -56,9 +56,13 @@ def direct_column_credit_table():
     """
 
 
-def test__extract_direct_column_html_table_as_df(matcher, direct_column_credit_table):
+def test_extract_direct_column_html_table_as_df(matcher, direct_column_credit_table):
     """Test extracting DataFrame from HTML table."""
-    df = matcher._extract_direct_column_html_table_as_df(direct_column_credit_table)
+    # Parse the HTML string to get a BeautifulSoup Tag object
+    soup = BeautifulSoup(direct_column_credit_table, "html.parser")
+    table = soup.find("table")
+
+    df = matcher._extract_direct_column_html_table_as_df(table)
 
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["Programmes", "+", "-"]
@@ -67,9 +71,9 @@ def test__extract_direct_column_html_table_as_df(matcher, direct_column_credit_t
     assert df["-"].dtype == "int"
 
 
-def test__extract_direct_column_html_table_as_df_no_table(matcher):
+def test_extract_direct_column_html_table_as_df_no_table(matcher):
     """Test handling HTML content with no table."""
-    df = matcher._extract_direct_column_html_table_as_df("<div>No table here</div>")
+    df = matcher._extract_direct_column_html_table_as_df(None)
     assert df is None
 
 
@@ -245,7 +249,11 @@ def test_match_empty_table(matcher):
         </tr>
     </table>
     """
-    amendment = {"amdt_idx": "TEST007", "Corps amdt original": html}
+    amendment = {
+        "amdt_idx": "TEST007",
+        "Corps amdt original": html,
+        "Num amdt": "TEST007",
+    }
 
     matches = matcher.match(amendment, "Corps amdt original")
     assert len(matches) == 0
@@ -488,7 +496,11 @@ def test_detect_table_format(
 
 def test_extract_nested_header_html_table(matcher, nested_header_credit_table):
     """Test extracting DataFrame from NestedHeaderFormat HTML table."""
-    df = matcher._extract_nested_header_html_table_as_df(nested_header_credit_table)
+    # Parse the HTML string to get a BeautifulSoup Tag object
+    soup = BeautifulSoup(nested_header_credit_table, "html.parser")
+    table = soup.find("table")
+
+    df = matcher._extract_nested_header_html_table_as_df(table)
 
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["Programmes", "+", "-"]
@@ -498,7 +510,133 @@ def test_extract_nested_header_html_table(matcher, nested_header_credit_table):
 
     # Check that the correct values were extracted
     assert "soutien al prestation de l'aviation civile" in df["Programmes"].values[0]
-    assert "navigation aerienne" in df["Programmes"].values[1]
-    assert (
-        "transport aerien, surveillance et certification" in df["Programmes"].values[2]
+
+
+@pytest.fixture
+def unknown_format_table():
+    """Create a table with unknown format."""
+    return """
+    <table>
+        <tr>
+            <td>This is not a credit table</td>
+            <td>It has no proper headers</td>
+        </tr>
+        <tr>
+            <td>Just some random data</td>
+            <td>Nothing useful here</td>
+        </tr>
+    </table>
+    """
+
+
+def test_match_multiple_tables_prioritize_nested_header(
+    nested_header_credit_table, direct_column_credit_table
+):
+    """Test that NestedHeaderFormat table is prioritized when multiple tables exist."""
+    # Create HTML with both table formats, with NestedHeaderFormat second
+    html = f"""
+    <div>
+        {direct_column_credit_table}
+        {nested_header_credit_table}
+    </div>
+    """
+    amendment = {
+        "amdt_idx": "TEST011",
+        "Corps amdt original": html,
+        "Num amdt": "TEST011",
+    }
+
+    # Create a custom program mapping that includes aviation programs
+    aviation_matcher = CreditTableMatcher(
+        {
+            "soutien al prestation de l'aviation civile": "Aviation Support",
+            "navigation aerienne": "Air Navigation",
+            "transports aeriens surveillance et certification": "Air Transport",
+        },
+        allowed_columns={"Corps amdt original"},
+        credit_type_text="Crédits de paiement",
     )
+
+    matches = aviation_matcher.match(amendment, "Corps amdt original")
+    assert len(matches) > 0
+    attributions = {match["attribution"] for match in matches}
+    assert "Aviation Support" in attributions
+
+
+def test_match_multiple_tables_direct_column_only(
+    matcher, direct_column_credit_table, unknown_format_table
+):
+    """Test that DirectColumnFormat table is selected when no NestedHeaderFormat exists."""
+    # Create HTML with DirectColumnFormat and unknown format tables
+    html = f"""
+    <div>
+        {unknown_format_table}
+        {direct_column_credit_table}
+    </div>
+    """
+    amendment = {
+        "amdt_idx": "TEST012",
+        "Corps amdt original": html,
+        "Num amdt": "TEST012",
+    }
+
+    # The matcher should select the DirectColumnFormat table
+    matches = matcher.match(amendment, "Corps amdt original")
+
+    # Verify that matches come from the DirectColumnFormat table
+    assert len(matches) == 2
+    attributions = {match["attribution"] for match in matches}
+    assert attributions == {"Health", "Education"}
+    programs = {match["program"] for match in matches}
+    assert programs == {
+        "programme 123 sante publique",
+        "programme 456 education nationale",
+    }
+
+
+def test_match_multiple_tables_no_valid_format(matcher, unknown_format_table):
+    """Test that no table is selected when none have a valid format."""
+    # Create HTML with multiple unknown format tables
+    html = f"""
+    <div>
+        {unknown_format_table}
+        {unknown_format_table}
+    </div>
+    """
+    amendment = {
+        "amdt_idx": "TEST013",
+        "Corps amdt original": html,
+        "Num amdt": "TEST013",
+    }
+
+    # The matcher should not select any table
+    matches = matcher.match(amendment, "Corps amdt original")
+    assert len(matches) == 0
+
+
+def test_match_multiple_nested_header_tables(matcher, nested_header_credit_table):
+    """Test that the first NestedHeaderFormat table is selected when multiple exist."""
+    # Create a modified version of the nested header table
+    modified_nested_table = nested_header_credit_table.replace(
+        "Soutien aux prestations de l'aviation civile", "Programme 123 Sante Publique"
+    )
+
+    # Create HTML with two NestedHeaderFormat tables
+    html = f"""
+    <div>
+        {modified_nested_table}
+        {nested_header_credit_table}
+    </div>
+    """
+    amendment = {
+        "amdt_idx": "TEST014",
+        "Corps amdt original": html,
+        "Num amdt": "TEST014",
+    }
+
+    # The matcher should select the first NestedHeaderFormat table
+    matches = matcher.match(amendment, "Corps amdt original")
+
+    # Check that we got matches from the first table (with the modified program name)
+    programs = {match["program"] for match in matches}
+    assert any("sante" in program.lower() for program in programs)

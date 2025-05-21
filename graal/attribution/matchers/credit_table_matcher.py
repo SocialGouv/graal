@@ -2,10 +2,10 @@
 
 import logging
 import logging.config
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 import pandas as pd
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from graal.attribution.matchers.base_matcher import BaseMatcher
 from graal.custom_types import AttributionColumns, ColumnName, IntIndex
@@ -13,7 +13,7 @@ from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
 
-TableFormat = Literal["DirectColumnFormat", "NestedHeaderFormat"]
+TableFormat = Literal["DirectColumnFormat", "NestedHeaderFormat", "Unknown"]
 
 
 class CreditTableMatcher(BaseMatcher):
@@ -38,36 +38,39 @@ class CreditTableMatcher(BaseMatcher):
         self.allowed_columns = allowed_columns
         self.credit_type_text = credit_type_text
 
-    def _detect_table_format(self, soup: BeautifulSoup) -> TableFormat:
+    def _detect_table_format(self, table: Tag) -> TableFormat:
         """
         Detect the format of the HTML table.
 
         Args:
-            soup: BeautifulSoup object containing the parsed HTML
+            table: BeautifulSoup table element to analyze
 
         Returns:
             String indicating the detected format: "DirectColumnFormat" or "NestedHeaderFormat"
         """
         # Check if the table contains the credit type text (NestedHeaderFormat format)
-        if soup.find(string=lambda text: text and self.credit_type_text in text):
+        if table.find(string=lambda text: text and self.credit_type_text in text):
             return "NestedHeaderFormat"
 
         # Check if the table has th elements (DirectColumnFormat format)
-        if soup.find("th"):
+        if table.find("th"):
             return "DirectColumnFormat"
 
-        # Default to DirectColumnFormat format if we can't determine
-        return "DirectColumnFormat"
+        # Default to Unknown format if we can't determine
+        return "Unknown"
 
     def _extract_direct_column_html_table_as_df(
-        self, html_content: str
-    ) -> pd.DataFrame | None:
-        """Extract and parse DirectColumnFormat credit table from HTML content."""
-        # Parse the HTML content
-        soup = BeautifulSoup(html_content, "html.parser")
+        self, table: Tag
+    ) -> Optional[pd.DataFrame]:
+        """
+        Extract and parse DirectColumnFormat credit table from a BeautifulSoup table element.
 
-        # Extract the table
-        table = soup.find("table")
+        Args:
+            table: BeautifulSoup Tag object representing an HTML table
+
+        Returns:
+            DataFrame containing the parsed table data or None if parsing fails
+        """
         if table is None:
             return None
 
@@ -120,13 +123,15 @@ class CreditTableMatcher(BaseMatcher):
         data = {"Programmes": programmes, "+": plus_values, "-": minus_values}
         df = pd.DataFrame(data)
 
+        logging.error(f"df {df}")
+
         # Convert "+" and "-" columns to integers, handling non-numeric values
         for col in ["+", "-"]:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
 
         return df
 
-    def _find_credits_value_indices(self, rows) -> tuple[int, int] | None:
+    def _find_credits_value_indices(self, rows: list[Tag]) -> tuple[int, int] | None:
         """
         Find the column indices for the `credit_type_text` section.
 
@@ -151,12 +156,17 @@ class CreditTableMatcher(BaseMatcher):
         return None
 
     def _extract_nested_header_html_table_as_df(
-        self, html_content: str
-    ) -> pd.DataFrame | None:
-        """Extract and parse NestedHeaderFormat credit table with 'Crédits de paiement' section."""
-        soup = BeautifulSoup(html_content, "html.parser")
+        self, table: Tag
+    ) -> Optional[pd.DataFrame]:
+        """
+        Extract and parse NestedHeaderFormat credit table with 'Crédits de paiement' section.
 
-        table = soup.find("table")
+        Args:
+            table: BeautifulSoup Tag object representing an HTML table
+
+        Returns:
+            DataFrame containing the parsed table data or None if parsing fails
+        """
         if table is None:
             return None
 
@@ -238,7 +248,11 @@ class CreditTableMatcher(BaseMatcher):
 
         def add_possible_attributions(condition):
             programs = credit_table.loc[condition, "Programmes"]
+            logging.warning(
+                f"self.program_to_attribution {self.program_to_attribution}"
+            )
             for program in programs:
+                logging.info(f"program {program}")
                 if program in self.program_to_attribution:
                     possible_attributions.add(
                         (program, self.program_to_attribution[program])
@@ -263,6 +277,66 @@ class CreditTableMatcher(BaseMatcher):
             for program, attribution in possible_attributions
         ]
 
+    def _select_best_table(
+        self, tables: list[Tag]
+    ) -> tuple[Optional[Tag], TableFormat]:
+        """
+        Select the most appropriate table from a list of tables based on format priority.
+
+        Args:
+            tables: List of BeautifulSoup Tag objects representing HTML tables
+
+        Returns:
+            Tuple of (selected table, table format) or (None, "Unknown") if no suitable table found
+        """
+        selected_table = None
+        selected_format: TableFormat = "Unknown"
+
+        # Try to find a table in preferred order: NestedHeaderFormat first, then DirectColumnFormat
+        for table in tables:
+            table_format = self._detect_table_format(table)
+            if table_format == "NestedHeaderFormat":
+                selected_table = table
+                selected_format = table_format
+                break
+            elif table_format == "DirectColumnFormat" and selected_table is None:
+                selected_table = table
+                selected_format = table_format
+
+        return selected_table, selected_format
+
+    def _extract_table_data(
+        self, table: Tag, table_format: TableFormat
+    ) -> Optional[pd.DataFrame]:
+        """
+        Extract data from a table based on its format and normalize it.
+
+        Args:
+            table: BeautifulSoup Tag object representing an HTML table
+            table_format: Format of the table ("NestedHeaderFormat" or "DirectColumnFormat")
+
+        Returns:
+            Normalized DataFrame containing the parsed table data or None if extraction fails
+        """
+        # Extract data from the table based on its format
+        if table_format == "NestedHeaderFormat":
+            credit_table = self._extract_nested_header_html_table_as_df(table)
+        elif table_format == "DirectColumnFormat":
+            credit_table = self._extract_direct_column_html_table_as_df(table)
+        else:
+            return None
+
+        if credit_table is None:
+            return None
+
+        # Normalize the table data
+        credit_table = self._normalize_programme_table(credit_table)
+        if credit_table.empty:
+            return None
+
+        logging.warning(f"credit_table {credit_table}")
+        return credit_table
+
     def match(
         self, amendment: dict[str, Any], column_name: str
     ) -> list[dict[str, str]]:
@@ -276,6 +350,7 @@ class CreditTableMatcher(BaseMatcher):
         Returns:
             List of dictionaries containing match information
         """
+        # Check if the column is allowed for matching
         if column_name not in self.allowed_columns:
             return []
 
@@ -283,24 +358,23 @@ class CreditTableMatcher(BaseMatcher):
         html_content = amendment["Corps amdt original"]
         soup = BeautifulSoup(html_content, "html.parser")
 
-        # Extract the table
-        table = soup.find("table")
-        if table is None:
+        # Extract all tables
+        tables = soup.find_all("table")
+        if not tables:
             return []
 
-        # Detect table format and extract accordingly
-        table_format = self._detect_table_format(soup)
+        # Select the most appropriate table
+        selected_table, selected_format = self._select_best_table(tables)
+        if selected_table is None:
+            logging.warning(f"No suitable table found for amdt {amendment['Num amdt']}")
+            return []
 
-        if table_format == "NestedHeaderFormat":
-            credit_table = self._extract_nested_header_html_table_as_df(html_content)
-        else:
-            credit_table = self._extract_direct_column_html_table_as_df(html_content)
-
+        # Extract and process the table data
+        credit_table = self._extract_table_data(selected_table, selected_format)
         if credit_table is None:
-            return []
-
-        credit_table = self._normalize_programme_table(credit_table)
-        if credit_table.empty:
+            logging.warning(
+                f"Failed to extract credit table data for amdt {amendment['Num amdt']}"
+            )
             return []
 
         # Get attributions based on credit table analysis
@@ -308,6 +382,7 @@ class CreditTableMatcher(BaseMatcher):
             credit_table, amendment["amdt_idx"], column_name
         )
 
+        logging.error(f"attributions {attributions}")
         return attributions
 
     def get_attribution_comment(self, matches: list[dict[str, str]]) -> str:
