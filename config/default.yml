@@ -57,26 +57,25 @@ paths:
   # Path to GRAAL configuration Excel file
   # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
   graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
-  # Path to preprocessed old amendments database
-  preprocessed_old_amendments_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
+  # Path to the similarity db file
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
 
 # Input files configuration
 input_files:
-  # - path: "${DATA_FOLDER}/input_ppl_fin_vie/AN_Commission_PPL_SPA.json"
   - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
       year: 2025
       month: 4
       day: 28
-    # origin_project: "PPL Fin de vie 2025"
+    # Project name, mainly used for similarity search (we match on origin_project)
     origin_project: "PLF 2025"
 
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
   file_prefix_template: "${DATA_FOLDER}/résultats_attribution_PLF_test_%Y-%m-%d"
-  # Columns to include in output file
+  # Columns to include in Excel file
   columns:
     - "Num amdt"
     - "Commentaires"

@@ -167,11 +167,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     GRAAL_CONFIG_FILE = Path(
         args.paths["graal_config_file"].replace("${DATA_FOLDER}", DATA_FOLDER)
     )
-    PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
-        args.paths["preprocessed_old_amendments_file"].replace(
-            "${DATA_FOLDER}", DATA_FOLDER
-        )
-    )
 
     # Build INPUT_FILES_CONFIG from args.input_files
     INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {}
@@ -425,8 +420,11 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 "Columns to copy configuration must be specified in the configuration under 'columns_to_copy'."
             )
 
-        old_amendments_df = pd.read_pickle(PRE_PROCESSED_OLD_AMENDMENTS_FILE)  # nosec
-        logging.info(f"Loaded old amendments from: {PRE_PROCESSED_OLD_AMENDMENTS_FILE}")
+        similarity_db_file = Path(
+            args.paths["similarity_db_file"].replace("${DATA_FOLDER}", DATA_FOLDER)
+        )
+        old_amendments_df = pd.read_pickle(similarity_db_file)  # nosec
+        logging.info(f"Loaded old amendments from: {similarity_db_file}")
         new_amendments_df = intermediate_amdts_df
         saved_new_amendments_df = new_amendments_df.copy()
         new_amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
