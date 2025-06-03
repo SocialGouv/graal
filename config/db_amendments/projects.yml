@@ -114,7 +114,7 @@ projects:
           day: 20
         origin_project: "PLFSS 2025"
 
-  PLACSS:
+  PLACSS_2022:
     json_configs:
       - path: "exports_lectures/PLACSS 22/AN Séance 1ère lecture/lecture-an-16-1268-PO791932.json"
         default_processing_timestamp:
@@ -128,6 +128,21 @@ projects:
           month: 7
           day: 1
         origin_project: "PLACSS 2021"
+    excel_configs: []
+  PLACSS_2024:
+    json_configs:
+      - path: "exports_lectures/PLACSS 2024/lecture-an-17-4-PO838901.json"
+        default_processing_timestamp:
+          year: 2024
+          month: 10
+          day: 14
+        origin_project: "PLACSS 2024"
+      - path: "exports_lectures/PLACSS 2024/lecture-senat-2024-2025-35-PO78718.json"
+        default_processing_timestamp:
+          year: 2024
+          month: 10
+          day: 22
+        origin_project: "PLACSS 2024"
     excel_configs: []
 
   LFRSS:
