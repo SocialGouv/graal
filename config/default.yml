@@ -19,7 +19,6 @@ similarities_within_lectures:
 # Attribution settings
 attribution: true
 attribution_project_name: "PLF"
-handle_inadmissible_amendments: false
 no_value_overwrite: false
 placeholder_amdt_body: false
 

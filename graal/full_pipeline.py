@@ -35,7 +35,6 @@ from graal.attribution.attribution_data_loader import AttributionDataLoader
 from graal.attribution.project_configurations import (
     get_attribution_handler_builder_func,
 )
-from graal.clustering.inadmissible_amdt_handler import InadmissibleAmendmentHandler
 from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import ColumnsToWorkOn, InputFileConfig, IntIndex
 from graal.opinion.opinion_handler import OpinionHandler
@@ -167,11 +166,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     # Extract path configurations from args
     GRAAL_CONFIG_FILE = Path(
         args.paths["graal_config_file"].replace("${DATA_FOLDER}", DATA_FOLDER)
-    )
-    PREPROCESSED_INADMISSIBLE_FILE = Path(
-        args.paths["preprocessed_inadmissible_file"].replace(
-            "${DATA_FOLDER}", DATA_FOLDER
-        )
     )
     PRE_PROCESSED_OLD_AMENDMENTS_FILE = Path(
         args.paths["preprocessed_old_amendments_file"].replace(
@@ -558,14 +552,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         ) & (intermediate_amdts_df["Objet amdt"] != "Supprimer cet article.")
         intermediate_amdts_df.loc[mask, "Objet amdt"] = (
             "APPEL : " + intermediate_amdts_df.loc[mask, "Objet amdt"]
-        )
-
-    if args.handle_inadmissible_amendments:
-        inadmissible_amdt_handler = InadmissibleAmendmentHandler(
-            preprocessed_inadmissible_file=PREPROCESSED_INADMISSIBLE_FILE
-        )
-        intermediate_amdts_df = inadmissible_amdt_handler.process(
-            amendments_df=intermediate_amdts_df
         )
 
     if args.no_value_overwrite:
