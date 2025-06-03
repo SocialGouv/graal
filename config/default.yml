@@ -18,7 +18,10 @@ similarities_within_lectures:
 
 # Attribution settings
 attribution: true
+# Each project can have a different attribution handler so we need to specify the project name
 attribution_project_name: "PLF"
+# Whether to overwrite existing values in the amendment
+# (used when agents have already started processing amendments in Signale before the export)
 no_value_overwrite: false
 placeholder_amdt_body: false
 
@@ -54,8 +57,6 @@ paths:
   # Path to GRAAL configuration Excel file
   # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
   graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
-  # Path to preprocessed inadmissible amendments file
-  preprocessed_inadmissible_file: "${DATA_FOLDER}/preprocessed/inadmissible_commission.pkl"
   # Path to preprocessed old amendments database
   preprocessed_old_amendments_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
 
