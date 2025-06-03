@@ -278,12 +278,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
             )
 
-    if len(args.already_processed_amdt_nums_path) > 0:
-        with open(args.already_processed_amdt_nums_path, "r", encoding="UTF-8") as file:
-            amdt_nums = {int(line.strip()) for line in file}
-        amendments_df = amendments_df[~amendments_df["Num amdt"].isin(amdt_nums)]
-        print(f"Ignoring num amdts: {amdt_nums}")
-
     acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
     amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
         amendments_df=amendments_df,
