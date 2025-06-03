@@ -16,9 +16,6 @@ similarities_within_lectures:
   column: "Exposé amdt"  # Column used for similarity comparison
   similarity_threshold: 0.8  # Threshold above which amendments are considered similar
 
-# Path to file containing already processed amendment numbers
-already_processed_amdt_nums_path: ""
-
 # Attribution settings
 attribution_interstitial_only: false
 attribution: false
