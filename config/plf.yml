@@ -17,7 +17,6 @@ similarities_within_lectures:
   similarity_threshold: 0.8  # Threshold above which amendments are considered similar
 
 # Attribution settings
-attribution_interstitial_only: false
 attribution: true
 attribution_project_name: "PLF"
 handle_inadmissible_amendments: false
