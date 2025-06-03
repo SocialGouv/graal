@@ -20,7 +20,7 @@ similarities_within_lectures:
 attribution:
   enabled: true
   # Each project can have a different attribution handler so we need to specify the project name
-  project_name: "PLF"
+  project_name: "PLFSS"
 # Whether to overwrite existing values in the amendment
 # (used when agents have already started processing amendments in Signale before the export)
 no_value_overwrite: false
@@ -28,7 +28,7 @@ placeholder_amdt_body: false
 
 # Similarity search configuration - finds similar amendments
 similarity_search:
-  enabled: false
+  enabled: true
   columns_to_copy:  # Columns to copy from similar amendments
     Réponse:
       enabled: true
@@ -47,7 +47,7 @@ summary_generation:
 default_opinion: false
 
 # Filter for mission short titles
-mission_short_title_filter: ["travail"]
+mission_short_title_filter: []
 
 # LLM client configuration
 llm_clients:
@@ -58,26 +58,26 @@ llm_clients:
 # File paths configuration
 paths:
   # Path to GRAAL configuration Excel file
-  # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
-  graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
+  graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
+  # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
   # Path to the similarity db file
-  similarity_db_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PLACSS_2024.pkl"
 
 # Input files configuration
 input_files:
-  - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"
+  - path: "${DATA_FOLDER}/exports_lectures/PLACSS 2024/lecture-an-17-4-PO838901.json"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
-      year: 2025
-      month: 4
-      day: 28
+      year: 2024
+      month: 10
+      day: 20
     # Project name, mainly used for similarity search (we match on origin_project)
-    origin_project: "PLF 2025"
+    origin_project: "PLACSS 2024"
 
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
-  file_prefix_template: "${DATA_FOLDER}/résultats_attribution_PLF_test_%Y-%m-%d"
+  file_prefix_template: "${DATA_FOLDER}/résultats_PLACSS_2024_test_%Y-%m-%d"
   # Columns to include in Excel file
   columns:
     - "Num amdt"
@@ -95,4 +95,4 @@ output:
     - "Exposé amdt"
     - "Corps amdt"
     - "amdt_idx"
-    - "mission_titre_court"
+    # - "mission_titre_court"
