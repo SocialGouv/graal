@@ -321,12 +321,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         )
         attribution_handler = builder_func(config_excel)
 
-        if args.attribution_interstitial_only:
-            relevant_amendments_df = amendments_df[
-                amendments_df["Num article"].str.lower().str.startswith("article add.")
-            ].copy()
-        else:
-            relevant_amendments_df = amendments_df.copy()
+        relevant_amendments_df = amendments_df.copy()
 
         intermediate_amdts_df = attribution_handler.process_amendments(
             relevant_amendments_df
