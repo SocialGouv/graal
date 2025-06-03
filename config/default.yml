@@ -17,9 +17,10 @@ similarities_within_lectures:
   similarity_threshold: 0.8  # Threshold above which amendments are considered similar
 
 # Attribution settings
-attribution: true
-# Each project can have a different attribution handler so we need to specify the project name
-attribution_project_name: "PLF"
+attribution:
+  enabled: true
+  # Each project can have a different attribution handler so we need to specify the project name
+  project_name: "PLF"
 # Whether to overwrite existing values in the amendment
 # (used when agents have already started processing amendments in Signale before the export)
 no_value_overwrite: false

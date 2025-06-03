@@ -17,8 +17,10 @@ similarities_within_lectures:
   similarity_threshold: 0.8  # Threshold above which amendments are considered similar
 
 # Attribution settings
-attribution: false
-attribution_project_name: "PPL FDV"
+attribution:
+  enabled: false
+  # Each project can have a different attribution handler so we need to specify the project name
+  project_name: "PPL FDV"
 no_value_overwrite: false
 placeholder_amdt_body: false
 

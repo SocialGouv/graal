@@ -113,7 +113,11 @@ def derive_columns_to_work_on_from_enabled_features(
         columns_to_preserve.update(["Objet amdt"])
         columns_to_clear.update(["Objet amdt"])
 
-    if args.attribution:
+    # Handle both old boolean format and new dictionary format for attribution
+    attribution_config = args.attribution
+    attribution_enabled = attribution_config.get("enabled", False)
+
+    if attribution_enabled:
         columns_to_preserve.update(
             [
                 "Affectation (email)",
@@ -295,7 +299,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     amdt_allotment_strategy_func = AllotmentHandler.default_removal_strategy_func
 
-    if args.attribution:
+    attribution_config = args.attribution
+    attribution_enabled = attribution_config.get("enabled", False)
+    if attribution_enabled:
         amdt_with_attribution_df = intermediate_amdts_df
         amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
             "Corps amdt"
@@ -305,9 +311,9 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             "Exposé amdt"
         ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
 
-        builder_func = get_attribution_handler_builder_func(
-            args.attribution_project_name
-        )
+        # Get project name from new structure, with fallback to old structure
+        project_name = attribution_config.get("project_name", None)
+        builder_func = get_attribution_handler_builder_func(project_name)
         attribution_handler = builder_func(config_excel)
 
         relevant_amendments_df = amendments_df.copy()
@@ -534,7 +540,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             ),
         )
         intermediate_amdts_df = opinion_populator.populate()
-        if args.allotments:
+        if allotment_enabled:
             for allot, group in intermediate_amdts_df.groupby("Allotissement"):
                 if "Défavorable" in group["Avis du Gouvernement"].values:
                     intermediate_amdts_df.loc[
