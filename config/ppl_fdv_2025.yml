@@ -57,8 +57,8 @@ llm_clients:
 paths:
   # Path to GRAAL configuration Excel file
   graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
-  # Path to preprocessed old amendments database
-  preprocessed_old_amendments_file: "${DATA_FOLDER}/preprocessed/DB_PPL_FIN_DE_VIE_2025.pkl"
+  # Path to the similarity db file
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PPL_FIN_DE_VIE_2025.pkl"
 
 # Input files configuration
 input_files:
