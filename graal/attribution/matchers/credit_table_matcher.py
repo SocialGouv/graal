@@ -123,8 +123,6 @@ class CreditTableMatcher(BaseMatcher):
         data = {"Programmes": programmes, "+": plus_values, "-": minus_values}
         df = pd.DataFrame(data)
 
-        logging.error(f"df {df}")
-
         # Convert "+" and "-" columns to integers, handling non-numeric values
         for col in ["+", "-"]:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
@@ -248,11 +246,7 @@ class CreditTableMatcher(BaseMatcher):
 
         def add_possible_attributions(condition):
             programs = credit_table.loc[condition, "Programmes"]
-            logging.warning(
-                f"self.program_to_attribution {self.program_to_attribution}"
-            )
             for program in programs:
-                logging.info(f"program {program}")
                 if program in self.program_to_attribution:
                     possible_attributions.add(
                         (program, self.program_to_attribution[program])
@@ -334,7 +328,6 @@ class CreditTableMatcher(BaseMatcher):
         if credit_table.empty:
             return None
 
-        logging.warning(f"credit_table {credit_table}")
         return credit_table
 
     def match(
@@ -382,7 +375,6 @@ class CreditTableMatcher(BaseMatcher):
             credit_table, amendment["amdt_idx"], column_name
         )
 
-        logging.error(f"attributions {attributions}")
         return attributions
 
     def get_attribution_comment(self, matches: list[dict[str, str]]) -> str:
