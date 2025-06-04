@@ -162,7 +162,7 @@ def main():
 
     filtered_amdt_df, _ = AllotmentHandler.process_allotments(
         amendments_df=amendments_df,
-        allotment_column="Corps amdt",
+        allotment_column="Exposé amdt",
         similarity_threshold=0.99,
         group_by_columns=["Lecture", "origin_project", "Num article"],
         eps=0.4,
