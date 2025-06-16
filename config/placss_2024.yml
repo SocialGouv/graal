@@ -12,7 +12,7 @@ allotments:
 
 # Configuration for finding similarities within lecture documents
 similarities_within_lectures:
-  enabled: false
+  enabled: true
   column: "Exposé amdt"  # Column used for similarity comparison
   similarity_threshold: 0.8  # Threshold above which amendments are considered similar
 
@@ -40,11 +40,11 @@ similarity_search:
 
 # Enable summary generation for amendments
 summary_generation:
-  enabled: false
-  should_overwrite: false
+  enabled: true
+  should_overwrite: true
 
 # Enable default opinion for amendments
-default_opinion: false
+default_opinion: true
 
 # Filter for mission short titles
 mission_short_title_filter: []
@@ -54,30 +54,31 @@ llm_clients:
   scaleway:
     nb_instances: 6
     timeout: 30  # Timeout in seconds
+  # fake:
+  #   nb_instances: 1
 
 # File paths configuration
 paths:
   # Path to GRAAL configuration Excel file
   graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
-  # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
   # Path to the similarity db file
-  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PLACSS_2024.pkl"
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PLACSS_2025.pkl"
 
 # Input files configuration
 input_files:
-  - path: "${DATA_FOLDER}/exports_lectures/PLACSS 2024/lecture-an-17-4-PO838901.json"
+  - path: "${DATA_FOLDER}/input_placss/lecture-an-17-1456-PO838901.json"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
-      year: 2024
-      month: 10
-      day: 20
+      year: 2025
+      month: 6
+      day: 5
     # Project name, mainly used for similarity search (we match on origin_project)
     origin_project: "PLACSS 2024"
 
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
-  file_prefix_template: "${DATA_FOLDER}/résultats_PLACSS_2024_test_%Y-%m-%d"
+  file_prefix_template: "${DATA_FOLDER}/résultats_PLACSS_%Y-%m-%d"
   # Columns to include in Excel file
   columns:
     - "Num amdt"
