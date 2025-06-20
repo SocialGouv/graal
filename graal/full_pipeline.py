@@ -28,7 +28,6 @@ from pathlib import Path
 
 import pandas as pd
 import yaml
-from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.attribution.attribution_data_loader import AttributionDataLoader
@@ -255,6 +254,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
         amendments_df
     )
+    # amendments_df = amendments_df.head(10)
     # amendments_df = amendments_df[
     #     amendments_df["Num amdt"].isin(
     #         [11, 110]
@@ -283,11 +283,11 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     )
 
     amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
+        lambda text: remove_gage_sentences(text)
     )
 
     amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
+        lambda text: remove_gage_sentences(text)
     )
 
     amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(

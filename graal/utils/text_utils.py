@@ -131,6 +131,7 @@ def remove_sentences_starting_with(
     Returns:
     str: The text with the specified sentences removed.
     """
+    start_patterns = [unidecode(pattern) for pattern in start_patterns]
     sentences = [s for s in re.split(f"({delimiter_pattern})", text) if s]
     filtered_sentences = []
     skip_next = False
@@ -141,8 +142,9 @@ def remove_sentences_starting_with(
             continue
 
         sentence = sentences[i]
+        sentence_unidecoded = unidecode(sentence)
         if any(
-            sentence.strip().lower().startswith(pattern.strip().lower())
+            sentence_unidecoded.strip().lower().startswith(pattern.strip().lower())
             for pattern in start_patterns
         ):
             skip_next = True  # Skip the delimiter
@@ -194,8 +196,8 @@ def remove_gage_sentences(text: str) -> str:
     return remove_sentences_starting_with(
         text,
         start_patterns=[
-            unidecode("la perte de recettes"),
-            unidecode("la charge pour l'état"),
+            "la perte de recettes",
+            "la charge pour l'état",
         ],
     )
 
