@@ -51,6 +51,7 @@ Le système dispose de trois types de matchers spécialisés, utilisés différe
     **Pour le PLFSS (Projet de Loi de Financement de la Sécurité Sociale)**
     - Correspondance par Mot-clé (sur "Exposé amdt" et "Corps amdt")
     - Correspondance par Document Juridique (sur "Corps amdt" uniquement)
+    - Correspondance par Amendement Rédactionnel (sur "Exposé amdt" et "Corps amdt")
 
     Description détaillée des matchers :
 
@@ -71,6 +72,17 @@ Le système dispose de trois types de matchers spécialisés, utilisés différe
     c) **Correspondance par Mot-clé**
     - Recherche des mots-clés ou expressions spécifiques
     - Utilise une correspondance exacte des mots normalisés
+
+    d) **Correspondance par Amendement Rédactionnel**
+    - Détecte automatiquement les amendements rédactionnels par la présence de motifs spécifiques :
+      - "amendement rédactionnel" (insensible à la casse)
+      - "Rédactionnel." (insensible à la casse)
+    - Attribue ces amendements en fonction du numéro d'article modifié
+    - Utilise une table subsidiaire ("Table subsidiaire") dans le fichier de configuration contenant :
+      - "Numéro article" : le numéro de l'article (ex. "Liminaire", "1", "2")
+      - "Contributeur" : le nom de la personne à qui attribuer l'amendement
+    - En cas d'article non trouvé dans la table subsidiaire, utilise l'attribution par défaut
+    - Ajoute une colonne "is_redactional" lors du prétraitement pour faciliter l'identification
 
 4. **Sélection de l'Attribution**
    Le système :

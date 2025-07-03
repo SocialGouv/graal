@@ -100,7 +100,9 @@ class AmendmentPreProcessor:
 
     @staticmethod
     def load_acronyms(config_df: pd.DataFrame) -> dict[Acronym, str]:
-        acronym_mapping = dict(zip(config_df["Acronyme"], config_df["Développement"]))
+        acronym_mapping = dict(
+            zip(config_df["Acronyme"], config_df["Développement"], strict=False)
+        )
         return acronym_mapping
 
     @staticmethod
@@ -212,41 +214,57 @@ class AmendmentPreProcessor:
         return amendments_df
 
     @staticmethod
-    def handle_common_amendment_expose(
+    def handle_common_amendment_expose_and_redactional(
         amendments_df: pd.DataFrame,
         expose_column: str = "Exposé amdt",
         amdt_bodies_column: str = "Corps amdt",
+        add_redactional_column: bool = True,
     ) -> pd.DataFrame:
         """
-        Concatenate expose_column with amdt_bodies_column if expose_column is:
-        - Small (< 50 characters)
-        - A common pattern (i.e. "Amendement rédactionnel.")
+        - Adds an 'is_redactional' column to identify redactional amendments.
+        - Concatenates expose_column with amdt_bodies_column if expose_column is:
+            - Small (< 50 characters)
+            - A common pattern (i.e. "Amendement rédactionnel.")
         """
-
-        very_common_patterns = [
+        redac_patterns = [
             r"amendement rédactionnel",
             r"Rédactionnel\.",
         ]
-        combined_pattern = r"|".join(very_common_patterns)
+        combined_pattern = r"|".join(redac_patterns)
 
-        # Create mask with regex. It does not need to be an exact match
-        mask = (
-            amendments_df[expose_column]
-            .str.contains(combined_pattern, regex=True, case=False)
-            .fillna(False)
-        )
+        # Add is_redactional column if requested
+        if add_redactional_column:
+            if expose_column in amendments_df.columns:
+                amendments_df["is_redactional"] = (
+                    amendments_df[expose_column]
+                    .str.contains(combined_pattern, regex=True, case=False)
+                    .fillna(False)
+                )
+            else:
+                amendments_df["is_redactional"] = False
+            redactional_count = amendments_df["is_redactional"].sum()
+            logging.info(f"Identified {redactional_count} redactional amendments.\n")
 
-        # Also append 'Num article' to small amendment bodies
-        mask = mask | (amendments_df[expose_column].str.len() < 50)
-        logging.info(
-            f'Concatenating "{amdt_bodies_column}" to "{expose_column}" in {mask.sum()} amendements to get better clusters...\n'
-        )
+        # Concatenate expose_column with amdt_bodies_column for common/small exposes
+        if (
+            expose_column in amendments_df.columns
+            and amdt_bodies_column in amendments_df.columns
+        ):
+            mask = (
+                amendments_df[expose_column]
+                .str.contains(combined_pattern, regex=True, case=False)
+                .fillna(False)
+            )
+            mask = mask | (amendments_df[expose_column].str.len() < 50)
+            logging.info(
+                f'Concatenating "{amdt_bodies_column}" to "{expose_column}" in {mask.sum()} amendements to get better clusters...\n'
+            )
+            amendments_df.loc[mask, expose_column] = (
+                amendments_df.loc[mask, expose_column]
+                + " "
+                + amendments_df.loc[mask, amdt_bodies_column]
+            )
 
-        amendments_df.loc[mask, expose_column] = (
-            amendments_df.loc[mask, expose_column]
-            + " "
-            + amendments_df.loc[mask, amdt_bodies_column]
-        )
         return amendments_df
 
     @staticmethod

@@ -9,6 +9,9 @@ from graal.attribution.attribution_handler import AttributionHandler
 from graal.attribution.matchers.credit_table_matcher import CreditTableMatcher
 from graal.attribution.matchers.keyword_matcher import KeywordMatcher
 from graal.attribution.matchers.legal_document_matcher import LegalDocumentMatcher
+from graal.attribution.matchers.redactional_amendment_matcher import (
+    RedactionalAmendmentMatcher,
+)
 from graal.custom_types import LegalDocumentType, ProjectName
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
@@ -80,6 +83,9 @@ def build_plfss_attribution_handler(
         config_excel
     )
 
+    # Load subsidiary table for redactional amendment attribution
+    subsidiary_df = AttributionDataLoader.load_subsidiary_table(config_excel)
+
     return AttributionHandler(
         matchers=[
             KeywordMatcher(
@@ -103,6 +109,11 @@ def build_plfss_attribution_handler(
                 documents_df=ordonnances_articles_df,
                 matcher_type="LEGAL_DOCUMENT_ORDONNANCE",
                 allowed_columns={"Corps amdt"},
+            ),
+            RedactionalAmendmentMatcher(
+                subsidiary_df=subsidiary_df,
+                allowed_columns={"Exposé amdt", "Corps amdt"},
+                matcher_type="REDACTIONAL_AMENDMENT",
             ),
         ],
         default_attributions=AttributionDataLoader.load_default_attribution_mappings(

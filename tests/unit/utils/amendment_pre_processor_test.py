@@ -160,6 +160,7 @@ def test_normalize_amendments():
                         "Rédactionnel. Body 4",
                     ],
                     "Corps amdt": ["Body 1", "Body 2", "Body 3", "Body 4"],
+                    "is_redactional": [True, False, False, True],
                 }
             ),
         ),
@@ -167,7 +168,7 @@ def test_normalize_amendments():
             pd.DataFrame(
                 {
                     "Exposé amdt": [
-                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be appended to!",
+                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be detected as such and appended to!",
                         "Short",
                     ],
                     "Corps amdt": ["Body B", "Body C"],
@@ -176,10 +177,11 @@ def test_normalize_amendments():
             pd.DataFrame(
                 {
                     "Exposé amdt": [
-                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be appended to! Body B",
+                        "This is a long exposé amdt but it contains aMEndement rédactionnel so it should be detected as such and appended to! Body B",
                         "Short Body C",
                     ],
                     "Corps amdt": ["Body B", "Body C"],
+                    "is_redactional": [True, False],
                 }
             ),
         ),
@@ -187,7 +189,7 @@ def test_normalize_amendments():
 )
 def test_handle_common_amendment_expose(input_df, expected_df):
     amendment_processor = AmendmentPreProcessor
-    result_df = amendment_processor.handle_common_amendment_expose(
+    result_df = amendment_processor.handle_common_amendment_expose_and_redactional(
         amendments_df=input_df
     )
     pd.testing.assert_frame_equal(result_df, expected_df)
