@@ -99,6 +99,14 @@ class AmendmentSummarizer:
             in cleaned_explanatory_statement
             or SummaryTextNormalizer.normalize_text("amendement de précision")
             in cleaned_explanatory_statement
+            or SummaryTextNormalizer.normalize_text("amendement de correction")
+            in cleaned_explanatory_statement
+            or SummaryTextNormalizer.normalize_text("amendement de clarification")
+            in cleaned_explanatory_statement
+            or SummaryTextNormalizer.normalize_text("amendement de coordination")
+            in cleaned_explanatory_statement
+            or SummaryTextNormalizer.normalize_text("amendement de suppression")
+            in cleaned_explanatory_statement
         ):
             return "Amendement rédactionnel."
         if cleaned_amdt_body.startswith(

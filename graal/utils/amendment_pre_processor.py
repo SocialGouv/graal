@@ -233,8 +233,12 @@ class AmendmentPreProcessor:
         redac_patterns = [
             rf"{unidecode(erreur_mat_str)}",
             rf"{unidecode('amendement rédactionnel')}",
-            rf"{unidecode('rédactionnel')}\.",
             rf"{unidecode('amendement de précision')}",
+            rf"{unidecode('amendement de correction')}",
+            rf"{unidecode('amendement de clarification')}",
+            rf"{unidecode('amendement de coordination')}",
+            rf"{unidecode('amendement de suppression')}",
+            rf"{unidecode('rédactionnel')}\.",
         ]
         combined_pattern = r"|".join(redac_patterns)
 
