@@ -145,6 +145,12 @@ class AttributionDataLoader:
             return pd.DataFrame(columns=["Numéro article", "Affectation (nom)"])
 
         subsidiary_df = excel_data["Table subsidiaire"].copy()
+        # Prepend "article " to non-empty "Numéro article" rows
+        subsidiary_df["Numéro article"] = subsidiary_df["Numéro article"].apply(
+            lambda x: f"article {str(x).lower()}"
+            if str(x).strip() != "" and not str(x).lower().startswith("article ")
+            else str(x).lower()
+        )
         subsidiary_df.fillna("", inplace=True)
 
         logger.info(f"Loaded {len(subsidiary_df)} entries from 'Table subsidiaire'.")

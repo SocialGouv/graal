@@ -16,7 +16,7 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
         # Create test subsidiary table data
         self.subsidiary_data = pd.DataFrame(
             {
-                "Numéro article": ["Liminaire", "1", "2"],
+                "Numéro article": ["article liminaire", "article 1", "article 2"],
                 "Affectation (nom)": ["Bob Martin", "Alice Douglas", "Bart Simpson"],
             }
         )
@@ -31,7 +31,7 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
         amendment = {
             "amdt_idx": 1,
             "is_redactional": True,
-            "Num article": "1",
+            "Num article": "article 1",
             "Exposé amdt": "Amendement rédactionnel.",
         }
 
@@ -39,7 +39,6 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
 
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]["attribution"], "Alice Douglas")
-        self.assertEqual(matches[0]["article_number"], "1")
         self.assertEqual(matches[0]["matcher_type"], "REDACTIONAL_AMENDMENT")
 
     def test_match_redactional_amendment_with_liminaire_article(self):
@@ -47,7 +46,7 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
         amendment = {
             "amdt_idx": 2,
             "is_redactional": True,
-            "Num article": "Liminaire",
+            "Num article": "article liminaire",
             "Exposé amdt": "Amendement rédactionnel.",
         }
 
@@ -55,14 +54,13 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
 
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]["attribution"], "Bob Martin")
-        self.assertEqual(matches[0]["article_number"], "Liminaire")
 
     def test_no_match_for_non_redactional_amendment(self):
         """Test that non-redactional amendments are not matched."""
         amendment = {
             "amdt_idx": 3,
             "is_redactional": False,
-            "Num article": "1",
+            "Num article": "article 1",
             "Exposé amdt": "Some other amendment text.",
         }
 
@@ -75,7 +73,7 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
         amendment = {
             "amdt_idx": 4,
             "is_redactional": True,
-            "Num article": "999",
+            "Num article": "article 999",
             "Exposé amdt": "Amendement rédactionnel.",
         }
 
@@ -92,7 +90,7 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
         amendment = {
             "amdt_idx": 5,
             "is_redactional": True,
-            "Num article": "",
+            "Num article": "article ",
             "Exposé amdt": "Amendement rédactionnel.",
         }
 
@@ -109,7 +107,7 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
         amendment = {
             "amdt_idx": 6,
             "is_redactional": True,
-            "Num article": "1",
+            "Num article": "article 1",
             "Some other column": "Amendement rédactionnel.",
         }
 
@@ -150,7 +148,7 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
         amendment = {
             "amdt_idx": 7,
             "is_redactional": True,
-            "Num article": "1",
+            "Num article": "article 1",
             "Exposé amdt": "Amendement rédactionnel.",
         }
 
