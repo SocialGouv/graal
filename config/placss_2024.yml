@@ -62,7 +62,7 @@ paths:
   # Path to GRAAL configuration Excel file
   graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
   # Path to the similarity db file
-  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PLACSS_2025.pkl"
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PLACSS_2024.pkl"
 
 # Input files configuration
 input_files:
