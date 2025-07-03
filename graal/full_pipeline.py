@@ -299,6 +299,12 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     amdt_allotment_strategy_func = AllotmentHandler.default_removal_strategy_func
 
+    intermediate_amdts_df = (
+        AmendmentPreProcessor.handle_common_amendment_expose_and_redactional(
+            amendments_df=intermediate_amdts_df, add_redactional_column=True
+        )
+    )
+
     attribution_config = args.attribution
     attribution_enabled = attribution_config.get("enabled", False)
     if attribution_enabled:
@@ -410,13 +416,13 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
         )
 
-    if args.similarity_search:
+    similarity_config = (
+        args.similarity_search
+        if isinstance(args.similarity_search, dict)
+        else {"enabled": False}
+    )
+    if similarity_config.get("enabled", False):
         # Extract similarity search configuration
-        similarity_config = (
-            args.similarity_search
-            if isinstance(args.similarity_search, dict)
-            else {"enabled": False}
-        )
 
         # Get columns to copy configuration with defaults (all disabled)
         columns_to_copy_config = similarity_config.get("columns_to_copy", None)
@@ -441,9 +447,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             new_amendments_df, columns_to_normalize=["Exposé amdt", "Corps amdt"]
         )
         new_amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-            amendments_df=new_amendments_df
-        )
-        new_amendments_df = AmendmentPreProcessor.handle_common_amendment_expose(
             amendments_df=new_amendments_df
         )
         intermediate_amdts_df = SimilarityHandler.populate(

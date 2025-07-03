@@ -41,7 +41,7 @@ class RedactionalAmendmentMatcher(BaseMatcher):
         self.article_to_attribution = {}
         if not subsidiary_df.empty:
             for _, row in subsidiary_df.iterrows():
-                article_num = str(row["Numéro article"]).strip()
+                article_num = str(row["Numéro article"]).strip().lower()
                 attribution = row["Affectation (nom)"]
                 if article_num and attribution:
                     self.article_to_attribution[article_num] = attribution
@@ -67,7 +67,7 @@ class RedactionalAmendmentMatcher(BaseMatcher):
             return []
 
         # Extract article number from the amendment
-        article_num = amendment.get("Num article", "").strip()
+        article_num = amendment.get("Num article", "").strip().lower()
         if not article_num:
             logger.warning(
                 f"Redactional amendment {amendment.get('amdt_idx', 'unknown')} "

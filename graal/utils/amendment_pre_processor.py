@@ -11,6 +11,7 @@ from typing import Any, Iterable, Optional
 
 import pandas as pd
 from pydantic import FilePath
+from unidecode import unidecode
 
 from graal.custom_types import Acronym, ColumnName
 from graal.utils.text_utils import extract_plain_text_from_html, normalize_text
@@ -226,20 +227,26 @@ class AmendmentPreProcessor:
             - Small (< 50 characters)
             - A common pattern (i.e. "Amendement rédactionnel.")
         """
+
+        # Use unidecode to make the pattern accent-insensitive
+        erreur_mat_str = "correction d'erreur matérielle"
         redac_patterns = [
-            r"amendement rédactionnel",
-            r"Rédactionnel\.",
+            rf"{unidecode(erreur_mat_str)}",
+            rf"{unidecode('amendement rédactionnel')}",
+            rf"{unidecode('rédactionnel')}\.",
+            rf"{unidecode('amendement de précision')}",
         ]
         combined_pattern = r"|".join(redac_patterns)
 
-        # Add is_redactional column if requested
+        expose_column_normalized = amendments_df[expose_column].apply(
+            lambda x: unidecode(str(x).lower()) if pd.notnull(x) else x
+        )
+
         if add_redactional_column:
             if expose_column in amendments_df.columns:
-                amendments_df["is_redactional"] = (
-                    amendments_df[expose_column]
-                    .str.contains(combined_pattern, regex=True, case=False)
-                    .fillna(False)
-                )
+                amendments_df["is_redactional"] = expose_column_normalized.str.contains(
+                    combined_pattern, regex=True, case=False
+                ).fillna(False)
             else:
                 amendments_df["is_redactional"] = False
             redactional_count = amendments_df["is_redactional"].sum()
@@ -250,11 +257,9 @@ class AmendmentPreProcessor:
             expose_column in amendments_df.columns
             and amdt_bodies_column in amendments_df.columns
         ):
-            mask = (
-                amendments_df[expose_column]
-                .str.contains(combined_pattern, regex=True, case=False)
-                .fillna(False)
-            )
+            mask = expose_column_normalized.str.contains(
+                combined_pattern, regex=True, case=False
+            ).fillna(False)
             mask = mask | (amendments_df[expose_column].str.len() < 50)
             logging.info(
                 f'Concatenating "{amdt_bodies_column}" to "{expose_column}" in {mask.sum()} amendements to get better clusters...\n'
