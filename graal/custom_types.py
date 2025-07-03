@@ -39,6 +39,7 @@ AttributionMatcherType = Literal[
     "LEGAL_DOCUMENT_ORDONNANCE",
     "KEYWORD",
     "CREDIT_TABLE",
+    "REDACTIONAL_AMENDMENT",
 ]
 LLMType = Literal[
     "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"

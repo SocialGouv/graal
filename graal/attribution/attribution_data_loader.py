@@ -129,6 +129,23 @@ class AttributionDataLoader:
         """Load group -> default opinion mappings from the "Groupe Opinion" sheet."""
         group_opinion_df = excel_data["Groupe avis défaut"]
         group_to_default_opinion = dict(
-            zip(group_opinion_df["Groupe"], group_opinion_df["Avis par défaut"])
+            zip(
+                group_opinion_df["Groupe"],
+                group_opinion_df["Avis par défaut"],
+                strict=False,
+            )
         )
         return group_to_default_opinion
+
+    @staticmethod
+    def load_subsidiary_table(excel_data: dict) -> pd.DataFrame:
+        """Load subsidiary table for redactional amendment attribution from the "Table subsidiaire" sheet."""
+        if "Table subsidiaire" not in excel_data:
+            logger.warning("Sheet 'Table subsidiaire' not found in configuration file.")
+            return pd.DataFrame(columns=["Numéro article", "Affectation (nom)"])
+
+        subsidiary_df = excel_data["Table subsidiaire"].copy()
+        subsidiary_df.fillna("", inplace=True)
+
+        logger.info(f"Loaded {len(subsidiary_df)} entries from 'Table subsidiaire'.")
+        return subsidiary_df
