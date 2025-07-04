@@ -238,7 +238,6 @@ class AmendmentPreProcessor:
             rf"{unidecode('amendement de clarification')}",
             rf"{unidecode('amendement de coordination')}",
             rf"{unidecode('amendement de suppression')}",
-            rf"{unidecode('rédactionnel')}\.",
         ]
         combined_pattern = r"|".join(redac_patterns)
 

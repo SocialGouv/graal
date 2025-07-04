@@ -92,11 +92,6 @@ class AmendmentSummarizer:
             cleaned_explanatory_statement.startswith(
                 SummaryTextNormalizer.normalize_text("Amendement rédactionnel.")
             )
-            or cleaned_explanatory_statement.startswith(
-                SummaryTextNormalizer.normalize_text("Rédactionnel.")
-            )
-            or SummaryTextNormalizer.normalize_text("correction d'erreur matérielle")
-            in cleaned_explanatory_statement
             or SummaryTextNormalizer.normalize_text("amendement de précision")
             in cleaned_explanatory_statement
             or SummaryTextNormalizer.normalize_text("amendement de correction")
@@ -106,6 +101,8 @@ class AmendmentSummarizer:
             or SummaryTextNormalizer.normalize_text("amendement de coordination")
             in cleaned_explanatory_statement
             or SummaryTextNormalizer.normalize_text("amendement de suppression")
+            in cleaned_explanatory_statement
+            or SummaryTextNormalizer.normalize_text("correction d'erreur matérielle")
             in cleaned_explanatory_statement
         ):
             return "Amendement rédactionnel."
