@@ -146,7 +146,7 @@ def test_normalize_amendments():
                         "Amendement rédactionnel.",
                         "A small amendment",
                         "Another amendment that is too long to be appended to!",
-                        "Rédactionnel.",
+                        "amendement de coordination.",
                     ],
                     "Corps amdt": ["Body 1", "Body 2", "Body 3", "Body 4"],
                 }
@@ -157,7 +157,7 @@ def test_normalize_amendments():
                         "Amendement rédactionnel. Body 1",
                         "A small amendment Body 2",
                         "Another amendment that is too long to be appended to!",
-                        "Rédactionnel. Body 4",
+                        "amendement de coordination. Body 4",
                     ],
                     "Corps amdt": ["Body 1", "Body 2", "Body 3", "Body 4"],
                     "is_redactional": [True, False, False, True],

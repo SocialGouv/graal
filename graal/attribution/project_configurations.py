@@ -47,14 +47,14 @@ def build_plf_attribution_handler(
 
     return AttributionHandler(
         matchers=[
-            KeywordMatcher(
-                keywords_df=keywords_df,
-                allowed_columns={"Exposé amdt"},
-            ),
             CreditTableMatcher(
                 program_to_attribution=program_to_attribution,
                 allowed_columns={"Corps amdt original"},
                 credit_type_text="Autorisations d’engagement",
+            ),
+            KeywordMatcher(
+                keywords_df=keywords_df,
+                allowed_columns={"Exposé amdt"},
             ),
         ],
         default_attributions=AttributionDataLoader.load_default_attribution_mappings(
@@ -62,6 +62,7 @@ def build_plf_attribution_handler(
         ),
         name_to_user_info_mapping=name_to_user_info_mapping,
         columns_to_match_on=["Exposé amdt", "Corps amdt original"],
+        attribution_strategy="early_exit",
     )
 
 
@@ -121,4 +122,5 @@ def build_plfss_attribution_handler(
         ),
         name_to_user_info_mapping=name_to_user_info_mapping,
         columns_to_match_on=["Exposé amdt", "Corps amdt"],
+        attribution_strategy="aggregate",
     )
