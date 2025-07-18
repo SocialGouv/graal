@@ -331,7 +331,7 @@ def test_early_exit_strategy_first_matcher_finds_match():
     assert "FIRST_MOCK" in first_result["Commentaires"]
     assert (
         "SECOND_MOCK" not in first_result["Commentaires"]
-    )  # Second matcher should not have run
+    )  # Second matcher results not included due to early exit
 
     # Second amendment should be attributed by second matcher (first matcher didn't match, so continued)
     second_result = result_df[result_df["amdt_idx"] == "TEST002"].iloc[0]
