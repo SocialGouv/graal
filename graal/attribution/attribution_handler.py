@@ -11,7 +11,7 @@ from typing import Optional
 import pandas as pd
 
 from graal.attribution.matchers.base_matcher import BaseMatcher
-from graal.custom_types import AttributionColumns
+from graal.custom_types import AttributionColumns, AttributionStrategy
 
 logging.config.fileConfig("logging.conf")
 
@@ -24,6 +24,7 @@ class AttributionHandler:
         matchers: list[BaseMatcher],
         default_attributions: list[str],
         name_to_user_info_mapping: dict[str, dict[str, str]],
+        attribution_strategy: AttributionStrategy,
         columns_to_match_on: Optional[list[AttributionColumns]] = None,
     ):
         """
@@ -34,12 +35,14 @@ class AttributionHandler:
             default_attributions: List of attribution names to use when no matches found
             name_to_user_info_mapping: Mapping of names to user info (email, entity)
             columns_to_match: List of column names to match against (default: ["Corps amdt", "Exposé amdt"])
+            attribution_strategy: Strategy for attribution ("aggregate" or "early_exit")
         """
         self.matchers = matchers
         self.cpu_count = cpu_count()
         self.default_attributions = default_attributions
         self.name_to_user_info_mapping = name_to_user_info_mapping
         self.columns_to_match_on = columns_to_match_on or ["Corps amdt", "Exposé amdt"]
+        self.attribution_strategy = attribution_strategy
 
     def _get_matches_for_amendment(
         self, amendment: dict, column_name: str
@@ -51,6 +54,30 @@ class AttributionHandler:
             if matches:
                 all_matches.extend(matches)
         return all_matches
+
+    def _get_matches_early_exit(self, amendment: dict) -> list[dict[str, str]]:
+        """
+        Get matches using early exit strategy which stops as soon as a match is found.
+        """
+        for matcher in self.matchers:
+            all_matches = []
+            for column in self.columns_to_match_on:
+                if column in amendment:
+                    # Check if matcher allows this column
+                    if hasattr(matcher, "allowed_columns") and matcher.allowed_columns:
+                        if column not in matcher.allowed_columns:
+                            continue
+
+                    matches = matcher.match(amendment, column)
+                    if matches:
+                        all_matches.extend(matches)
+
+            # If this matcher found any matches, return them immediately
+            if all_matches:
+                return all_matches
+
+        # No matches found from any matcher
+        return []
 
     def _select_match(self, matches: list[dict[str, str]]) -> Optional[str]:
         """
@@ -120,14 +147,19 @@ class AttributionHandler:
     def _process_single_amendments(
         self, idx: int, shared_result_dict: DictProxy
     ) -> None:
-        # Get matches from all matchers across specified columns
         amendment = shared_result_dict[idx]
-        all_matches = []
-        for column in self.columns_to_match_on:
-            if column in amendment:
-                matches = self._get_matches_for_amendment(amendment, column)
-                if matches:
-                    all_matches.extend(matches)
+
+        if self.attribution_strategy == "early_exit":
+            # Use early exit strategy
+            all_matches = self._get_matches_early_exit(amendment)
+        else:
+            # Use aggregate strategy (default behavior)
+            all_matches = []
+            for column in self.columns_to_match_on:
+                if column in amendment:
+                    matches = self._get_matches_for_amendment(amendment, column)
+                    if matches:
+                        all_matches.extend(matches)
 
         # Select attribution and generate comments
         selected_attribution = self._select_match(all_matches)

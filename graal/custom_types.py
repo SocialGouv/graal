@@ -41,6 +41,7 @@ AttributionMatcherType = Literal[
     "CREDIT_TABLE",
     "REDACTIONAL_AMENDMENT",
 ]
+AttributionStrategy = Literal["aggregate", "early_exit"]
 LLMType = Literal[
     "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
 ]
