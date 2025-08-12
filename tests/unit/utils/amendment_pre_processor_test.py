@@ -187,7 +187,7 @@ def test_normalize_amendments():
         ),
     ],
 )
-def test_handle_common_amendment_expose(input_df, expected_df):
+def test_handle_common_amendment_expose_and_redactional(input_df, expected_df):
     amendment_processor = AmendmentPreProcessor
     result_df = amendment_processor.handle_common_amendment_expose_and_redactional(
         amendments_df=input_df
