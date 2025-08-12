@@ -100,11 +100,28 @@ class CreditTableMatcher(BaseMatcher):
         return credit_table_df
 
     def _extract_text_from_cell(self, cell) -> str:
-        """Extract text from a table cell, returning content of first <p> tag if it exists."""
+        """
+        Extract text from a table cell.
+
+        Prioritizes content from the first <p> tag if present, otherwise uses cell text.
+        Converts decimal numbers to integers (e.g., "5.0" -> "5").
+
+        Args:
+            cell: BeautifulSoup cell element
+
+        Returns:
+            Cleaned text content from the cell
+        """
+        # Extract text from first <p> tag if available, otherwise from cell directly
         p_tags = cell.find_all("p")
-        if p_tags:
-            return p_tags[0].get_text().strip()
-        return cell.get_text().strip()
+        text = p_tags[0].get_text().strip() if p_tags else cell.get_text().strip()
+
+        # Convert decimal numbers to integers for cleaner display
+        try:
+            num = float(text)
+            return str(int(num)) if num.is_integer() else text
+        except ValueError:
+            return text
 
     def _extract_program_name(self, program_cell) -> str:
         """Extract program name from a table cell."""

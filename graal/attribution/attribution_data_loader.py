@@ -71,7 +71,7 @@ class AttributionDataLoader:
                 # program numbers instead of their names
                 if pd.notna(row["N° programme"]):
                     program = AttributionTextNormalizer.normalize_text(
-                        row["N° programme"]
+                        str(int(row["N° programme"]))
                     )
                     program_to_attribution[program].add(row["Prénom Nom"])
         return program_to_attribution
