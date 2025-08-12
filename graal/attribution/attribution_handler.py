@@ -42,6 +42,9 @@ class AttributionHandler:
         self.default_attributions = default_attributions
         self.name_to_user_info_mapping = name_to_user_info_mapping
         self.columns_to_match_on = columns_to_match_on or ["Corps amdt", "Exposé amdt"]
+        logging.info(
+            f"Building attribution handler with strategy: '{attribution_strategy}'"
+        )
         self.attribution_strategy = attribution_strategy
 
     def _get_matches_for_amendment(
