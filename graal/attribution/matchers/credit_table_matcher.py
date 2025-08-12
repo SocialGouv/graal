@@ -27,7 +27,7 @@ class CreditTableMatcher(BaseMatcher):
 
     def __init__(
         self,
-        program_to_attribution: dict[PLFProgramName, UserName],
+        program_to_attribution: dict[PLFProgramName, set[UserName]],
         allowed_columns: set[AttributionColumns],
         credit_type_text: str,
     ):
@@ -35,7 +35,7 @@ class CreditTableMatcher(BaseMatcher):
         Initialize the CreditTableMatcher.
 
         Args:
-            program_to_attribution: Mapping of program names to attributions
+            program_to_attribution: Mapping of program names to sets of attributions
             allowed_columns: Set of column names to match against
             credit_type_text: Text used to identify credit type in tables
         """
@@ -254,9 +254,8 @@ class CreditTableMatcher(BaseMatcher):
             programs = credit_table.loc[condition, "Programmes"]
             for program in programs:
                 if program in self.program_to_attribution:
-                    possible_attributions.add(
-                        (program, self.program_to_attribution[program])
-                    )
+                    for attribution in self.program_to_attribution[program]:
+                        possible_attributions.add((program, attribution))
 
         # Case 2: All zeros in + column, some positive in - column
         if (credit_table["+"] == 0).all() and (credit_table["-"] > 0).any():
