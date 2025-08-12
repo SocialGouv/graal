@@ -62,7 +62,7 @@ paths:
 
 # Input files configuration
 input_files:
-  - path: "${DATA_FOLDER}/input_plf/PLF2025_L1_AN_SP.json"
+  - path: "${DATA_FOLDER}/input_plf/PLF2025_L1_AN_COMFIN.json"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
       year: 2025
@@ -73,7 +73,7 @@ input_files:
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
-  file_prefix_template: "${DATA_FOLDER}/résultats_attrib_PLF2025_L1_AN_SP_test_%Y-%m-%d"
+  file_prefix_template: "${DATA_FOLDER}/résultats_attrib_PLF2025_L1_AN_COMFIN_test_2_%Y-%m-%d"
   # Columns to include in output file
   columns:
     - "Num amdt"
