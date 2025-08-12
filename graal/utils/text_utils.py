@@ -160,13 +160,11 @@ def remove_sentences_starting_with(
     return "".join(filtered_sentences)
 
 
-def normalize_text(text: Optional[str]) -> str:
+def normalize_text(text: str) -> str:
     """
     Normalize the given text by removing accents, apostrophes, dashes, backticks,
     special characters, and extra whitespaces.
     """
-    if text is None:
-        return ""
     text = remove_small_roman_numerals(text)
 
     # Remove accents
