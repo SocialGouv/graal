@@ -16,9 +16,9 @@ logging.config.fileConfig("logging.conf")
 def program_mapping():
     """Create a test program to attribution mapping."""
     return {
-        "programme 123 sante publique": "Health",
-        "programme 456 education nationale": "Education",
-        "programme 789 recherche": "Research",
+        "programme 123 sante publique": {"Alice"},
+        "programme 456 education nationale": {"Bob"},
+        "programme 789 recherche": {"Charles"},
     }
 
 
@@ -141,7 +141,7 @@ def test_match_credit_reduction(matcher):
 
     matches = matcher.match(amendment, "Corps amdt original")
     assert len(matches) == 1
-    assert matches[0]["attribution"] == "Health"
+    assert matches[0]["attribution"] == "Alice"
     assert matches[0]["program"] == "programme 123 sante publique"
 
 
@@ -170,7 +170,7 @@ def test_match_credit_transfer(matcher):
 
     matches = matcher.match(amendment, "Corps amdt original")
     assert len(matches) == 1
-    assert matches[0]["attribution"] == "Health"
+    assert matches[0]["attribution"] == "Alice"
     assert matches[0]["program"] == "programme 123 sante publique"
 
 
@@ -189,7 +189,7 @@ def test_get_attribution_comment_single_match():
     matches = [
         {
             "amdt_idx": "TEST005",
-            "attribution": "Health",
+            "attribution": "Alice",
             "program": "programme 123 sante publique",
             "matcher": "CreditTableMatcher",
             "matcher_type": "CREDIT_TABLE",
@@ -202,7 +202,7 @@ def test_get_attribution_comment_single_match():
     comment = matcher.get_attribution_comment(matches)
 
     assert "Affectations par tableau de crédits" in comment
-    assert "Health" in comment
+    assert "Alice" in comment
     assert "programme 123 sante publique" in comment
 
 
@@ -211,7 +211,7 @@ def test_get_attribution_comment_multiple_matches():
     matches = [
         {
             "amdt_idx": "TEST006",
-            "attribution": "Health",
+            "attribution": "Alice",
             "program": "programme 123 sante publique",
             "matcher": "CreditTableMatcher",
             "matcher_type": "CREDIT_TABLE",
@@ -219,7 +219,7 @@ def test_get_attribution_comment_multiple_matches():
         },
         {
             "amdt_idx": "TEST006",
-            "attribution": "Education",
+            "attribution": "Bob",
             "program": "programme 456 education nationale",
             "matcher": "CreditTableMatcher",
             "matcher_type": "CREDIT_TABLE",
@@ -232,8 +232,8 @@ def test_get_attribution_comment_multiple_matches():
     comment = matcher.get_attribution_comment(matches)
 
     assert "Affectations par tableau de crédits" in comment
-    assert "Health" in comment
-    assert "Education" in comment
+    assert "Alice" in comment
+    assert "Bob" in comment
     assert "programme 123 sante publique" in comment
     assert "programme 456 education nationale" in comment
 
@@ -296,7 +296,7 @@ def test_match_credit_reduction_only(matcher):
     matches = matcher.match(amendment, "Corps amdt original")
     assert len(matches) == 2
     attributions = {match["attribution"] for match in matches}
-    assert attributions == {"Health", "Education"}
+    assert attributions == {"Alice", "Bob"}
     programs = {match["program"] for match in matches}
     assert programs == {
         "programme 123 sante publique",
@@ -335,7 +335,7 @@ def test_match_credit_both_columns(matcher):
     matches = matcher.match(amendment, "Corps amdt original")
     assert len(matches) == 3
     attributions = {match["attribution"] for match in matches}
-    assert attributions == {"Health", "Education", "Research"}
+    assert attributions == {"Alice", "Bob", "Charles"}
     programs = {match["program"] for match in matches}
     assert programs == {
         "programme 123 sante publique",
@@ -509,7 +509,7 @@ def test_extract_nested_header_html_table(matcher, nested_header_credit_table):
     assert df["-"].values.tolist() == [0, 5000000, 4200000]
 
     # Check that the correct values were extracted
-    assert "soutien al prestation de l'aviation civile" in df["Programmes"].values[0]
+    assert "soutien aux prestation de l'aviation civile" in df["Programmes"].values[0]
 
 
 @pytest.fixture
@@ -549,9 +549,9 @@ def test_match_multiple_tables_prioritize_nested_header(
     # Create a custom program mapping that includes aviation programs
     aviation_matcher = CreditTableMatcher(
         {
-            "soutien al prestation de l'aviation civile": "Aviation Support",
-            "navigation aerienne": "Air Navigation",
-            "transports aeriens surveillance et certification": "Air Transport",
+            "soutien aux prestation de l'aviation civile": {"JCVD"},
+            "navigation aerienne": {"Patrick"},
+            "transports aeriens surveillance et certification": {"Jean-Noël"},
         },
         allowed_columns={"Corps amdt original"},
         credit_type_text="Crédits de paiement",
@@ -560,7 +560,7 @@ def test_match_multiple_tables_prioritize_nested_header(
     matches = aviation_matcher.match(amendment, "Corps amdt original")
     assert len(matches) > 0
     attributions = {match["attribution"] for match in matches}
-    assert "Aviation Support" in attributions
+    assert "JCVD" in attributions
 
 
 def test_match_multiple_tables_direct_column_only(
@@ -586,7 +586,7 @@ def test_match_multiple_tables_direct_column_only(
     # Verify that matches come from the DirectColumnFormat table
     assert len(matches) == 2
     attributions = {match["attribution"] for match in matches}
-    assert attributions == {"Health", "Education"}
+    assert attributions == {"Alice", "Bob"}
     programs = {match["program"] for match in matches}
     assert programs == {
         "programme 123 sante publique",
