@@ -32,8 +32,10 @@ class SimilarityHandler:
         amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=amendments_df
         )
-        amendments_df = AmendmentPreProcessor.handle_common_amendment_expose(
-            amendments_df=amendments_df
+        amendments_df = (
+            AmendmentPreProcessor.handle_common_amendment_expose_and_redactional(
+                amendments_df=amendments_df
+            )
         )
         amendments_df = AmendmentPreProcessor.normalize_amendments(
             amendments_df=amendments_df,
