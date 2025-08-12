@@ -52,28 +52,28 @@ class AttributionDataLoader:
         return articles_df
 
     @staticmethod
-    def load_programs(config_excel: dict) -> dict[PLFProgramName, UserName]:
-        program_to_attribution: dict[PLFProgramName, UserName] = {}
+    def load_programs(config_excel: dict) -> dict[PLFProgramName, set[UserName]]:
+        from collections import defaultdict
+
+        program_to_attribution: dict[PLFProgramName, set[UserName]] = defaultdict(set)
         # Load program mappings from config if available
         if "Responsables de programme" in config_excel:
             programs_df = config_excel["Responsables de programme"]
             for _, row in programs_df.iterrows():
                 if pd.isna(row["Prénom Nom"]):
                     continue
-
                 if pd.notna(row["Programme budgétaire"]):
                     program = AttributionTextNormalizer.normalize_text(
                         row["Programme budgétaire"]
                     )
-                    program_to_attribution[program] = row["Prénom Nom"]
-
+                    program_to_attribution[program].add(row["Prénom Nom"])
                 # "N° programme" is an alternative for credit table matching that sometimes uses the
                 # program numbers instead of their names
                 if pd.notna(row["N° programme"]):
                     program = AttributionTextNormalizer.normalize_text(
                         row["N° programme"]
                     )
-                    program_to_attribution[program] = row["Prénom Nom"]
+                    program_to_attribution[program].add(row["Prénom Nom"])
         return program_to_attribution
 
     @staticmethod
