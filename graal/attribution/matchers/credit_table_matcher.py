@@ -8,7 +8,13 @@ import pandas as pd
 from bs4 import BeautifulSoup, Tag
 
 from graal.attribution.matchers.base_matcher import BaseMatcher
-from graal.custom_types import AttributionColumns, ColumnName, IntIndex
+from graal.custom_types import (
+    AttributionColumns,
+    ColumnName,
+    IntIndex,
+    PLFProgramName,
+    UserName,
+)
 from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
@@ -21,7 +27,7 @@ class CreditTableMatcher(BaseMatcher):
 
     def __init__(
         self,
-        program_to_attribution: dict[str, str],
+        program_to_attribution: dict[PLFProgramName, UserName],
         allowed_columns: set[AttributionColumns],
         credit_type_text: str,
     ):
