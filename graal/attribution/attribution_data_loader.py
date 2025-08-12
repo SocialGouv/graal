@@ -49,6 +49,8 @@ class AttributionDataLoader:
         articles_df.rename(
             columns={"Prénom Nom": "Affectation (nom)", "Valeur": "value"}, inplace=True
         )
+        articles_df["Affectation (nom)"] = articles_df["Affectation (nom)"].str.lower()
+
         return articles_df
 
     @staticmethod
@@ -62,6 +64,7 @@ class AttributionDataLoader:
             for _, row in programs_df.iterrows():
                 if pd.isna(row["Prénom Nom"]):
                     continue
+                row["Prénom Nom"] = row["Prénom Nom"].lower()
                 if pd.notna(row["Programme budgétaire"]):
                     program = AttributionTextNormalizer.normalize_text(
                         row["Programme budgétaire"]
@@ -100,6 +103,7 @@ class AttributionDataLoader:
 
         # Rename column
         keywords_df.rename(columns={"Prénom Nom": "Affectation (nom)"}, inplace=True)
+        keywords_df["Affectation (nom)"] = keywords_df["Affectation (nom)"].str.lower()
 
         return keywords_df
 
@@ -119,6 +123,7 @@ class AttributionDataLoader:
 
         # Drop duplicates, keeping the first instance
         user_info_df = user_info_df.drop_duplicates(subset=["Prénom Nom"], keep="first")
+        user_info_df["Prénom Nom"] = user_info_df["Prénom Nom"].str.lower()
 
         user_info_mappings = user_info_df.set_index("Prénom Nom")[
             ["Mail", "Entité Pilote"]
@@ -128,9 +133,10 @@ class AttributionDataLoader:
     @staticmethod
     def load_default_attribution_mappings(excel_data: dict) -> list[str]:
         """Load default attribution mappings from the "Attribution par défaut" sheet. Used when no other attribution is found."""
-        attribution_mappings_when_empty = excel_data["Attribution par défaut"][
-            "Prénom Nom"
-        ].tolist()
+        attribution_mappings_when_empty = (
+            excel_data["Attribution par défaut"]["Prénom Nom"].str.lower().tolist()
+        )
+
         return attribution_mappings_when_empty
 
     @staticmethod
