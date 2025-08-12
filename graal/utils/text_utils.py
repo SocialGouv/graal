@@ -12,7 +12,8 @@ from unidecode import unidecode
 from graal.custom_types import TxtContent
 
 logging.config.fileConfig("logging.conf")
-FRENCH_IRREGULAR_PLURALS = {
+FRENCH_IRREGULAR_PLURALS_OR_EXCEPTIONS = {
+    "aux": "aux",
     "travaux": "travail",
     "vitraux": "vitrail",
     "yeux": "œil",
@@ -67,10 +68,13 @@ FRENCH_NUMBER_MAPPING = {
 }
 
 
-def digitize_small_french_numbers(text):
+def digitize_small_french_numbers(text: Optional[str]) -> str:
     """
     Replace French number words < 100 with their corresponding digits in the given text.
     """
+    if text is None:
+        return ""
+
     pattern = re.compile(
         r"\b("
         + "|".join(
@@ -88,7 +92,9 @@ def digitize_small_french_numbers(text):
     return pattern.sub(replace_match, text)
 
 
-def remove_stop_words(text, language="french"):
+def remove_stop_words(text: Optional[str], language: str = "french") -> str:
+    if text is None:
+        return ""
     stop_words = set(stopwords.words(language))
     words = word_tokenize(text)
     filtered_text = [word for word in words if word.lower() not in stop_words]
@@ -101,8 +107,8 @@ def remove_french_plurals(word):
     This function will wrongfully remove x and s sometimes (like "nous allons" -> "nous allon")
     but it is not a problem for our use case.
     """
-    if word in FRENCH_IRREGULAR_PLURALS:
-        return FRENCH_IRREGULAR_PLURALS[word]
+    if word in FRENCH_IRREGULAR_PLURALS_OR_EXCEPTIONS:
+        return FRENCH_IRREGULAR_PLURALS_OR_EXCEPTIONS[word]
     if word.endswith("s") and not word.endswith(("is", "us", "os", "as")):
         return word[:-1]
     if word.endswith("aux") and not word.endswith("eaux"):
