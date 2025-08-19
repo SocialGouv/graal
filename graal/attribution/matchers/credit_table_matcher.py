@@ -145,7 +145,10 @@ class CreditTableMatcher(BaseMatcher):
         """Create a DataFrame from extracted credit data and convert values to integers."""
         data = {"Programmes": programmes, "+": plus_values, "-": minus_values}
         df = pd.DataFrame(data)
-
+        # Sometimes there are spaces (or non-numeric characters) in "+" and "-" columns which makes
+        # the int casting below fail
+        for col in ["+", "-"]:
+            df[col] = df[col].astype(str).str.replace(r"\D", "", regex=True)
         # Convert "+" and "-" columns to integers, handling non-numeric values
         for col in ["+", "-"]:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
@@ -226,14 +229,14 @@ class CreditTableMatcher(BaseMatcher):
 
             programmes.append(program_text)
 
-            # Extract "+" value from the Crédits de paiement section
+            # Extract "+" value from the `credit_type_text` section (e.g. "Autorisation d'engagement")
             plus_value = "0"  # Default to 0
-            if len(cells) > credits_plus_idx:
+            if credits_plus_idx < len(cells):
                 plus_value = self._extract_credit_value(cells[credits_plus_idx])
 
-            # Extract "-" value from the Crédits de paiement section
+            # Extract "-" value from the `credit_type_text` section (e.g. "Autorisation d'engagement")
             minus_value = "0"  # Default to 0
-            if len(cells) > credits_minus_idx:
+            if credits_minus_idx < len(cells):
                 minus_value = self._extract_credit_value(cells[credits_minus_idx])
 
             plus_values.append(plus_value)
@@ -260,7 +263,7 @@ class CreditTableMatcher(BaseMatcher):
         # Case 1: If there is a new line or new program, skip as keyword matching on Exposé amdt will be used instead
         if (
             credit_table["Programmes"]
-            .str.contains("ligne nouvelle|nouveau programme")
+            .str.contains("ligne nouvelle|nouveau programme|creer le programme")
             .any()
         ):
             return []
