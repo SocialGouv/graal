@@ -29,48 +29,6 @@ def df():
     return pd.DataFrame(data)
 
 
-@pytest.fixture
-def cluster_finder(df):
-    cluster_finder = AmendmentsClusterFinder(
-        df, group_by_columns=["Lecture"], text_column="Corps amdt"
-    )
-    cluster_finder._vectorize_data()  # Ensure vectorizer is fitted before tests
-    return cluster_finder
-
-
-@pytest.mark.parametrize(
-    "lecture_group, expected_shape",
-    [
-        ("A", (2, 2)),
-        ("B", (3, 3)),
-        ("C", (4, 4)),
-    ],
-)
-def test_compute_distance_matrix(cluster_finder, lecture_group, expected_shape):
-    cluster_finder._transform_group(lecture_group)
-    cluster_finder._compute_distance_matrix(lecture_group)
-    assert lecture_group in cluster_finder.distance_matrix_per_group
-    assert (
-        cluster_finder.distance_matrix_per_group[lecture_group].shape == expected_shape
-    )
-
-
-@pytest.mark.parametrize(
-    "lecture_group",
-    [
-        "A",
-        "B",
-        "C",
-    ],
-)
-def test_transform_group(cluster_finder, df, lecture_group):
-    cluster_finder._transform_group(lecture_group)
-    assert lecture_group in cluster_finder.vectors_per_group
-    assert cluster_finder.vectors_per_group[lecture_group].shape[0] == len(
-        df[df["Lecture"] == lecture_group]
-    )
-
-
 @pytest.mark.parametrize(
     "lecture_group, eps, expected_amdt_idx_clusters",
     [
@@ -83,10 +41,13 @@ def test_transform_group(cluster_finder, df, lecture_group):
         ("C", 0.2, [[5, 6], [7, 8]]),
     ],
 )
-def test_find_similarity_clusters(
-    cluster_finder, lecture_group, eps, expected_amdt_idx_clusters
-):
-    tfidf_clusters_per_lecture = cluster_finder.find_similarity_clusters(eps=eps)
+def test_find_similarity_clusters(df, lecture_group, eps, expected_amdt_idx_clusters):
+    tfidf_clusters_per_lecture = AmendmentsClusterFinder.find_similarity_clusters(
+        amendments_df=df,
+        group_by_columns=["Lecture"],
+        text_column="Corps amdt",
+        eps=eps,
+    )
     assert tfidf_clusters_per_lecture[(lecture_group,)] == expected_amdt_idx_clusters
 
 
@@ -122,11 +83,12 @@ def test_find_similarity_clusters_messy_data(
         ],
     }
     df = pd.DataFrame(data)
-    cluster_finder = AmendmentsClusterFinder(
-        df, group_by_columns=["Lecture"], text_column="Corps amdt"
+    tfidf_clusters_per_lecture = AmendmentsClusterFinder.find_similarity_clusters(
+        amendments_df=df,
+        group_by_columns=["Lecture"],
+        text_column="Corps amdt",
+        eps=eps,
     )
-    cluster_finder._vectorize_data()  # Ensure vectorizer is fitted before tests
-    tfidf_clusters_per_lecture = cluster_finder.find_similarity_clusters(eps=eps)
     assert tfidf_clusters_per_lecture[(lecture_group,)] == expected_amdt_idx_clusters
 
 
@@ -142,10 +104,19 @@ def test_find_similarity_clusters_messy_data(
     ],
 )
 def test_refine_clusters_with_distance(
-    cluster_finder, lecture_group, distance_threshold, expected_amdt_idx_clusters
+    df, lecture_group, distance_threshold, expected_amdt_idx_clusters
 ):
-    cluster_finder.find_similarity_clusters(eps=0.5)
-    refined_clusters, _ = cluster_finder.refine_clusters_with_distance(
-        distance_threshold=distance_threshold
+    tfidf_clusters = AmendmentsClusterFinder.find_similarity_clusters(
+        amendments_df=df,
+        group_by_columns=["Lecture"],
+        text_column="Corps amdt",
+        eps=0.5,
+    )
+    refined_clusters, _ = AmendmentsClusterFinder.refine_clusters_with_distance(
+        amendments_df=df,
+        group_by_columns=["Lecture"],
+        text_column="Corps amdt",
+        tfidf_clusters=tfidf_clusters,
+        distance_threshold=distance_threshold,
     )
     assert refined_clusters[(lecture_group,)] == expected_amdt_idx_clusters
