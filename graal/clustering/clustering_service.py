@@ -57,7 +57,7 @@ class ClusteringService:
         group_by_columns: List[str],
         text_column: str,
         eps: float = 0.4,
-    ) -> Tuple[AmendmentsClusterFinder, Dict[Tuple, List[List[IntIndex]]]]:
+    ) -> Dict[Tuple, List[List[IntIndex]]]:
         """
         Create initial clusters using TF-IDF and DBSCAN
 
@@ -68,31 +68,35 @@ class ClusteringService:
             eps: Epsilon value for DBSCAN
 
         Returns:
-            A tuple containing:
-            - The cluster finder instance
-            - Dictionary of clusters
+            Dictionary of clusters
         """
         logging.info(
             f"Creating initial clusters of similar amendments using TF-IDF on column {text_column}"
         )
-        cluster_finder = AmendmentsClusterFinder(
+        tfidf_clusters = AmendmentsClusterFinder.find_similarity_clusters(
             amendments_df=normalized_amdt_df,
             group_by_columns=group_by_columns,
             text_column=text_column,
+            eps=eps,
         )
-        tfidf_clusters = cluster_finder.find_similarity_clusters(eps=eps)
-        return cluster_finder, tfidf_clusters
+        return tfidf_clusters
 
     @staticmethod
     def apply_levenshtein_refinement(
-        cluster_finder: AmendmentsClusterFinder,
+        amendments_df: pd.DataFrame,
+        group_by_columns: List[str],
+        text_column: str,
+        tfidf_clusters: Dict[Tuple, List[List[IntIndex]]],
         pct_threshold: float,
     ) -> Tuple[Dict[Tuple, List[List[IntIndex]]], Dict[int, Dict[int, float]]]:
         """
         Refine clusters using Damerau-Levenshtein distance
 
         Args:
-            cluster_finder: The cluster finder instance
+            amendments_df: DataFrame containing amendments
+            group_by_columns: Columns to group by when finding clusters
+            text_column: Column containing the text to analyze for similarity
+            tfidf_clusters: Initial clusters from TF-IDF clustering
             pct_threshold: The threshold value
 
         Returns:
@@ -106,8 +110,12 @@ class ClusteringService:
         distance_threshold = 1.0 - pct_threshold
 
         refined_clusters, similarity_percentages = (
-            cluster_finder.refine_clusters_with_distance(
-                distance_threshold=distance_threshold
+            AmendmentsClusterFinder.refine_clusters_with_distance(
+                amendments_df=amendments_df,
+                group_by_columns=group_by_columns,
+                text_column=text_column,
+                tfidf_clusters=tfidf_clusters,
+                distance_threshold=distance_threshold,
             )
         )
         return refined_clusters, similarity_percentages
@@ -136,7 +144,7 @@ class ClusteringService:
             - Dictionary of similarity percentages between amendments
         """
         logging.info(f"Get clusters of similar amendments using column {text_column}")
-        cluster_finder, _ = ClusteringService.create_tfidf_clusters(
+        tfidf_clusters = ClusteringService.create_tfidf_clusters(
             normalized_amdt_df=normalized_amdt_df,
             group_by_columns=group_by_columns,
             text_column=text_column,
@@ -144,7 +152,10 @@ class ClusteringService:
         )
         clusters, similarity_percentages = (
             ClusteringService.apply_levenshtein_refinement(
-                cluster_finder=cluster_finder,
+                amendments_df=normalized_amdt_df,
+                group_by_columns=group_by_columns,
+                text_column=text_column,
+                tfidf_clusters=tfidf_clusters,
                 pct_threshold=refinement_pct_threshold,
             )
         )
