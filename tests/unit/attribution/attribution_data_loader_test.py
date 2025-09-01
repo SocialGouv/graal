@@ -50,7 +50,7 @@ def test_load_codes_and_articles(excel_data, mocker):
     result = AttributionDataLoader.load_codes_and_articles(excel_data)
     expected = pd.DataFrame(
         {
-            "Affectation (nom)": ["John Doe", "Jane Smith"],
+            "Affectation (nom)": ["john doe", "jane smith"],
             "Articles": ["article 1", "article 2"],
             "Type": ["code", "code"],
             "value": ["code 1", "code 2"],
@@ -67,7 +67,7 @@ def test_load_keywords(excel_data, mocker):
     result = AttributionDataLoader.load_keywords(excel_data, acronym_mapping)
     expected = pd.DataFrame(
         {
-            "Affectation (nom)": ["John Doe", "John Doe", "Jane Smith"],
+            "Affectation (nom)": ["john doe", "john doe", "jane smith"],
             "Mots clés": [
                 "keyword 1",
                 "testing with the replaced_acronym acronym",
@@ -81,15 +81,15 @@ def test_load_keywords(excel_data, mocker):
 def test_load_name_to_user_info_mappings(excel_data):
     result = AttributionDataLoader.load_name_to_user_info_mappings(excel_data)
     expected = {
-        "John Doe": {"Mail": "john.doe@example.com", "Entité Pilote": "JABC"},
-        "Jane Smith": {"Mail": "jane.smith@example.com", "Entité Pilote": "JABC"},
+        "john doe": {"Mail": "john.doe@example.com", "Entité Pilote": "JABC"},
+        "jane smith": {"Mail": "jane.smith@example.com", "Entité Pilote": "JABC"},
     }
     assert result == expected
 
 
 def test_load_default_attribution_mappings(excel_data):
     result = AttributionDataLoader.load_default_attribution_mappings(excel_data)
-    expected = ["John Doe", "Jane Smith"]
+    expected = ["john doe", "jane smith"]
     assert result == expected
 
 
