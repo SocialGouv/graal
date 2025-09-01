@@ -563,15 +563,19 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     if args.no_value_overwrite:
         for column in columns_to_work_on["to_preserve_orig_value"]:
-            intermediate_amdts_df[column] = intermediate_amdts_df.apply(
-                lambda row, col=column: (
-                    original_value := original_amdt_df.loc[
-                        original_amdt_df["amdt_idx"] == row["amdt_idx"], col
-                    ].values[0],
+
+            def preserve_original_value(row, col=column):
+                original_value = original_amdt_df.loc[
+                    original_amdt_df["amdt_idx"] == row["amdt_idx"], col
+                ].values[0]
+                return (
                     original_value
                     if pd.notna(original_value) and original_value not in [None, ""]
-                    else row[col],
-                )[1],
+                    else row[col]
+                )
+
+            intermediate_amdts_df[column] = intermediate_amdts_df.apply(
+                preserve_original_value,
                 axis=1,
             )
 
