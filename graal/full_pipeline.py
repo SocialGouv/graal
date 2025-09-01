@@ -263,7 +263,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
 
     original_amdt_df = amendments_df.copy()
 
-    if args.placeholder_amdt_body:
+    if args.processing_options.get("placeholder_amdt_body", False):
         for index, row in amendments_df.iterrows():
             amendments_df.at[index, "Corps amdt"] = (
                 row["Corps amdt"]
@@ -365,7 +365,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             default_attributions
         )
 
-    tf_idf_threshold = getattr(args, "tf_idf_threshold", 0.4)
+    tf_idf_threshold = args.similarity_thresholds.get("tf_idf_threshold", 0.4)
 
     # Extract similarities_within_lectures configuration
     similarities_config = args.similarities_within_lectures
@@ -449,22 +449,27 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         new_amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=new_amendments_df
         )
+        # Get similarity threshold configurations from config file
+        clustering_similarity_thresholds = similarity_config.get(
+            "clustering_similarity_thresholds",
+            {"Exposé amdt": 0.4, "Corps amdt": 0.4},  # fallback defaults
+        )
+        fuzzy_match_similarity_thresholds = similarity_config.get(
+            "fuzzy_match_similarity_thresholds",
+            {"Exposé amdt": 0.4, "Corps amdt": 0.9},  # fallback defaults
+        )
+        similarity_threshold_overrides = similarity_config.get(
+            "similarity_threshold_overrides",
+            {"Exposé amdt": {"amendement redactionnel": 0.95}},  # fallback defaults
+        )
+
         intermediate_amdts_df = SimilarityHandler.populate(
             preprocessed_old_amendments_df=old_amendments_df,
             preprocessed_new_amendments_df=new_amendments_df,
             original_new_amendments_df=saved_new_amendments_df,
-            # TODO: Make these configs come from the config file
-            clustering_similarity_thresholds={
-                "Exposé amdt": 0.4,
-                "Corps amdt": 0.4,
-            },
-            fuzzy_match_similarity_thresholds={
-                "Exposé amdt": 0.4,
-                "Corps amdt": 0.9,
-            },
-            similarity_threshold_overrides={
-                "Exposé amdt": {"amendement redactionnel": 0.95},
-            },
+            clustering_similarity_thresholds=clustering_similarity_thresholds,
+            fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
+            similarity_threshold_overrides=similarity_threshold_overrides,
             column_filtering_funcs={
                 "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
             },
@@ -561,7 +566,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             "APPEL : " + intermediate_amdts_df.loc[mask, "Objet amdt"]
         )
 
-    if args.no_value_overwrite:
+    if args.processing_options.get("no_value_overwrite", False):
         for column in columns_to_work_on["to_preserve_orig_value"]:
 
             def preserve_original_value(row, col=column):
