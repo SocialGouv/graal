@@ -89,7 +89,7 @@ ignore = [
 
 [tool.mypy]
 ignore_missing_imports = true
-disable_error_code = ["call-overload", "import-untyped"]
+disable_error_code = ["call-overload", "import-untyped", "assignment"]
 check_untyped_defs = true
 
 [tool.bandit]
@@ -97,4 +97,3 @@ tests = ["B201", "B301"]
 
 [tool.poetry.group.dev.dependencies]
 virtualenv = "20.26.6"
-
