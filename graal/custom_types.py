@@ -47,6 +47,14 @@ LLMType = Literal[
 ]
 AttributionColumns = Literal["Exposé amdt", "Corps amdt", "Corps amdt original"]
 ProjectName = Literal["PLFSS", "PLF"]
+FeatureName = Literal[
+    "attribution",
+    "similarity_search",
+    "summary_generation",
+    "opinion",
+    "allotment",
+    "similarities_within_lectures",
+]
 
 
 class ColumnsToWorkOn(TypedDict):
