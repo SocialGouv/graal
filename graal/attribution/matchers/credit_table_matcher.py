@@ -8,6 +8,7 @@ import pandas as pd
 from bs4 import BeautifulSoup, Tag
 
 from graal.attribution.matchers.base_matcher import BaseMatcher
+from graal.core.text_normalizers import TextNormalizerFactory
 from graal.custom_types import (
     AttributionColumns,
     ColumnName,
@@ -15,7 +16,6 @@ from graal.custom_types import (
     PLFProgramName,
     UserName,
 )
-from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
 
@@ -126,7 +126,8 @@ class CreditTableMatcher(BaseMatcher):
     def _extract_program_name(self, program_cell) -> str:
         """Extract program name from a table cell."""
         progam_text = self._extract_text_from_cell(program_cell)
-        return AttributionTextNormalizer.normalize_text(progam_text)
+        attribution_normalizer = TextNormalizerFactory.get_normalizer("attribution")
+        return attribution_normalizer.normalize_for_feature(progam_text)
 
     def _extract_credit_value(self, cell) -> str:
         """Extract credit value from a table cell."""
@@ -165,12 +166,15 @@ class CreditTableMatcher(BaseMatcher):
         Returns:
             Tuple of (plus_index, minus_index) or None if not found
         """
+        attribution_normalizer = TextNormalizerFactory.get_normalizer("attribution")
         cells = rows[0].find_all("td")
         cells = [
-            AttributionTextNormalizer.normalize_text(self._extract_text_from_cell(cell))
+            attribution_normalizer.normalize_for_feature(
+                self._extract_text_from_cell(cell)
+            )
             for cell in cells
         ]
-        normalized_credit_text = AttributionTextNormalizer.normalize_text(
+        normalized_credit_text = attribution_normalizer.normalize_for_feature(
             self.credit_type_text
         )
         # Find the cell containing `credit_type_text`
@@ -247,8 +251,9 @@ class CreditTableMatcher(BaseMatcher):
 
     def _normalize_programme_table(self, df: pd.DataFrame) -> pd.DataFrame:
         """Normalize program names and remove totals/balance rows."""
+        attribution_normalizer = TextNormalizerFactory.get_normalizer("attribution")
         df["Programmes"] = df["Programmes"].apply(
-            lambda text: AttributionTextNormalizer.normalize_text(str(text))
+            lambda text: attribution_normalizer.normalize_for_feature(str(text))
         )
         df = df[~df["Programmes"].str.lower().isin(["total", "solde"])]
         return df

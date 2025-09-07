@@ -9,8 +9,6 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from unidecode import unidecode
 
-from graal.custom_types import TxtContent
-
 logging.config.fileConfig("logging.conf")
 FRENCH_IRREGULAR_PLURALS_OR_EXCEPTIONS = {
     "aux": "aux",
@@ -204,51 +202,3 @@ def remove_gage_sentences(text: str) -> str:
             "la charge pour l'état",
         ],
     )
-
-
-class AttributionTextNormalizer:
-    @staticmethod
-    def normalize_text(text: TxtContent) -> TxtContent:
-        """Normalize text by stripping, converting to lowercase, and removing specific spaces."""
-        text = remove_small_roman_numerals(text)
-        text = unidecode(text.strip().lower())
-        # Replace dashes with a space unless they are surrounded by numbers
-        text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
-        # Replace various Unicode space characters with a regular space
-        text = re.sub(
-            r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000]",
-            " ",
-            text,
-        )
-        split_pattern = r"[\s\n\r\t\f'.,;:!?\"(){}<>-\[\]]+"
-        text = "".join(
-            remove_french_plurals(word) for word in re.split(f"({split_pattern})", text)
-        )
-        # Remove extra whitespaces
-        text = re.sub(r"\s+", " ", text)
-
-        return text
-
-
-class SummaryTextNormalizer:
-    @staticmethod
-    def normalize_text(text: str) -> str:
-        """
-        Pre-process the user text to safely integrate into an LLM prompt.
-        """
-
-        cleaned_text = unidecode(text)
-        cleaned_text = re.sub(r"[’]", "'", cleaned_text)
-
-        cleaned_text = cleaned_text.replace("\n", " ").replace("\r", "").lower()
-        cleaned_text = re.sub(
-            r"[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000]",
-            " ",
-            cleaned_text,
-        )
-
-        cleaned_text = re.sub(r"[^a-z0-9À-ÿ'.,!? \-«»\"]+", "", cleaned_text)
-
-        cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
-
-        return cleaned_text

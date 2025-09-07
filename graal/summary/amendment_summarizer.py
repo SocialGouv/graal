@@ -8,7 +8,7 @@ from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
-from graal.utils.text_utils import SummaryTextNormalizer
+from graal.core.text_normalizers import TextNormalizerFactory
 
 logging.config.fileConfig("logging.conf")
 
@@ -83,31 +83,35 @@ class AmendmentSummarizer:
         ] = summary
 
     def _get_predefined_summary(self, row: pd.Series) -> str:
-        cleaned_explanatory_statement = SummaryTextNormalizer.normalize_text(
+        summary_normalizer = TextNormalizerFactory.get_normalizer("summary_generation")
+
+        cleaned_explanatory_statement = summary_normalizer.normalize_for_feature(
             row["Exposé amdt"]
         )
-        cleaned_amdt_body = SummaryTextNormalizer.normalize_text(row["Corps amdt"])
+        cleaned_amdt_body = summary_normalizer.normalize_for_feature(row["Corps amdt"])
 
         if (
             cleaned_explanatory_statement.startswith(
-                SummaryTextNormalizer.normalize_text("Amendement rédactionnel.")
+                summary_normalizer.normalize_for_feature("Amendement rédactionnel.")
             )
-            or SummaryTextNormalizer.normalize_text("amendement de précision")
+            or summary_normalizer.normalize_for_feature("amendement de précision")
             in cleaned_explanatory_statement
-            or SummaryTextNormalizer.normalize_text("amendement de correction")
+            or summary_normalizer.normalize_for_feature("amendement de correction")
             in cleaned_explanatory_statement
-            or SummaryTextNormalizer.normalize_text("amendement de clarification")
+            or summary_normalizer.normalize_for_feature("amendement de clarification")
             in cleaned_explanatory_statement
-            or SummaryTextNormalizer.normalize_text("amendement de coordination")
+            or summary_normalizer.normalize_for_feature("amendement de coordination")
             in cleaned_explanatory_statement
-            or SummaryTextNormalizer.normalize_text("amendement de suppression")
+            or summary_normalizer.normalize_for_feature("amendement de suppression")
             in cleaned_explanatory_statement
-            or SummaryTextNormalizer.normalize_text("correction d'erreur matérielle")
+            or summary_normalizer.normalize_for_feature(
+                "correction d'erreur matérielle"
+            )
             in cleaned_explanatory_statement
         ):
             return "Amendement rédactionnel."
         if cleaned_amdt_body.startswith(
-            SummaryTextNormalizer.normalize_text("Supprimer cet article")
+            summary_normalizer.normalize_for_feature("Supprimer cet article")
         ):
             return "Supprimer cet article."
 
