@@ -3,8 +3,8 @@ import logging.config
 
 import pandas as pd
 
+from graal.core.text_normalizers import TextNormalizerFactory
 from graal.custom_types import LegalDocumentType, PLFProgramName, UserName
-from graal.utils.text_utils import AttributionTextNormalizer
 
 logging.config.fileConfig("logging.conf")
 logger = logging.getLogger(__name__)
@@ -35,16 +35,17 @@ class AttributionDataLoader:
     @staticmethod
     def load_articles_by_type(excel_data: dict, article_type: str) -> pd.DataFrame:
         """Load and normalize articles by type from the data."""
+        attribution_normalizer = TextNormalizerFactory.get_normalizer("attribution")
         articles_df = excel_data["Code et Article"].copy()
         articles_df["Type"] = articles_df["Type"].str.lower()
         articles_df = articles_df[
             articles_df["Type"].str.contains(article_type, na=False)
         ]
         articles_df.loc[:, "Articles"] = articles_df["Articles"].apply(
-            lambda x: AttributionTextNormalizer.normalize_text(str(x))
+            lambda x: attribution_normalizer.normalize_for_feature(str(x))
         )
         articles_df.loc[:, "Valeur"] = articles_df["Valeur"].apply(
-            lambda x: AttributionTextNormalizer.normalize_text(str(x))
+            lambda x: attribution_normalizer.normalize_for_feature(str(x))
         )
         articles_df.rename(
             columns={"Prénom Nom": "Affectation (nom)", "Valeur": "value"}, inplace=True
@@ -57,6 +58,7 @@ class AttributionDataLoader:
     def load_programs(config_excel: dict) -> dict[PLFProgramName, set[UserName]]:
         from collections import defaultdict
 
+        attribution_normalizer = TextNormalizerFactory.get_normalizer("attribution")
         program_to_attribution: dict[PLFProgramName, set[UserName]] = defaultdict(set)
         # Load program mappings from config if available
         if "Responsables de programme" in config_excel:
@@ -66,14 +68,14 @@ class AttributionDataLoader:
                     continue
                 row["Prénom Nom"] = row["Prénom Nom"].lower()
                 if pd.notna(row["Programme budgétaire"]):
-                    program = AttributionTextNormalizer.normalize_text(
+                    program = attribution_normalizer.normalize_for_feature(
                         row["Programme budgétaire"]
                     )
                     program_to_attribution[program].add(row["Prénom Nom"])
                 # "N° programme" is an alternative for credit table matching that sometimes uses the
                 # program numbers instead of their names
                 if pd.notna(row["N° programme"]):
-                    program = AttributionTextNormalizer.normalize_text(
+                    program = attribution_normalizer.normalize_for_feature(
                         str(int(row["N° programme"]))
                     )
                     program_to_attribution[program].add(row["Prénom Nom"])
@@ -84,6 +86,7 @@ class AttributionDataLoader:
         excel_data: dict, acronym_mapping: dict[str, str]
     ) -> pd.DataFrame:
         """Load and normalize keywords from the data."""
+        attribution_normalizer = TextNormalizerFactory.get_normalizer("attribution")
         keywords_df = excel_data["Mots clés"]
 
         # Stage 1: Replace acronyms based on the acronym_mapping
@@ -98,7 +101,7 @@ class AttributionDataLoader:
 
         # Stage 2: Normalize the text after replacing acronyms
         keywords_df["Mots clés"] = keywords_df["Mots clés"].apply(
-            lambda x: AttributionTextNormalizer.normalize_text(str(x))
+            lambda x: attribution_normalizer.normalize_for_feature(str(x))
         )
 
         # Rename column
