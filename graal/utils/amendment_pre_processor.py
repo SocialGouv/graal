@@ -145,7 +145,7 @@ class AmendmentPreProcessor:
             "expose": "Exposé amdt",
             "groupe": "Groupe",
             "has_ever_been_on_dossier_de_banc": "A été dans le Dossier de Banc",
-            "Mission": "Mission",
+            "mission_titre_court": "Mission",
             "num": "Num amdt",
             "objet": "Objet amdt",
             "organe": "Organe",

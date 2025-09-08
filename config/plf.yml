@@ -83,7 +83,7 @@ paths:
 
 # Input files configuration
 input_files:
-  - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.xlsx"
+  - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
       year: 2025
