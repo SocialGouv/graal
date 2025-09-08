@@ -235,6 +235,17 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     else:
         raise ValueError(f"Unsupported file type: {suffix}")
 
+    amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
+        amendments_df
+    )
+
+    # amendments_df = amendments_df.head(10)
+    # amendments_df = amendments_df[
+    #     amendments_df["Num amdt"].isin(
+    #         [11, 110]
+    #     )
+    # ]
+
     if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
         amendments_df["Mission"] = (
             amendments_df["Mission"]
@@ -243,7 +254,7 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
             .str.decode("utf-8")
             .str.lower()
         )
-        amendments_df = amendments_df["Mission"].fillna("")
+        amendments_df["Mission"] = amendments_df["Mission"].fillna("")
         amendments_df = amendments_df[
             amendments_df["Mission"].apply(
                 lambda x: any(
@@ -251,16 +262,6 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
                 )
             )
         ]
-
-    amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
-        amendments_df
-    )
-    # amendments_df = amendments_df.head(10)
-    # amendments_df = amendments_df[
-    #     amendments_df["Num amdt"].isin(
-    #         [11, 110]
-    #     )
-    # ]
 
     original_amdt_df = amendments_df.copy()
 
