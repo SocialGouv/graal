@@ -10,7 +10,7 @@ similarity_thresholds:
 allotments:
   enabled: false
   column: "Corps amdt"  # Column used for similarity comparison
-  similarity_threshold: 0.9999  # Threshold above which amendments are considered similar
+  similarity_threshold: 0.99  # Threshold above which amendments are considered similar
 
 # Configuration for finding similarities within lecture documents
 similarities_within_lectures:
@@ -67,9 +67,12 @@ mission_short_title_filter: ["sante", "travail", "solidarite"]
 
 # LLM client configuration
 llm_clients:
-  scaleway:
-    nb_instances: 6
-    timeout: 30  # Timeout in seconds
+  fake:
+    nb_instances: 1
+    timeout: 10  # Timeout in seconds
+  # scaleway:
+  #   nb_instances: 6
+  #   timeout: 30  # Timeout in seconds
 
 # File paths configuration
 paths:
@@ -80,7 +83,7 @@ paths:
 
 # Input files configuration
 input_files:
-  - path: "${DATA_FOLDER}/input_plf/PLF2025_L1_AN_COMFIN.json"
+  - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.xlsx"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
       year: 2025
@@ -91,7 +94,7 @@ input_files:
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
-  file_prefix_template: "${DATA_FOLDER}/résultats_attrib_PLF2025_L1_AN_COMFIN_test_2_%Y-%m-%d"
+  file_prefix_template: "${DATA_FOLDER}/résultats_attrib_PLF_senat-2024-2025-143-2-PO78718_test2_%Y-%m-%d"
   # Columns to include in output file
   columns:
     - "Num amdt"
@@ -109,4 +112,4 @@ output:
     - "Exposé amdt"
     - "Corps amdt"
     - "amdt_idx"
-    - "mission_titre_court"
+    - "Mission"

@@ -35,6 +35,7 @@ from graal.attribution.project_configurations import (
     get_attribution_handler_builder_func,
 )
 from graal.clustering.similarity_handler import SimilarityHandler
+from graal.core.text_normalizers import AttributionTextNormalizer
 from graal.custom_types import ColumnsToWorkOn, InputFileConfig, IntIndex
 from graal.opinion.opinion_handler import OpinionHandler
 from graal.similarities.similarities_handler import SimilaritiesHandler
@@ -43,7 +44,6 @@ from graal.summary.summary_generation_load_balancer import SummaryGenerationLoad
 from graal.summary.summary_handler import SummaryHandler
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.text_utils import (
-    AttributionTextNormalizer,
     remove_gage_sentences,
 )
 
@@ -236,15 +236,16 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
         raise ValueError(f"Unsupported file type: {suffix}")
 
     if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
-        amendments_df["mission_titre_court"] = (
-            amendments_df["mission_titre_court"]
+        amendments_df["Mission"] = (
+            amendments_df["Mission"]
             .str.normalize("NFKD")
             .str.encode("ascii", errors="ignore")
             .str.decode("utf-8")
             .str.lower()
         )
+        amendments_df = amendments_df["Mission"].fillna("")
         amendments_df = amendments_df[
-            amendments_df["mission_titre_court"].apply(
+            amendments_df["Mission"].apply(
                 lambda x: any(
                     x.startswith(prefix) for prefix in args.mission_short_title_filter
                 )
@@ -308,14 +309,15 @@ def run_processing_pipeline(args: argparse.Namespace) -> None:
     attribution_config = args.attribution
     attribution_enabled = attribution_config.get("enabled", False)
     if attribution_enabled:
+        attribution_text_normalizer = AttributionTextNormalizer()
         amdt_with_attribution_df = intermediate_amdts_df
         amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
             "Corps amdt"
-        ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
+        ].apply(lambda x: attribution_text_normalizer.normalize_for_feature(str(x)))
 
         amdt_with_attribution_df.loc[:, "Exposé amdt"] = amdt_with_attribution_df[
             "Exposé amdt"
-        ].apply(lambda x: AttributionTextNormalizer.normalize_text(str(x)))
+        ].apply(lambda x: attribution_text_normalizer.normalize_for_feature(str(x)))
 
         # Get project name from new structure, with fallback to old structure
         project_name = attribution_config.get("project_name", None)
