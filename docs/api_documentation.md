@@ -22,7 +22,7 @@
       "Exposé amdt": "Explanation of the amendment",
       "Num article": "Article 1",
       "Groupe": "Group name",
-      "mission_titre_court": "mission title"
+      "Mission": "mission title"
       // Other amendment fields
     }
     // More amendments
@@ -347,10 +347,10 @@
 | ----------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------- |
 | project_name      | string  | Yes      | Name of the project for attribution rules (e.g., "PLF")                                               |
 | interstitial_only | boolean | No       | Whether to only process amendments with article numbers starting with "article add." (default: false) |
-| directory            | object | No       | Configuration for directory containing attribution rules                         |
-| directory.type       | string | No       | Type of storage for directory ("s3", "local", etc.)                            |
-| directory.path       | string | No       | Path to the directory file                                                      |
-| directory.format     | string | No       | Format of the directory file ("json", "excel", etc.)                           |
+| directory         | object  | No       | Configuration for directory containing attribution rules                                              |
+| directory.type    | string  | No       | Type of storage for directory ("s3", "local", etc.)                                                   |
+| directory.path    | string  | No       | Path to the directory file                                                                            |
+| directory.format  | string  | No       | Format of the directory file ("json", "excel", etc.)                                                  |
 
 ### 6. Add New Amendments Endpoint
 

@@ -138,19 +138,20 @@ class AmendmentPreProcessor:
         column_mapping = {
             "affectation_email": "Affectation (email)",
             "affectation_name": "Affectation (nom)",
-            "pilot_entity": "Entité Pilote",
             "article": "Num article",
             "avis": "Avis du Gouvernement",
             "computed_batch": "Allotissement",
             "corps": "Corps amdt",
             "expose": "Exposé amdt",
             "groupe": "Groupe",
+            "has_ever_been_on_dossier_de_banc": "A été dans le Dossier de Banc",
+            "Mission": "Mission",
             "num": "Num amdt",
             "objet": "Objet amdt",
             "organe": "Organe",
+            "pilot_entity": "Entité Pilote",
             "reponse": "Réponse",
             "sort": "Sort",
-            "has_ever_been_on_dossier_de_banc": "A été dans le Dossier de Banc",
         }
         amendments_df.rename(columns=column_mapping, inplace=True)
         return amendments_df
