@@ -8,19 +8,19 @@ similarity_thresholds:
 
 # Allotment configuration - groups amendments by similarity
 allotments:
-  enabled: false
+  enabled: true
   column: "Corps amdt"  # Column used for similarity comparison
   similarity_threshold: 0.99  # Threshold above which amendments are considered similar
 
 # Configuration for finding similarities within lecture documents
 similarities_within_lectures:
-  enabled: false
+  enabled: true
   column: "Exposé amdt"  # Column used for similarity comparison
   similarity_threshold: 0.8  # Threshold above which amendments are considered similar
 
 # Similarity search configuration - finds similar amendments from historical data
 similarity_search:
-  enabled: false
+  enabled: true
   # Clustering similarity thresholds for initial TF-IDF clustering
   clustering_similarity_thresholds:
     "Exposé amdt": 0.4
@@ -33,6 +33,8 @@ similarity_search:
   similarity_threshold_overrides:
     "Exposé amdt":
       "amendement redactionnel": 0.95
+  # Path to the similarity db file
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PLF_2025.pkl"
   # Columns to copy from similar amendments
   columns_to_copy:
     Réponse:
@@ -56,11 +58,11 @@ processing_options:
 
 # Enable summary generation for amendments
 summary_generation:
-  enabled: false
+  enabled: true
   should_overwrite: false
 
 # Enable default opinion for amendments
-default_opinion: false
+default_opinion: true
 
 # Filter for mission short titles
 mission_short_title_filter: ["sante", "travail", "solidarite"]
@@ -78,9 +80,6 @@ llm_clients:
 paths:
   # Path to GRAAL configuration Excel file
   graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
-  # Path to the similarity db file
-  similarity_db_file: "${DATA_FOLDER}/preprocessed/DB_PLF_2025.pkl"
-
 # Input files configuration
 input_files:
   - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"
@@ -94,7 +93,7 @@ input_files:
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
-  file_prefix_template: "${DATA_FOLDER}/résultats_attrib_PLF_senat-2024-2025-143-2-PO78718_test2_%Y-%m-%d"
+  file_prefix_template: "${DATA_FOLDER}/résultats_all_PLF_senat-2024-2025-143-2-PO78718_%Y-%m-%d"
   # Columns to include in output file
   columns:
     - "Num amdt"
