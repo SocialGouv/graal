@@ -1,0 +1,160 @@
+"""
+Similarity search feature implementation.
+
+This feature finds similarities with historical amendments.
+"""
+
+import logging
+import logging.config
+from pathlib import Path
+from typing import Any, Set
+
+import pandas as pd
+
+from graal.clustering.similarity_handler import SimilarityHandler
+from graal.core.feature_interface import BaseFeature, FeatureInput, FeatureOutput
+from graal.core.text_normalizers import TextNormalizerFactory
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+
+logging.config.fileConfig("logging.conf")
+
+
+class SimilaritySearchFeature(BaseFeature):
+    """
+    Finds similarities with historical amendments.
+    """
+
+    def __init__(self, config: dict[str, Any]):
+        super().__init__("similarity_search")
+        self.normalizer = TextNormalizerFactory.get_normalizer("similarity_search")
+        self.config = config
+
+        if not config:
+            raise ValueError("SimilaritySearchFeature requires config parameter")
+
+    def get_required_columns(self) -> Set[str]:
+        """Similarity search requires these columns."""
+        return {"Corps amdt", "Exposé amdt", "amdt_idx", "Num article"}
+
+    def get_output_columns(self) -> Set[str]:
+        """Similarity search can update these columns based on configuration."""
+        similarity_config = self.config.get("similarity_search", {})
+        columns_to_copy_config = similarity_config.get("columns_to_copy", {})
+
+        if not columns_to_copy_config:
+            raise ValueError(
+                "Columns to copy configuration must be specified in similarity_search.columns_to_copy"
+            )
+
+        # Get enabled columns from config
+        enabled_columns = set()
+        for column, config_dict in columns_to_copy_config.items():
+            if config_dict.get("enabled", False):
+                enabled_columns.add(column)
+
+        # Always include "Commentaires" regardless of config
+        enabled_columns.add("Commentaires")
+
+        return enabled_columns
+
+    def is_enabled(self, config: dict[str, Any]) -> bool:
+        """Check if similarity search is enabled."""
+        similarity_config = config.get("similarity_search", {})
+        return similarity_config.get("enabled", False)
+
+    def process(self, feature_input: FeatureInput) -> FeatureOutput:
+        """
+        Process amendments for similarity search.
+
+        This creates its own normalized text internally without affecting the input data.
+        """
+        # Work with our own copy
+        working_df = feature_input.amendments_df.copy()
+        similarity_config = feature_input.config.get("similarity_search", {})
+
+        # Get columns to copy configuration
+        columns_to_copy_config = similarity_config.get("columns_to_copy", {})
+        if not columns_to_copy_config:
+            raise ValueError(
+                "Columns to copy configuration must be specified in similarity_search.columns_to_copy"
+            )
+
+        # Load historical amendments (path is already preprocessed)
+        similarity_db_file = Path(similarity_config.get("similarity_db_file", ""))
+        old_amendments_df = pd.read_pickle(similarity_db_file)  # nosec B301
+
+        # Create our own normalized version for processing
+        normalized_working_df = self._create_normalized_dataframe(working_df)
+
+        # Get similarity thresholds
+        clustering_similarity_thresholds = similarity_config.get(
+            "clustering_similarity_thresholds", {"Exposé amdt": 0.4, "Corps amdt": 0.4}
+        )
+        fuzzy_match_similarity_thresholds = similarity_config.get(
+            "fuzzy_match_similarity_thresholds", {"Exposé amdt": 0.4, "Corps amdt": 0.9}
+        )
+        similarity_threshold_overrides = similarity_config.get(
+            "similarity_threshold_overrides",
+            {"Exposé amdt": {"amendement redactionnel": 0.95}},
+        )
+
+        # Process similarity search
+        result_df = SimilarityHandler.populate(
+            preprocessed_old_amendments_df=old_amendments_df,
+            preprocessed_new_amendments_df=normalized_working_df,
+            original_new_amendments_df=working_df,
+            clustering_similarity_thresholds=clustering_similarity_thresholds,
+            fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
+            similarity_threshold_overrides=similarity_threshold_overrides,
+            column_filtering_funcs={
+                "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
+            },
+            column_group_by_columns={
+                "Corps amdt": ["Num article"],
+            },
+            columns_to_copy_config=columns_to_copy_config,
+        )
+        result_df.set_index("amdt_idx", inplace=True)
+
+        output_columns = self.get_output_columns()
+
+        # Create final result with declared output columns
+        final_df = feature_input.amendments_df.copy()
+        for col in output_columns:
+            if col in result_df.columns:
+                final_df[col] = result_df[col]
+
+        return FeatureOutput(
+            amendments_df=final_df,
+            outputs={
+                "processed_amendments": len(result_df),
+                "enabled_columns": list(output_columns),
+            },
+        )
+
+    def _create_normalized_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Create a normalized version of the dataframe for internal processing.
+
+        This applies all the necessary preprocessing that similarity search needs
+        without affecting the original data.
+        """
+        normalized_df = df.copy()
+
+        # Drop empty rows
+        normalized_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
+            amendments_df=normalized_df, columns_to_filter=["Exposé amdt", "Corps amdt"]
+        )
+
+        # Normalize the text columns using our feature-specific normalizer
+        for column in ["Exposé amdt", "Corps amdt"]:
+            normalized_df[column] = normalized_df[column].apply(
+                lambda x: self.normalizer.normalize_for_feature(str(x))
+            )
+
+        # Handle common amendment bodies
+        normalized_df = AmendmentPreProcessor.handle_common_amendment_bodies(
+            amendments_df=normalized_df
+        )
+
+        return normalized_df

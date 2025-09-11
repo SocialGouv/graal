@@ -99,10 +99,14 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
                     new_comment
                 )
 
-        # Create final result - merge the updated comments back to original dataframe
+        # Create final result using declared output columns
+        output_columns = self.get_output_columns()
         final_df = feature_input.amendments_df.copy()
-        # Update only the Commentaires column from result_df
-        final_df.update(result_df[["amdt_idx", "Commentaires"]].set_index("amdt_idx"))
+
+        # Update only the declared output columns
+        for col in output_columns:
+            if col in result_df.columns:
+                final_df[col] = result_df[col]
 
         return FeatureOutput(
             amendments_df=final_df,
