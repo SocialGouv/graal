@@ -4,7 +4,7 @@ import pytest
 from graal.attribution.attribution_data_loader import (
     AttributionDataLoader,
 )
-from graal.utils.text_utils import AttributionTextNormalizer
+from graal.core.text_normalizers import AttributionTextNormalizer
 
 
 @pytest.fixture
@@ -45,7 +45,9 @@ def excel_data():
 
 def test_load_codes_and_articles(excel_data, mocker):
     mocker.patch.object(
-        AttributionTextNormalizer, "normalize_text", side_effect=lambda x: x.lower()
+        AttributionTextNormalizer,
+        "normalize_for_feature",
+        side_effect=lambda x: x.lower(),
     )
     result = AttributionDataLoader.load_codes_and_articles(excel_data)
     expected = pd.DataFrame(
@@ -61,7 +63,9 @@ def test_load_codes_and_articles(excel_data, mocker):
 
 def test_load_keywords(excel_data, mocker):
     mocker.patch.object(
-        AttributionTextNormalizer, "normalize_text", side_effect=lambda x: x.lower()
+        AttributionTextNormalizer,
+        "normalize_for_feature",
+        side_effect=lambda x: x.lower(),
     )
     acronym_mapping = {"BLA": "replaced_acronym"}
     result = AttributionDataLoader.load_keywords(excel_data, acronym_mapping)
