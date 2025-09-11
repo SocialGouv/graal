@@ -33,6 +33,8 @@ similarity_search:
   similarity_threshold_overrides:
     "Exposé amdt":
       "amendement redactionnel": 0.95
+  # Path to the similarity db file
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
   # Columns to copy from similar amendments
   columns_to_copy:
     Réponse:
@@ -78,8 +80,6 @@ paths:
   # Path to GRAAL configuration Excel file
   # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
   graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
-  # Path to the similarity db file
-  similarity_db_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
 
 # Input files configuration
 input_files:
