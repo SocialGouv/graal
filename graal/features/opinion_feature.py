@@ -37,6 +37,12 @@ class OpinionFeature(BaseFeature):
         """Check if default opinion is enabled."""
         return config.get("default_opinion", False)
 
+    def get_columns_to_clear(self, config: dict[str, Any]) -> Set[str]:
+        """Return columns to clear if default opinion is enabled."""
+        if self.is_enabled(config):
+            return {"Avis du Gouvernement"}
+        return set()
+
     def process(self, feature_input: FeatureInput) -> FeatureOutput:
         """
         Process amendments for default opinion assignment.

@@ -10,7 +10,7 @@ that run first and can filter data, but they still use the same BaseFeature inte
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Set
+from typing import Any
 
 import pandas as pd
 
@@ -20,7 +20,7 @@ class FeatureInput:
     """Immutable input data for a feature."""
 
     amendments_df: pd.DataFrame
-    config: Dict[str, Any]
+    config: dict[str, Any]
 
     def __post_init__(self):
         """Ensure the DataFrame is copied to prevent mutations."""
@@ -34,7 +34,7 @@ class FeatureOutput:
 
     amendments_df: pd.DataFrame
     # Simple outputs dictionary for any data features want to share
-    outputs: Dict[str, Any] = None
+    outputs: dict[str, Any] = None
 
     def __post_init__(self):
         if self.outputs is None:
@@ -57,18 +57,34 @@ class BaseFeature(ABC):
         self.feature_name = feature_name
 
     @abstractmethod
-    def get_required_columns(self) -> Set[str]:
+    def get_required_columns(self) -> set[str]:
         """Return the set of columns this feature requires."""
         pass
 
     @abstractmethod
-    def get_output_columns(self) -> Set[str]:
+    def get_output_columns(self) -> set[str]:
         """Return the set of columns this feature will produce/modify."""
         pass
 
     @abstractmethod
-    def is_enabled(self, config: Dict[str, Any]) -> bool:
+    def is_enabled(self, config: dict[str, Any]) -> bool:
         """Check if this feature is enabled in the configuration."""
+        pass
+
+    @abstractmethod
+    def get_columns_to_clear(self, config: dict[str, Any]) -> set[str]:
+        """
+        Return the set of columns this feature needs cleared before processing.
+
+        This method should only return columns if the feature is enabled in the config.
+        If the feature is disabled, it should return an empty set.
+
+        Args:
+            config: Full configuration dictionary
+
+        Returns:
+            Set of column names that should be cleared before processing
+        """
         pass
 
     @abstractmethod
