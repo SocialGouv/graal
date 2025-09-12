@@ -1,56 +1,30 @@
 """
 This module serves as the main entry point for processing amendments related to
-the French legislative process. It orchestrates the loading, preprocessing,
-and analysis of amendment data, including generating summaries, allotments,
-recurring amendments detection, attributions, and opinions.
+the French legislative process
 
 Key functionalities include:
-- Loading amendments and related data from JSON and Excel files.
-- Preprocessing amendments to normalize and clean the data.
-- Generating summaries for amendments using a language model.
-- Populating allotments and attributions based on predefined mappings.
-- Performing similarity searches between new and old amendments.
-- Assigning default opinions based on group mappings.
-- Handling previously identified inadmissible amendments by processing them separately.
-- Adding placeholder text for empty amendment bodies.
-- Ignoring already processed amendments based on a provided list.
-- Saving the processed results to Excel and CSV formats.
+- Loading and basic preprocessing of amendment data
+- Running features without cross-dependencies
+- Coordinating preprocessing steps (like allotment) separately from features
+- Ensuring each feature uses its own text normalization
+- Saving the processed results to Excel and CSV formats
 """
 
 import argparse
 import logging
 import logging.config
-import os
-import re
 import time
-from datetime import datetime
 from pathlib import Path
+from typing import Any
 
-import pandas as pd
 import yaml
 
-from graal.allotment.allotment_handler import AllotmentHandler
-from graal.attribution.attribution_data_loader import AttributionDataLoader
-from graal.attribution.project_configurations import (
-    get_attribution_handler_builder_func,
-)
-from graal.clustering.similarity_handler import SimilarityHandler
-from graal.core.text_normalizers import AttributionTextNormalizer
-from graal.custom_types import ColumnsToWorkOn, InputFileConfig, IntIndex
-from graal.opinion.opinion_handler import OpinionHandler
-from graal.similarities.similarities_handler import SimilaritiesHandler
-from graal.summary.llm_factory import create_llm_api_clients, get_rate_limiting_config
-from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
-from graal.summary.summary_handler import SummaryHandler
-from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import (
-    remove_gage_sentences,
-)
+from graal.core.processing_pipeline import ProcessingPipeline
 
 logging.config.fileConfig("logging.conf")
 
 
-def load_config(config_path: str) -> argparse.Namespace:
+def load_config(config_path: str) -> dict[str, Any]:
     """
     Load configuration from a YAML file.
 
@@ -58,7 +32,7 @@ def load_config(config_path: str) -> argparse.Namespace:
         config_path: Path to the configuration file (.yaml or .yml)
 
     Returns:
-        Configuration as an argparse.Namespace object
+        Configuration as a dictionary
 
     Raises:
         ValueError: If the file extension is not supported
@@ -73,12 +47,12 @@ def load_config(config_path: str) -> argparse.Namespace:
                 f"Unsupported configuration file format: {file_extension}. Only YAML (.yaml, .yml) is supported."
             )
 
-    return argparse.Namespace(**config)
+    return config
 
 
-def parse_arguments():
+def parse_arguments() -> dict[str, Any]:
     parser = argparse.ArgumentParser(
-        description="Process amendments related to the French legislative process."
+        description="Process amendments related to the French legislative process using features."
     )
     parser.add_argument(
         "--config",
@@ -90,517 +64,10 @@ def parse_arguments():
     return load_config(args.config)
 
 
-def derive_columns_to_work_on_from_enabled_features(
-    args: argparse.Namespace,
-) -> ColumnsToWorkOn:
-    """
-    Derive columns to work on based on enabled features in the configuration.
-
-    Returns:
-        ColumnsToWorkOn: An object containing sets of column names to preserve or clear
-        based on enabled features in the configuration.
-    """
-    columns_to_clear = {"Commentaires"}
-    columns_to_preserve = set()
-    if args.allotments.get("enabled", False):
-        columns_to_clear.update(["Allotissement"])
-
-    # Handle both old boolean format and new dictionary format for summary_generation
-    summary_generation_enabled = args.summary_generation.get("enabled", False)
-
-    if summary_generation_enabled:
-        columns_to_preserve.update(["Objet amdt"])
-        columns_to_clear.update(["Objet amdt"])
-
-    # Handle both old boolean format and new dictionary format for attribution
-    attribution_config = args.attribution
-    attribution_enabled = attribution_config.get("enabled", False)
-
-    if attribution_enabled:
-        columns_to_preserve.update(
-            [
-                "Affectation (email)",
-                "Affectation (nom)",
-                "Entité Pilote",
-            ]
-        )
-        columns_to_clear.update(
-            ["Affectation (email)", "Affectation (nom)", "Entité Pilote"]
-        )
-
-    if args.similarity_search:
-        # Extract similarity search configuration
-        similarity_config = (
-            args.similarity_search
-            if isinstance(args.similarity_search, dict)
-            else {"enabled": False}
-        )
-
-        # Only add columns if similarity search is enabled
-        if similarity_config.get("enabled", False):
-            columns_to_copy_config = similarity_config.get("columns_to_copy", {})
-
-            # Add columns that are enabled for copying to preserve and clear lists
-            columns_to_preserve_list = []
-            columns_to_clear_list = []
-
-            for column, config in columns_to_copy_config.items():
-                if config.get("enabled", False):
-                    columns_to_preserve_list.append(column)
-                    columns_to_clear_list.append(column)
-
-            columns_to_preserve.update(columns_to_preserve_list)
-            columns_to_clear.update(columns_to_clear_list)
-
-    if args.default_opinion:
-        columns_to_preserve.update(["Avis du Gouvernement"])
-        columns_to_clear.update(["Avis du Gouvernement"])
-
-    columns_to_work_on = ColumnsToWorkOn(
-        to_preserve_orig_value=columns_to_preserve, to_clear=columns_to_clear
-    )
-    return columns_to_work_on
-
-
-# ruff: noqa: C901
-def run_processing_pipeline(args: argparse.Namespace) -> None:
-    DATA_FOLDER = os.getenv("DATA_FOLDER")
-
-    # Extract path configurations from args
-    GRAAL_CONFIG_FILE = Path(
-        args.paths["graal_config_file"].replace("${DATA_FOLDER}", DATA_FOLDER)
-    )
-
-    # Build INPUT_FILES_CONFIG from args.input_files
-    INPUT_FILES_CONFIG: dict[Path, InputFileConfig] = {}
-    for input_file_config in args.input_files:
-        file_path = Path(
-            input_file_config["path"].replace("${DATA_FOLDER}", DATA_FOLDER)
-        )
-
-        # Convert timestamp dict to datetime and then to timestamp
-        timestamp_dict = input_file_config["default_processing_timestamp"]
-        timestamp = int(
-            datetime(
-                year=timestamp_dict["year"],
-                month=timestamp_dict["month"],
-                day=timestamp_dict["day"],
-            ).timestamp()
-        )
-
-        INPUT_FILES_CONFIG[file_path] = {
-            "default_processing_timestamp": timestamp,
-            "origin_project": input_file_config["origin_project"],
-        }
-
-    # Format output file prefix with current date
-    OUTPUT_FILE_PREFIX = args.output["file_prefix_template"].replace(
-        "${DATA_FOLDER}", DATA_FOLDER
-    )
-    OUTPUT_FILE_PREFIX = datetime.now().strftime(OUTPUT_FILE_PREFIX)
-
-    # Get columns to output from args
-    COLUMNS_TO_OUTPUT_IN_EXCEL = args.output["columns"]
-
-    columns_to_work_on = derive_columns_to_work_on_from_enabled_features(args)
-
-    config_excel = pd.read_excel(GRAAL_CONFIG_FILE, sheet_name=None)
-
-    # Create LLM API clients based on configuration
-    llm_api_clients = create_llm_api_clients(vars(args))
-
-    # Get rate limiting configuration
-    rate_limiting_config = get_rate_limiting_config(vars(args))
-
-    summary_gen_load_balancer = SummaryGenerationLoadBalancer(
-        clients=llm_api_clients,
-        queue_timeout=4,
-        max_retries=5,
-        rate_limiting_config=rate_limiting_config,
-    )
-
-    intermediate_amdts_df = None
-
-    file_path = next(iter(INPUT_FILES_CONFIG.keys()))
-    suffix = file_path.suffix.lower()
-
-    if suffix in [".xlsx", ".xls"]:
-        amendments_df = AmendmentPreProcessor.load_amendments_excel(
-            [file_path], INPUT_FILES_CONFIG
-        )
-    elif suffix == ".json":
-        amendments_df = AmendmentPreProcessor.load_amendments_json(
-            [file_path], INPUT_FILES_CONFIG
-        )
-    else:
-        raise ValueError(f"Unsupported file type: {suffix}")
-
-    amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
-        amendments_df
-    )
-
-    # amendments_df = amendments_df.head(10)
-    # amendments_df = amendments_df[
-    #     amendments_df["Num amdt"].isin(
-    #         [11, 110]
-    #     )
-    # ]
-
-    if args.mission_short_title_filter and len(args.mission_short_title_filter) > 0:
-        amendments_df["Mission"] = (
-            amendments_df["Mission"]
-            .str.normalize("NFKD")
-            .str.encode("ascii", errors="ignore")
-            .str.decode("utf-8")
-            .str.lower()
-        )
-        amendments_df["Mission"] = amendments_df["Mission"].fillna("")
-        amendments_df = amendments_df[
-            amendments_df["Mission"].apply(
-                lambda x: any(
-                    x.startswith(prefix) for prefix in args.mission_short_title_filter
-                )
-            )
-        ]
-
-    original_amdt_df = amendments_df.copy()
-
-    if args.processing_options.get("placeholder_amdt_body", False):
-        for index, row in amendments_df.iterrows():
-            amendments_df.at[index, "Corps amdt"] = (
-                row["Corps amdt"]
-                if pd.notna(row["Corps amdt"]) and row["Corps amdt"] not in [None, ""]
-                else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
-            )
-
-    acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
-    amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
-        amendments_df=amendments_df,
-        columns_to_filter=["Exposé amdt"],
-    )
-    amendments_df = AmendmentPreProcessor.replace_acronyms(
-        amendments_df=amendments_df,
-        acronym_mapping=acronym_mapping,
-        columns_to_normalize=["Exposé amdt", "Corps amdt"],
-    )
-
-    amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
-        lambda text: remove_gage_sentences(text)
-    )
-
-    amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
-        lambda text: remove_gage_sentences(text)
-    )
-
-    amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
-        amendments_df=amendments_df,
-        columns_to_clear=columns_to_work_on["to_clear"],
-    )
-    intermediate_amdts_df = amendments_df
-    preprocessed_original_amdt_df = amendments_df.copy()
-
-    amdt_allotment_strategy_func = AllotmentHandler.default_removal_strategy_func
-
-    intermediate_amdts_df = (
-        AmendmentPreProcessor.handle_common_amendment_expose_and_redactional(
-            amendments_df=intermediate_amdts_df, add_redactional_column=True
-        )
-    )
-
-    attribution_config = args.attribution
-    attribution_enabled = attribution_config.get("enabled", False)
-    if attribution_enabled:
-        attribution_text_normalizer = AttributionTextNormalizer()
-        amdt_with_attribution_df = intermediate_amdts_df
-        amdt_with_attribution_df.loc[:, "Corps amdt"] = preprocessed_original_amdt_df[
-            "Corps amdt"
-        ].apply(lambda x: attribution_text_normalizer.normalize_for_feature(str(x)))
-
-        amdt_with_attribution_df.loc[:, "Exposé amdt"] = amdt_with_attribution_df[
-            "Exposé amdt"
-        ].apply(lambda x: attribution_text_normalizer.normalize_for_feature(str(x)))
-
-        # Get project name from new structure, with fallback to old structure
-        project_name = attribution_config.get("project_name", None)
-        builder_func = get_attribution_handler_builder_func(project_name)
-        attribution_handler = builder_func(config_excel)
-
-        relevant_amendments_df = amendments_df.copy()
-
-        intermediate_amdts_df = attribution_handler.process_amendments(
-            relevant_amendments_df
-        )
-
-        default_attributions = AttributionDataLoader.load_default_attribution_mappings(
-            config_excel
-        )
-
-        def build_attribution_allot_filter_func(default_attributions):
-            def removal_func(amendments_df: pd.DataFrame, cluster: list[IntIndex]):
-                affectation_series = amendments_df.loc[
-                    amendments_df["amdt_idx"].isin(cluster)
-                    & ~amendments_df["Affectation (nom)"].isin(default_attributions),
-                    "Affectation (nom)",
-                ]
-                if affectation_series.empty:
-                    return cluster[1:]
-                most_common_affectation = affectation_series.value_counts().idxmax()
-                affectation_df = amendments_df.loc[
-                    (amendments_df["Affectation (nom)"] == most_common_affectation)
-                    & (amendments_df["amdt_idx"].isin(cluster)),
-                    "amdt_idx",
-                ]
-                if not affectation_df.empty:
-                    amdt_idx_with_most_common_affectation = affectation_df.iloc[0]
-                else:
-                    amdt_idx_with_most_common_affectation = None
-
-                to_remove = [
-                    idx
-                    for idx in cluster
-                    if idx != amdt_idx_with_most_common_affectation
-                ]
-                return to_remove
-
-            return removal_func
-
-        amdt_allotment_strategy_func = build_attribution_allot_filter_func(
-            default_attributions
-        )
-
-    tf_idf_threshold = args.similarity_thresholds.get("tf_idf_threshold", 0.4)
-
-    # Extract similarities_within_lectures configuration
-    similarities_config = args.similarities_within_lectures
-    similarities_enabled = similarities_config.get("enabled", False)
-
-    if similarities_enabled:
-        similarities_column = similarities_config.get("column", None)
-        if similarities_column is None:
-            raise ValueError(
-                "Similarities column must be specified in the configuration under 'column'."
-            )
-        similarity_threshold = similarities_config.get("similarity_threshold", 0.8)
-
-        similarity_results = SimilaritiesHandler.find_similar_amendments(
-            amendments_df=intermediate_amdts_df,
-            similarities_column=similarities_column,
-            pct_similarity_threshold=similarity_threshold,
-            group_by_columns=["Num article"],
-            eps=tf_idf_threshold,
-        )
-
-        logging.info("Retrieved similarity information for amendments")
-
-    # Extract allotment configuration
-    allotment_config = args.allotments
-    allotment_enabled = allotment_config.get("enabled", False)
-
-    if allotment_enabled:
-        allotment_column = allotment_config.get("column", None)
-        if allotment_column is None:
-            raise ValueError(
-                "Allotment column must be specified in the configuration under 'column'."
-            )
-        similarity_threshold = allotment_config.get("similarity_threshold", 0.9999)
-
-        intermediate_amdts_df, allotted_amdt_clusters = (
-            AllotmentHandler.process_allotments(
-                amendments_df=intermediate_amdts_df,
-                allotment_column=allotment_column,
-                similarity_threshold=similarity_threshold,
-                group_by_columns=["Num article"],
-                eps=tf_idf_threshold,
-                removal_strategy_func=amdt_allotment_strategy_func,
-            )
-        )
-
-        logging.info(
-            f"Number of amendments left after removing extra allotted amendements : {len(intermediate_amdts_df)}"
-        )
-
-    similarity_config = (
-        args.similarity_search
-        if isinstance(args.similarity_search, dict)
-        else {"enabled": False}
-    )
-    if similarity_config.get("enabled", False):
-        # Extract similarity search configuration
-
-        # Get columns to copy configuration with defaults (all disabled)
-        columns_to_copy_config = similarity_config.get("columns_to_copy", None)
-
-        if columns_to_copy_config is None:
-            raise ValueError(
-                "Columns to copy configuration must be specified in the configuration under 'columns_to_copy'."
-            )
-
-        similarity_db_file = Path(
-            args.paths["similarity_db_file"].replace("${DATA_FOLDER}", DATA_FOLDER)
-        )
-        old_amendments_df = pd.read_pickle(similarity_db_file)  # nosec
-        logging.info(f"Loaded old amendments from: {similarity_db_file}")
-        new_amendments_df = intermediate_amdts_df
-        saved_new_amendments_df = new_amendments_df.copy()
-        new_amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
-            amendments_df=new_amendments_df,
-            columns_to_filter=["Exposé amdt", "Corps amdt"],
-        )
-        new_amendments_df = AmendmentPreProcessor.normalize_amendments(
-            new_amendments_df, columns_to_normalize=["Exposé amdt", "Corps amdt"]
-        )
-        new_amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-            amendments_df=new_amendments_df
-        )
-        # Get similarity threshold configurations from config file
-        clustering_similarity_thresholds = similarity_config.get(
-            "clustering_similarity_thresholds",
-            {"Exposé amdt": 0.4, "Corps amdt": 0.4},  # fallback defaults
-        )
-        fuzzy_match_similarity_thresholds = similarity_config.get(
-            "fuzzy_match_similarity_thresholds",
-            {"Exposé amdt": 0.4, "Corps amdt": 0.9},  # fallback defaults
-        )
-        similarity_threshold_overrides = similarity_config.get(
-            "similarity_threshold_overrides",
-            {"Exposé amdt": {"amendement redactionnel": 0.95}},  # fallback defaults
-        )
-
-        intermediate_amdts_df = SimilarityHandler.populate(
-            preprocessed_old_amendments_df=old_amendments_df,
-            preprocessed_new_amendments_df=new_amendments_df,
-            original_new_amendments_df=saved_new_amendments_df,
-            clustering_similarity_thresholds=clustering_similarity_thresholds,
-            fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
-            similarity_threshold_overrides=similarity_threshold_overrides,
-            column_filtering_funcs={
-                "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
-            },
-            column_group_by_columns={
-                "Corps amdt": ["Num article"],
-            },
-            columns_to_copy_config=columns_to_copy_config,
-        )
-
-    # Handle both old boolean format and new dictionary format for summary_generation
-    summary_generation_enabled = args.summary_generation.get("enabled", False)
-    should_overwrite = args.summary_generation.get("should_overwrite", True)
-
-    if summary_generation_enabled:
-        config_prompt = config_excel["Prompt Objet"].to_string()
-        amdt_summary_populator = SummaryHandler(
-            summary_gen_load_balancer=summary_gen_load_balancer,
-            amendments_df=intermediate_amdts_df,
-            acronym_mapping=acronym_mapping,
-            summary_column="Objet amdt",
-            config_prompt=config_prompt,
-            should_overwrite=should_overwrite,
-        )
-        intermediate_amdts_df = amdt_summary_populator.populate()
-
-    if allotment_enabled:
-        intermediate_amdts_df = AllotmentHandler.populate(
-            original_amendments_df=preprocessed_original_amdt_df,
-            pipeline_result_amdt_df=intermediate_amdts_df,
-            allotted_amdt_clusters=allotted_amdt_clusters,  # type: ignore
-            columns_to_copy=[
-                "Réponse",
-                "Sort",
-                "Commentaires",
-                "Objet amdt",
-                "Avis du Gouvernement",
-                "Affectation (email)",
-                "Affectation (nom)",
-                "Entité Pilote",
-            ],
-        )
-
-    # After allotment is done, update the comments with similarity information
-    if similarities_enabled and similarity_results:
-        for amdt_idx, similar_amdts in similarity_results.items():
-            # Skip if the amendment was removed during allotment
-            if amdt_idx not in intermediate_amdts_df["amdt_idx"].values:
-                continue
-
-            # Format the comment
-            similarity_comment = SimilaritiesHandler.format_similarity_comment(
-                similar_amdts
-            )
-
-            # Update the 'Commentaires' column
-            current_comment = intermediate_amdts_df.loc[
-                intermediate_amdts_df["amdt_idx"] == amdt_idx, "Commentaires"
-            ].iloc[0]
-
-            if pd.isna(current_comment) or current_comment == "":
-                new_comment = similarity_comment
-            else:
-                new_comment = f"{similarity_comment}\n{current_comment}"
-
-            intermediate_amdts_df.loc[
-                intermediate_amdts_df["amdt_idx"] == amdt_idx, "Commentaires"
-            ] = new_comment
-
-        logging.info("Updated comments with similarity information after allotment")
-
-    if args.default_opinion:
-        opinion_populator = OpinionHandler(
-            amendments_df=intermediate_amdts_df,
-            group_to_default_opinion=AttributionDataLoader.load_group_to_default_opinion(
-                config_excel
-            ),
-        )
-        intermediate_amdts_df = opinion_populator.populate()
-        if allotment_enabled:
-            for allot, group in intermediate_amdts_df.groupby("Allotissement"):
-                if "Défavorable" in group["Avis du Gouvernement"].values:
-                    intermediate_amdts_df.loc[
-                        intermediate_amdts_df["Allotissement"] == allot,
-                        "Avis du Gouvernement",
-                    ] = "Défavorable"
-
-    if args.summary_generation:
-        regex_pattern = r"amendements? d.?appel"
-        mask = intermediate_amdts_df["Exposé amdt"].apply(
-            lambda x: isinstance(x, str)
-            and re.search(regex_pattern, x, re.IGNORECASE) is not None
-        ) & (intermediate_amdts_df["Objet amdt"] != "Supprimer cet article.")
-        intermediate_amdts_df.loc[mask, "Objet amdt"] = (
-            "APPEL : " + intermediate_amdts_df.loc[mask, "Objet amdt"]
-        )
-
-    if args.processing_options.get("no_value_overwrite", False):
-        for column in columns_to_work_on["to_preserve_orig_value"]:
-
-            def preserve_original_value(row, col=column):
-                original_value = original_amdt_df.loc[
-                    original_amdt_df["amdt_idx"] == row["amdt_idx"], col
-                ].values[0]
-                return (
-                    original_value
-                    if pd.notna(original_value) and original_value not in [None, ""]
-                    else row[col]
-                )
-
-            intermediate_amdts_df[column] = intermediate_amdts_df.apply(
-                preserve_original_value,
-                axis=1,
-            )
-
-    intermediate_amdts_df.to_excel(
-        f"{OUTPUT_FILE_PREFIX}.xlsx", columns=COLUMNS_TO_OUTPUT_IN_EXCEL
-    )
-    intermediate_amdts_df.to_csv(
-        f"{OUTPUT_FILE_PREFIX}.csv", sep=";", encoding="utf-8-sig", index=False
-    )
-    logging.info(
-        f"Saved processed amendments to: {OUTPUT_FILE_PREFIX}.xlsx and {OUTPUT_FILE_PREFIX}.csv"
-    )
-
-
 if __name__ == "__main__":
     start_time = time.time()
     args = parse_arguments()
-    run_processing_pipeline(args)
+    pipeline = ProcessingPipeline()
+    pipeline.run(args)
     end_time = time.time()
     logging.info(f"Total execution time: {end_time - start_time} seconds")
