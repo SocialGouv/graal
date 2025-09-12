@@ -1,5 +1,7 @@
 import logging
 import logging.config
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, Optional, Set
 
 import pandas as pd
@@ -31,7 +33,7 @@ class PipelineOrchestrator:
         self.concatenated_columns = concatenated_columns or {"Commentaires"}
         self.concatenated_column_separator = concatenated_column_separator
 
-    def process(
+    def process(  # noqa: C901
         self,
         amendments_df: pd.DataFrame,
         config: Dict[str, Any],
@@ -58,45 +60,138 @@ class PipelineOrchestrator:
         for feature in self.preprocessing_features:
             if not feature.is_enabled(config):
                 continue
+            try:
+                feature_input = FeatureInput(
+                    amendments_df=current_df,
+                    config=config,
+                )
+                feature.validate_input(feature_input)
+                feature_output = feature.process(feature_input)
+                # For preprocessing features, the filtered dataset becomes the new current_df
+                current_df = feature_output.amendments_df.copy()
+                processing_outputs[feature.feature_name] = feature_output.outputs
+            except Exception as e:
+                logging.error(
+                    f"Preprocessing feature {feature.feature_name} failed: {str(e)}"
+                )
+                raise RuntimeError(
+                    f"Pipeline failed during preprocessing feature {feature.feature_name}: {str(e)}"
+                ) from e
 
-            feature_input = FeatureInput(
-                amendments_df=current_df,
-                config=config,
+        # Phase 2: Run features in parallel
+        result_df = current_df
+
+        # Get parallel processing configuration
+        parallel_config = config.get("parallel_processing", {})
+        max_workers = parallel_config.get("max_workers", 4)
+
+        # Validate max_workers configuration
+        if not isinstance(max_workers, int) or max_workers < 1:
+            logging.warning(
+                f"Invalid max_workers value: {max_workers}, defaulting to 1"
             )
+            max_workers = 1
 
-            feature.validate_input(feature_input)
-            feature_output = feature.process(feature_input)
+        # Filter enabled features
+        enabled_features = [f for f in self.features if f.is_enabled(config)]
 
-            # For preprocessing features, the filtered dataset becomes the new current_df
-            current_df = feature_output.amendments_df.copy()
-            processing_outputs[feature.feature_name] = feature_output.outputs
+        if not enabled_features:
+            return result_df, processing_outputs
 
-        # Phase 2: Run features
-        result_df = current_df.copy()
+        # Adjust max_workers to not exceed number of features
+        max_workers = min(max_workers, len(enabled_features))
 
-        for feature in self.features:
-            if not feature.is_enabled(config):
-                continue
+        logging.info(
+            f"Processing {len(enabled_features)} features in parallel with {max_workers} workers"
+        )
 
-            # Each feature gets the filtered data from preprocessing
-            # but processes independently
-            feature_input = FeatureInput(
-                amendments_df=current_df,  # Filtered by preprocessing
-                config=config,
+        # Process features in parallel
+        feature_results = {}
+        feature_timings = {}
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all features for processing
+            future_to_feature = {}
+            for feature in enabled_features:
+                feature_input = FeatureInput(
+                    amendments_df=current_df,  # Filtered by preprocessing
+                    config=config,
+                )
+
+                future = executor.submit(
+                    self._process_single_feature, feature, feature_input
+                )
+                future_to_feature[future] = feature
+
+            # Collect results as they complete
+            for future in as_completed(future_to_feature):
+                feature = future_to_feature[future]
+                try:
+                    feature_output, processing_time = future.result()
+                    feature_results[feature.feature_name] = feature_output
+                    feature_timings[feature.feature_name] = processing_time
+                    logging.info(
+                        f"Feature '{feature.feature_name}' completed in {processing_time:.2f}s"
+                    )
+                except Exception as exc:
+                    logging.error(
+                        f"Feature '{feature.feature_name}' generated an exception: {exc}"
+                    )
+                    # Continue processing other features even if one fails
+                    feature_results[feature.feature_name] = None
+                    feature_timings[feature.feature_name] = 0.0
+
+        # Merge all successful feature results
+        for feature in enabled_features:
+            feature_output = feature_results.get(feature.feature_name)
+            if feature_output is not None:
+                # Merge results - only update columns this feature owns
+                result_df = self._merge_feature_results(
+                    result_df, feature_output, feature.get_output_columns()
+                )
+
+                # Store feature outputs
+                processing_outputs[feature.feature_name] = feature_output.outputs
+            else:
+                # Feature failed, store empty outputs
+                processing_outputs[feature.feature_name] = {}
+
+        # Log performance summary
+        if feature_timings:
+            total_time = sum(feature_timings.values())
+            max_time = max(feature_timings.values())
+            logging.info(
+                f"Parallel processing completed. Total CPU time: {total_time:.2f}s, Wall time: {max_time:.2f}s"
             )
-
-            feature.validate_input(feature_input)
-            feature_output = feature.process(feature_input)
-
-            # Merge results - only update columns this feature owns
-            result_df = self._merge_feature_results(
-                result_df, feature_output, feature.get_output_columns()
-            )
-
-            # Store feature outputs
-            processing_outputs[feature.feature_name] = feature_output.outputs
+        else:
+            logging.info("Parallel processing completed with no enabled features")
 
         return result_df, processing_outputs
+
+    def _process_single_feature(
+        self, feature: BaseFeature, feature_input: FeatureInput
+    ) -> tuple[FeatureOutput, float]:
+        """
+        Process a single feature and measure execution time.
+
+        Args:
+            feature: The feature to process
+            feature_input: Input data for the feature
+
+        Returns:
+            Tuple of (feature_output, processing_time_in_seconds)
+        """
+        start_time = time.time()
+
+        try:
+            feature.validate_input(feature_input)
+            feature_output = feature.process(feature_input)
+            processing_time = time.time() - start_time
+            return feature_output, processing_time
+        except Exception as e:
+            processing_time = time.time() - start_time
+            logging.error(f"Error processing feature '{feature.feature_name}': {e}")
+            raise
 
     def _merge_feature_results(
         self,

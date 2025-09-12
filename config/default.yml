@@ -92,6 +92,10 @@ input_files:
     # Project name, mainly used for similarity search (we match on origin_project)
     origin_project: "PLF 2025"
 
+# Parallel processing configuration
+parallel_processing:
+  max_workers: 4  # Number of parallel threads (adjust based on your system)
+
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
