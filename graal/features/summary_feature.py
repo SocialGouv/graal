@@ -42,6 +42,12 @@ class SummaryGenerationFeature(BaseFeature):
         """Check if summary generation is enabled."""
         return config.get("summary_generation", {}).get("enabled", False)
 
+    def get_columns_to_clear(self, config: dict[str, Any]) -> Set[str]:
+        """Return columns to clear if summary generation is enabled."""
+        if self.is_enabled(config):
+            return {"Objet amdt"}
+        return set()
+
     def process(self, feature_input: FeatureInput) -> FeatureOutput:
         """
         Process amendments for summary generation.

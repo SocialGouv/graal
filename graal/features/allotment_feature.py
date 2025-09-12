@@ -53,6 +53,12 @@ class AllotmentFeature(BaseFeature):
         """Check if allotment is enabled."""
         return config.get("allotments", {}).get("enabled", False)
 
+    def get_columns_to_clear(self, config: dict[str, Any]) -> set[str]:
+        """Return columns to clear if allotment is enabled."""
+        if self.is_enabled(config):
+            return {"Allotissement"}
+        return set()
+
     def process(self, feature_input: FeatureInput) -> FeatureOutput:
         """
         Process allotments - filter duplicate amendments.

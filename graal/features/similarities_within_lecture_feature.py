@@ -42,6 +42,10 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
         """Check if similarities within lectures is enabled."""
         return config.get("similarities_within_lectures", {}).get("enabled", False)
 
+    def get_columns_to_clear(self, config: dict[str, Any]) -> Set[str]:
+        """This feature doesn't clear any columns, it only appends to Commentaires."""
+        return set()
+
     def process(self, feature_input: FeatureInput) -> FeatureOutput:
         """
         Process amendments for similarities within lectures.

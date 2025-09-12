@@ -7,7 +7,7 @@ This feature finds similarities with historical amendments.
 import logging
 import logging.config
 from pathlib import Path
-from typing import Any, Set
+from typing import Any
 
 import pandas as pd
 
@@ -32,11 +32,11 @@ class SimilaritySearchFeature(BaseFeature):
         if not config:
             raise ValueError("SimilaritySearchFeature requires config parameter")
 
-    def get_required_columns(self) -> Set[str]:
+    def get_required_columns(self) -> set[str]:
         """Similarity search requires these columns."""
         return {"Corps amdt", "Exposé amdt", "amdt_idx", "Num article"}
 
-    def get_output_columns(self) -> Set[str]:
+    def get_output_columns(self) -> set[str]:
         """Similarity search can update these columns based on configuration."""
         similarity_config = self.config.get("similarity_search", {})
         columns_to_copy_config = similarity_config.get("columns_to_copy", {})
@@ -61,6 +61,17 @@ class SimilaritySearchFeature(BaseFeature):
         """Check if similarity search is enabled."""
         similarity_config = config.get("similarity_search", {})
         return similarity_config.get("enabled", False)
+
+    def get_columns_to_clear(self, config: dict[str, Any]) -> set[str]:
+        """Return columns to clear if similarity search is enabled."""
+        if not self.is_enabled(config):
+            return set()
+
+        # Reuse logic from get_output_columns but exclude non-clearable columns
+        output_columns = self.get_output_columns()
+        # Remove 'Commentaires' as it's appended to, not cleared
+        clearable_columns = output_columns - {"Commentaires"}
+        return clearable_columns
 
     def process(self, feature_input: FeatureInput) -> FeatureOutput:
         """
