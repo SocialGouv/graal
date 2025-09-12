@@ -53,7 +53,12 @@ class AmendmentPreProcessor:
 
         amendments_df = pd.concat(df_accumulator, ignore_index=True)
         amendments_df["amdt_idx"] = range(len(amendments_df))
-        return AmendmentPreProcessor.clean_up_json_columns(amendments_df)
+        amendments_df = AmendmentPreProcessor.clean_up_json_columns(amendments_df)
+        # Remap JSON column names to standard format
+        amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
+            amendments_df
+        )
+        return amendments_df
 
     @staticmethod
     def load_amendments_excel(
