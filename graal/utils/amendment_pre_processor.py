@@ -167,7 +167,17 @@ class AmendmentPreProcessor:
     ) -> pd.DataFrame:
         for col_name in columns_to_clear:
             logging.info(f"Clearing column {col_name}...\n")
-            amendments_df.loc[:, col_name] = None
+            # Check if column exists and handle dtype compatibility
+            if col_name in amendments_df.columns:
+                # Convert to object dtype first to avoid dtype incompatibility warnings
+                if amendments_df[col_name].dtype in [
+                    "int64",
+                    "int32",
+                    "float64",
+                    "float32",
+                ]:
+                    amendments_df[col_name] = amendments_df[col_name].astype("object")
+                amendments_df.loc[:, col_name] = None
 
         return amendments_df
 
