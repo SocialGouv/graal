@@ -168,7 +168,6 @@ Supported client types:
 - `fake`: Fake client for testing
 - `vllm`: vLLM API
 
-
 #### Similarity Search Configuration
 
 You can configure the similarity search feature using the `similarity_search` section in your configuration file:
@@ -195,7 +194,6 @@ Parameters:
     - `enabled`: Whether to copy this column from similar amendments
     - `condition`: Optional condition that must be met to copy the column (e.g., only copy "Sort" when it contains "irrecevable")
 
-
 #### Summary Generation Configuration
 
 You can configure the summary generation feature using the `summary_generation` section in your configuration file:
@@ -215,6 +213,66 @@ Parameters:
   - When `false`: Only empty summaries are generated, existing summaries are preserved
 
 This is particularly useful when you want to preserve manually edited summaries or when you want to regenerate all summaries with an updated prompt or model.
+
+## Web API
+
+GRAAL now includes a REST API that provides web-based access to the amendment processing pipeline. The API allows users to upload JSON files, process them through the GRAAL pipeline, and retrieve results via HTTP endpoints.
+
+### Getting Started
+
+Start the web server using the provided startup script:
+
+```bash
+# Using the startup script
+python start_web_server.py
+
+# Or directly with uvicorn
+uvicorn graal.api.main:app --host localhost --port 8000 --reload
+```
+
+The API will be available at `http://localhost:8000` with automatic API documentation at `http://localhost:8000/docs`.
+
+### Usage Example
+
+Here's a complete example of using the API with curl:
+
+```bash
+# 1. Upload and start processing
+curl -X POST "http://localhost:8000/api/v1/process" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@amendments.json"
+
+# Response: {"job_id": "abc123", "status": "queued", "message": "Processing job started"}
+
+# 2. Check processing status
+curl "http://localhost:8000/api/v1/status/abc123"
+
+# 3. Get results preview (when completed)
+curl "http://localhost:8000/api/v1/results/abc123/preview"
+
+# 4. Download full results
+curl "http://localhost:8000/api/v1/results/abc123/download" -o results.csv
+```
+
+### Configuration
+
+The web API uses the same configuration system as the command-line pipeline:
+
+- **Configuration File**: Uses `config/default.yml` by default
+- **File Size Limit**: 50MB maximum for uploaded files
+- **Processing Timeout**: 60 minutes maximum per job
+- **Temporary Files**: Stored in `tmp/` directory
+- **CORS**: Configured for development with Vite dev server (`http://localhost:5173`)
+
+### Development
+
+For development, the API includes:
+
+- **Auto-reload**: Enabled when running with `--reload` flag
+- **CORS Middleware**: Allows cross-origin requests from frontend
+- **Logging**: Comprehensive logging for debugging
+- **Error Handling**: Graceful error handling with appropriate HTTP status codes
+
 
 ## Similarity Data Base
 

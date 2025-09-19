@@ -29,6 +29,10 @@ dependencies = [
     "pre-commit>=4.0.1",
     "detect-secrets>=1.5.0",
     "llamaapi>=0.1.36",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+    "aiofiles (>=24.1.0,<25.0.0)",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +57,7 @@ include_namespace_packages = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = ["dist", "build", "dev", "typings"]
+asyncio_default_fixture_loop_scope = "function"
 addopts = [
     "-n 4",
     "--cov=graal",
