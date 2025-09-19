@@ -273,6 +273,110 @@ For development, the API includes:
 - **Logging**: Comprehensive logging for debugging
 - **Error Handling**: Graceful error handling with appropriate HTTP status codes
 
+## Web Application Frontend
+
+GRAAL now includes a modern web application frontend that provides a user-friendly interface for uploading and processing amendments through the web browser. The frontend is built with React, TypeScript, and the French Government Design System (DSFR).
+
+### Technology Stack
+
+- **React 18** with TypeScript for type safety
+- **Vite** for fast development and building
+- **Yarn Berry (v4+)** for modern package management
+- **DSFR (Système de Design de l'État)** for French government compliant UI
+- **API Integration** with the FastAPI backend
+
+### Getting Started
+
+#### Prerequisites
+
+Make sure you have Node.js (v18+) and Yarn installed on your system.
+
+#### Installation and Setup
+
+1. **Navigate to the frontend directory:**
+
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   yarn install
+   ```
+
+3. **Start the development server:**
+
+   ```bash
+   yarn dev
+   ```
+
+   The frontend will be available at `http://localhost:5173/`
+
+#### Running the Full Stack
+
+To use the complete web application, you need both the backend API and frontend running:
+
+1. **Start the backend API** (in the project root):
+
+   ```bash
+   python start_web_server.py
+   ```
+
+   Backend will run on `http://localhost:8000`
+
+2. **Start the frontend** (in a separate terminal):
+
+   ```bash
+   cd frontend
+   yarn dev
+   ```
+
+   Frontend will run on `http://localhost:5173/`
+
+3. **Open your browser** and navigate to `http://localhost:5173/`
+
+### Features
+
+The web application provides:
+
+- **File Upload Interface**: Drag & drop or browse to upload JSON amendment files (max 50MB)
+- **Processing Progress**: Real-time progress tracking with status updates
+- **Results Preview**: View the first 10 processed amendments in a table
+- **CSV Download**: Download the complete processed results
+- **DSFR Compliance**: French government design system for accessibility and consistency
+- **Responsive Design**: Works on desktop and mobile devices
+
+### Usage
+
+1. **Upload Amendments**: Use the file upload interface to select a JSON file containing amendments
+2. **Monitor Progress**: Watch the processing progress with real-time status updates
+3. **Review Results**: Preview the processed amendments in the results table
+4. **Download Results**: Download the complete CSV file with all processed amendments
+
+### Development
+
+#### Available Scripts
+
+- `yarn dev` - Start development server with hot reload
+- `yarn build` - Build for production
+- `yarn preview` - Preview production build locally
+- `yarn lint` - Run ESLint for code quality
+
+#### API Integration
+
+The frontend automatically proxies API requests to the backend server running on `http://localhost:8000`. This is configured in `vite.config.ts` and allows seamless communication between frontend and backend during development.
+
+### Deployment
+
+For production deployment, build the frontend and serve the static files:
+
+```bash
+cd frontend
+yarn build
+```
+
+The built files will be in the `frontend/dist/` directory and can be served by any static file server.
 
 ## Similarity Data Base
 

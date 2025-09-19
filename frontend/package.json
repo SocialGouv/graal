@@ -1,0 +1,34 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@codegouvfr/react-dsfr": "^1.27.0",
+    "@tanstack/react-query": "^5.17.0",
+    "axios": "^1.6.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "eslint": "^9.35.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.4.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.43.0",
+    "vite": "^7.1.6"
+  },
+  "packageManager": "yarn@4.10.2+sha512.0b0e54ad5381f0a35184957bd3ea44e37f5a4fb1960b903b0fb9a3c7c2c009190455c41ef2a1977b1dbd3b72c5f152da696e9c52e2bc78a011b6adea8ee73ba3"
+}
