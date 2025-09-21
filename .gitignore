@@ -6,6 +6,7 @@ data/exports_lectures/*
 .envrc
 .env
 ~*
+tmp
 
 # Python specific
 *.pyc

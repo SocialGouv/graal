@@ -21,3 +21,31 @@ build_simil_db_ppl_fdv:
 
 run:
 	poetry run python graal/full_pipeline.py --config=config/default.yml
+
+# Web application development
+web-backend:
+	poetry run python start_web_server.py
+
+web-frontend:
+	cd frontend && yarn dev
+
+dev:
+	@echo "Starting GRAAL web application..."
+	@echo "Backend will be available at: http://localhost:8000"
+	@echo "Frontend will be available at: http://localhost:5173"
+	@echo "Press Ctrl+C to stop both servers"
+	@trap 'kill %1 %2 2>/dev/null; exit' INT; \
+	poetry run python start_web_server.py & \
+	cd frontend && yarn dev & \
+	wait
+
+dev-help:
+	@echo "GRAAL Web Application Development Commands:"
+	@echo "  make dev           - Start both backend and frontend servers"
+	@echo "  make web-backend   - Start only the backend server"
+	@echo "  make web-frontend  - Start only the frontend server"
+	@echo ""
+	@echo "URLs:"
+	@echo "  Backend API: http://localhost:8000"
+	@echo "  Frontend:    http://localhost:5173"
+	@echo "  API Docs:    http://localhost:8000/docs"

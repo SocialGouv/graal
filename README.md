@@ -273,68 +273,53 @@ For development, the API includes:
 - **Logging**: Comprehensive logging for debugging
 - **Error Handling**: Graceful error handling with appropriate HTTP status codes
 
-## Web Application Frontend
+## Web Application
 
-GRAAL now includes a modern web application frontend that provides a user-friendly interface for uploading and processing amendments through the web browser. The frontend is built with React, TypeScript, and the French Government Design System (DSFR).
+GRAAL includes a modern web application with a React frontend that provides a user-friendly interface for uploading and processing amendments through the web browser. The frontend is built with React, TypeScript, and the French Government Design System (DSFR).
 
-### Technology Stack
-
-- **React 18** with TypeScript for type safety
-- **Vite** for fast development and building
-- **Yarn Berry (v4+)** for modern package management
-- **DSFR (Système de Design de l'État)** for French government compliant UI
-- **API Integration** with the FastAPI backend
-
-### Getting Started
+### Quick Start
 
 #### Prerequisites
 
-Make sure you have Node.js (v18+) and Yarn installed on your system.
+- Python 3.9+ with Poetry installed
+- Node.js 18+ with Yarn installed
+- All dependencies installed: `make install`
 
-#### Installation and Setup
+#### Start Both Servers
 
-1. **Navigate to the frontend directory:**
+Start both backend and frontend servers with one command:
 
-   ```bash
-   cd frontend
-   ```
+```bash
+make dev
+```
 
-2. **Install dependencies:**
+This will start:
 
-   ```bash
-   yarn install
-   ```
+- **Backend API**: <http://localhost:8000>
+- **Frontend**: <http://localhost:5173>
+- **API Documentation**: <http://localhost:8000/docs>
 
-3. **Start the development server:**
+Press `Ctrl+C` to stop both servers.
 
-   ```bash
-   yarn dev
-   ```
+#### Individual Server Commands
 
-   The frontend will be available at `http://localhost:5173/`
+```bash
+# Start only backend server
+make web-backend
 
-#### Running the Full Stack
+# Start only frontend server
+make web-frontend
 
-To use the complete web application, you need both the backend API and frontend running:
+# Show help
+make dev-help
+```
 
-1. **Start the backend API** (in the project root):
+### Usage
 
-   ```bash
-   python start_web_server.py
-   ```
-
-   Backend will run on `http://localhost:8000`
-
-2. **Start the frontend** (in a separate terminal):
-
-   ```bash
-   cd frontend
-   yarn dev
-   ```
-
-   Frontend will run on `http://localhost:5173/`
-
-3. **Open your browser** and navigate to `http://localhost:5173/`
+1. Open <http://localhost:5173> in your browser
+2. Upload a JSON file containing amendments (max 50MB)
+3. Monitor processing progress in real-time
+4. View results table and download CSV when complete
 
 ### Features
 
@@ -347,12 +332,13 @@ The web application provides:
 - **DSFR Compliance**: French government design system for accessibility and consistency
 - **Responsive Design**: Works on desktop and mobile devices
 
-### Usage
+### Technology Stack
 
-1. **Upload Amendments**: Use the file upload interface to select a JSON file containing amendments
-2. **Monitor Progress**: Watch the processing progress with real-time status updates
-3. **Review Results**: Preview the processed amendments in the results table
-4. **Download Results**: Download the complete CSV file with all processed amendments
+- **React 18** with TypeScript for type safety
+- **Vite** for fast development and building
+- **Yarn Berry (v4+)** for modern package management
+- **DSFR (Système de Design de l'État)** for French government compliant UI
+- **API Integration** with the FastAPI backend
 
 ### Development
 
