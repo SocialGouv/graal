@@ -71,7 +71,7 @@ class WebProcessingService:
         input_file_path = self.tmp_dir / f"{job_id}_input.json"
 
         async with aiofiles.open(input_file_path, "wb") as f:
-            f.write(file_content)
+            await f.write(file_content)
 
         # Register job
         self.job_registry.create_job(job_id, str(input_file_path))
