@@ -2,173 +2,172 @@
 
 ## Project Overview
 
-GRAAL processes and analyzes legislative amendments to streamline the work of government agents. It groups similar amendments, attributes them to appropriate reviewers, generates summaries, and finds historical similarities using a modern feature-based architecture with parallel processing capabilities.
+GRAAL processes and analyzes legislative amendments to streamline government work. It groups similar amendments, assigns reviewers, generates summaries, and finds historical similarities using a feature-based architecture with parallel processing. The project includes both a CLI pipeline and a full-stack web application.
 
-## Core Architecture
+## Architecture
+
+### Core System
+
+- **Feature-based architecture**: Independent, modular features implementing `BaseFeature` interface
+- **Parallel execution**: Features run concurrently using configurable thread pools
+- **Two-phase processing**: Preprocessing features (filtering) → Parallel feature processing
+- **Pipeline orchestrator**: Manages concurrent execution with error handling
+
+### Web Application Stack
+
+**Backend**: FastAPI with async processing, Pydantic validation, job registry for status tracking
+**Frontend**: React 18 + TypeScript, DSFR design system, Zustand state management, React Query for API communication
 
 ### Project Structure
 
-- `graal/`: Main package
-  - `core/`: Core pipeline architecture and feature interfaces
-    - `pipeline_orchestrator.py`: Manages parallel feature execution
-    - `processing_pipeline.py`: Main pipeline implementation
-    - `feature_interface.py`: Base interfaces for all features
-    - `text_normalizers.py`: Feature-specific text normalization
-  - `features/`: Modular feature implementations
-    - `allotment_feature.py`: Amendment grouping (preprocessing)
-    - `attribution_feature.py`: Reviewer assignment
-    - `summary_feature.py`: LLM-based summarization
-    - `similarity_search_feature.py`: Historical similarity search
-    - `opinion_feature.py`: Opinion handling
-    - `similarities_within_lecture_feature.py`: Intra-lecture similarities
-  - `api/`: REST API layer (Clean Architecture)
-    - `adapters/`: Database layer with models and repositories
-    - `domain/`: Business logic with entities and use cases
-    - `interface/`: REST routes, models, and services
-  - `allotment/`: Amendment grouping logic
-  - `attribution/`: Reviewer assignment logic
-  - `clustering/`: Similarity algorithms implementation
-  - `opinion/`: Opinion generation logic
-  - `summary/`: LLM summarization implementation
-  - `similarities/`: Similarity handling logic
-  - `utils/`: Utilities and helpers
+```txt
+graal/
+├── core/                    # Pipeline orchestration and feature interfaces
+├── features/               # Modular feature implementations
+├── api/                    # FastAPI web application
+│   ├── routes/            # API endpoints
+│   ├── services/          # Business logic
+│   └── models/            # Pydantic models
+├── allotment/             # Amendment grouping logic
+├── attribution/           # Reviewer assignment
+├── clustering/            # Similarity algorithms
+├── summary/               # LLM summarization
+├── similarities/          # Historical similarity search
+└── utils/                 # Shared utilities
+frontend/                  # React web application
+```
 
-### Feature-Based Architecture
+## Data Flow
 
-The system is built around independent, modular features that implement the `BaseFeature` interface:
-
-- **Feature Independence**: Each feature works with immutable input data and has no cross-dependencies
-- **Parallel Execution**: Features run concurrently using configurable thread pools
-- **Two-Phase Processing**:
-  1. Preprocessing features (like allotment) that can filter data
-  2. Regular features that process the filtered dataset in parallel
-
-### Data Flow
-
-1. **Initial Preprocessing**: Load amendments from JSON/Excel files, apply basic text normalization
-2. **Configuration Preprocessing**: Resolve environment variables, validate paths
-3. **Column Clearing**: Clear columns that will be overwritten by enabled features
-4. **Phase 1 - Preprocessing Features**: Run allotment and other filtering features sequentially
-5. **Phase 2 - Parallel Feature Processing**: Execute enabled features concurrently
-6. **Result Merging**: Combine feature outputs using column ownership rules
-7. **Post-processing**: Handle special cases like allotment population and value preservation
-8. **Output Generation**: Export results to Excel and CSV formats
+1. **Input Processing**: Load JSON/Excel → text normalization → configuration validation
+2. **Column Management**: Clear columns for enabled features
+3. **Phase 1**: Run preprocessing features (allotment) sequentially
+4. **Phase 2**: Execute enabled features in parallel
+5. **Result Merging**: Combine outputs using column ownership rules
+6. **Output**: Export to Excel/CSV formats
 
 ## Key Features
+
+| Feature               | Purpose                    | Key Algorithms                  | Output                    |
+| --------------------- | -------------------------- | ------------------------------- | ------------------------- |
+| **Allotment**         | Group identical amendments | TF-IDF + Damerau-Levenshtein    | Representative amendments |
+| **Attribution**       | Assign to reviewers        | Keyword/table/legal matchers    | Reviewer assignments      |
+| **Summary**           | Generate concise summaries | LLM with load balancing         | 8-20 word summaries       |
+| **Similarity Search** | Find historical matches    | TF-IDF → Levenshtein refinement | Similar amendment data    |
+| **Opinion**           | Handle government opinions | Rule-based processing           | Opinion classifications   |
+| **Intra-lecture**     | Find session similarities  | Clustering algorithms           | Within-session matches    |
+
+### Core Algorithms
+
+- **TF-IDF**: Text vectorization for initial similarity clustering
+- **Damerau-Levenshtein**: Precise string distance calculation
+- **Cosine Similarity**: Vector similarity measurement
+- **DBSCAN**: Density-based clustering
+
+## Text Processing
 
 ### Amendment Preprocessing
 
 - Acronym expansion using predefined mappings
-- Removal of "gage" phrases (standard legal text)
-- Normalization of spaces and punctuation
-- Special handling for empty amendment bodies
+- "Gage" phrase removal (standard legal text)
+- Space/punctuation normalization
+- Empty amendment handling with placeholder generation
 - Mission filtering capabilities
-- Placeholder body generation for empty amendments
 
-### Allotment (Preprocessing Feature)
+### Feature-Specific Normalization
 
-- Groups identical/near-identical amendments
-- Uses TF-IDF (threshold ~0.4) for initial clustering
-- Refines with Damerau-Levenshtein distance (threshold ~0.9999)
-- Selects representative amendments and propagates information
-- Runs as preprocessing feature to filter dataset before other features
+Each feature applies specialized text normalization optimized for its processing requirements.
 
-### Attribution
+## Web Application
 
-- Assigns amendments to appropriate reviewers
-- Uses specialized matchers:
-  - Keyword Matcher: Finds keywords in text
-  - Credit Table Matcher: Analyzes budget tables (PLF)
-  - Legal Document Matcher: Identifies legal references (PLFSS)
-  - Redactional Amendment Matcher: Handles editorial amendments
-- Loads configuration from Excel files
-- Runs in parallel with other features
+### API Endpoints
 
-### Similarity Search
+- `POST /api/v1/process`: Upload and start processing
+- `GET /api/v1/status/{job_id}`: Real-time job status
+- `GET /api/v1/results/{job_id}/preview`: First 10 results
+- `GET /api/v1/results/{job_id}/download`: Full CSV download
 
-- Finds similarities with historical amendments
-- Two-phase approach:
-  - TF-IDF vectorization for initial clustering
-  - Damerau-Levenshtein for precise comparison
-- Different thresholds for different amendment types
-- Copies relevant information from similar amendments
-- Configurable columns to copy from similar amendments
+### Job Management
 
-### Summary Generation
+- **States**: `queued` → `running` → `completed`/`failed`/`timeout`
+- **Progress tracking**: Percentage, status messages, timestamps
+- **Error handling**: Validation, timeouts (60min), graceful failures
+- **File management**: Temporary storage in `tmp/` directory
 
-- Creates concise summaries using LLMs with load balancing
-- Applies specific formatting rules:
-  - Start with infinitive verb
-  - Limited length (8-20 words)
-  - Include essential information
-- Uses multiple LLM clients with rate limiting
-- Special handling for editorial amendments
-- Supports multiple LLM providers (Albert, Ollama, Scaleway)
+### Frontend Features
 
-### Opinion Handling
-
-- Manages government opinions on amendments
-- Integrates with other features for comprehensive processing
-
-### Similarities Within Lectures
-
-- Identifies similar amendments within the same legislative session
-- Complements historical similarity search
+- Drag & drop JSON upload with validation
+- Real-time progress tracking
+- Results preview table
+- CSV download functionality
+- DSFR-compliant UI
 
 ## Configuration
 
-- YAML-based configuration controls enabled features
-- Environment variable preprocessing and validation
-- Configurable thresholds for similarity algorithms
-- Parallel processing configuration (max workers, timeouts)
-- Support for multiple LLM providers with rate limiting
-- Path validation and preprocessing
-- Feature-specific configuration sections
+YAML-based configuration controls:
 
-## Parallel Processing
+- Enabled features and their parameters
+- Similarity thresholds and algorithm settings
+- Parallel processing (worker counts, timeouts)
+- LLM provider settings with rate limiting
+- Path validation and environment variable preprocessing
 
-- **PipelineOrchestrator**: Manages concurrent feature execution
-- **Configurable Workers**: Adjustable thread pool size
-- **Performance Monitoring**: Execution time tracking and logging
-- **Error Handling**: Graceful failure handling with continued processing
-- **Load Balancing**: Intelligent distribution of LLM requests
+## LLM Integration
 
-## Key Algorithms
+### Summary Generation
 
-- **TF-IDF**: Term frequency-inverse document frequency for text vectorization
-- **Cosine Similarity**: Measures similarity between document vectors
-- **Damerau-Levenshtein**: Calculates edit distance between strings
-- **DBSCAN**: Density-based clustering for grouping similar amendments
+- Multiple LLM providers (Albert, Ollama, Scaleway)
+- Load balancing with rate limiting
+- Specific formatting rules (infinitive verbs, 8-20 words)
+- Special handling for editorial amendments
+
+### Attribution Matching
+
+- **Keyword Matcher**: Text pattern matching
+- **Credit Table Matcher**: Budget table analysis (PLF)
+- **Legal Document Matcher**: Legal reference identification (PLFSS)
+- **Redactional Matcher**: Editorial amendment handling
 
 ## Advanced Features
 
-### Value Preservation
+### Parallel Processing
 
-- `no_value_overwrite` option to preserve original values
-- Selective column preservation based on feature configuration
+- Configurable thread pools for feature execution
+- Performance monitoring and logging
+- Graceful error handling with continued processing
+- Load balancing for external API calls
 
-### Allotment Population
+### Data Management
 
-- Special handling to propagate results back to filtered amendments
-- Maintains data integrity across the filtering process
+- **Value Preservation**: `no_value_overwrite` option
+- **Column Ownership**: Prevents feature conflicts
+- **Allotment Population**: Propagates results to filtered amendments
+- **Concatenation Support**: For comment-like columns
 
-### Column Management
+## Testing & Development
 
-- Automatic column clearing for enabled features
-- Column ownership system prevents conflicts
-- Concatenation support for comment-like columns
-
-## Tests
+### Test Structure
 
 - **Unit Tests**: Feature-specific testing with pytest
-- **Integration Tests**: End-to-end pipeline testing
-- **API Tests**: REST API endpoint testing
-- Tests are run with pytest and organized by component
+- **Integration Tests**: End-to-end pipeline validation
+- **API Tests**: REST endpoint testing
 
-## Performance Optimizations
+### Development Commands
 
-- Parallel feature execution reduces wall-clock time
-- Efficient memory management with DataFrame copying strategies
-- Rate limiting for external API calls
+```bash
+# Backend
+poetry run python start_web_server.py
+poetry run uvicorn graal.api.main:app --reload
+
+# Frontend
+cd frontend && yarn dev
+```
+
+## Performance Considerations
+
+- Async file I/O operations
+- Non-blocking pipeline execution
+- Efficient memory management with DataFrame strategies
 - Configurable timeouts and retry mechanisms
-- Performance logging and monitoring
+- Rate limiting for external API calls
+- Streaming file downloads for large results
