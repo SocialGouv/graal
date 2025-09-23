@@ -342,6 +342,10 @@ The web application provides:
 
 ### Development
 
+#### Automatic Type Generation for GRAAL Frontend
+
+See [Auto type generation doc](frontend/docs/auto_type_generation_from_backend.md)
+
 #### Available Scripts
 
 - `yarn dev` - Start development server with hot reload
