@@ -14,7 +14,7 @@ class AmendmentsClusterFinder:
     """Find clusters of similar amendments using DBSCAN on TF-IDF vectors"""
 
     @staticmethod
-    def find_similarity_clusters(
+    def find_similarity_clusters(  # noqa: C901
         amendments_df: pd.DataFrame,
         group_by_columns: list[str],
         text_column: str = "Corps amdt",
@@ -27,8 +27,56 @@ class AmendmentsClusterFinder:
             f"Converting strings to TF-IDF vectors for all data from column {text_column}...\n"
         )
         strings = amendments_df[text_column].tolist()
+
+        # Debug logging for TF-IDF input
+        logging.debug(f"[TF_IDF_CLUSTERING] Total number of strings: {len(strings)}")
+        for i, string in enumerate(strings[:10]):  # Log first 10 strings
+            logging.debug(f"[TF_IDF_CLUSTERING] String {i}: '{string}'")
+        if len(strings) > 10:
+            logging.debug(
+                f"[TF_IDF_CLUSTERING] ... and {len(strings) - 10} more strings"
+            )
+
+        # Check for empty strings
+        empty_strings = [i for i, s in enumerate(strings) if not s or not s.strip()]
+        if empty_strings:
+            logging.warning(
+                f"[TF_IDF_CLUSTERING] Found {len(empty_strings)} empty strings at indices: {empty_strings[:10]}"
+            )
+
+        # Safety check: ensure we have valid strings for TF-IDF
+        valid_strings = [s for s in strings if s and s.strip()]
+        if not valid_strings:
+            error_msg = (
+                f"[TF_IDF_CLUSTERING] No valid strings found for TF-IDF clustering! "
+                f"All {len(strings)} strings are empty or whitespace-only. "
+                f"This suggests that text preprocessing removed all content from the '{text_column}' column. "
+                f"Check the text normalization pipeline, especially stop word removal."
+            )
+            logging.error(error_msg)
+            raise ValueError(
+                "No valid strings for TF-IDF clustering - all text was filtered out during preprocessing"
+            )
+
+        if len(valid_strings) != len(strings):
+            logging.warning(
+                f"[TF_IDF_CLUSTERING] Only {len(valid_strings)}/{len(strings)} strings are valid for TF-IDF"
+            )
+
         vectorizer = TfidfVectorizer()
-        vectorizer.fit(strings)
+        try:
+            vectorizer.fit(strings)
+            logging.debug(
+                f"[TF_IDF_CLUSTERING] TF-IDF vectorizer fitted successfully. Vocabulary size: {len(vectorizer.vocabulary_)}"
+            )
+        except ValueError as e:
+            logging.error(f"[TF_IDF_CLUSTERING] TF-IDF vectorizer failed to fit: {e}")
+            logging.error(f"[TF_IDF_CLUSTERING] All strings being processed: {strings}")
+            logging.error(f"[TF_IDF_CLUSTERING] Valid strings: {valid_strings}")
+            logging.error(
+                "[TF_IDF_CLUSTERING] This likely means text preprocessing was too aggressive and removed all meaningful content"
+            )
+            raise
 
         tfidf_clusters_per_group: dict[tuple, list[list[IntIndex]]] = {}
         group_keys = (
@@ -37,7 +85,16 @@ class AmendmentsClusterFinder:
             .itertuples(index=False, name=None)
         )
 
-        for group_key in group_keys:
+        logging.debug(
+            f"[TF_IDF_CLUSTERING] Found {len(list(group_keys))} unique groups"
+        )
+        group_keys = list(group_keys)  # Convert back to list since we consumed it above
+
+        for i, group_key in enumerate(group_keys):
+            logging.debug(
+                f"[TF_IDF_CLUSTERING] Processing group {i + 1}/{len(group_keys)}: {group_key}"
+            )
+
             # Transform group
             df_group = amendments_df[
                 (
@@ -45,8 +102,32 @@ class AmendmentsClusterFinder:
                     == pd.Series(group_key, index=group_by_columns)
                 ).all(axis=1)
             ]
+
+            logging.debug(
+                f"[TF_IDF_CLUSTERING] Group {group_key} has {len(df_group)} amendments"
+            )
+
+            if len(df_group) == 0:
+                logging.warning(
+                    f"[TF_IDF_CLUSTERING] Group {group_key} is empty, skipping"
+                )
+                continue
+
             group_strings = df_group[text_column].tolist()
+            logging.debug(
+                f"[TF_IDF_CLUSTERING] Group {group_key} strings: {group_strings[:3]}{'...' if len(group_strings) > 3 else ''}"
+            )
+
+            if not group_strings or all(not s or not s.strip() for s in group_strings):
+                logging.warning(
+                    f"[TF_IDF_CLUSTERING] Group {group_key} has no valid strings, skipping"
+                )
+                continue
+
             vectors = vectorizer.transform(group_strings)
+            logging.debug(
+                f"[TF_IDF_CLUSTERING] Group {group_key} vectorized to shape: {vectors.shape}"
+            )
 
             # Compute distance matrix
             similarity_matrix = cosine_similarity(vectors)

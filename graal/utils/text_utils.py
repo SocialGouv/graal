@@ -163,34 +163,65 @@ def normalize_text(text: str) -> str:
     Normalize the given text by removing accents, apostrophes, dashes, backticks,
     special characters, and extra whitespaces.
     """
+    original_text = text
+    logging.debug(f"[TEXT_NORMALIZATION] Original text: '{original_text}'")
+
     text = remove_small_roman_numerals(text)
+    logging.debug(f"[TEXT_NORMALIZATION] After removing roman numerals: '{text}'")
 
     # Remove accents
     text = unidecode(text)
     text = text.strip().lower()
+    logging.debug(f"[TEXT_NORMALIZATION] After unidecode and lowercase: '{text}'")
+
     # Replace apostrophes, backticks, underscores with spaces
-    text = re.sub(r"['`’_]", " ", text)
+    text = re.sub(r"['`'_]", " ", text)
+    logging.debug(
+        f"[TEXT_NORMALIZATION] After replacing apostrophes/backticks: '{text}'"
+    )
+
     # Replace dashes with a space unless they are surrounded by numbers
     text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
+    logging.debug(f"[TEXT_NORMALIZATION] After replacing dashes: '{text}'")
+
     # Remove most special characters
     text = re.sub(r"[^a-zA-Z0-9\s\-%]", "", text)
+    logging.debug(f"[TEXT_NORMALIZATION] After removing special characters: '{text}'")
 
     text = remove_stop_words(text)
+    logging.debug(f"[TEXT_NORMALIZATION] After removing stop words: '{text}'")
+
     text = digitize_small_french_numbers(text)
+    logging.debug(f"[TEXT_NORMALIZATION] After digitizing numbers: '{text}'")
+
     text = " ".join(remove_french_plurals(word) for word in text.split())
+    logging.debug(f"[TEXT_NORMALIZATION] After removing plurals: '{text}'")
 
     # Remove extra whitespaces
     text = re.sub(r"\s+", " ", text)
-    return text.strip()
+    final_text = text.strip()
+    logging.debug(f"[TEXT_NORMALIZATION] Final normalized text: '{final_text}'")
+
+    if not final_text:
+        logging.warning(
+            f"[TEXT_NORMALIZATION] Text became empty after normalization! Original: '{original_text}'"
+        )
+
+    return final_text
 
 
-def extract_plain_text_from_html(encoded_html: str) -> None:
+def extract_plain_text_from_html(encoded_html: str) -> str:
+    logging.debug(f"[HTML_EXTRACTION] Original HTML: '{encoded_html}'")
+
     # Decode HTML entities
     decoded_html = html.unescape(encoded_html)
+    logging.debug(f"[HTML_EXTRACTION] After HTML unescape: '{decoded_html}'")
 
     # Parse HTML and extract text
     soup = BeautifulSoup(decoded_html, "html.parser")
     plain_text = soup.get_text()
+    logging.debug(f"[HTML_EXTRACTION] Final plain text: '{plain_text}'")
+
     return plain_text
 
 
