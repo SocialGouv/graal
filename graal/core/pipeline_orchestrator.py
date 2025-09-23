@@ -52,27 +52,54 @@ class PipelineOrchestrator:
         Returns:
             Tuple of final processed DataFrame and processing outputs
         """
+        logging.info(
+            f"[ORCHESTRATOR] Starting pipeline processing with {len(amendments_df)} amendments"
+        )
+
         # Keep original for reference
         processing_outputs = {}
 
         # Phase 1: Run preprocessing features (allotment, etc.)
         current_df = amendments_df.copy()
+        logging.info(
+            f"[ORCHESTRATOR] Phase 1: Processing {len(self.preprocessing_features)} preprocessing features"
+        )
+
         for feature in self.preprocessing_features:
             if not feature.is_enabled(config):
+                logging.debug(
+                    f"[ORCHESTRATOR] Skipping disabled preprocessing feature: {feature.feature_name}"
+                )
                 continue
+
+            logging.info(
+                f"[ORCHESTRATOR] Starting preprocessing feature: {feature.feature_name}"
+            )
             try:
                 feature_input = FeatureInput(
                     amendments_df=current_df,
                     config=config,
                 )
                 feature.validate_input(feature_input)
+                logging.debug(
+                    f"[ORCHESTRATOR] Input validation passed for feature: {feature.feature_name}"
+                )
+
                 feature_output = feature.process(feature_input)
                 # For preprocessing features, the filtered dataset becomes the new current_df
+                original_count = len(current_df)
                 current_df = feature_output.amendments_df.copy()
+                new_count = len(current_df)
+
+                logging.info(
+                    f"[ORCHESTRATOR] Preprocessing feature completed: {feature.feature_name}, amendments: {original_count} -> {new_count}"
+                )
                 processing_outputs[feature.feature_name] = feature_output.outputs
+
             except Exception as e:
                 logging.error(
-                    f"Preprocessing feature {feature.feature_name} failed: {str(e)}"
+                    f"[ORCHESTRATOR] Preprocessing feature {feature.feature_name} failed: {str(e)}",
+                    exc_info=True,
                 )
                 raise RuntimeError(
                     f"Pipeline failed during preprocessing feature {feature.feature_name}: {str(e)}"
@@ -80,6 +107,9 @@ class PipelineOrchestrator:
 
         # Phase 2: Run features in parallel
         result_df = current_df
+        logging.info(
+            f"[ORCHESTRATOR] Phase 2: Starting parallel processing with {len(current_df)} amendments"
+        )
 
         # Get parallel processing configuration
         parallel_config = config.get("parallel_processing", {})
@@ -88,21 +118,33 @@ class PipelineOrchestrator:
         # Validate max_workers configuration
         if not isinstance(max_workers, int) or max_workers < 1:
             logging.warning(
-                f"Invalid max_workers value: {max_workers}, defaulting to 1"
+                f"[ORCHESTRATOR] Invalid max_workers value: {max_workers}, defaulting to 1"
             )
             max_workers = 1
 
         # Filter enabled features
         enabled_features = [f for f in self.features if f.is_enabled(config)]
+        disabled_features = [f for f in self.features if not f.is_enabled(config)]
+
+        logging.info(
+            f"[ORCHESTRATOR] Feature status - enabled: {len(enabled_features)}, disabled: {len(disabled_features)}"
+        )
+        for feature in enabled_features:
+            logging.debug(f"[ORCHESTRATOR] Enabled feature: {feature.feature_name}")
+        for feature in disabled_features:
+            logging.debug(f"[ORCHESTRATOR] Disabled feature: {feature.feature_name}")
 
         if not enabled_features:
+            logging.info(
+                "[ORCHESTRATOR] No enabled features to process, returning preprocessed data"
+            )
             return result_df, processing_outputs
 
         # Adjust max_workers to not exceed number of features
         max_workers = min(max_workers, len(enabled_features))
 
         logging.info(
-            f"Processing {len(enabled_features)} features in parallel with {max_workers} workers"
+            f"[ORCHESTRATOR] Processing {len(enabled_features)} features in parallel with {max_workers} workers"
         )
 
         # Process features in parallel
@@ -110,6 +152,10 @@ class PipelineOrchestrator:
         feature_timings = {}
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            logging.debug(
+                f"[ORCHESTRATOR] Created ThreadPoolExecutor with {max_workers} workers"
+            )
+
             # Submit all features for processing
             future_to_feature = {}
             for feature in enabled_features:
@@ -118,33 +164,51 @@ class PipelineOrchestrator:
                     config=config,
                 )
 
+                logging.debug(
+                    f"[ORCHESTRATOR] Submitting feature for parallel processing: {feature.feature_name}"
+                )
                 future = executor.submit(
                     self._process_single_feature, feature, feature_input
                 )
                 future_to_feature[future] = feature
 
+            logging.info(
+                f"[ORCHESTRATOR] Submitted {len(future_to_feature)} features for parallel processing"
+            )
+
             # Collect results as they complete
+            completed_count = 0
             for future in as_completed(future_to_feature):
                 feature = future_to_feature[future]
+                completed_count += 1
+
                 try:
                     feature_output, processing_time = future.result()
                     feature_results[feature.feature_name] = feature_output
                     feature_timings[feature.feature_name] = processing_time
                     logging.info(
-                        f"Feature '{feature.feature_name}' completed in {processing_time:.2f}s"
+                        f"[ORCHESTRATOR] Feature completed ({completed_count}/{len(enabled_features)}): '{feature.feature_name}' in {processing_time:.2f}s"
                     )
                 except Exception as exc:
                     logging.error(
-                        f"Feature '{feature.feature_name}' generated an exception: {exc}"
+                        f"[ORCHESTRATOR] Feature failed ({completed_count}/{len(enabled_features)}): '{feature.feature_name}' - {exc}",
+                        exc_info=True,
                     )
                     # Continue processing other features even if one fails
                     feature_results[feature.feature_name] = None
                     feature_timings[feature.feature_name] = 0.0
 
         # Merge all successful feature results
+        logging.info("[ORCHESTRATOR] Starting result merging phase")
+        successful_features = 0
+        failed_features = 0
+
         for feature in enabled_features:
             feature_output = feature_results.get(feature.feature_name)
             if feature_output is not None:
+                logging.debug(
+                    f"[ORCHESTRATOR] Merging results for feature: {feature.feature_name}"
+                )
                 # Merge results - only update columns this feature owns
                 result_df = self._merge_feature_results(
                     result_df, feature_output, feature.get_output_columns()
@@ -152,20 +216,34 @@ class PipelineOrchestrator:
 
                 # Store feature outputs
                 processing_outputs[feature.feature_name] = feature_output.outputs
+                successful_features += 1
             else:
                 # Feature failed, store empty outputs
+                logging.warning(
+                    f"[ORCHESTRATOR] Skipping merge for failed feature: {feature.feature_name}"
+                )
                 processing_outputs[feature.feature_name] = {}
+                failed_features += 1
 
         # Log performance summary
         if feature_timings:
             total_time = sum(feature_timings.values())
             max_time = max(feature_timings.values())
+            avg_time = total_time / len(feature_timings) if feature_timings else 0
             logging.info(
-                f"Parallel processing completed. Total CPU time: {total_time:.2f}s, Wall time: {max_time:.2f}s"
+                f"[ORCHESTRATOR] Parallel processing completed - successful: {successful_features}, failed: {failed_features}"
+            )
+            logging.info(
+                f"[ORCHESTRATOR] Performance summary - Total CPU time: {total_time:.2f}s, Wall time: {max_time:.2f}s, Avg time: {avg_time:.2f}s"
             )
         else:
-            logging.info("Parallel processing completed with no enabled features")
+            logging.info(
+                "[ORCHESTRATOR] Parallel processing completed with no enabled features"
+            )
 
+        logging.info(
+            f"[ORCHESTRATOR] Pipeline processing completed - final amendments: {len(result_df)}"
+        )
         return result_df, processing_outputs
 
     def _process_single_feature(
@@ -182,15 +260,30 @@ class PipelineOrchestrator:
             Tuple of (feature_output, processing_time_in_seconds)
         """
         start_time = time.time()
+        logging.debug(
+            f"[ORCHESTRATOR] Starting single feature processing: {feature.feature_name}"
+        )
 
         try:
+            logging.debug(
+                f"[ORCHESTRATOR] Validating input for feature: {feature.feature_name}"
+            )
             feature.validate_input(feature_input)
+
+            logging.debug(f"[ORCHESTRATOR] Processing feature: {feature.feature_name}")
             feature_output = feature.process(feature_input)
+
             processing_time = time.time() - start_time
+            logging.debug(
+                f"[ORCHESTRATOR] Feature processing completed: {feature.feature_name} in {processing_time:.2f}s"
+            )
             return feature_output, processing_time
         except Exception as e:
             processing_time = time.time() - start_time
-            logging.error(f"Error processing feature '{feature.feature_name}': {e}")
+            logging.error(
+                f"[ORCHESTRATOR] Error processing feature '{feature.feature_name}' after {processing_time:.2f}s: {e}",
+                exc_info=True,
+            )
             raise
 
     def _merge_feature_results(
@@ -205,23 +298,45 @@ class PipelineOrchestrator:
         Only merge the columns that the feature is supposed to output.
         For columns in concatenated_columns, concatenate values instead of overwriting.
         """
+        logging.debug(
+            f"[ORCHESTRATOR] Merging feature results - output_columns: {output_columns}"
+        )
+
         # Always use "amdt_idx" as index for merging
         base_df_indexed = base_df.set_index("amdt_idx")
         feature_output_df_indexed = feature_output.amendments_df.set_index("amdt_idx")
 
+        logging.debug(
+            f"[ORCHESTRATOR] Merge setup - base_df rows: {len(base_df_indexed)}, feature_output rows: {len(feature_output_df_indexed)}"
+        )
+
         # Update only the columns this feature is responsible for
+        merged_columns = []
+        concatenated_columns = []
+
         for col in output_columns:
             if col in feature_output_df_indexed.columns:
                 if col in self.concatenated_columns:
                     # Concatenate values for configured columns
+                    logging.debug(f"[ORCHESTRATOR] Concatenating column: {col}")
                     base_df_indexed[col] = self._concatenate_column_values(
                         base_df_indexed.get(col),
                         feature_output_df_indexed[col],
                     )
+                    concatenated_columns.append(col)
                 else:
                     # Overwrite for regular columns
+                    logging.debug(f"[ORCHESTRATOR] Overwriting column: {col}")
                     base_df_indexed[col] = feature_output_df_indexed[col]
+                    merged_columns.append(col)
+            else:
+                logging.debug(
+                    f"[ORCHESTRATOR] Column not found in feature output: {col}"
+                )
 
+        logging.debug(
+            f"[ORCHESTRATOR] Merge completed - merged: {merged_columns}, concatenated: {concatenated_columns}"
+        )
         return base_df_indexed.reset_index()
 
     # Create a function to concatenate individual values
