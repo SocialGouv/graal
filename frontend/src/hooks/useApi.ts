@@ -3,7 +3,7 @@ import type { AxiosProgressEvent } from 'axios';
 import React from 'react';
 import apiService from '../services/api';
 import { useProcessingStore } from '../stores/processingStore';
-import type { JobStatusResponse, ProcessJobResponse, PreviewResponse } from '../types/api';
+import type { JobStatusResponse, PreviewResponse, ProcessJobResponse } from '../types/api';
 
 // Upload file mutation
 export const useUploadFile = () => {
@@ -22,7 +22,7 @@ export const useUploadFile = () => {
 
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { job_id: string; }) => {
       setJobId(data.job_id);
       updateProgress('queued', 0, 'Fichier téléchargé, traitement en cours...');
       setError(null);
@@ -46,7 +46,7 @@ export const useJobStatus = (jobId: string | null, enabled: boolean = true) => {
       return apiService.getJobStatus(jobId);
     },
     enabled: enabled && !!jobId,
-    refetchInterval: (query) => {
+    refetchInterval: (query: { state: { data: any; }; }) => {
       // Stop polling if job is completed, failed, or timeout
       const data = query.state.data;
       if (data?.status && ['completed', 'failed', 'timeout'].includes(data.status)) {
@@ -124,7 +124,7 @@ export const useDownloadResults = () => {
     mutationFn: async (jobId: string): Promise<Blob> => {
       return apiService.downloadResults(jobId);
     },
-    onSuccess: (blob, jobId) => {
+    onSuccess: (blob: Blob, jobId: string) => {
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -137,7 +137,34 @@ export const useDownloadResults = () => {
       setError(null);
     },
     onError: (error: any) => {
-      const errorMessage = error.detail || 'Erreur lors du téléchargement des résultats';
+      const errorMessage = error.detail || 'Erreur lors du téléchargement des résultats CSV';
+      setError(errorMessage);
+    },
+  });
+};
+
+// Download Excel results mutation
+export const useDownloadExcelResults = () => {
+  const { setError } = useProcessingStore();
+
+  return useMutation({
+    mutationFn: async (jobId: string): Promise<Blob> => {
+      return apiService.downloadExcelResults(jobId);
+    },
+    onSuccess: (blob: Blob, jobId: string) => {
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `graal-results-${jobId}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setError(null);
+    },
+    onError: (error: any) => {
+      const errorMessage = error.detail || 'Erreur lors du téléchargement des résultats Excel';
       setError(errorMessage);
     },
   });

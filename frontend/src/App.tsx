@@ -13,7 +13,7 @@ import DownloadButton from "./components/DownloadButton/DownloadButton";
 
 // Import hooks and store
 import { useProcessingStore } from "./stores/processingStore";
-import { useUploadFile, useJobStatus, useResultsPreview, useDownloadResults } from "./hooks/useApi";
+import { useUploadFile, useJobStatus, useResultsPreview, useDownloadResults, useDownloadExcelResults } from "./hooks/useApi";
 
 // Container is a simple div wrapper, we can create it ourselves or use a regular div
 const Container = ({ children, ...props }: { children: React.ReactNode } & React.HTMLAttributes<HTMLDivElement>) => (
@@ -33,6 +33,7 @@ function AppContent() {
   // API hooks
   const uploadFileMutation = useUploadFile();
   const downloadResultsMutation = useDownloadResults();
+  const downloadExcelResultsMutation = useDownloadExcelResults();
 
   // Job status polling - only when we have a jobId and processing
   useJobStatus(
@@ -51,9 +52,15 @@ function AppContent() {
     uploadFileMutation.mutate(file);
   };
 
-  const handleDownload = () => {
+  const handleDownloadCsv = () => {
     if (jobId) {
       downloadResultsMutation.mutate(jobId);
+    }
+  };
+
+  const handleDownloadExcel = () => {
+    if (jobId) {
+      downloadExcelResultsMutation.mutate(jobId);
     }
   };
 
@@ -136,8 +143,10 @@ function AppContent() {
               <>
                 <ResultsTable />
                 <DownloadButton
-                  onDownload={handleDownload}
-                  isLoading={downloadResultsMutation.isPending}
+                  onDownloadCsv={handleDownloadCsv}
+                  onDownloadExcel={handleDownloadExcel}
+                  isCsvLoading={downloadResultsMutation.isPending}
+                  isExcelLoading={downloadExcelResultsMutation.isPending}
                 />
               </>
             )}

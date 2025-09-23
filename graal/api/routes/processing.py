@@ -172,7 +172,7 @@ async def download_results(job_id: str):
     Raises:
         HTTPException: 404 if job not found, 400 if job not completed
     """
-    logger.info(f"[API] Download request for job_id: {job_id}")
+    logger.info(f"[API] CSV download request for job_id: {job_id}")
 
     # Check if job exists and is completed
     status = web_processing_service.get_job_status(job_id)
@@ -190,13 +190,63 @@ async def download_results(job_id: str):
         )
 
     # Get results file path
-    logger.debug(f"[API] Retrieving results file path for job_id: {job_id}")
+    logger.debug(f"[API] Retrieving CSV results file path for job_id: {job_id}")
     file_path = web_processing_service.get_results_file_path(job_id)
     if not file_path:
-        logger.error(f"[API] Results file not found for job_id: {job_id}")
+        logger.error(f"[API] CSV results file not found for job_id: {job_id}")
         raise HTTPException(status_code=500, detail="Results file not found")
 
-    logger.info(f"[API] Serving download for job_id: {job_id}, file_path: {file_path}")
+    logger.info(
+        f"[API] Serving CSV download for job_id: {job_id}, file_path: {file_path}"
+    )
     return FileResponse(
         path=file_path, filename=f"graal_results_{job_id}.csv", media_type="text/csv"
+    )
+
+
+@router.get("/results/{job_id}/download/excel")
+async def download_excel_results(job_id: str):
+    """
+    Download the complete processing results as an Excel file.
+
+    Args:
+        job_id: Unique job identifier
+
+    Returns:
+        Excel file download
+
+    Raises:
+        HTTPException: 404 if job not found, 400 if job not completed
+    """
+    logger.info(f"[API] Excel download request for job_id: {job_id}")
+
+    # Check if job exists and is completed
+    status = web_processing_service.get_job_status(job_id)
+    if not status:
+        logger.warning(f"[API] Excel download request failed - job not found: {job_id}")
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if status.status != "completed":
+        logger.warning(
+            f"[API] Excel download request failed - job not completed: {job_id}, current status: {status.status}"
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job is not completed. Current status: {status.status}",
+        )
+
+    # Get Excel results file path
+    logger.debug(f"[API] Retrieving Excel results file path for job_id: {job_id}")
+    file_path = web_processing_service.get_excel_results_file_path(job_id)
+    if not file_path:
+        logger.error(f"[API] Excel results file not found for job_id: {job_id}")
+        raise HTTPException(status_code=500, detail="Excel results file not found")
+
+    logger.info(
+        f"[API] Serving Excel download for job_id: {job_id}, file_path: {file_path}"
+    )
+    return FileResponse(
+        path=file_path,
+        filename=f"graal_results_{job_id}.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
