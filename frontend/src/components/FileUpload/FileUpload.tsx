@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { fr } from '@codegouvfr/react-dsfr';
@@ -94,6 +94,25 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
       handleClick();
     }
   }, [handleClick]);
+
+  // Add event listener to the file input for browser file selection
+  useEffect(() => {
+    const fileInput = uploadRef.current?.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      const handleInputChange = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        if (target.files && target.files.length > 0) {
+          const files = Array.from(target.files);
+          handleFileChange(files);
+        }
+      };
+
+      fileInput.addEventListener('change', handleInputChange);
+      return () => {
+        fileInput.removeEventListener('change', handleInputChange);
+      };
+    }
+  }, [handleFileChange]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
