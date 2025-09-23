@@ -4,7 +4,6 @@ It includes functions for loading, cleaning, and normalizing amendment data, as 
 common patterns in amendment bodies and exposes.
 """
 
-import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
@@ -14,6 +13,7 @@ from pydantic import FilePath
 from unidecode import unidecode
 
 from graal.custom_types import Acronym, ColumnName
+from graal.utils.json_utils import load_json_from_file
 from graal.utils.text_utils import extract_plain_text_from_html, normalize_text
 
 
@@ -26,8 +26,7 @@ class AmendmentPreProcessor:
         # Initialize default_processing_timestamp before the loop to avoid warnings
         default_processing_timestamp = 0
         for file_name in input_files:
-            with open(file_name, "r", encoding="utf-8-sig") as f:
-                data = json.load(f)
+            data = load_json_from_file(str(file_name))
             df = pd.DataFrame(data["amendements"])
 
             if file_config:

@@ -39,8 +39,8 @@ class TestWebProcessingService:
         """Mock aiofiles operations."""
         with patch("graal.api.services.web_processing_service.aiofiles") as mock_files:
             mock_file = AsyncMock()
-            # Configure write to be a regular method that returns None, not a coroutine
-            mock_file.write = Mock(return_value=None)
+            # Configure write to be an async method that returns None
+            mock_file.write = AsyncMock(return_value=None)
             mock_context = AsyncMock()
             mock_context.__aenter__ = AsyncMock(return_value=mock_file)
             mock_context.__aexit__ = AsyncMock(return_value=None)
@@ -159,7 +159,7 @@ class TestWebProcessingService:
         file_content = b"invalid json content"
         filename = "invalid.json"
 
-        with pytest.raises(ValueError, match="Invalid JSON file"):
+        with pytest.raises(ValueError, match="Invalid JSON content"):
             await service.start_processing(file_content, filename)
 
     @pytest.mark.asyncio
@@ -168,7 +168,7 @@ class TestWebProcessingService:
         file_content = b"\xff\xfe invalid utf-8"
         filename = "invalid_encoding.json"
 
-        with pytest.raises(ValueError, match="Invalid JSON file"):
+        with pytest.raises(ValueError, match="Unable to decode file content as UTF-8"):
             await service.start_processing(file_content, filename)
 
     @pytest.mark.asyncio
