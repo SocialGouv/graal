@@ -174,7 +174,7 @@ class ApiService {
    * Download full results as CSV
    */
   async downloadResults(jobId: string): Promise<Blob> {
-    console.log(`[API_CLIENT] Starting results download for: ${jobId}`);
+    console.log(`[API_CLIENT] Starting CSV results download for: ${jobId}`);
 
     const startTime = Date.now();
 
@@ -187,7 +187,7 @@ class ApiService {
       const downloadTime = Date.now() - startTime;
       const fileSize = response.data.size;
 
-      console.log(`[API_CLIENT] Results download completed for: ${jobId}`, {
+      console.log(`[API_CLIENT] CSV results download completed for: ${jobId}`, {
         fileSize: `${fileSize} bytes`,
         downloadTime: `${downloadTime}ms`,
         contentType: response.headers['content-type'],
@@ -196,7 +196,41 @@ class ApiService {
       return response.data;
     } catch (error) {
       const downloadTime = Date.now() - startTime;
-      console.error(`[API_CLIENT] Results download failed for: ${jobId}`, {
+      console.error(`[API_CLIENT] CSV results download failed for: ${jobId}`, {
+        downloadTime: `${downloadTime}ms`,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Download full results as Excel
+   */
+  async downloadExcelResults(jobId: string): Promise<Blob> {
+    console.log(`[API_CLIENT] Starting Excel results download for: ${jobId}`);
+
+    const startTime = Date.now();
+
+    try {
+      const response = await this.client.get(`/results/${jobId}/download/excel`, {
+        responseType: 'blob',
+        timeout: 300000, // 5 minutes for download
+      });
+
+      const downloadTime = Date.now() - startTime;
+      const fileSize = response.data.size;
+
+      console.log(`[API_CLIENT] Excel results download completed for: ${jobId}`, {
+        fileSize: `${fileSize} bytes`,
+        downloadTime: `${downloadTime}ms`,
+        contentType: response.headers['content-type'],
+      });
+
+      return response.data;
+    } catch (error) {
+      const downloadTime = Date.now() - startTime;
+      console.error(`[API_CLIENT] Excel results download failed for: ${jobId}`, {
         downloadTime: `${downloadTime}ms`,
         error,
       });

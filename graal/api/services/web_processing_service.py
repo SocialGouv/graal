@@ -239,27 +239,37 @@ class WebProcessingService:
                 )
                 return
 
-            # Find the actual output file (pipeline may add timestamp)
+            # Find the actual output files (pipeline may add timestamp)
             logger.debug(
-                f"[WEB_SERVICE] Looking for output CSV files - job_id: {job_id}, pattern: {job_id}_output*.csv"
+                f"[WEB_SERVICE] Looking for output files - job_id: {job_id}, pattern: {job_id}_output*"
             )
             csv_files = list(self.tmp_dir.glob(f"{job_id}_output*.csv"))
+            excel_files = list(self.tmp_dir.glob(f"{job_id}_output*.xlsx"))
+
             if not csv_files:
                 logger.error(
                     f"[WEB_SERVICE] No CSV output file found - job_id: {job_id}, searched in: {self.tmp_dir}"
                 )
                 raise FileNotFoundError("No CSV output file found")
 
-            actual_output_path = csv_files[0]
+            if not excel_files:
+                logger.error(
+                    f"[WEB_SERVICE] No Excel output file found - job_id: {job_id}, searched in: {self.tmp_dir}"
+                )
+                raise FileNotFoundError("No Excel output file found")
+
+            csv_output_path = csv_files[0]
+            excel_output_path = excel_files[0]
             logger.info(
-                f"[WEB_SERVICE] Found output file - job_id: {job_id}, path: {actual_output_path}"
+                f"[WEB_SERVICE] Found output files - job_id: {job_id}, csv: {csv_output_path}, excel: {excel_output_path}"
             )
 
-            # Check file size and content
+            # Check file sizes and content
             try:
-                file_size = actual_output_path.stat().st_size
+                csv_size = csv_output_path.stat().st_size
+                excel_size = excel_output_path.stat().st_size
                 logger.info(
-                    f"[WEB_SERVICE] Output file stats - job_id: {job_id}, size: {file_size} bytes"
+                    f"[WEB_SERVICE] Output file stats - job_id: {job_id}, csv_size: {csv_size} bytes, excel_size: {excel_size} bytes"
                 )
             except Exception as e:
                 logger.warning(
@@ -275,7 +285,8 @@ class WebProcessingService:
                 status=JobStatus.completed,
                 percent=100,
                 message="Processing completed successfully",
-                output_file_path=str(actual_output_path),
+                output_file_path=str(csv_output_path),
+                excel_output_file_path=str(excel_output_path),
             )
 
         except Exception as e:
@@ -416,6 +427,25 @@ class WebProcessingService:
         file_path = job_info.get("output_file_path")
         logger.debug(
             f"[WEB_SERVICE] Results file path retrieved - job_id: {job_id}, path: {file_path}"
+        )
+        return file_path
+
+    def get_excel_results_file_path(self, job_id: str) -> Optional[str]:
+        """Get the path to the results Excel file for download."""
+        logger.debug(
+            f"[WEB_SERVICE] Retrieving Excel results file path - job_id: {job_id}"
+        )
+
+        job_info = self.job_registry.get_job(job_id)
+        if not job_info or job_info["status"] != JobStatus.completed:
+            logger.warning(
+                f"[WEB_SERVICE] Cannot get Excel file path - job not found or not completed - job_id: {job_id}"
+            )
+            return None
+
+        file_path = job_info.get("excel_output_file_path")
+        logger.debug(
+            f"[WEB_SERVICE] Excel results file path retrieved - job_id: {job_id}, path: {file_path}"
         )
         return file_path
 
