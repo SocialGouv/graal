@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { JobStatus, AmendmentResult } from '../types/api';
+import type { JobStatus, AmendmentPreview } from '../types/api';
 
 export interface ProcessingState {
   // File upload state
@@ -15,7 +15,7 @@ export interface ProcessingState {
   updatedAt: string | null;
 
   // Results state
-  resultsPreview: AmendmentResult[] | null;
+  resultsPreview: AmendmentPreview[] | null;
   totalRows: number;
 
   // Error handling
@@ -32,7 +32,7 @@ export interface ProcessingState {
     startedAt?: string,
     updatedAt?: string
   ) => void;
-  setResults: (results: AmendmentResult[], totalRows: number) => void;
+  setResults: (results: AmendmentPreview[], totalRows: number) => void;
   setError: (error: string | null) => void;
   reset: () => void;
 }
