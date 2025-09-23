@@ -67,7 +67,7 @@ summary_generation:
 default_opinion: false
 
 # Filter for mission short titles
-mission_short_title_filter: ["travail"]
+mission_short_title_filter: []
 
 # LLM client configuration
 llm_clients:

@@ -239,11 +239,11 @@ class WebProcessingService:
                 )
                 return
 
-            # Find the actual output file (pipeline adds timestamp)
+            # Find the actual output file (pipeline may add timestamp)
             logger.debug(
-                f"[WEB_SERVICE] Looking for output CSV files - job_id: {job_id}, pattern: {job_id}_output_*.csv"
+                f"[WEB_SERVICE] Looking for output CSV files - job_id: {job_id}, pattern: {job_id}_output*.csv"
             )
-            csv_files = list(self.tmp_dir.glob(f"{job_id}_output_*.csv"))
+            csv_files = list(self.tmp_dir.glob(f"{job_id}_output*.csv"))
             if not csv_files:
                 logger.error(
                     f"[WEB_SERVICE] No CSV output file found - job_id: {job_id}, searched in: {self.tmp_dir}"
