@@ -23,32 +23,73 @@ class ClusteringService:
         columns_to_clear: Optional[List[str]] = None,
     ) -> pd.DataFrame:
         """Preprocess amendments for clustering."""
+        logging.debug(
+            f"[CLUSTERING_PREPROCESSING] Starting preprocessing with {len(amendments_df)} amendments"
+        )
+        logging.debug(
+            f"[CLUSTERING_PREPROCESSING] Columns to filter: {columns_to_filter}"
+        )
+        logging.debug(
+            f"[CLUSTERING_PREPROCESSING] Columns to normalize: {columns_to_normalize}"
+        )
+
         prepared_df = amendments_df.copy()
 
         # Clear columns if specified
         if columns_to_clear:
+            logging.debug(
+                f"[CLUSTERING_PREPROCESSING] Clearing columns: {columns_to_clear}"
+            )
             prepared_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
                 amendments_df=prepared_df, columns_to_clear=columns_to_clear
             )
 
         # Apply acronym replacement if mapping is provided
         if acronym_mapping:
+            logging.debug(
+                f"[CLUSTERING_PREPROCESSING] Applying acronym mapping with {len(acronym_mapping)} entries"
+            )
             prepared_df = AmendmentPreProcessor.replace_acronyms(
                 amendments_df=prepared_df,
                 acronym_mapping=acronym_mapping,
                 columns_to_normalize=columns_to_normalize,
             )
 
+        logging.debug(
+            f"[CLUSTERING_PREPROCESSING] Before dropping empty rows: {len(prepared_df)} amendments"
+        )
         prepared_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
             amendments_df=prepared_df, columns_to_filter=columns_to_filter
         )
+        logging.debug(
+            f"[CLUSTERING_PREPROCESSING] After dropping empty rows: {len(prepared_df)} amendments"
+        )
+
         prepared_df = AmendmentPreProcessor.handle_common_amendment_bodies(
             amendments_df=prepared_df
         )
+
+        logging.debug("[CLUSTERING_PREPROCESSING] Before normalization - sample texts:")
+        for col in columns_to_normalize:
+            if col in prepared_df.columns:
+                sample_texts = prepared_df[col].dropna().head(3)
+                for idx, text in sample_texts.items():
+                    logging.debug(f"[CLUSTERING_PREPROCESSING] {col}[{idx}]: '{text}'")
+
         prepared_df = AmendmentPreProcessor.normalize_amendments(
             amendments_df=prepared_df, columns_to_normalize=columns_to_normalize
         )
 
+        logging.debug("[CLUSTERING_PREPROCESSING] After normalization - sample texts:")
+        for col in columns_to_normalize:
+            if col in prepared_df.columns:
+                sample_texts = prepared_df[col].dropna().head(3)
+                for idx, text in sample_texts.items():
+                    logging.debug(f"[CLUSTERING_PREPROCESSING] {col}[{idx}]: '{text}'")
+
+        logging.debug(
+            f"[CLUSTERING_PREPROCESSING] Final preprocessing result: {len(prepared_df)} amendments"
+        )
         return prepared_df
 
     @staticmethod

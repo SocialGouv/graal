@@ -112,16 +112,36 @@ class AmendmentPreProcessor:
 
     @staticmethod
     def clean_up_json_columns(amendements_df: pd.DataFrame) -> pd.DataFrame:
+        logging.debug(f"[JSON_CLEANUP] Starting with {len(amendements_df)} amendments")
+        logging.debug(
+            f"[JSON_CLEANUP] Available columns: {list(amendements_df.columns)}"
+        )
+
         amendements_df["Lecture"] = (
             amendements_df["chambre"].astype(str)
             + " "
             + amendements_df["legislature"].astype(str)
         )
+
         # We need to have access to the HTML in some cases so we keep it in a new column
         amendements_df["Corps amdt original"] = amendements_df["corps"]
+
+        # Log sample values before HTML extraction
+        if "corps" in amendements_df.columns:
+            sample_corps = amendements_df["corps"].head(3)
+            for idx, value in sample_corps.items():
+                logging.debug(f"[JSON_CLEANUP] Original corps[{idx}]: '{value}'")
+
         amendements_df["corps"] = amendements_df["corps"].apply(
             extract_plain_text_from_html
         )
+
+        # Log sample values after HTML extraction
+        if "corps" in amendements_df.columns:
+            sample_corps = amendements_df["corps"].head(3)
+            for idx, value in sample_corps.items():
+                logging.debug(f"[JSON_CLEANUP] Cleaned corps[{idx}]: '{value}'")
+
         amendements_df["expose"] = amendements_df["expose"].apply(
             extract_plain_text_from_html
         )
@@ -135,6 +155,8 @@ class AmendmentPreProcessor:
         amendements_df["computed_batch"] = amendements_df["computed_batch"].apply(
             lambda x: ",".join(map(str, x))
         )
+
+        logging.debug(f"[JSON_CLEANUP] Finished with {len(amendements_df)} amendments")
         return amendements_df
 
     @staticmethod
@@ -191,6 +213,9 @@ class AmendmentPreProcessor:
 
         Otherwise they are not discriminative enough.
         """
+        logging.debug(
+            f"[AMENDMENT_PREPROCESSING] Processing {len(amendments_df)} amendments for common bodies"
+        )
 
         amendments_df[amdt_bodies_column] = amendments_df[
             amdt_bodies_column
@@ -221,12 +246,31 @@ class AmendmentPreProcessor:
             f'Appending {mask.sum()} "Num article" to small amendment bodies to get better clusters...\n'
         )
 
+        # Log some examples before modification
+        if mask.sum() > 0:
+            examples = amendments_df.loc[
+                mask, [amdt_bodies_column, "Num article"]
+            ].head(3)
+            for idx, row in examples.iterrows():
+                logging.debug(
+                    f"[AMENDMENT_PREPROCESSING] Before modification - Amendment {idx}: '{row[amdt_bodies_column]}' + '{row['Num article']}'"
+                )
+
         # Concatenate the "Num article" to amdt_bodies_column for the masked rows
         amendments_df.loc[mask, amdt_bodies_column] = (
             amendments_df.loc[mask, amdt_bodies_column]
             + " "
             + amendments_df.loc[mask, "Num article"]
         )
+
+        # Log some examples after modification
+        if mask.sum() > 0:
+            examples = amendments_df.loc[mask, amdt_bodies_column].head(3)
+            for idx, text in examples.items():
+                logging.debug(
+                    f"[AMENDMENT_PREPROCESSING] After modification - Amendment {idx}: '{text}'"
+                )
+
         return amendments_df
 
     @staticmethod
@@ -298,11 +342,79 @@ class AmendmentPreProcessor:
         """
         Drop rows where the specified columns are empty or contain only whitespace.
         """
+        logging.debug(
+            f"[DROP_EMPTY_ROWS] Starting with {len(amendments_df)} amendments"
+        )
+        logging.debug(f"[DROP_EMPTY_ROWS] Columns to filter: {columns_to_filter}")
+
         for column in columns_to_filter:
+            initial_count = len(amendments_df)
+            logging.debug(
+                f"[DROP_EMPTY_ROWS] Processing column '{column}' - starting with {initial_count} amendments"
+            )
+
+            # Check if column exists
+            if column not in amendments_df.columns:
+                logging.error(
+                    f"[DROP_EMPTY_ROWS] Column '{column}' does not exist! Available columns: {list(amendments_df.columns)}"
+                )
+                continue
+
+            # Log some sample values before filtering
+            sample_values = amendments_df[column].head(5)
+            for idx, value in sample_values.items():
+                logging.debug(
+                    f"[DROP_EMPTY_ROWS] Sample value [{idx}]: '{value}' (type: {type(value)})"
+                )
+
+            # Count null values
+            null_count = amendments_df[column].isnull().sum()
+            logging.debug(
+                f"[DROP_EMPTY_ROWS] Found {null_count} null values in column '{column}'"
+            )
+
+            # Drop null values
             amendments_df.dropna(subset=column, inplace=True)
-            amendments_df = amendments_df[
-                amendments_df[column].str.strip().apply(len) > 0
-            ].copy()
+            after_dropna_count = len(amendments_df)
+            logging.debug(
+                f"[DROP_EMPTY_ROWS] After dropping null values: {after_dropna_count} amendments ({initial_count - after_dropna_count} removed)"
+            )
+
+            # Count empty/whitespace-only values
+            if len(amendments_df) > 0:
+                empty_mask = amendments_df[column].str.strip().apply(len) == 0
+                empty_count = empty_mask.sum()
+                logging.debug(
+                    f"[DROP_EMPTY_ROWS] Found {empty_count} empty/whitespace-only values in column '{column}'"
+                )
+
+                # Show examples of what will be removed
+                if empty_count > 0:
+                    empty_examples = amendments_df.loc[empty_mask, column].head(3)
+                    for idx, value in empty_examples.items():
+                        logging.debug(
+                            f"[DROP_EMPTY_ROWS] Empty value example [{idx}]: '{value}'"
+                        )
+
+                amendments_df = amendments_df[
+                    amendments_df[column].str.strip().apply(len) > 0
+                ].copy()
+
+            final_count = len(amendments_df)
+            removed_count = initial_count - final_count
+            logging.debug(
+                f"[DROP_EMPTY_ROWS] After filtering column '{column}': {final_count} amendments ({removed_count} total removed)"
+            )
+
+            if final_count == 0:
+                logging.error(
+                    f"[DROP_EMPTY_ROWS] All amendments removed after filtering column '{column}'!"
+                )
+                break
+
+        logging.debug(
+            f"[DROP_EMPTY_ROWS] Final result: {len(amendments_df)} amendments"
+        )
         return amendments_df
 
     @staticmethod
