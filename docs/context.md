@@ -16,7 +16,7 @@ GRAAL processes and analyzes legislative amendments to streamline government wor
 ### Web Application Stack
 
 **Backend**: FastAPI with async processing, Pydantic validation, job registry for status tracking
-**Frontend**: React 18 + TypeScript, DSFR design system, Zustand state management, React Query for API communication
+**Frontend**: React 18 + TypeScript, DSFR design system ([react-dsfr](https://components.react-dsfr.codegouv.studio/?path=/docs/%F0%9F%87%AB%F0%9F%87%B7-introduction--page)), Zustand state management, React Query for API communication
 
 ### Project Structure
 

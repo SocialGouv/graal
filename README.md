@@ -337,7 +337,7 @@ The web application provides:
 - **React 18** with TypeScript for type safety
 - **Vite** for fast development and building
 - **Yarn Berry (v4+)** for modern package management
-- **DSFR (Système de Design de l'État)** for French government compliant UI
+- **DSFR (Système de Design de l'État)** for French government compliant UI ([react-dsfr](https://components.react-dsfr.codegouv.studio/?path=/docs/%F0%9F%87%AB%F0%9F%87%B7-introduction--page))
 - **API Integration** with the FastAPI backend
 
 ### Development
