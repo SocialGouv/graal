@@ -54,8 +54,15 @@ class WebProcessingService:
         Returns:
             ProcessingResponse with job_id
         """
+        logger.info(
+            f"[WEB_SERVICE] Starting processing for file: {filename}, size: {len(file_content)} bytes"
+        )
+
         # Validate file size
         if len(file_content) > self.max_file_size:
+            logger.error(
+                f"[WEB_SERVICE] File size validation failed - filename: {filename}, size: {len(file_content)} bytes, max: {self.max_file_size} bytes"
+            )
             raise ValueError(
                 f"File size {len(file_content)} bytes exceeds maximum {self.max_file_size} bytes"
             )
@@ -76,33 +83,65 @@ class WebProcessingService:
         # Generate job ID and save file
         job_id = str(uuid.uuid4())
         input_file_path = self.tmp_dir / f"{job_id}_input.json"
+        logger.info(
+            f"[WEB_SERVICE] Generated job_id: {job_id}, input_file_path: {input_file_path}"
+        )
 
-        async with aiofiles.open(input_file_path, "wb") as f:
-            await f.write(file_content)
+        try:
+            async with aiofiles.open(input_file_path, "wb") as f:
+                await f.write(file_content)
+            logger.debug(
+                f"[WEB_SERVICE] File saved successfully - job_id: {job_id}, path: {input_file_path}"
+            )
+        except Exception as e:
+            logger.error(
+                f"[WEB_SERVICE] Failed to save input file - job_id: {job_id}, error: {str(e)}"
+            )
+            raise
 
         # Register job
+        logger.debug(f"[WEB_SERVICE] Registering job in registry - job_id: {job_id}")
         self.job_registry.create_job(job_id, str(input_file_path))
 
         # Start processing in background
+        logger.info(
+            f"[WEB_SERVICE] Starting background processing task - job_id: {job_id}"
+        )
         task = asyncio.create_task(self._process_file_async(job_id))
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
 
+        logger.info(
+            f"[WEB_SERVICE] Processing job created and queued - job_id: {job_id}, filename: {filename}"
+        )
         return ProcessingResponse(
             job_id=job_id, status=JobStatus.queued, message="Processing job started"
         )
 
     async def _process_file_async(self, job_id: str) -> None:
         """Process file asynchronously."""
+        import time
+
+        start_time = time.time()
+        logger.info(f"[WEB_SERVICE] Starting async processing for job_id: {job_id}")
+
         try:
             job_info = self.job_registry.get_job(job_id)
             if not job_info:
-                logger.error(f"Job {job_id} not found in registry")
+                logger.error(
+                    f"[WEB_SERVICE] Job not found in registry - job_id: {job_id}"
+                )
                 return
 
             input_file_path = job_info["input_file_path"]
+            logger.info(
+                f"[WEB_SERVICE] Retrieved job info - job_id: {job_id}, input_file: {input_file_path}"
+            )
 
             # Update status to running
+            logger.debug(
+                f"[WEB_SERVICE] Updating job status to running - job_id: {job_id}"
+            )
             self.job_registry.update_job(
                 job_id,
                 status=JobStatus.running,
@@ -111,7 +150,11 @@ class WebProcessingService:
             )
 
             # Load configuration
+            logger.info(f"[WEB_SERVICE] Loading configuration from: {self.config_path}")
             config = load_config(self.config_path)
+            logger.debug(
+                f"[WEB_SERVICE] Configuration loaded successfully - job_id: {job_id}"
+            )
 
             # Update the input file path in config to point to our uploaded file
             # TODO: Make these values come from the frontend in the future
@@ -126,38 +169,69 @@ class WebProcessingService:
                     "origin_project": "Web Upload",
                 }
             ]
+            logger.debug(
+                f"[WEB_SERVICE] Updated config with input file - job_id: {job_id}, path: {input_file_path}"
+            )
 
             # Set output path
             output_file_path = self.tmp_dir / f"{job_id}_output.csv"
             config["output"]["file_prefix_template"] = str(output_file_path).replace(
                 ".csv", ""
             )
+            logger.debug(
+                f"[WEB_SERVICE] Set output path template - job_id: {job_id}, template: {config['output']['file_prefix_template']}"
+            )
 
+            logger.info(
+                f"[WEB_SERVICE] Starting GRAAL pipeline processing - job_id: {job_id}"
+            )
             self.job_registry.update_job(
                 job_id, percent=20, message="Starting GRAAL pipeline processing"
             )
 
             # Run pipeline with timeout
             pipeline = ProcessingPipeline()
+            logger.debug(
+                f"[WEB_SERVICE] Created ProcessingPipeline instance - job_id: {job_id}"
+            )
 
             # Run in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
 
             def run_pipeline():
                 try:
+                    logger.info(
+                        f"[WEB_SERVICE] Executing pipeline.run() - job_id: {job_id}"
+                    )
                     pipeline.run(config)
+                    logger.info(
+                        f"[WEB_SERVICE] Pipeline execution completed successfully - job_id: {job_id}"
+                    )
                     return True
                 except Exception as e:
-                    logger.error(f"Pipeline execution failed: {str(e)}")
+                    logger.error(
+                        f"[WEB_SERVICE] Pipeline execution failed - job_id: {job_id}, error: {str(e)}",
+                        exc_info=True,
+                    )
                     raise
 
             # Execute with timeout
             try:
+                logger.debug(
+                    f"[WEB_SERVICE] Starting pipeline execution with timeout: {self.timeout_seconds}s - job_id: {job_id}"
+                )
                 await asyncio.wait_for(
                     loop.run_in_executor(None, run_pipeline),
                     timeout=self.timeout_seconds,
                 )
+                pipeline_time = time.time() - start_time
+                logger.info(
+                    f"[WEB_SERVICE] Pipeline execution completed in {pipeline_time:.2f}s - job_id: {job_id}"
+                )
             except asyncio.TimeoutError:
+                logger.error(
+                    f"[WEB_SERVICE] Pipeline execution timed out after {self.timeout_seconds}s - job_id: {job_id}"
+                )
                 self.job_registry.update_job(
                     job_id,
                     status=JobStatus.timeout,
@@ -166,12 +240,36 @@ class WebProcessingService:
                 return
 
             # Find the actual output file (pipeline adds timestamp)
+            logger.debug(
+                f"[WEB_SERVICE] Looking for output CSV files - job_id: {job_id}, pattern: {job_id}_output_*.csv"
+            )
             csv_files = list(self.tmp_dir.glob(f"{job_id}_output_*.csv"))
             if not csv_files:
+                logger.error(
+                    f"[WEB_SERVICE] No CSV output file found - job_id: {job_id}, searched in: {self.tmp_dir}"
+                )
                 raise FileNotFoundError("No CSV output file found")
 
             actual_output_path = csv_files[0]
+            logger.info(
+                f"[WEB_SERVICE] Found output file - job_id: {job_id}, path: {actual_output_path}"
+            )
 
+            # Check file size and content
+            try:
+                file_size = actual_output_path.stat().st_size
+                logger.info(
+                    f"[WEB_SERVICE] Output file stats - job_id: {job_id}, size: {file_size} bytes"
+                )
+            except Exception as e:
+                logger.warning(
+                    f"[WEB_SERVICE] Could not get output file stats - job_id: {job_id}, error: {str(e)}"
+                )
+
+            total_time = time.time() - start_time
+            logger.info(
+                f"[WEB_SERVICE] Job processing completed successfully - job_id: {job_id}, total_time: {total_time:.2f}s"
+            )
             self.job_registry.update_job(
                 job_id,
                 status=JobStatus.completed,
@@ -181,7 +279,11 @@ class WebProcessingService:
             )
 
         except Exception as e:
-            logger.error(f"Error processing job {job_id}: {str(e)}")
+            total_time = time.time() - start_time
+            logger.error(
+                f"[WEB_SERVICE] Job processing failed - job_id: {job_id}, total_time: {total_time:.2f}s, error: {str(e)}",
+                exc_info=True,
+            )
             self.job_registry.update_job(
                 job_id,
                 status=JobStatus.failed,
@@ -191,10 +293,15 @@ class WebProcessingService:
 
     def get_job_status(self, job_id: str) -> Optional[ProgressResponse]:
         """Get the current status of a processing job."""
+        logger.debug(f"[WEB_SERVICE] Retrieving job status - job_id: {job_id}")
         job_info = self.job_registry.get_job(job_id)
         if not job_info:
+            logger.debug(f"[WEB_SERVICE] Job not found in registry - job_id: {job_id}")
             return None
 
+        logger.debug(
+            f"[WEB_SERVICE] Job status retrieved - job_id: {job_id}, status: {job_info['status']}, percent: {job_info['percent']}%"
+        )
         return ProgressResponse(
             job_id=job_id,
             status=job_info["status"],
@@ -206,20 +313,37 @@ class WebProcessingService:
 
     def get_results_preview(self, job_id: str) -> Optional[PreviewResponse]:
         """Get a preview of the processing results (first 10 rows)."""
+        logger.info(f"[WEB_SERVICE] Generating results preview - job_id: {job_id}")
+
         job_info = self.job_registry.get_job(job_id)
         if not job_info or job_info["status"] != JobStatus.completed:
+            logger.warning(
+                f"[WEB_SERVICE] Cannot generate preview - job not found or not completed - job_id: {job_id}"
+            )
             return None
 
         output_file_path = job_info.get("output_file_path")
         if not output_file_path or not os.path.exists(output_file_path):
+            logger.error(
+                f"[WEB_SERVICE] Output file not found - job_id: {job_id}, path: {output_file_path}"
+            )
             return None
 
         try:
+            logger.debug(
+                f"[WEB_SERVICE] Reading CSV file for preview - job_id: {job_id}, path: {output_file_path}"
+            )
             # Read CSV file
             df = pd.read_csv(output_file_path)
+            logger.info(
+                f"[WEB_SERVICE] CSV loaded successfully - job_id: {job_id}, total_rows: {len(df)}, columns: {len(df.columns)}"
+            )
 
             # Get first 10 rows
             preview_df = df.head(10)
+            logger.debug(
+                f"[WEB_SERVICE] Created preview dataframe - job_id: {job_id}, preview_rows: {len(preview_df)}"
+            )
 
             # Convert to list of AmendmentPreview objects
             preview_rows = []
@@ -244,6 +368,9 @@ class WebProcessingService:
                     )
                 )
 
+            logger.info(
+                f"[WEB_SERVICE] Preview generated successfully - job_id: {job_id}, total_rows: {len(df)}, preview_rows: {len(preview_rows)}"
+            )
             return PreviewResponse(
                 job_id=job_id,
                 total_rows=len(df),
@@ -252,16 +379,28 @@ class WebProcessingService:
             )
 
         except Exception as e:
-            logger.error(f"Error reading results for job {job_id}: {str(e)}")
+            logger.error(
+                f"[WEB_SERVICE] Error reading results for preview - job_id: {job_id}, error: {str(e)}",
+                exc_info=True,
+            )
             return None
 
     def get_results_file_path(self, job_id: str) -> Optional[str]:
         """Get the path to the results CSV file for download."""
+        logger.debug(f"[WEB_SERVICE] Retrieving results file path - job_id: {job_id}")
+
         job_info = self.job_registry.get_job(job_id)
         if not job_info or job_info["status"] != JobStatus.completed:
+            logger.warning(
+                f"[WEB_SERVICE] Cannot get file path - job not found or not completed - job_id: {job_id}"
+            )
             return None
 
-        return job_info.get("output_file_path")
+        file_path = job_info.get("output_file_path")
+        logger.debug(
+            f"[WEB_SERVICE] Results file path retrieved - job_id: {job_id}, path: {file_path}"
+        )
+        return file_path
 
 
 # Global job registry instance

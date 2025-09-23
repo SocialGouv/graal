@@ -62,31 +62,45 @@ class ProcessingPipeline:
         Args:
             config: Full configuration dictionary from YAML
         """
-        logging.info("Starting pipeline processing")
+        logging.info("[PIPELINE] Starting pipeline processing")
         start_time = time.time()
 
         # Phase 0: Preprocess configuration (resolve environment variables, validate paths)
+        logging.info("[PIPELINE] Phase 0: Preprocessing configuration")
         config_preprocessor = ConfigPreprocessor(
             validate_paths=False
         )  # Don't validate paths that might not exist yet
         preprocessed_config = config_preprocessor.preprocess_config(config)
+        logging.debug("[PIPELINE] Configuration preprocessing completed")
 
         # Phase 1: Load and prepare data
+        logging.info("[PIPELINE] Phase 1: Loading and preparing data")
         amendments_df, dependencies = self._load_and_prepare_data(preprocessed_config)
+        logging.info(
+            f"[PIPELINE] Data loading completed - amendments: {len(amendments_df)}"
+        )
 
         # Store preprocessed original dataframe for allotment population (before clearing)
         dependencies["preprocessed_original_df"] = amendments_df.copy()
+        logging.debug(
+            "[PIPELINE] Stored preprocessed original dataframe for allotment population"
+        )
 
         # Phase 2: Get features from dependencies (already created during data preparation)
         preprocessing_features = dependencies["preprocessing_features"]
         features = dependencies["features"]
+        logging.info(
+            f"[PIPELINE] Phase 2: Feature setup - preprocessing: {len(preprocessing_features)}, regular: {len(features)}"
+        )
 
         # Store original dataframe AFTER clearing columns - this ensures that
         # _preserve_original_values() will preserve the cleared (None) values
         # instead of the old data that was supposed to be erased
         dependencies["original_df"] = amendments_df.copy()
+        logging.debug("[PIPELINE] Stored original dataframe after column clearing")
 
         # Phase 3: Run orchestrated processing
+        logging.info("[PIPELINE] Phase 3: Starting orchestrated processing")
         orchestrator = PipelineOrchestrator(
             preprocessing_features=preprocessing_features,
             features=features,
@@ -98,15 +112,19 @@ class ProcessingPipeline:
             amendments_df=amendments_df,
             config=preprocessed_config,
         )
+        logging.info(
+            f"[PIPELINE] Orchestrated processing completed - result amendments: {len(result_df)}"
+        )
 
         # Phase 4: Handle special post-processing and output
+        logging.info("[PIPELINE] Phase 4: Finalizing and generating output")
         self._finalize_and_output(
             result_df, preprocessed_config, dependencies, processing_outputs
         )
 
         end_time = time.time()
         logging.info(
-            f"Independent pipeline completed in {end_time - start_time:.2f} seconds"
+            f"[PIPELINE] Pipeline processing completed in {end_time - start_time:.2f} seconds"
         )
 
     def _load_and_prepare_data(
@@ -118,58 +136,99 @@ class ProcessingPipeline:
         This handles the initial data loading and basic cleaning that
         all features need, without feature-specific normalization.
         """
+        logging.info("[PIPELINE] Starting data loading and preparation")
+
         DATA_FOLDER = os.environ["DATA_FOLDER"]
+        logging.debug(f"[PIPELINE] Using DATA_FOLDER: {DATA_FOLDER}")
 
         # Load configuration Excel file (path is already preprocessed)
         graal_config_file = Path(config["paths"]["graal_config_file"])
+        logging.info(
+            f"[PIPELINE] Loading configuration Excel file: {graal_config_file}"
+        )
         config_excel = pd.read_excel(graal_config_file, sheet_name=None)
+        logging.debug(
+            f"[PIPELINE] Configuration Excel loaded - sheets: {list(config_excel.keys())}"
+        )
 
         # Build input files configuration
+        logging.debug("[PIPELINE] Building input files configuration")
         input_files_config = self._build_input_files_config(config)
+        logging.info(
+            f"[PIPELINE] Input files configuration built - files: {len(input_files_config)}"
+        )
 
         # Load amendments from input files
+        logging.info("[PIPELINE] Loading amendments from input files")
         amendments_df = self._load_amendments(input_files_config)
+        logging.info(
+            f"[PIPELINE] Amendments loaded - count: {len(amendments_df)}, columns: {len(amendments_df.columns)}"
+        )
 
         # Apply mission filter if specified
         if config.get("mission_short_title_filter"):
+            original_count = len(amendments_df)
+            logging.info(
+                f"[PIPELINE] Applying mission filter: {config['mission_short_title_filter']}"
+            )
             amendments_df = self._apply_mission_filter(
                 amendments_df, config["mission_short_title_filter"]
+            )
+            logging.info(
+                f"[PIPELINE] Mission filter applied - amendments: {original_count} -> {len(amendments_df)}"
             )
 
         # Handle placeholder amendment bodies if enabled
         if config.get("processing_options", {}).get("placeholder_amdt_body", False):
+            logging.info("[PIPELINE] Adding placeholder amendment bodies")
             amendments_df = self._add_placeholder_bodies(amendments_df)
+            logging.debug("[PIPELINE] Placeholder bodies added")
 
         # Load and apply basic preprocessing (not feature-specific)
+        logging.info("[PIPELINE] Starting basic preprocessing")
         acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
+        logging.debug(
+            f"[PIPELINE] Acronym mapping loaded - entries: {len(acronym_mapping)}"
+        )
 
         # Drop empty rows and replace acronyms
+        original_count = len(amendments_df)
         amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
             amendments_df=amendments_df,
             columns_to_filter=["Exposé amdt"],
         )
+        logging.info(
+            f"[PIPELINE] Empty rows dropped - amendments: {original_count} -> {len(amendments_df)}"
+        )
+
         amendments_df = AmendmentPreProcessor.replace_acronyms(
             amendments_df=amendments_df,
             acronym_mapping=acronym_mapping,
             columns_to_normalize=["Exposé amdt", "Corps amdt"],
         )
+        logging.debug("[PIPELINE] Acronyms replaced in text columns")
 
         # Remove gage sentences (this is universal preprocessing)
+        logging.debug("[PIPELINE] Removing gage sentences from amendment text")
         amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
             lambda text: remove_gage_sentences(text)
         )
         amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
             lambda text: remove_gage_sentences(text)
         )
+        logging.debug("[PIPELINE] Gage sentences removed")
 
         # Handle common amendment patterns
+        logging.debug("[PIPELINE] Handling common amendment patterns")
         amendments_df = (
             AmendmentPreProcessor.handle_common_amendment_expose_and_redactional(
                 amendments_df=amendments_df, add_redactional_column=True
             )
         )
+        logging.debug("[PIPELINE] Common amendment patterns processed")
 
         # Create LLM clients for summary generation
+        logging.info("[PIPELINE] Creating LLM clients for summary generation")
         llm_api_clients = create_llm_api_clients(config)
         rate_limiting_config = get_rate_limiting_config(config)
         summary_gen_load_balancer = SummaryGenerationLoadBalancer(
@@ -178,8 +237,12 @@ class ProcessingPipeline:
             max_retries=5,
             rate_limiting_config=rate_limiting_config,
         )
+        logging.debug(
+            f"[PIPELINE] LLM load balancer created - clients: {len(llm_api_clients)}"
+        )
 
         # Create all features to determine columns to clear
+        logging.info("[PIPELINE] Creating feature instances")
         preprocessing_features = [
             AllotmentFeature(config_excel=config_excel),
         ]
@@ -197,12 +260,19 @@ class ProcessingPipeline:
         ]
 
         all_features = preprocessing_features + features
+        logging.info(
+            f"[PIPELINE] Features created - preprocessing: {len(preprocessing_features)}, regular: {len(features)}"
+        )
 
         # Clear columns that will be overridden by features
+        logging.info("[PIPELINE] Determining columns to clear")
         columns_to_clear = self._determine_columns_to_clear(config, all_features)
+        logging.info(f"[PIPELINE] Columns to clear: {columns_to_clear}")
+
         amendments_df = AmendmentPreProcessor.clear_columns_to_be_overridden(
             amendments_df=amendments_df, columns_to_clear=columns_to_clear
         )
+        logging.debug("[PIPELINE] Columns cleared for feature processing")
 
         # Prepare dependencies for features
         dependencies = {
@@ -215,6 +285,9 @@ class ProcessingPipeline:
             "features": features,
         }
 
+        logging.info(
+            f"[PIPELINE] Data loading and preparation completed - final amendments: {len(amendments_df)}"
+        )
         return amendments_df, dependencies
 
     def _build_input_files_config(
@@ -250,18 +323,27 @@ class ProcessingPipeline:
         """Load amendments from input files."""
         file_path = next(iter(input_files_config.keys()))
         suffix = file_path.suffix.lower()
+        logging.info(
+            f"[PIPELINE] Loading amendments from file: {file_path} (type: {suffix})"
+        )
 
         if suffix in [".xlsx", ".xls"]:
+            logging.debug("[PIPELINE] Using Excel loader")
             amendments_df = AmendmentPreProcessor.load_amendments_excel(
                 [file_path], input_files_config
             )
         elif suffix == ".json":
+            logging.debug("[PIPELINE] Using JSON loader")
             amendments_df = AmendmentPreProcessor.load_amendments_json(
                 [file_path], input_files_config
             )
         else:
+            logging.error(f"[PIPELINE] Unsupported file type: {suffix}")
             raise ValueError(f"Unsupported file type: {suffix}")
 
+        logging.info(
+            f"[PIPELINE] Amendments loaded successfully - count: {len(amendments_df)}"
+        )
         return amendments_df
 
     def _apply_mission_filter(
@@ -320,28 +402,51 @@ class ProcessingPipeline:
         """
         Handle final processing and output generation.
         """
+        logging.info(
+            f"[PIPELINE] Starting finalization with {len(result_df)} amendments"
+        )
+
         # Handle no_value_overwrite option
         if config.get("processing_options", {}).get("no_value_overwrite", False):
+            logging.info(
+                "[PIPELINE] Preserving original values (no_value_overwrite enabled)"
+            )
             original_df = dependencies.get("original_df")
             if original_df is not None:
                 result_df = self._preserve_original_values(
                     result_df, original_df, config
                 )
+                logging.debug("[PIPELINE] Original values preserved")
+            else:
+                logging.warning(
+                    "[PIPELINE] no_value_overwrite enabled but no original_df found"
+                )
 
         # Handle allotment result population (special case since allotment affects structure)
         allotment_outputs = processing_outputs.get("allotment", {})
         if allotment_outputs and "allotted_clusters" in allotment_outputs:
+            logging.info(
+                "[PIPELINE] Populating allotment results to original dataframe"
+            )
+            original_count = len(result_df)
             result_df = self._populate_allotment_results(
                 result_df,
                 dependencies.get("preprocessed_original_df"),
                 allotment_outputs["allotted_clusters"],
             )
+            logging.info(
+                f"[PIPELINE] Allotment population completed - amendments: {original_count} -> {len(result_df)}"
+            )
 
         # Generate output files
+        logging.info("[PIPELINE] Generating output files")
         self._save_results(result_df, config)
 
         # Log processing summary
+        logging.info("[PIPELINE] Generating processing summary")
         self._log_processing_summary(processing_outputs)
+
+        logging.info("[PIPELINE] Finalization completed")
 
     def _preserve_original_values(
         self, result_df: pd.DataFrame, original_df: pd.DataFrame, config: dict[str, Any]
@@ -432,19 +537,41 @@ class ProcessingPipeline:
         output_file_prefix = datetime.now().strftime(
             config["output"]["file_prefix_template"]
         )
+        logging.info(f"[PIPELINE] Saving results with prefix: {output_file_prefix}")
 
         # Get columns to output
         columns_to_output = config["output"]["columns"]
+        logging.debug(
+            f"[PIPELINE] Output columns configured: {len(columns_to_output)} columns"
+        )
 
         # Save files
-        result_df.to_excel(f"{output_file_prefix}.xlsx", columns=columns_to_output)
-        result_df.to_csv(
-            f"{output_file_prefix}.csv", sep=";", encoding="utf-8-sig", index=False
-        )
+        try:
+            excel_path = f"{output_file_prefix}.xlsx"
+            csv_path = f"{output_file_prefix}.csv"
 
-        logging.info(
-            f"Saved results to: {output_file_prefix}.xlsx and {output_file_prefix}.csv"
-        )
+            logging.debug(f"[PIPELINE] Saving Excel file: {excel_path}")
+            result_df.to_excel(excel_path, columns=columns_to_output)
+
+            logging.debug(f"[PIPELINE] Saving CSV file: {csv_path}")
+            result_df.to_csv(csv_path, sep=";", encoding="utf-8-sig", index=False)
+
+            # Log file sizes
+            try:
+                excel_size = Path(excel_path).stat().st_size
+                csv_size = Path(csv_path).stat().st_size
+                logging.info(
+                    f"[PIPELINE] Results saved successfully - Excel: {excel_path} ({excel_size} bytes), CSV: {csv_path} ({csv_size} bytes)"
+                )
+            except Exception as e:
+                logging.warning(f"[PIPELINE] Could not get file sizes: {str(e)}")
+                logging.info(
+                    f"[PIPELINE] Results saved successfully - Excel: {excel_path}, CSV: {csv_path}"
+                )
+
+        except Exception as e:
+            logging.error(f"[PIPELINE] Failed to save results: {str(e)}", exc_info=True)
+            raise
 
     def _log_processing_summary(self, metadata: dict[str, Any]) -> None:
         """Log a summary of the processing."""
