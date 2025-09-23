@@ -3,7 +3,7 @@ import type { AxiosProgressEvent } from 'axios';
 import React from 'react';
 import apiService from '../services/api';
 import { useProcessingStore } from '../stores/processingStore';
-import type { JobStatusResponse, ProcessJobResponse, ResultsPreviewResponse } from '../types/api';
+import type { JobStatusResponse, ProcessJobResponse, PreviewResponse } from '../types/api';
 
 // Upload file mutation
 export const useUploadFile = () => {
@@ -90,7 +90,7 @@ export const useResultsPreview = (jobId: string | null, enabled: boolean = false
 
   const query = useQuery({
     queryKey: ['resultsPreview', jobId],
-    queryFn: async (): Promise<ResultsPreviewResponse> => {
+    queryFn: async (): Promise<PreviewResponse> => {
       if (!jobId) throw new Error('Job ID is required');
       return apiService.getResultsPreview(jobId);
     },
@@ -100,7 +100,7 @@ export const useResultsPreview = (jobId: string | null, enabled: boolean = false
   // Handle data updates
   React.useEffect(() => {
     if (query.data) {
-      setResults(query.data.preview, query.data.total_rows);
+      setResults(query.data.preview_rows, query.data.total_rows);
       setError(null);
     }
   }, [query.data, setResults, setError]);

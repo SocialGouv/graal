@@ -1,12 +1,22 @@
-export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'timeout';
+// Import and re-export the generated types for easier imports
+import type {
+  components,
+  operations,
+  paths
+} from './api-generated';
 
-export interface JobProgress {
-  status: JobStatus;
-  percent: number;
-  message: string | null;
-  started_at: string;
-  updated_at: string;
-}
+export type {
+  components,
+  operations,
+  paths
+};
+
+// Type aliases for commonly used types
+export type JobStatus = components['schemas']['JobStatus'];
+export type ProcessingResponse = components['schemas']['ProcessingResponse'];
+export type ProgressResponse = components['schemas']['ProgressResponse'];
+export type PreviewResponse = components['schemas']['PreviewResponse'];
+export type AmendmentPreview = components['schemas']['AmendmentPreview'];
 
 export interface ProcessJobResponse {
   job_id: string;
@@ -23,25 +33,7 @@ export interface JobStatusResponse {
   updated_at: string;
 }
 
-export interface ResultsPreviewResponse {
-  job_id: string;
-  preview: AmendmentResult[];
-  total_rows: number;
-}
-
 export interface ApiError {
   detail: string;
   status_code: number;
-}
-
-export interface AmendmentResult {
-  [key: string]: string | number | null | undefined;
-  // Common fields that we expect
-  numero?: string;
-  auteur?: string;
-  objet?: string;
-  dispositif?: string;
-  sort?: string;
-  avis_gouvernement?: string;
-  // Add more fields as needed based on the actual GRAAL output
 }

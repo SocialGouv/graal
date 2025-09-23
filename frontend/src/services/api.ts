@@ -3,7 +3,7 @@ import type {
   ApiError,
   JobStatusResponse,
   ProcessJobResponse,
-  ResultsPreviewResponse,
+  PreviewResponse,
 } from '../types/api';
 
 class ApiService {
@@ -151,11 +151,11 @@ class ApiService {
   /**
    * Get results preview (first 10 rows)
    */
-  async getResultsPreview(jobId: string): Promise<ResultsPreviewResponse> {
+  async getResultsPreview(jobId: string): Promise<PreviewResponse> {
     console.log(`[API_CLIENT] Fetching results preview for: ${jobId}`);
 
     try {
-      const response = await this.client.get<ResultsPreviewResponse>(`/results/${jobId}/preview`);
+      const response = await this.client.get<PreviewResponse>(`/results/${jobId}/preview`);
 
       console.log(`[API_CLIENT] Results preview retrieved for: ${jobId}`, {
         totalRows: response.data.total_rows,
