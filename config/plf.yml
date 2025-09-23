@@ -98,6 +98,8 @@ parallel_processing:
 output:
   # Template for output file prefix, includes date formatting
   file_prefix_template: "${DATA_FOLDER}/résultats_all_PLF_senat-2024-2025-143-2-PO78718_%Y-%m-%d"
+  # CSV separator character (semicolon is common in European formats)
+  csv_separator: ";"
   # Columns to include in output file
   columns:
     - "Num amdt"
