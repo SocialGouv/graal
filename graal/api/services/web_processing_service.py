@@ -3,7 +3,6 @@ Web processing service for GRAAL pipeline integration.
 """
 
 import asyncio
-import json
 import logging
 import os
 import uuid
@@ -23,6 +22,7 @@ from graal.api.models.responses import (
 from graal.api.services.job_registry import InMemoryJobRegistry, JobRegistry
 from graal.core.processing_pipeline import ProcessingPipeline
 from graal.full_pipeline import load_config
+from graal.utils.json_utils import load_json
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +62,16 @@ class WebProcessingService:
 
         # Validate JSON content
         try:
-            json.loads(file_content.decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            raise ValueError(f"Invalid JSON file: {str(e)}") from e
+            logger.debug(f"[WEB_SERVICE] Validating JSON content for file: {filename}")
+            json_data = load_json(file_content, filename)
+            logger.info(
+                f"[WEB_SERVICE] JSON validation successful - filename: {filename}, records: {len(json_data) if isinstance(json_data, list) else 'N/A'}"
+            )
+        except ValueError as e:
+            logger.error(
+                f"[WEB_SERVICE] JSON validation failed - filename: {filename}, error: {str(e)}"
+            )
+            raise
 
         # Generate job ID and save file
         job_id = str(uuid.uuid4())
