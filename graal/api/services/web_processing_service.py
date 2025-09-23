@@ -351,26 +351,37 @@ class WebProcessingService:
                 f"[WEB_SERVICE] Created preview dataframe - job_id: {job_id}, preview_rows: {len(preview_df)}"
             )
 
+            # Helper function to safely convert pandas values to Pydantic-compatible strings
+            def safe_str_convert(value):
+                """Convert pandas values to strings, handling NaN and None values."""
+                if pd.isna(value) or value is None:
+                    return None
+                return str(value)
+
             # Convert to list of AmendmentPreview objects
             preview_rows = []
             for _, row in preview_df.iterrows():
                 preview_rows.append(
                     AmendmentPreview(
-                        num_amdt=row.get("Num amdt"),
-                        commentaires=row.get("Commentaires"),
-                        allotissement=row.get("Allotissement"),
-                        objet_amdt=row.get("Objet amdt"),
-                        sort=row.get("Sort"),
-                        reponse=row.get("Réponse"),
-                        affectation_email=row.get("Affectation (email)"),
-                        affectation_nom=row.get("Affectation (nom)"),
-                        entite_pilote=row.get("Entité Pilote"),
-                        avis_du_gouvernement=row.get("Avis du Gouvernement"),
-                        groupe=row.get("Groupe"),
-                        num_article=row.get("Num article"),
-                        expose_amdt=row.get("Exposé amdt"),
-                        corps_amdt=row.get("Corps amdt"),
-                        mission=row.get("Mission"),
+                        num_amdt=safe_str_convert(row.get("Num amdt")),
+                        commentaires=safe_str_convert(row.get("Commentaires")),
+                        allotissement=safe_str_convert(row.get("Allotissement")),
+                        objet_amdt=safe_str_convert(row.get("Objet amdt")),
+                        sort=safe_str_convert(row.get("Sort")),
+                        reponse=safe_str_convert(row.get("Réponse")),
+                        affectation_email=safe_str_convert(
+                            row.get("Affectation (email)")
+                        ),
+                        affectation_nom=safe_str_convert(row.get("Affectation (nom)")),
+                        entite_pilote=safe_str_convert(row.get("Entité Pilote")),
+                        avis_du_gouvernement=safe_str_convert(
+                            row.get("Avis du Gouvernement")
+                        ),
+                        groupe=safe_str_convert(row.get("Groupe")),
+                        num_article=safe_str_convert(row.get("Num article")),
+                        expose_amdt=safe_str_convert(row.get("Exposé amdt")),
+                        corps_amdt=safe_str_convert(row.get("Corps amdt")),
+                        mission=safe_str_convert(row.get("Mission")),
                     )
                 )
 
