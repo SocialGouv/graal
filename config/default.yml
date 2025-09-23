@@ -100,6 +100,8 @@ parallel_processing:
 output:
   # Template for output file prefix, includes date formatting
   file_prefix_template: "${DATA_FOLDER}/résultats_attribution_PLF_test_%Y-%m-%d"
+  # CSV separator character (semicolon is common in European formats)
+  csv_separator: ";"
   # Columns to include in Excel file
   columns:
     - "Num amdt"

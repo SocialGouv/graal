@@ -333,8 +333,14 @@ class WebProcessingService:
             logger.debug(
                 f"[WEB_SERVICE] Reading CSV file for preview - job_id: {job_id}, path: {output_file_path}"
             )
-            # Read CSV file
-            df = pd.read_csv(output_file_path)
+            # Load configuration to get the CSV separator
+            config = load_config(self.config_path)
+            csv_separator = config["output"].get("csv_separator", ";")
+            logger.debug(
+                f"[WEB_SERVICE] Using CSV separator: '{csv_separator}' - job_id: {job_id}"
+            )
+            # Read CSV file with the configured separator
+            df = pd.read_csv(output_file_path, sep=csv_separator)
             logger.info(
                 f"[WEB_SERVICE] CSV loaded successfully - job_id: {job_id}, total_rows: {len(df)}, columns: {len(df.columns)}"
             )

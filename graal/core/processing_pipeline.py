@@ -554,7 +554,10 @@ class ProcessingPipeline:
             result_df.to_excel(excel_path, columns=columns_to_output)
 
             logging.debug(f"[PIPELINE] Saving CSV file: {csv_path}")
-            result_df.to_csv(csv_path, sep=";", encoding="utf-8-sig", index=False)
+            csv_separator = config["output"].get("csv_separator", ";")
+            result_df.to_csv(
+                csv_path, sep=csv_separator, encoding="utf-8-sig", index=False
+            )
 
             # Log file sizes
             try:
