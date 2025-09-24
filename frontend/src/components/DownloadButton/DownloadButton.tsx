@@ -35,7 +35,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       <div className={fr.cx('fr-mb-2w')}>
         <h3 className={fr.cx('fr-h6')}>Télécharger les résultats</h3>
         <p className={fr.cx('fr-text--sm')}>
-          Téléchargez les résultats complets contenant tous les {totalRows} amendements traités par GRAAL.
+          Téléchargez les résultats complets contenant les {totalRows} amendements traités par GRAAL.
         </p>
       </div>
 
@@ -65,8 +65,8 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       <div className={fr.cx('fr-mt-2w', 'fr-text--sm')}>
         <p>
           Les fichiers contiennent toutes les colonnes et tous les amendements traités par GRAAL.
-          Le format Excel préserve la mise en forme et permet une meilleure manipulation des données.
-          Le CSV permet l'import dans Signale.
+          Le format Excel préserve la mise en forme et permet une meilleure manipulation des données par l'humain.
+          Le CSV permet l'import dans l'outil Signale.
         </p>
       </div>
     </div>

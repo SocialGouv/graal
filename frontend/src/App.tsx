@@ -141,13 +141,13 @@ function AppContent() {
             {/* Results Section */}
             {showResults && (
               <>
-                <ResultsTable />
                 <DownloadButton
                   onDownloadCsv={handleDownloadCsv}
                   onDownloadExcel={handleDownloadExcel}
                   isCsvLoading={downloadResultsMutation.isPending}
                   isExcelLoading={downloadExcelResultsMutation.isPending}
                 />
+                <ResultsTable />
               </>
             )}
           </div>
