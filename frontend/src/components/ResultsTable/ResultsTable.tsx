@@ -80,7 +80,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ className }) => {
       <div className={fr.cx('fr-mt-2w', 'fr-text--sm')}>
         <p>
           <strong>Note :</strong> Les cellules longues sont tronquées pour l'affichage.
-          Le fichier CSV complet contient toutes les données.
+          Les fichiers téléchargables contiennent données complètes.
         </p>
       </div>
     </div>
