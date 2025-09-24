@@ -217,12 +217,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
         </div>
       )}
 
-      {(validationError || error) && (
+      {validationError && (
         <div className={fr.cx('fr-mt-2w')}>
           <Alert
             severity="error"
             title="Erreur"
-            description={validationError || error || undefined}
+            description={validationError}
           />
         </div>
       )}
