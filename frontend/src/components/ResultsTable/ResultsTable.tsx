@@ -3,7 +3,7 @@ import { Table } from '@codegouvfr/react-dsfr/Table';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
-import type { AmendmentResult } from '../../types/api';
+import type { AmendmentPreview } from '../../types/api';
 
 interface ResultsTableProps {
   className?: string;
@@ -17,7 +17,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ className }) => {
   }
 
   // Get all unique column names from the results
-  const getColumns = (data: AmendmentResult[]): string[] => {
+  const getColumns = (data: AmendmentPreview[]): string[] => {
     const columnSet = new Set<string>();
     data.forEach(row => {
       Object.keys(row).forEach(key => columnSet.add(key));
@@ -45,11 +45,14 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ className }) => {
 
   // Create table data as ReactNode[][]
   const tableData = resultsPreview.map((row, rowIndex) => {
-    return columns.map((column, columnIndex) => (
-      <span key={`${rowIndex}-${columnIndex}`} title={String(row[column] || '')}>
-        {formatCellValue(row[column])}
-      </span>
-    ));
+    return columns.map((column, columnIndex) => {
+      const value = (row as any)[column];
+      return (
+        <span key={`${rowIndex}-${columnIndex}`} title={String(value || '')}>
+          {formatCellValue(value)}
+        </span>
+      );
+    });
   });
 
   return (

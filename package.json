@@ -1,0 +1,18 @@
+{
+    "name": "graal",
+    "private": true,
+    "workspaces": [
+        "frontend"
+    ],
+    "packageManager": "yarn@4.10.2",
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    },
+    "scripts": {
+        "dev:frontend": "yarn workspace frontend dev",
+        "build:frontend": "yarn workspace frontend build",
+        "build:ts": "tsc --build",
+        "clean:ts": "tsc --build --clean",
+        "install:all": "yarn install"
+    }
+}

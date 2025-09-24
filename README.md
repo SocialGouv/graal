@@ -277,13 +277,43 @@ For development, the API includes:
 
 GRAAL includes a modern web application with a React frontend that provides a user-friendly interface for uploading and processing amendments through the web browser. The frontend is built with React, TypeScript, and the French Government Design System (DSFR).
 
+### Project Structure
+
+The project uses **Yarn Workspaces** for monorepo management:
+
+```txt
+graal/
+├── package.json          # Root workspace configuration
+├── tsconfig.json         # Root TypeScript project references
+├── .yarnrc.yml           # Yarn configuration (node-modules mode)
+├── yarn.lock             # Lockfile for all workspaces
+└── frontend/             # Frontend workspace
+    ├── package.json      # Frontend dependencies
+    ├── tsconfig.json     # Frontend TypeScript config
+    ├── vite.config.ts    # Vite configuration
+    ├── src/              # Source code
+    └── dist/             # Build output (generated)
+```
+
 ### Quick Start
 
 #### Prerequisites
 
-- Python 3.9+ with Poetry installed
-- Node.js 18+ with Yarn installed
+- **Python 3.9+** with Poetry installed
+- **Node.js 18+** with Yarn installed
 - All dependencies installed: `make install`
+
+#### Install Dependencies
+
+From the root directory, install all workspace dependencies:
+
+```bash
+# Install all dependencies (backend + frontend)
+yarn install
+
+# Or use the make command
+make install
+```
 
 #### Start Both Servers
 
@@ -309,6 +339,7 @@ make web-backend
 
 # Start only frontend server
 make web-frontend
+# Or from root: yarn dev:frontend
 
 # Show help
 make dev-help
@@ -328,7 +359,7 @@ The web application provides:
 - **File Upload Interface**: Drag & drop or browse to upload JSON amendment files (max 50MB)
 - **Processing Progress**: Real-time progress tracking with status updates
 - **Results Preview**: View the first 10 processed amendments in a table
-- **CSV Download**: Download the complete processed results
+- **CSV/Excel Download**: Download the complete processed results in multiple formats
 - **DSFR Compliance**: French government design system for accessibility and consistency
 - **Responsive Design**: Works on desktop and mobile devices
 
@@ -336,37 +367,94 @@ The web application provides:
 
 - **React 18** with TypeScript for type safety
 - **Vite** for fast development and building
-- **Yarn Berry (v4+)** for modern package management
+- **Yarn Berry (v4+)** with workspaces for modern package management
 - **DSFR (Système de Design de l'État)** for French government compliant UI ([react-dsfr](https://components.react-dsfr.codegouv.studio/?path=/docs/%F0%9F%87%AB%F0%9F%87%B7-introduction--page))
 - **API Integration** with the FastAPI backend
+- **Zustand** for state management
+- **React Query** for API data fetching
 
 ### Development
 
-#### Automatic Type Generation for GRAAL Frontend
+#### Workspace Commands
 
-See [Auto type generation doc](frontend/docs/auto_type_generation_from_backend.md)
+From the root directory, you can run frontend commands using yarn workspaces:
 
-#### Available Scripts
+```bash
+# Development server
+yarn dev:frontend
 
-- `yarn dev` - Start development server with hot reload
-- `yarn build` - Build for production
-- `yarn preview` - Preview production build locally
-- `yarn lint` - Run ESLint for code quality
+# Build for production
+yarn build:frontend
+
+# TypeScript compilation (workspace-aware)
+yarn tsc --build
+yarn build:ts
+
+# Clean TypeScript build cache
+yarn clean:ts
+```
+
+#### TypeScript Configuration
+
+The project uses **TypeScript Project References** for efficient compilation:
+
+- **Root `tsconfig.json`**: Defines project references to workspaces
+- **Frontend `tsconfig.json`**: Configured for React with composite builds
+- **Incremental Compilation**: Faster builds with `tsc --build`
+- **Declaration Files**: Generated for better IDE support
+
+#### Automatic Type Generation
+
+The frontend automatically generates TypeScript types from the backend's OpenAPI specification:
+
+```bash
+# Generate types from running backend (localhost:8000)
+yarn workspace frontend generate-types
+
+# Or from frontend directory
+cd frontend && yarn generate-types
+```
+
+See [Auto type generation doc](frontend/docs/auto_type_generation_from_backend.md) for more details.
 
 #### API Integration
 
 The frontend automatically proxies API requests to the backend server running on `http://localhost:8000`. This is configured in `vite.config.ts` and allows seamless communication between frontend and backend during development.
 
-### Deployment
+### Building and Deployment
 
-For production deployment, build the frontend and serve the static files:
+#### Development Build
 
 ```bash
-cd frontend
-yarn build
+# Build TypeScript (from root)
+yarn build:ts
+
+# Build frontend for production
+yarn build:frontend
+```
+
+#### Production Deployment
+
+```bash
+# Build everything
+yarn install --immutable
+yarn build:ts
+yarn build:frontend
+
+# Frontend build output
+ls frontend/dist/
 ```
 
 The built files will be in the `frontend/dist/` directory and can be served by any static file server.
+
+#### Docker Support
+
+The Dockerfile includes frontend build steps:
+
+```bash
+# Build with frontend included
+docker build -t smart-amendments .
+```
 
 ## Similarity Data Base
 
