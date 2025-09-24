@@ -12,11 +12,17 @@ from graal.api.models.responses import (
     ProcessingResponse,
     ProgressResponse,
 )
-from graal.api.services.web_processing_service import web_processing_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def get_web_processing_service():
+    """Get the global web processing service instance."""
+    from graal.api.main import web_processing_service
+
+    return web_processing_service
 
 
 @router.post("/process", response_model=ProcessingResponse)
@@ -57,7 +63,8 @@ async def process_amendments(file: UploadFile):
 
         # Start processing
         logger.info(f"[API] Starting processing service for file: {file.filename}")
-        response = await web_processing_service.start_processing(
+        service = get_web_processing_service()
+        response = await service.start_processing(
             file_content=file_content, filename=file.filename
         )
 
@@ -101,7 +108,8 @@ async def get_processing_status(job_id: str):
     """
     logger.debug(f"[API] Status request for job_id: {job_id}")
 
-    status = web_processing_service.get_job_status(job_id)
+    service = get_web_processing_service()
+    status = service.get_job_status(job_id)
     if not status:
         logger.warning(f"[API] Status request failed - job not found: {job_id}")
         raise HTTPException(status_code=404, detail="Job not found")
@@ -129,7 +137,8 @@ async def get_results_preview(job_id: str):
     logger.info(f"[API] Preview request for job_id: {job_id}")
 
     # Check if job exists and is completed
-    status = web_processing_service.get_job_status(job_id)
+    service = get_web_processing_service()
+    status = service.get_job_status(job_id)
     if not status:
         logger.warning(f"[API] Preview request failed - job not found: {job_id}")
         raise HTTPException(status_code=404, detail="Job not found")
@@ -145,7 +154,7 @@ async def get_results_preview(job_id: str):
 
     # Get results preview
     logger.debug(f"[API] Generating results preview for job_id: {job_id}")
-    preview = web_processing_service.get_results_preview(job_id)
+    preview = service.get_results_preview(job_id)
     if not preview:
         logger.error(f"[API] Failed to generate results preview for job_id: {job_id}")
         raise HTTPException(
@@ -175,7 +184,8 @@ async def download_results(job_id: str):
     logger.info(f"[API] CSV download request for job_id: {job_id}")
 
     # Check if job exists and is completed
-    status = web_processing_service.get_job_status(job_id)
+    service = get_web_processing_service()
+    status = service.get_job_status(job_id)
     if not status:
         logger.warning(f"[API] Download request failed - job not found: {job_id}")
         raise HTTPException(status_code=404, detail="Job not found")
@@ -191,7 +201,7 @@ async def download_results(job_id: str):
 
     # Get results file path
     logger.debug(f"[API] Retrieving CSV results file path for job_id: {job_id}")
-    file_path = web_processing_service.get_results_file_path(job_id)
+    file_path = service.get_results_file_path(job_id)
     if not file_path:
         logger.error(f"[API] CSV results file not found for job_id: {job_id}")
         raise HTTPException(status_code=500, detail="Results file not found")
@@ -221,7 +231,8 @@ async def download_excel_results(job_id: str):
     logger.info(f"[API] Excel download request for job_id: {job_id}")
 
     # Check if job exists and is completed
-    status = web_processing_service.get_job_status(job_id)
+    service = get_web_processing_service()
+    status = service.get_job_status(job_id)
     if not status:
         logger.warning(f"[API] Excel download request failed - job not found: {job_id}")
         raise HTTPException(status_code=404, detail="Job not found")
@@ -237,7 +248,7 @@ async def download_excel_results(job_id: str):
 
     # Get Excel results file path
     logger.debug(f"[API] Retrieving Excel results file path for job_id: {job_id}")
-    file_path = web_processing_service.get_excel_results_file_path(job_id)
+    file_path = service.get_excel_results_file_path(job_id)
     if not file_path:
         logger.error(f"[API] Excel results file not found for job_id: {job_id}")
         raise HTTPException(status_code=500, detail="Excel results file not found")
