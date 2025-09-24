@@ -19,7 +19,7 @@ from graal.api.models.responses import (
     ProcessingResponse,
     ProgressResponse,
 )
-from graal.api.services.job_registry import InMemoryJobRegistry, JobRegistry
+from graal.api.services.job_registry import JobRegistry
 from graal.core.processing_pipeline import ProcessingPipeline
 from graal.full_pipeline import load_config
 from graal.utils.json_utils import load_json
@@ -448,9 +448,3 @@ class WebProcessingService:
             f"[WEB_SERVICE] Excel results file path retrieved - job_id: {job_id}, path: {file_path}"
         )
         return file_path
-
-
-# Global job registry instance
-job_registry = InMemoryJobRegistry()
-# Global service instance
-web_processing_service = WebProcessingService(job_registry=job_registry)
