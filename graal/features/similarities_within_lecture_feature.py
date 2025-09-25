@@ -76,6 +76,10 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
 
         # Update comments with similarity information
         result_df = working_df.copy()
+
+        if "Commentaires" not in result_df.columns:
+            result_df["Commentaires"] = ""
+
         if similarity_results:
             for amdt_idx, similar_amdts in similarity_results.items():
                 # Skip if the amendment is not in our dataframe
