@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
+import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
@@ -12,9 +13,10 @@ interface FileUploadProps {
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled = false }) => {
-  const { uploadedFile, error, processingStatus } = useProcessingStore();
+  const { uploadedFile, error, processingStatus, originProject, setOriginProject } = useProcessingStore();
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [originProjectError, setOriginProjectError] = useState<string | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
   const isProcessing = processingStatus !== 'idle' && processingStatus !== 'failed';
 
@@ -32,20 +34,55 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
     return null;
   }, []);
 
+  const validateOriginProject = useCallback((value: string): string | null => {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return 'Le projet d\'origine est obligatoire.';
+    }
+
+    if (trimmed.length < 2) {
+      return 'Le projet d\'origine doit contenir au moins 2 caractères.';
+    }
+
+    if (trimmed.length > 100) {
+      return 'Le projet d\'origine ne peut pas dépasser 100 caractères.';
+    }
+
+    return null;
+  }, []);
+
+  const handleOriginProjectChange = useCallback((value: string) => {
+    setOriginProject(value);
+
+    // Clear error when user starts typing
+    if (originProjectError && value.trim()) {
+      setOriginProjectError(null);
+    }
+  }, [setOriginProject, originProjectError]);
+
   const handleFileChange = useCallback((files: File[]) => {
     if (files.length === 0) return;
 
     const file = files[0];
-    const validationError = validateFile(file);
+    const fileValidationError = validateFile(file);
+    const projectValidationError = validateOriginProject(originProject);
 
-    if (validationError) {
-      setValidationError(validationError);
+    if (fileValidationError) {
+      setValidationError(fileValidationError);
+      return;
+    }
+
+    if (projectValidationError) {
+      setOriginProjectError(projectValidationError);
+      setValidationError('Veuillez corriger les erreurs avant de continuer.');
       return;
     }
 
     setValidationError(null);
+    setOriginProjectError(null);
     onFileSelect(file);
-  }, [onFileSelect, validateFile]);
+  }, [onFileSelect, validateFile, validateOriginProject, originProject]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -124,39 +161,60 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
 
   return (
     <div className={fr.cx('fr-mb-4w')}>
-      <button
-        className={fr.cx('fr-upload-group')}
-        tabIndex={disabled || isProcessing ? -1 : 0}
-        aria-label="Zone de dépôt pour fichier JSON. Cliquez pour sélectionner un fichier ou glissez-déposez un fichier ici."
-        aria-describedby="upload-hint"
-        onDragEnter={handleDragIn}
-        onDragLeave={handleDragOut}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onKeyDown={handleKeyDown}
-        onClick={handleClick}
-        style={{
-          position: 'relative',
-          minHeight: '200px',
-          border: dragActive ? '2px solid #000091' : '2px dashed #929292',
-          borderRadius: '4px',
-          backgroundColor: dragActive ? 'rgba(0, 0, 145, 0.05)' : '#f6f6f6',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: disabled || isProcessing ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s ease-in-out',
-          outline: 'none',
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.boxShadow = '0 0 0 2px #000091';
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-      >
+      <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+        {/* Left column: Origin Project Input */}
+        <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
+          <Input
+            label="Projet d'origine"
+            hintText="Nom du projet législatif (ex: PLFSS 2025, PLF 2024)"
+            state={originProjectError ? 'error' : 'default'}
+            stateRelatedMessage={originProjectError || undefined}
+            nativeInputProps={{
+              placeholder: 'Ex: PLFSS 2025',
+              value: originProject,
+              onChange: (e) => handleOriginProjectChange(e.target.value),
+              disabled: disabled || isProcessing,
+              maxLength: 100,
+            }}
+          />
+        </div>
+
+        {/* Right column: File Upload */}
+        <div className={fr.cx('fr-col-12', 'fr-col-md-8')}>
+          <button
+            className={fr.cx('fr-upload-group')}
+            tabIndex={disabled || isProcessing ? -1 : 0}
+            aria-label="Zone de dépôt pour fichier JSON. Cliquez pour sélectionner un fichier ou glissez-déposez un fichier ici."
+            aria-describedby="upload-hint"
+            onDragEnter={handleDragIn}
+            onDragLeave={handleDragOut}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onKeyDown={handleKeyDown}
+            onClick={handleClick}
+            style={{
+              position: 'relative',
+              minHeight: '200px',
+              width: '100%',
+              border: dragActive ? '2px solid #000091' : '2px dashed #929292',
+              borderRadius: '4px',
+              backgroundColor: dragActive ? 'rgba(0, 0, 145, 0.05)' : '#f6f6f6',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: disabled || isProcessing ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease-in-out',
+              outline: 'none',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.boxShadow = '0 0 0 2px #000091';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
         <div className={fr.cx('fr-mb-2w')} style={{ textAlign: 'center' }}>
           <div className={fr.cx('fr-mb-1w')}>
             <svg
@@ -194,10 +252,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
           />
         </div>
 
-        <div id="upload-hint" className={fr.cx('fr-text--xs', 'fr-mt-2w')} style={{ color: '#666666' }}>
-          Taille maximale : 50MB. Seuls les fichiers JSON sont acceptés.
+            <div id="upload-hint" className={fr.cx('fr-text--xs', 'fr-mt-2w')} style={{ color: '#666666' }}>
+              Taille maximale : 50MB. Seuls les fichiers JSON sont acceptés.
+            </div>
+          </button>
         </div>
-      </button>
+      </div>
 
       {uploadedFile && (
         <div className={fr.cx('fr-mt-2w')}>
@@ -217,12 +277,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
         </div>
       )}
 
-      {validationError && (
+      {(validationError || originProjectError) && (
         <div className={fr.cx('fr-mt-2w')}>
           <Alert
             severity="error"
             title="Erreur"
-            description={validationError}
+            description={validationError || originProjectError || ''}
           />
         </div>
       )}

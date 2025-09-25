@@ -4,9 +4,10 @@ Processing API routes for GRAAL amendment processing.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
+from graal.api.models.requests import ProcessingRequest
 from graal.api.models.responses import (
     PreviewResponse,
     ProcessingResponse,
@@ -26,12 +27,13 @@ def get_web_processing_service():
 
 
 @router.post("/process", response_model=ProcessingResponse)
-async def process_amendments(file: UploadFile):
+async def process_amendments(file: UploadFile, request: str = Form(...)):
     """
     Upload and process a JSON file containing amendments.
 
     Args:
         file: JSON file containing amendments data
+        request: JSON string containing ProcessingRequest data
 
     Returns:
         ProcessingResponse with job_id and initial status
@@ -39,8 +41,25 @@ async def process_amendments(file: UploadFile):
     Raises:
         HTTPException: 400 for validation errors, 413 for file too large, 422 for invalid JSON
     """
+    # Parse and validate the ProcessingRequest
+    try:
+        import json
+
+        request_data = json.loads(request)
+        processing_request = ProcessingRequest(**request_data)
+    except json.JSONDecodeError as e:
+        logger.warning(f"[API] Invalid JSON in request parameter: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail="Invalid JSON in request parameter"
+        ) from e
+    except Exception as e:
+        logger.warning(f"[API] Invalid ProcessingRequest: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid request data: {str(e)}"
+        ) from e
+
     logger.info(
-        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}"
+        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}, origin_project: {processing_request.origin_project}"
     )
 
     if file.filename is None or file.filename == "":
@@ -65,11 +84,13 @@ async def process_amendments(file: UploadFile):
         logger.info(f"[API] Starting processing service for file: {file.filename}")
         service = get_web_processing_service()
         response = await service.start_processing(
-            file_content=file_content, filename=file.filename
+            file_content=file_content,
+            filename=file.filename,
+            processing_request=processing_request,
         )
 
         logger.info(
-            f"[API] Processing job created successfully - job_id: {response.job_id}, filename: {file.filename}, status: {response.status}"
+            f"[API] Processing job created successfully - job_id: {response.job_id}, filename: {file.filename}, origin_project: {processing_request.origin_project}, status: {response.status}"
         )
         return response
 

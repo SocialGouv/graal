@@ -41,6 +41,7 @@ export interface paths {
          *
          *     Args:
          *         file: JSON file containing amendments data
+         *         request: JSON string containing ProcessingRequest data
          *
          *     Returns:
          *         ProcessingResponse with job_id and initial status
@@ -218,6 +219,8 @@ export interface components {
              * Format: binary
              */
             file: string;
+            /** Request */
+            request: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {

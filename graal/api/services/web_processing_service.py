@@ -12,6 +12,7 @@ from typing import Optional
 import aiofiles
 import pandas as pd
 
+from graal.api.models.requests import ProcessingRequest
 from graal.api.models.responses import (
     AmendmentPreview,
     JobStatus,
@@ -42,7 +43,7 @@ class WebProcessingService:
         )  # Track background tasks to prevent garbage collection
 
     async def start_processing(
-        self, file_content: bytes, filename: str
+        self, file_content: bytes, filename: str, processing_request: ProcessingRequest
     ) -> ProcessingResponse:
         """
         Start processing a JSON file.
@@ -50,6 +51,7 @@ class WebProcessingService:
         Args:
             file_content: Raw file content
             filename: Original filename
+            processing_request: ProcessingRequest object containing all processing parameters
 
         Returns:
             ProcessingResponse with job_id
@@ -107,7 +109,7 @@ class WebProcessingService:
         logger.info(
             f"[WEB_SERVICE] Starting background processing task - job_id: {job_id}"
         )
-        task = asyncio.create_task(self._process_file_async(job_id))
+        task = asyncio.create_task(self._process_file_async(job_id, processing_request))
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
 
@@ -118,7 +120,9 @@ class WebProcessingService:
             job_id=job_id, status=JobStatus.queued, message="Processing job started"
         )
 
-    async def _process_file_async(self, job_id: str) -> None:
+    async def _process_file_async(
+        self, job_id: str, processing_request: ProcessingRequest
+    ) -> None:
         """Process file asynchronously."""
         import time
 
@@ -157,7 +161,6 @@ class WebProcessingService:
             )
 
             # Update the input file path in config to point to our uploaded file
-            # TODO: Make these values come from the frontend in the future
             config["input_files"] = [
                 {
                     "path": input_file_path,
@@ -166,7 +169,7 @@ class WebProcessingService:
                         "month": 1,
                         "day": 1,
                     },
-                    "origin_project": "Web Upload",
+                    "origin_project": processing_request.origin_project,
                 }
             ]
             logger.debug(
