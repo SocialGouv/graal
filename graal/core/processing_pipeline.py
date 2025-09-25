@@ -545,18 +545,41 @@ class ProcessingPipeline:
             f"[PIPELINE] Output columns configured: {len(columns_to_output)} columns"
         )
 
+        # Defensive programming: filter out columns that don't exist in result_df
+        available_columns = result_df.columns.tolist()
+        existing_columns = [
+            col for col in columns_to_output if col in available_columns
+        ]
+        missing_columns = [
+            col for col in columns_to_output if col not in available_columns
+        ]
+
+        if missing_columns:
+            logging.warning(
+                f"[PIPELINE] Some configured output columns are not present in result DataFrame. "
+                f"Missing columns: {missing_columns}. "
+                f"Using {len(existing_columns)}/{len(columns_to_output)} configured columns."
+            )
+
+        # Use filtered columns for output
+        columns_to_use = existing_columns
+
         # Save files
         try:
             excel_path = f"{output_file_prefix}.xlsx"
             csv_path = f"{output_file_prefix}.csv"
 
             logging.debug(f"[PIPELINE] Saving Excel file: {excel_path}")
-            result_df.to_excel(excel_path, columns=columns_to_output)
+            result_df.to_excel(excel_path, columns=columns_to_use)
 
             logging.debug(f"[PIPELINE] Saving CSV file: {csv_path}")
             csv_separator = config["output"].get("csv_separator", ";")
             result_df.to_csv(
-                csv_path, sep=csv_separator, encoding="utf-8-sig", index=False
+                csv_path,
+                sep=csv_separator,
+                encoding="utf-8-sig",
+                index=False,
+                columns=columns_to_use,
             )
 
             # Log file sizes

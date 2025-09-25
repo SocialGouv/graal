@@ -143,6 +143,9 @@ class SimilarityHandler:
     ) -> pd.DataFrame:
         # Default configuration if none provided
 
+        if "Commentaires" not in target_df.columns:
+            target_df["Commentaires"] = ""
+
         # Iterate over the closest documents
         for new_amdt_idx, closest_doc in closest_amdts.items():
             amdt_idx_mask = target_df["amdt_idx"] == new_amdt_idx
