@@ -33,6 +33,14 @@ export interface JobStatusResponse {
   updated_at: string;
 }
 
+export interface ProcessingRequest {
+  originProject: string;
+  // Future parameters can be easily added here:
+  // processingDate?: string;
+  // userPreferences?: Record<string, any>;
+  // featureFlags?: string[];
+}
+
 export interface ApiError {
   detail: string;
   status_code: number;

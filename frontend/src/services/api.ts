@@ -4,6 +4,7 @@ import type {
   JobStatusResponse,
   ProcessJobResponse,
   PreviewResponse,
+  ProcessingRequest,
 } from '../types/api';
 
 class ApiService {
@@ -72,16 +73,19 @@ class ApiService {
    */
   async uploadFile(
     file: File,
+    processingRequest: ProcessingRequest,
     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
   ): Promise<ProcessJobResponse> {
     console.log('[API_CLIENT] Starting file upload', {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
+      processingRequest: processingRequest,
     });
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('request', JSON.stringify(processingRequest));
 
     const startTime = Date.now();
 

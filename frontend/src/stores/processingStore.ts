@@ -1,10 +1,13 @@
 import { create } from 'zustand';
-import type { JobStatus, AmendmentPreview } from '../types/api';
+import type { AmendmentPreview, JobStatus } from '../types/api';
 
 export interface ProcessingState {
   // File upload state
   uploadedFile: File | null;
   uploadProgress: number;
+
+  // Origin project state
+  originProject: string;
 
   // Job processing state
   jobId: string | null;
@@ -24,6 +27,7 @@ export interface ProcessingState {
   // Actions
   setUploadedFile: (file: File | null) => void;
   setUploadProgress: (progress: number) => void;
+  setOriginProject: (project: string) => void;
   setJobId: (id: string | null) => void;
   updateProgress: (
     status: ProcessingState['processingStatus'],
@@ -40,6 +44,7 @@ export interface ProcessingState {
 const initialState = {
   uploadedFile: null,
   uploadProgress: 0,
+  originProject: '',
   jobId: null,
   processingStatus: 'idle' as const,
   progressPercent: 0,
@@ -65,6 +70,13 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
     set((state) => ({
       ...state,
       uploadProgress: progress,
+    })),
+
+  setOriginProject: (project) =>
+    set((state) => ({
+      ...state,
+      originProject: project,
+      error: null,
     })),
 
   setJobId: (id) =>

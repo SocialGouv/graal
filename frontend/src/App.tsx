@@ -26,6 +26,7 @@ function AppContent() {
   const {
     jobId,
     processingStatus,
+    originProject,
     setUploadedFile,
     reset,
   } = useProcessingStore();
@@ -49,7 +50,10 @@ function AppContent() {
 
   const handleFileSelect = (file: File) => {
     setUploadedFile(file);
-    uploadFileMutation.mutate(file);
+    const processingRequest = {
+      originProject: originProject,
+    };
+    uploadFileMutation.mutate({ file, processingRequest });
   };
 
   const handleDownloadCsv = () => {

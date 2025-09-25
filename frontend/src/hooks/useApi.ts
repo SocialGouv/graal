@@ -3,17 +3,17 @@ import type { AxiosProgressEvent } from 'axios';
 import React from 'react';
 import apiService from '../services/api';
 import { useProcessingStore } from '../stores/processingStore';
-import type { JobStatusResponse, PreviewResponse, ProcessJobResponse } from '../types/api';
+import type { JobStatusResponse, PreviewResponse, ProcessJobResponse, ProcessingRequest } from '../types/api';
 
 // Upload file mutation
 export const useUploadFile = () => {
   const { setJobId, setUploadProgress, updateProgress, setError } = useProcessingStore();
 
   return useMutation({
-    mutationFn: async (file: File): Promise<ProcessJobResponse> => {
+    mutationFn: async ({ file, processingRequest }: { file: File; processingRequest: ProcessingRequest }): Promise<ProcessJobResponse> => {
       updateProgress('uploading', 0, 'Téléchargement du fichier...');
 
-      const response = await apiService.uploadFile(file, (progressEvent: AxiosProgressEvent) => {
+      const response = await apiService.uploadFile(file, processingRequest, (progressEvent: AxiosProgressEvent) => {
         if (progressEvent.total) {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setUploadProgress(percent);
