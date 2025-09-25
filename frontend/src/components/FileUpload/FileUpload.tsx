@@ -2,17 +2,19 @@ import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
+  onStartProcessing: () => void;
   disabled?: boolean;
 }
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
-export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled = false }) => {
+export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onStartProcessing, disabled = false }) => {
   const { uploadedFile, error, processingStatus, originProject, setOriginProject } = useProcessingStore();
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -66,23 +68,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
 
     const file = files[0];
     const fileValidationError = validateFile(file);
-    const projectValidationError = validateOriginProject(originProject);
 
     if (fileValidationError) {
       setValidationError(fileValidationError);
       return;
     }
 
-    if (projectValidationError) {
-      setOriginProjectError(projectValidationError);
-      setValidationError('Veuillez corriger les erreurs avant de continuer.');
-      return;
-    }
-
     setValidationError(null);
-    setOriginProjectError(null);
     onFileSelect(file);
-  }, [onFileSelect, validateFile, validateOriginProject, originProject]);
+  }, [onFileSelect, validateFile]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -158,6 +152,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  // Check if form is ready for processing
+  const isFormValid = useCallback(() => {
+    return uploadedFile && !validateOriginProject(originProject) && !validationError;
+  }, [uploadedFile, originProject, validateOriginProject, validationError]);
+
+  const handleStartProcessing = useCallback(() => {
+    // Validate origin project before processing
+    const projectError = validateOriginProject(originProject);
+    if (projectError) {
+      setOriginProjectError(projectError);
+      return;
+    }
+
+    setOriginProjectError(null);
+    onStartProcessing();
+  }, [originProject, validateOriginProject, onStartProcessing]);
 
   return (
     <div className={fr.cx('fr-mb-4w')}>
@@ -284,6 +295,27 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled =
             title="Erreur"
             description={validationError || originProjectError || ''}
           />
+        </div>
+      )}
+
+      {/* Processing Button */}
+      {uploadedFile && (
+        <div className={fr.cx('fr-mt-3w')} style={{ textAlign: 'center' }}>
+          <Button
+            priority="primary"
+            size="large"
+            onClick={handleStartProcessing}
+            disabled={!isFormValid() || disabled || isProcessing}
+            iconId="fr-icon-play-fill"
+            iconPosition="left"
+          >
+            Commencer le traitement
+          </Button>
+          {!isFormValid() && !originProjectError && (
+            <p className={fr.cx('fr-text--sm', 'fr-mt-1w')} style={{ color: '#666666' }}>
+              Veuillez remplir tous les champs obligatoires pour continuer
+            </p>
+          )}
         </div>
       )}
     </div>
