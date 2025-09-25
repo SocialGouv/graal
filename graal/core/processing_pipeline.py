@@ -288,6 +288,12 @@ class ProcessingPipeline:
         logging.info(
             f"[PIPELINE] Data loading and preparation completed - final amendments: {len(amendments_df)}"
         )
+
+        # For testing purposes
+        # amendments_df = amendments_df[
+        #     amendments_df["Num amdt"].isin([2342, 2089, 2382])
+        # ]
+
         return amendments_df, dependencies
 
     def _build_input_files_config(
