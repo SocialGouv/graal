@@ -34,7 +34,7 @@ export interface JobStatusResponse {
 }
 
 export interface ProcessingRequest {
-  originProject: string;
+  origin_project: string;
   // Future parameters can be easily added here:
   // processingDate?: string;
   // userPreferences?: Record<string, any>;

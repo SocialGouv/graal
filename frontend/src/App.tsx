@@ -27,6 +27,7 @@ function AppContent() {
     jobId,
     processingStatus,
     originProject,
+    uploadedFile,
     setUploadedFile,
     reset,
   } = useProcessingStore();
@@ -50,10 +51,15 @@ function AppContent() {
 
   const handleFileSelect = (file: File) => {
     setUploadedFile(file);
+  };
+
+  const handleStartProcessing = () => {
+    if (!uploadedFile) return;
+
     const processingRequest = {
-      originProject: originProject,
+      origin_project: originProject,
     };
-    uploadFileMutation.mutate({ file, processingRequest });
+    uploadFileMutation.mutate({ file: uploadedFile, processingRequest });
   };
 
   const handleDownloadCsv = () => {
@@ -133,6 +139,7 @@ function AppContent() {
             {!showResults && (
               <FileUpload
                 onFileSelect={handleFileSelect}
+                onStartProcessing={handleStartProcessing}
                 disabled={uploadFileMutation.isPending}
               />
             )}
