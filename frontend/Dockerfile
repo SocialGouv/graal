@@ -1,6 +1,10 @@
 # Stage 1: Build stage
 FROM node:24-alpine AS builder
 
+# Accept build argument for API URL
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Create a non-root user for building
 RUN addgroup -g 1001 -S frontendgroup && \
     adduser -S frontenduser -u 1001 -G frontendgroup
