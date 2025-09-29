@@ -11,8 +11,11 @@ class ApiService {
   private readonly client: AxiosInstance;
 
   constructor() {
+    // Use VITE_API_URL from environment or fallback to localhost for development
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    
     this.client = axios.create({
-      baseURL: 'http://localhost:8000/api/v1',
+      baseURL: `${apiBaseUrl}/api/v1`,
       timeout: 60000, // 60 seconds for regular requests
       headers: {
         'Content-Type': 'application/json',
