@@ -51,7 +51,7 @@ env/
 
 # Logs
 *.log
-logging.conf
+# logging.conf - NEEDED by the application, do not exclude
 
 # Frontend (si build séparément)
 frontend/
