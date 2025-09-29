@@ -32,13 +32,3 @@ FROM ghcr.io/socialgouv/docker/nginx4spa:sha-9cb7d83
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# The SocialGouv nginx image already:
-# - Runs as non-root user
-# - Uses port 8080 (non-privileged)
-# - Is compatible with read-only filesystems
-# - Has security headers configured
-# - Provides /live and /ready health check endpoints
-# - Supports Kubernetes zero-downtime deployments
-
-# No additional configuration needed!
