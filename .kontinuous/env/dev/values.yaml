@@ -1,0 +1,3 @@
+app:
+  annotations:
+    oblik.socialgouv.io/min-limit-cpu: 2
