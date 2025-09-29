@@ -9,3 +9,6 @@ api:
   imagePackage: api
   probesPath: /api/v1/health
   containerPort: 8000
+  env:
+    - name: FRONTEND_URL
+      value: "https://{{ .Values.global.host }}"

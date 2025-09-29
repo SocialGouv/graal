@@ -3,6 +3,7 @@ FastAPI main application for GRAAL web interface.
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -44,10 +45,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS for development
+# Configure CORS origins
+cors_origins = ["http://localhost:5173"]  # Always allow local development
+
+# Add production frontend URL if provided
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    cors_origins.append(frontend_url)
+
+logger.info(f"CORS origins configured: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite dev server
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
