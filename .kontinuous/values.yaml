@@ -2,7 +2,7 @@ app:
   ~chart: app
   imagePackage: frontend
   probesPath: /live
-  containerPort: 3000
+  containerPort: 8080
 
 api:
   ~chart: app
