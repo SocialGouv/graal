@@ -62,7 +62,6 @@ yarn.lock
 .yarnrc.yml
 
 # Configuration locale
-config/
 *.local
 
 # Documentation
