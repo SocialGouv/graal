@@ -44,8 +44,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Création d'un utilisateur non-root pour la sécurité
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Création d'un utilisateur non-root pour la sécurité (avec UID explicite pour Kubernetes)
+RUN groupadd -r -g 1000 appuser && useradd -r -u 1000 -g appuser appuser
 
 WORKDIR /app
 
@@ -56,8 +56,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copie du code source
 COPY --chown=appuser:appuser . .
 
-# Changement vers l'utilisateur non-root
-USER appuser
+# Changement vers l'utilisateur non-root (UID numérique pour Kubernetes)
+USER 1000
 
 # Health check pour vérifier que l'application fonctionne
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
