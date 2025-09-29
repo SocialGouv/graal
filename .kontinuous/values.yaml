@@ -1,0 +1,11 @@
+app:
+  ~chart: app
+  imagePackage: frontend
+  probesPath: /healthz
+  containerPort: 3000
+
+api:
+  ~chart: app
+  imagePackage: api
+  probesPath: /healthz
+  containerPort: 8000
