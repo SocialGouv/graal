@@ -1,0 +1,9 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: graal
+data:
+  DATA_FOLDER: "/app/data"
+  ETALAB_API_KEY: "xxxxxxxxxxxxxxxxxxx"
+  ETALAB_BASE_URL: "https://albert.api.etalab.gouv.fr/v1"
+  ETALAB_MODEL_NAME: "meta-llama/Meta-Llama-3.1-70B-Instruct"
