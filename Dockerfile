@@ -6,7 +6,7 @@ RUN pip install poetry==1.8.4
 
 COPY pyproject.toml poetry.lock ./
 
-RUN poetry install
+RUN poetry lock --no-update && poetry install
 
 RUN poetry run python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords')"
 
