@@ -56,6 +56,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copie du code source
 COPY --chown=appuser:appuser . .
 
+# Création du répertoire tmp pour le service WebProcessingService
+RUN mkdir -p /app/tmp && chown -R appuser:appuser /app/tmp
+
 # Changement vers l'utilisateur non-root (UID numérique pour Kubernetes)
 USER 1000
 
@@ -63,5 +66,5 @@ USER 1000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1
 
-# Commande par défaut
-CMD ["python", "/app/graal/full_pipeline.py"]
+# Commande par défaut pour lancer l'API FastAPI
+CMD ["uvicorn", "graal.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
