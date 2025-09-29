@@ -7,5 +7,5 @@ app:
 api:
   ~chart: app
   imagePackage: api
-  probesPath: /healthz
+  probesPath: /api/v1/health
   containerPort: 8000
