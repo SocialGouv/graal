@@ -71,6 +71,9 @@ export OLLAMA_MODEL_NAME="llama3.1:70b"
 export SCALEWAY_BASE_URL="https://<UUID_SCALEWAY>.ifr.fr-par.scaleway.com/v1"
 export SCALEWAY_MODEL_NAME="meta/llama-3.3-70b-instruct:bf16"
 export SCALEWAY_API_KEY="<API_KEY>"
+
+export S3_BUCKET_ACCESS_KEY="<access_key>"
+export S3_BUCKET_SECRET_KEY="<secret_key>"
 ```
 
 **NB:** You can still test GRAAL without using Albert or Ollama by using the FakeLLMAPIClient. See [pipeline](#pipeline)
