@@ -23,15 +23,14 @@ from graal.clustering.similarity_handler import SimilarityHandler
 from graal.custom_types import Acronym, IntIndex
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.project_config_manager import ProjectConfigManager
+from graal.utils.sheet_data_loader import SheetDataLoader
 from graal.utils.text_utils import remove_gage_sentences
 
 logging.config.fileConfig("logging.conf")
 
 DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
 DEFAULT_OUTPUT_FILE = Path(f"{DATA_FOLDER}/preprocessed/pre_processed_old_amdts.pkl")
-ATTRIBUTION_MAPPINGS_FILE = Path(
-    f"{DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
-)
+ATTRIBUTION_MAPPINGS_FILE = "Fichier de configuration GRAAL - DSS - latest.xlsx"
 
 
 def parse_args():
@@ -147,9 +146,8 @@ def main():
         logging.info("Processing amendments for all projects")
 
     # Load and process amendments
-    attribution_mappings_excel = pd.read_excel(
-        ATTRIBUTION_MAPPINGS_FILE, sheet_name=None
-    )
+    sheet_loader = SheetDataLoader(ATTRIBUTION_MAPPINGS_FILE)
+    attribution_mappings_excel = sheet_loader.excel_data
     acronym_mapping = AmendmentPreProcessor.load_acronyms(
         attribution_mappings_excel["Acronymes"]
     )
