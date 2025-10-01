@@ -10,7 +10,7 @@ from graal.utils.s3_config_service import get_s3_config_service
 class SheetDataLoader:
     def __init__(self, file_path: Union[str, Path], force_local: bool = False):
         """Initialize SheetDataLoader with support for S3 configuration files.
-        
+
         Args:
             file_path: Path to the Excel file or configuration filename
             force_local: If True, always use local files even if S3 is available
@@ -23,31 +23,35 @@ class SheetDataLoader:
 
     def _load_excel_data(self) -> dict[str, pd.DataFrame]:
         """Load Excel data from S3 or local filesystem.
-        
+
         Returns:
             dict[str, pd.DataFrame]: Dictionary mapping sheet names to DataFrames.
         """
         # Convert file_path to string for processing
         file_path_str = str(self.file_path)
-        
+
         # Check if this looks like a GRAAL configuration file (relative or absolute path)
         file_path_obj = Path(file_path_str)
         is_config_filename = (
-            'configuration GRAAL' in file_path_str and
-            file_path_str.endswith('.xlsx') and
-            ('PLF' in file_path_str or 'DSS' in file_path_str)
+            "configuration GRAAL" in file_path_str
+            and file_path_str.endswith(".xlsx")
+            and ("PLF" in file_path_str or "DSS" in file_path_str)
         )
-        
+
         # Try S3 for configuration files if not forced to use local
         if is_config_filename and not self.force_local:
             s3_service = get_s3_config_service()
             if s3_service.is_s3_enabled():
                 try:
-                    logging.info(f"Attempting to load configuration from S3: {file_path_str}")
+                    logging.info(
+                        f"Attempting to load configuration from S3: {file_path_str}"
+                    )
                     return s3_service.load_config_excel(file_path_str)
                 except Exception as e:
-                    logging.warning(f"Failed to load from S3, falling back to local: {e}")
-        
+                    logging.warning(
+                        f"Failed to load from S3, falling back to local: {e}"
+                    )
+
         # Fallback to local file loading
         try:
             logging.info(f"Loading Excel file from local path: {file_path_str}")
@@ -56,8 +60,9 @@ class SheetDataLoader:
             # If it's a config filename and local load failed, try building the full path
             if is_config_filename:
                 import os
-                data_folder = os.getenv('DATA_FOLDER', 'data')
-                full_path = Path(data_folder) / 'config_graal' / file_path_str
+
+                data_folder = os.getenv("DATA_FOLDER", "data")
+                full_path = Path(data_folder) / "config_graal" / file_path_str
                 logging.info(f"Trying full config path: {full_path}")
                 return pd.read_excel(full_path, sheet_name=None)
             else:
@@ -65,10 +70,10 @@ class SheetDataLoader:
 
     def extract_sheet_data(self, sheet_name: str) -> Optional[pd.DataFrame]:
         """Extract data from a specific sheet.
-        
+
         Args:
             sheet_name: Name of the sheet to extract.
-            
+
         Returns:
             pd.DataFrame or None: The sheet data if found, None otherwise.
         """

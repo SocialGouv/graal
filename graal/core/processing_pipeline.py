@@ -147,7 +147,7 @@ class ProcessingPipeline:
         logging.info(
             f"[PIPELINE] Loading configuration Excel file: {graal_config_file}"
         )
-        
+
         # Use SheetDataLoader which supports both S3 and local files
         sheet_loader = SheetDataLoader(graal_config_file)
         config_excel = sheet_loader.excel_data
