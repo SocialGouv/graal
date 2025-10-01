@@ -31,6 +31,11 @@ class S3ConfigService:
     CONFIG_FILE_MAPPING = {
         "Fichier de configuration GRAAL - DSS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - DSS - latest.xlsx",
         "Fichier de configuration GRAAL - PLF - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF - latest.xlsx",
+        "Fichier de configuration GRAAL - PLF_vDGCS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_vDGCS - latest.xlsx",
+        "Fichier de configuration GRAAL - PLF_DGCS et DGS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_DGCS et DGS - latest.xlsx",
+        "Fichier de configuration GRAAL - PLF_DGS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_DGS - latest.xlsx",
+        "Fichier de configuration GRAAL - PLF_DGS - v1.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_DGS - v1.xlsx",
+        "Fichier de configuration GRAAL - PLF_vDGCS - v1.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_vDGCS - v1.xlsx",
     }
 
     def __init__(self):
@@ -181,11 +186,23 @@ class S3ConfigService:
                     )
                     return excel_data
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to load from S3, falling back to local: {e}"
+                    # When S3 is enabled and the file is in the mapping, don't fallback to local
+                    # This prevents confusing error messages about missing local files in production
+                    logger.error(
+                        f"Failed to load configuration from S3: {e}. "
+                        f"S3 is enabled, so local fallback is disabled."
                     )
+                    raise Exception(
+                        f"Failed to load configuration file '{actual_filename}' from S3: {e}"
+                    ) from e
             else:
-                logger.warning(f"No S3 mapping found for file {filename}, trying local")
+                # File not in S3 mapping - when S3 is enabled, this should be an error
+                error_msg = (
+                    f"Configuration file '{actual_filename}' is not in the S3 mapping. "
+                    f"Available files in mapping: {list(self.CONFIG_FILE_MAPPING.keys())}"
+                )
+                logger.error(error_msg)
+                raise FileNotFoundError(error_msg)
 
         # Fallback to local file
         local_path = self._get_local_path(filename)
