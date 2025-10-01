@@ -30,12 +30,12 @@ class SheetDataLoader:
         # Convert file_path to string for processing
         file_path_str = str(self.file_path)
         
-        # Check if this looks like a configuration file name (not a full path)
+        # Check if this looks like a GRAAL configuration file (relative or absolute path)
         file_path_obj = Path(file_path_str)
         is_config_filename = (
-            not file_path_obj.is_absolute() and 
-            file_path_obj.parent == Path('.') and
-            'configuration GRAAL' in file_path_str
+            'configuration GRAAL' in file_path_str and
+            file_path_str.endswith('.xlsx') and
+            ('PLF' in file_path_str or 'DSS' in file_path_str)
         )
         
         # Try S3 for configuration files if not forced to use local
