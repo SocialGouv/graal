@@ -1,5 +1,5 @@
 # Stage 1: Build stage
-FROM node:24-alpine AS builder
+FROM node:24-alpine@sha256:89ec1788bd39c23adafd9f7ee14a023fcd01d08c5920745d71fb571bc7d30d1e AS builder
 
 # Accept build argument for API URL
 ARG VITE_API_URL
