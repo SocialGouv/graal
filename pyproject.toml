@@ -35,6 +35,7 @@ fastapi = ">=0.104.0"
 uvicorn = {extras = ["standard"], version = ">=0.24.0"}
 python-multipart = ">=0.0.6"
 aiofiles = ">=24.1.0,<25.0.0"
+boto3 = ">=1.34.0"
 
 [tool.poetry.group.dev.dependencies]
 virtualenv = "20.26.6"
