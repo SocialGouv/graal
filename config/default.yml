@@ -8,7 +8,7 @@ similarity_thresholds:
 
 # Allotment configuration - groups amendments by similarity
 allotments:
-  enabled: true
+  enabled: false
   column: "Corps amdt"  # Column used for similarity comparison
   similarity_threshold: 0.9999  # Threshold above which amendments are considered similar
 
@@ -34,7 +34,7 @@ similarity_search:
     "Exposé amdt":
       "amendement redactionnel": 0.95
   # Path to the similarity db file
-  similarity_db_file: "${DATA_FOLDER}/preprocessed/ppl_similarity_db.pkl"
+  similarity_db_file: "${DATA_FOLDER}/preprocessed/test_plfss_similarity_db.pkl"
   # Columns to copy from similar amendments
   columns_to_copy:
     Réponse:
@@ -67,23 +67,22 @@ summary_generation:
 default_opinion: false
 
 # Filter for mission short titles
+# mission_short_title_filter: ["solidarite", "sante", "travail"]
 mission_short_title_filter: []
 
 # LLM client configuration
 llm_clients:
-  scaleway:
-    nb_instances: 6
-    timeout: 30  # Timeout in seconds
+  fake:
+    nb_instances: 1
 
 # File paths configuration
 paths:
   # Path to GRAAL configuration Excel file
-  # graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - DSS - latest.xlsx"
-  graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF - latest.xlsx"
+  graal_config_file: "${DATA_FOLDER}/config_graal/Fichier de configuration GRAAL - PLF_vDGCS - latest.xlsx"
 
 # Input files configuration
 input_files:
-  - path: "${DATA_FOLDER}/input_plf/lecture-senat-2024-2025-143-2-PO78718.json"
+  - path: "${DATA_FOLDER}/input_plf/PLF2025_L1_AN_SP.json"
     # Default timestamp to use for processing if not specified
     default_processing_timestamp:
       year: 2025
@@ -99,24 +98,24 @@ parallel_processing:
 # Output configuration
 output:
   # Template for output file prefix, includes date formatting
-  file_prefix_template: "${DATA_FOLDER}/résultats_attribution_PLF_test_%Y-%m-%d"
+  file_prefix_template: "${DATA_FOLDER}/résultats_attribution_PLF_DGS_test_%Y-%m-%d"
   # CSV separator character (semicolon is common in European formats)
   csv_separator: ";"
   # Columns to include in Excel file
   columns:
     - "Num amdt"
-    - "Commentaires"
+    - "Num article"
+    - "Mission"
     - "Allotissement"
     - "Objet amdt"
     - "Sort"
     - "Réponse"
-    - "Affectation (email)"
     - "Affectation (nom)"
+    - "Affectation (email)"
     - "Entité Pilote"
     - "Avis du Gouvernement"
     - "Groupe"
-    - "Num article"
     - "Exposé amdt"
     - "Corps amdt"
+    - "Commentaires"
     - "amdt_idx"
-    - "Mission"
