@@ -71,9 +71,9 @@ mission_short_title_filter: []
 
 # LLM client configuration
 llm_clients:
-  scaleway:
-    nb_instances: 6
-    timeout: 30  # Timeout in seconds
+  fake:
+    nb_instances: 1
+    # timeout: 30  # Timeout in seconds
 
 # File paths configuration
 paths:
