@@ -126,7 +126,7 @@ class AttributionDataLoader:
 
         # Drop duplicates, keeping the first instance
         user_info_df = user_info_df.drop_duplicates(subset=["Prénom Nom"], keep="first")
-        user_info_df["Prénom Nom"] = user_info_df["Prénom Nom"].str.lower()
+        user_info_df["Prénom Nom"] = user_info_df["Prénom Nom"].str.lower().str.strip()
 
         user_info_mappings = user_info_df.set_index("Prénom Nom")[
             ["Mail", "Entité Pilote"]

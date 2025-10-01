@@ -370,7 +370,7 @@ class ProcessingPipeline:
         amendments_df["Mission"] = amendments_df["Mission"].fillna("")
         amendments_df = amendments_df[
             amendments_df["Mission"].apply(
-                lambda x: any(x.startswith(prefix) for prefix in mission_filters)
+                lambda x: any(mission in x for mission in mission_filters)
             )
         ]
         return amendments_df
