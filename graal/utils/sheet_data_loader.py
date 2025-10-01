@@ -30,16 +30,8 @@ class SheetDataLoader:
         # Convert file_path to string for processing
         file_path_str = str(self.file_path)
 
-        # Check if this looks like a GRAAL configuration file (relative or absolute path)
-        file_path_obj = Path(file_path_str)
-        is_config_filename = (
-            "configuration GRAAL" in file_path_str
-            and file_path_str.endswith(".xlsx")
-            and ("PLF" in file_path_str or "DSS" in file_path_str)
-        )
-
         # Try S3 for configuration files if not forced to use local
-        if is_config_filename and not self.force_local:
+        if not self.force_local:
             s3_service = get_s3_config_service()
             if s3_service.is_s3_enabled():
                 try:
@@ -53,20 +45,8 @@ class SheetDataLoader:
                     )
 
         # Fallback to local file loading
-        try:
-            logging.info(f"Loading Excel file from local path: {file_path_str}")
-            return pd.read_excel(file_path_str, sheet_name=None)
-        except Exception as e:
-            # If it's a config filename and local load failed, try building the full path
-            if is_config_filename:
-                import os
-
-                data_folder = os.getenv("DATA_FOLDER", "data")
-                full_path = Path(data_folder) / "config_graal" / file_path_str
-                logging.info(f"Trying full config path: {full_path}")
-                return pd.read_excel(full_path, sheet_name=None)
-            else:
-                raise e
+        logging.info(f"Loading Excel file from local path: {file_path_str}")
+        return pd.read_excel(file_path_str, sheet_name=None)
 
     def extract_sheet_data(self, sheet_name: str) -> Optional[pd.DataFrame]:
         """Extract data from a specific sheet.
