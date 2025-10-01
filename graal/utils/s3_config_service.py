@@ -146,7 +146,7 @@ class S3ConfigService:
         """Load a configuration Excel file from S3 or local filesystem.
         
         Args:
-            filename: Name of the Excel file (e.g., "Fichier de configuration GRAAL - DSS - latest.xlsx")
+            filename: Name of the Excel file or full path (e.g., "Fichier de configuration GRAAL - DSS - latest.xlsx")
             
         Returns:
             dict[str, pd.DataFrame]: Dictionary mapping sheet names to DataFrames.
@@ -157,9 +157,13 @@ class S3ConfigService:
         """
         logger.info(f"Loading configuration file: {filename}")
         
+        # Extract filename from path if it's a full path
+        from pathlib import Path
+        actual_filename = Path(filename).name
+        
         # Try S3 first if enabled
         if self._s3_enabled:
-            s3_key = self.CONFIG_FILE_MAPPING.get(filename)
+            s3_key = self.CONFIG_FILE_MAPPING.get(actual_filename)
             if s3_key:
                 try:
                     file_content = self._download_from_s3(s3_key)
