@@ -35,6 +35,7 @@ from graal.summary.llm_factory import create_llm_api_clients, get_rate_limiting_
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.config_preprocessor import ConfigPreprocessor
+from graal.utils.sheet_data_loader import SheetDataLoader
 from graal.utils.text_utils import remove_gage_sentences
 
 logging.config.fileConfig("logging.conf")
@@ -146,7 +147,10 @@ class ProcessingPipeline:
         logging.info(
             f"[PIPELINE] Loading configuration Excel file: {graal_config_file}"
         )
-        config_excel = pd.read_excel(graal_config_file, sheet_name=None)
+
+        # Use SheetDataLoader which supports both S3 and local files
+        sheet_loader = SheetDataLoader(graal_config_file)
+        config_excel = sheet_loader.excel_data
         logging.debug(
             f"[PIPELINE] Configuration Excel loaded - sheets: {list(config_excel.keys())}"
         )

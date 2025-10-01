@@ -1,0 +1,46 @@
+app:
+  ~chart: app
+  imagePackage: frontend
+  probesPath: /live
+  containerPort: 8080
+
+api:
+  ~chart: app
+  imagePackage: api
+  probesPath: /api/v1/health
+  containerPort: 8000
+  envFrom:
+    - configMapRef:
+        name: graal
+    - secretRef:
+        name: graal-dev-app-access-key
+  env:
+    - name: FRONTEND_URL
+      value: "https://{{ .Values.global.host }}"
+    - name: S3_BUCKET_NAME
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_name
+    - name: S3_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_endpoint
+    - name: S3_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_access_key
+    - name: S3_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_secret_key
+    - name: S3_REGION
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_region
+    - name: USE_S3_CONFIG
+      value: "true"
