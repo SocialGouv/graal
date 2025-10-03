@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build-frontend:
-    environment: build-review-auto
+    environment: build-review-manual
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
     runs-on: ubuntu-latest
@@ -65,7 +65,7 @@ jobs:
             VITE_API_URL=https://${{ steps.env.outputs.subdomain_api }}.ovh.fabrique.social.gouv.fr
 
   build-api:
-    environment: build-review-auto
+    environment: build-review-manual
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
     runs-on: ubuntu-latest
@@ -108,5 +108,5 @@ jobs:
   kontinuous:
     needs: [build-frontend, build-api]
     name: "Deploy on Kubernetes 🐳"
-    uses: socialgouv/workflows/.github/workflows/use-ks-gh-review-auto-atlas.yaml@v1
+    uses: socialgouv/workflows/.github/workflows/use-ks-gh-review-atlas.yaml@v1
     secrets: inherit
