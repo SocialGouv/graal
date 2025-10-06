@@ -3,9 +3,11 @@ import type { AmendmentPreview, JobStatus } from '../types/api';
 
 export interface ProcessingConfig {
   originProject: string;
-  // Future configuration fields will be added here:
-  // enabledFeatures?: string[];
-  // customThresholds?: Record<string, number>;
+  allotments: {
+    enabled: boolean;
+    column: 'Corps amdt' | 'Exposé amdt';
+    similarity_threshold: number;
+  };
 }
 
 export interface ProcessingState {
@@ -53,6 +55,11 @@ const initialState = {
   uploadProgress: 0,
   processingConfig: {
     originProject: '',
+    allotments: {
+      enabled: false,
+      column: 'Corps amdt' as const,
+      similarity_threshold: 0.9999,
+    },
   },
   jobId: null,
   processingStatus: 'idle' as const,
