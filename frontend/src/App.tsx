@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Header } from "@codegouvfr/react-dsfr/Header";
 import { Footer } from "@codegouvfr/react-dsfr/Footer";
 import { Button } from "@codegouvfr/react-dsfr/Button";
@@ -6,6 +6,7 @@ import { fr } from "@codegouvfr/react-dsfr";
 
 // Import components and providers
 import QueryProvider from "./providers/QueryProvider";
+import ProcessingConfig from "./components/ProcessingConfig/ProcessingConfig";
 import FileUpload from "./components/FileUpload/FileUpload";
 import ProcessingStatus from "./components/ProcessingStatus/ProcessingStatus";
 import ResultsTable from "./components/ResultsTable/ResultsTable";
@@ -14,6 +15,7 @@ import DownloadButton from "./components/DownloadButton/DownloadButton";
 // Import hooks and store
 import { useProcessingStore } from "./stores/processingStore";
 import { useUploadFile, useJobStatus, useResultsPreview, useDownloadResults, useDownloadExcelResults } from "./hooks/useApi";
+import { useValidation } from "./hooks/useValidation";
 
 // Container is a simple div wrapper, we can create it ourselves or use a regular div
 const Container = ({ children, ...props }: { children: React.ReactNode } & React.HTMLAttributes<HTMLDivElement>) => (
@@ -26,7 +28,7 @@ function AppContent() {
   const {
     jobId,
     processingStatus,
-    originProject,
+    processingConfig,
     uploadedFile,
     setUploadedFile,
     reset,
@@ -36,6 +38,9 @@ function AppContent() {
   const uploadFileMutation = useUploadFile();
   const downloadResultsMutation = useDownloadResults();
   const downloadExcelResultsMutation = useDownloadExcelResults();
+
+  // Validation hook
+  const { isOriginProjectValid } = useValidation();
 
   // Job status polling - only when we have a jobId and processing
   useJobStatus(
@@ -53,11 +58,18 @@ function AppContent() {
     setUploadedFile(file);
   };
 
+  const isFormValid = useMemo(
+    () => uploadedFile && isOriginProjectValid(processingConfig.originProject),
+    [uploadedFile, processingConfig.originProject, isOriginProjectValid]
+  );
+
   const handleStartProcessing = () => {
-    if (!uploadedFile) return;
+    if (!uploadedFile || !isFormValid) return;
 
     const processingRequest = {
-      origin_project: originProject,
+      processing_config: {
+        origin_project: processingConfig.originProject,
+      },
     };
     uploadFileMutation.mutate({ file: uploadedFile, processingRequest });
   };
@@ -135,13 +147,19 @@ function AppContent() {
           </div>
 
           <div className={fr.cx("fr-mt-4w")}>
-            {/* File Upload Section */}
+            {/* Configuration and File Upload Section */}
             {!showResults && (
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                onStartProcessing={handleStartProcessing}
-                disabled={uploadFileMutation.isPending}
-              />
+              <>
+                <ProcessingConfig
+                  disabled={uploadFileMutation.isPending}
+                />
+                <FileUpload
+                  onFileSelect={handleFileSelect}
+                  onStartProcessing={handleStartProcessing}
+                  disabled={uploadFileMutation.isPending}
+                  isFormValid={!!isFormValid}
+                />
+              </>
             )}
 
             {/* Processing Status Section */}

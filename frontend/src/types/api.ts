@@ -33,8 +33,16 @@ export interface JobStatusResponse {
   updated_at: string;
 }
 
-export interface ProcessingRequest {
+export interface ProcessingConfig {
   origin_project: string;
+  // Future configuration fields will be added here:
+  // processing_date?: string;
+  // enabled_features?: string[];
+  // custom_thresholds?: Record<string, number>;
+}
+
+export interface ProcessingRequest {
+  processing_config: ProcessingConfig;
   // Future parameters can be easily added here:
   // processingDate?: string;
   // userPreferences?: Record<string, any>;

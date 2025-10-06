@@ -169,7 +169,7 @@ class WebProcessingService:
                         "month": 1,
                         "day": 1,
                     },
-                    "origin_project": processing_request.origin_project,
+                    "origin_project": processing_request.processing_config.origin_project,
                 }
             ]
             logger.debug(

@@ -7,8 +7,8 @@ import re
 from pydantic import BaseModel, Field, field_validator
 
 
-class ProcessingRequest(BaseModel):
-    """Request model for processing amendments."""
+class ProcessingConfig(BaseModel):
+    """Configuration model for processing parameters."""
 
     origin_project: str = Field(
         ...,
@@ -17,10 +17,10 @@ class ProcessingRequest(BaseModel):
         description="Name of the legislative project (e.g., 'PLFSS 2025')",
     )
 
-    # Future parameters can be easily added here:
+    # Future configuration fields will be added here:
     # processing_date: Optional[str] = Field(None, description="Custom processing date")
-    # user_preferences: Optional[Dict[str, Any]] = Field(None, description="User preferences")
-    # feature_flags: Optional[List[str]] = Field(None, description="Enabled feature flags")
+    # enabled_features: Optional[List[str]] = Field(None, description="List of enabled features")
+    # custom_thresholds: Optional[Dict[str, float]] = Field(None, description="Custom similarity thresholds")
 
     @field_validator("origin_project")
     @classmethod
@@ -42,3 +42,11 @@ class ProcessingRequest(BaseModel):
             raise ValueError("Origin project contains invalid characters")
 
         return v
+
+
+class ProcessingRequest(BaseModel):
+    """Request model for processing amendments."""
+
+    processing_config: ProcessingConfig = Field(
+        ..., description="Processing configuration parameters"
+    )

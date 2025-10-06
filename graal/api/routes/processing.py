@@ -59,7 +59,7 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):
         ) from e
 
     logger.info(
-        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}, origin_project: {processing_request.origin_project}"
+        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}"
     )
 
     if file.filename is None or file.filename == "":
@@ -90,7 +90,7 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):
         )
 
         logger.info(
-            f"[API] Processing job created successfully - job_id: {response.job_id}, filename: {file.filename}, origin_project: {processing_request.origin_project}, status: {response.status}"
+            f"[API] Processing job created successfully - job_id: {response.job_id}, filename: {file.filename}, status: {response.status}"
         )
         return response
 
