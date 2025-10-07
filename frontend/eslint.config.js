@@ -1,26 +1,46 @@
+import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import tsParser from '@typescript-eslint/parser'
+import { defineConfig } from 'eslint/config'
 import globals from 'globals'
-import tseslint from 'typescript-eslint'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all
+})
 
 export default defineConfig([
-  globalIgnores(['dist']),
   {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs['recommended-latest'],
-      reactRefresh.configs.vite,
-    ],
+    extends: compat.extends(
+      'eslint:recommended',
+      'plugin:@typescript-eslint/recommended',
+      'plugin:prettier/recommended'
+    ),
+
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.node
+      },
+
+      parser: tsParser,
+      ecmaVersion: 'latest',
+      sourceType: 'module'
     },
+
     rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_'
+        }
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
-    },
-  },
+      'prettier/prettier': 'error'
+    }
+  }
 ])
