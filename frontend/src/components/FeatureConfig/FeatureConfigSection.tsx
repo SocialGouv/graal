@@ -1,24 +1,21 @@
-import React from 'react';
-import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
-import { Accordion } from '@codegouvfr/react-dsfr/Accordion';
-import { fr } from '@codegouvfr/react-dsfr';
+import React from 'react'
+import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox'
+import { fr } from '@codegouvfr/react-dsfr'
 
 interface FeatureConfigSectionProps {
   // Feature identification
-  title: string;
-  description: string;
+  title: string
+  description: string
 
   // State management
-  enabled: boolean;
-  onEnabledChange: (enabled: boolean) => void;
+  enabled: boolean
+  onEnabledChange: (enabled: boolean) => void
 
   // UI behavior
-  showAdvancedConfig?: boolean;
-  accordionLabel?: string;
-  disabled?: boolean;
+  disabled?: boolean
 
   // Configuration content
-  children?: React.ReactNode;
+  children?: React.ReactNode
 }
 
 export const FeatureConfigSection: React.FC<FeatureConfigSectionProps> = ({
@@ -26,15 +23,14 @@ export const FeatureConfigSection: React.FC<FeatureConfigSectionProps> = ({
   description,
   enabled,
   onEnabledChange,
-  showAdvancedConfig = true,
-  accordionLabel = "Configuration avancée",
   disabled = false,
-  children,
+  children
 }) => {
   const handleChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onEnabledChange(e.target.checked),
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      onEnabledChange(e.target.checked),
     [onEnabledChange]
-  );
+  )
 
   const checkboxOption = React.useMemo(
     () => ({
@@ -43,58 +39,37 @@ export const FeatureConfigSection: React.FC<FeatureConfigSectionProps> = ({
       nativeInputProps: {
         checked: enabled,
         onChange: handleChange,
-        disabled,
-      },
+        disabled
+      }
     }),
     [title, description, enabled, handleChange, disabled]
-  );
+  )
 
-  // If feature is disabled or no advanced config, show simple checkbox
-  if (!enabled || !showAdvancedConfig || !children) {
-    return (
-      <div
-        className={fr.cx('fr-p-2w')}
-        style={{
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          backgroundColor: enabled ? '#f8f9fa' : '#ffffff'
-        }}
-      >
-        <Checkbox options={[checkboxOption]} />
-      </div>
-    );
-  }
-
-  // If feature is enabled and has advanced config, show accordion
   return (
-    <Accordion
-      label={
-        <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-grid-row--middle')}>
-          <div className={fr.cx('fr-col')}>
-            <Checkbox options={[checkboxOption]} />
-          </div>
-          <div
-            className={fr.cx('fr-col')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              flex: '0 0 auto'
-            }}
-          >
-            <span className={fr.cx('fr-text--sm', 'fr-text--bold')}>
-              {accordionLabel}
-            </span>
-          </div>
-        </div>
-      }
-      defaultExpanded={false}
+    <div
+      className={fr.cx('fr-p-2w')}
+      style={{
+        border: '1px solid var(--border-default-grey, #ddd)',
+        borderRadius: '4px',
+        backgroundColor: enabled
+          ? 'var(--background-alt-blue-france, #f5f5fe)'
+          : 'var(--background-default-grey, #ffffff)'
+      }}
     >
-      <div className={fr.cx('fr-mt-2w')}>
-        {children}
-      </div>
-    </Accordion>
-  );
-};
+      <Checkbox options={[checkboxOption]} />
 
-export default FeatureConfigSection;
+      {/* Show configuration fields directly when feature is enabled */}
+      {enabled && children && (
+        <section
+          className={fr.cx('fr-mt-2w')}
+          aria-live="polite"
+          aria-label="Configuration options"
+        >
+          {children}
+        </section>
+      )}
+    </div>
+  )
+}
+
+export default FeatureConfigSection
