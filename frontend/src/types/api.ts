@@ -25,20 +25,46 @@ export interface JobStatusResponse {
   updated_at: string
 }
 
+export interface AllotmentsConfig {
+  enabled: boolean
+  column?: string
+  similarity_threshold?: number
+}
+
+export interface SimilaritiesWithinLecturesConfig {
+  enabled: boolean
+  column?: string
+  similarity_threshold?: number
+}
+
+export interface SimilaritySearchConfig {
+  enabled: boolean
+  origin_project?: string
+  clustering_similarity_thresholds?: Record<string, number>
+  fuzzy_match_similarity_thresholds?: Record<string, number>
+  similarity_threshold_overrides?: Record<string, number>
+  columns_to_copy?: Record<string, { enabled: boolean; condition?: string }>
+}
+
+export interface AttributionConfig {
+  enabled: boolean
+  project_name?: string
+}
+
+export interface DefaultOpinionConfig {
+  enabled: boolean
+}
+
 export interface ProcessingConfig {
-  origin_project: string
-  // Future configuration fields will be added here:
-  // processing_date?: string;
-  // enabled_features?: string[];
-  // custom_thresholds?: Record<string, number>;
+  allotments: AllotmentsConfig
+  similarities_within_lectures: SimilaritiesWithinLecturesConfig
+  similarity_search: SimilaritySearchConfig
+  attribution: AttributionConfig
+  default_opinion: DefaultOpinionConfig
 }
 
 export interface ProcessingRequest {
   processing_config: ProcessingConfig
-  // Future parameters can be easily added here:
-  // processingDate?: string;
-  // userPreferences?: Record<string, any>;
-  // featureFlags?: string[];
 }
 
 export interface ApiError {

@@ -195,8 +195,15 @@ class SimilarityHandler:
                 columns_text = ", ".join(enabled_columns)
                 prefix = f"Copie de {columns_text} depuis"
 
+                # Handle None values in origin_project for display
+                display_origin_project = (
+                    matching_origin_project
+                    if matching_origin_project is not None
+                    else "Projet inconnu"
+                )
+
                 target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
-                        {prefix} : {matching_origin_project}
+                        {prefix} : {display_origin_project}
                         Numéro d'amendement : {matching_num_amdt}
                         Lecture : {matching_lecture}
                         Organe : {matching_organe}
