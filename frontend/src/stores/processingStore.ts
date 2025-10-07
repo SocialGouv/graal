@@ -8,6 +8,21 @@ export interface ProcessingConfig {
     column: 'Corps amdt' | 'Exposé amdt';
     similarity_threshold: number;
   };
+  similaritiesWithinLectures: {
+    enabled: boolean;
+    column: 'Corps amdt' | 'Exposé amdt';
+    similarity_threshold: number;
+  };
+  similaritySearch: {
+    enabled: boolean;
+  };
+  attribution: {
+    enabled: boolean;
+    project_name: string;
+  };
+  defaultOpinion: {
+    enabled: boolean;
+  };
 }
 
 export interface ProcessingState {
@@ -59,6 +74,21 @@ const initialState = {
       enabled: false,
       column: 'Corps amdt' as const,
       similarity_threshold: 0.9999,
+    },
+    similaritiesWithinLectures: {
+      enabled: false,
+      column: 'Exposé amdt' as const,
+      similarity_threshold: 0.8,
+    },
+    similaritySearch: {
+      enabled: false,
+    },
+    attribution: {
+      enabled: true,
+      project_name: 'PLF',
+    },
+    defaultOpinion: {
+      enabled: false,
     },
   },
   jobId: null,
