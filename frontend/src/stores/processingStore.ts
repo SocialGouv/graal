@@ -4,65 +4,65 @@ import type { AmendmentPreview, JobStatus } from '../types/api';
 export interface ProcessingConfig {
   originProject: string;
   allotments: {
-    enabled: boolean;
-    column: 'Corps amdt' | 'Exposé amdt';
-    similarity_threshold: number;
-  };
+    enabled: boolean
+    column: 'Corps amdt' | 'Exposé amdt'
+    similarity_threshold: number
+  }
   similaritiesWithinLectures: {
-    enabled: boolean;
-    column: 'Corps amdt' | 'Exposé amdt';
-    similarity_threshold: number;
-  };
+    enabled: boolean
+    column: 'Corps amdt' | 'Exposé amdt'
+    similarity_threshold: number
+  }
   similaritySearch: {
     enabled: boolean;
   };
   attribution: {
-    enabled: boolean;
-    project_name: string;
-  };
+    enabled: boolean
+    project_name: string
+  }
   defaultOpinion: {
-    enabled: boolean;
-  };
+    enabled: boolean
+  }
 }
 
 export interface ProcessingState {
   // File upload state
-  uploadedFile: File | null;
-  uploadProgress: number;
+  uploadedFile: File | null
+  uploadProgress: number
 
   // Processing configuration
-  processingConfig: ProcessingConfig;
+  processingConfig: ProcessingConfig
 
   // Job processing state
-  jobId: string | null;
-  processingStatus: 'idle' | 'uploading' | JobStatus;
-  progressPercent: number;
-  progressMessage: string | null;
-  startedAt: string | null;
-  updatedAt: string | null;
+  jobId: string | null
+  processingStatus: 'idle' | 'uploading' | JobStatus
+  progressPercent: number
+  progressMessage: string | null
+  startedAt: string | null
+  updatedAt: string | null
 
   // Results state
-  resultsPreview: AmendmentPreview[] | null;
-  totalRows: number;
+  resultsPreview: AmendmentPreview[] | null
+  totalRows: number
 
   // Error handling
-  error: string | null;
+  error: string | null
 
   // Actions
-  setUploadedFile: (file: File | null) => void;
-  setUploadProgress: (progress: number) => void;
-  setProcessingConfig: (config: ProcessingConfig) => void;
-  setJobId: (id: string | null) => void;
+  setUploadedFile: (file: File | null) => void
+  setUploadProgress: (progress: number) => void
+  setProcessingConfig: (config: ProcessingConfig) => void
+  setJobId: (id: string | null) => void
   updateProgress: (
     status: ProcessingState['processingStatus'],
     percent: number,
     message?: string | null,
     startedAt?: string,
     updatedAt?: string
-  ) => void;
-  setResults: (results: AmendmentPreview[], totalRows: number) => void;
-  setError: (error: string | null) => void;
-  reset: () => void;
+  ) => void
+  setResults: (results: AmendmentPreview[], totalRows: number) => void
+  setError: (error: string | null) => void
+  reset: () => void
 }
 
 const initialState = {
@@ -73,23 +73,23 @@ const initialState = {
     allotments: {
       enabled: false,
       column: 'Corps amdt' as const,
-      similarity_threshold: 0.9999,
+      similarity_threshold: 0.9999
     },
     similaritiesWithinLectures: {
       enabled: false,
       column: 'Exposé amdt' as const,
-      similarity_threshold: 0.8,
+      similarity_threshold: 0.8
     },
     similaritySearch: {
       enabled: false,
     },
     attribution: {
       enabled: true,
-      project_name: 'PLF',
+      project_name: 'PLF'
     },
     defaultOpinion: {
-      enabled: false,
-    },
+      enabled: false
+    }
   },
   jobId: null,
   processingStatus: 'idle' as const,
@@ -99,8 +99,8 @@ const initialState = {
   updatedAt: null,
   resultsPreview: null,
   totalRows: 0,
-  error: null,
-};
+  error: null
+}
 
 export const useProcessingStore = create<ProcessingState>((set) => ({
   ...initialState,
@@ -109,26 +109,26 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
     set((state) => ({
       ...state,
       uploadedFile: file,
-      error: null,
+      error: null
     })),
 
   setUploadProgress: (progress) =>
     set((state) => ({
       ...state,
-      uploadProgress: progress,
+      uploadProgress: progress
     })),
 
   setProcessingConfig: (config) =>
     set((state) => ({
       ...state,
       processingConfig: config,
-      error: null,
+      error: null
     })),
 
   setJobId: (id) =>
     set((state) => ({
       ...state,
-      jobId: id,
+      jobId: id
     })),
 
   updateProgress: (status, percent, message, startedAt, updatedAt) =>
@@ -138,22 +138,22 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
       progressPercent: percent,
       progressMessage: message ?? state.progressMessage,
       startedAt: startedAt ?? state.startedAt,
-      updatedAt: updatedAt ?? state.updatedAt,
+      updatedAt: updatedAt ?? state.updatedAt
     })),
 
   setResults: (results, totalRows) =>
     set((state) => ({
       ...state,
       resultsPreview: results,
-      totalRows,
+      totalRows
     })),
 
   setError: (error) =>
     set((state) => ({
       ...state,
       error,
-      processingStatus: error ? 'failed' : state.processingStatus,
+      processingStatus: error ? 'failed' : state.processingStatus
     })),
 
-  reset: () => set(initialState),
-}));
+  reset: () => set(initialState)
+}))
