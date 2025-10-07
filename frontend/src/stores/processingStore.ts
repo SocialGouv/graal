@@ -1,8 +1,15 @@
-import { create } from 'zustand';
-import type { AmendmentPreview, JobStatus } from '../types/api';
+import { create } from 'zustand'
+import type { AmendmentPreview, JobStatus } from '../types/api'
+
+export interface ColumnToCopyConfig {
+  enabled: boolean
+  condition?: string
+}
+
+export type ThresholdConfig = Record<string, number>
+export type ThresholdOverrides = Record<string, Record<string, number>>
 
 export interface ProcessingConfig {
-  originProject: string;
   allotments: {
     enabled: boolean
     column: 'Corps amdt' | 'Exposé amdt'
@@ -14,8 +21,13 @@ export interface ProcessingConfig {
     similarity_threshold: number
   }
   similaritySearch: {
-    enabled: boolean;
-  };
+    enabled: boolean
+    originProject: string
+    clusteringSimilarityThresholds: ThresholdConfig
+    fuzzyMatchSimilarityThresholds: ThresholdConfig
+    similarityThresholdOverrides: ThresholdOverrides
+    columnsToCopy: Record<string, ColumnToCopyConfig>
+  }
   attribution: {
     enabled: boolean
     project_name: string
@@ -69,7 +81,6 @@ const initialState = {
   uploadedFile: null,
   uploadProgress: 0,
   processingConfig: {
-    originProject: '',
     allotments: {
       enabled: false,
       column: 'Corps amdt' as const,
@@ -82,6 +93,21 @@ const initialState = {
     },
     similaritySearch: {
       enabled: false,
+      originProject: '',
+      clusteringSimilarityThresholds: {
+        'Exposé amdt': 0.4,
+        'Corps amdt': 0.4
+      },
+      fuzzyMatchSimilarityThresholds: {
+        'Exposé amdt': 0.4,
+        'Corps amdt': 0.9
+      },
+      similarityThresholdOverrides: {},
+      columnsToCopy: {
+        Réponse: { enabled: true },
+        Sort: { enabled: true, condition: 'irrecevable' },
+        'Objet amdt': { enabled: false }
+      }
     },
     attribution: {
       enabled: true,

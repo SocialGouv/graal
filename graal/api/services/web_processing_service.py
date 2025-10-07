@@ -42,7 +42,7 @@ class WebProcessingService:
             set()
         )  # Track background tasks to prevent garbage collection
 
-    def _merge_frontend_config(
+    def _merge_frontend_config(  # noqa: C901
         self, base_config: dict, frontend_config: ProcessingConfig
     ) -> dict:
         """
@@ -84,9 +84,43 @@ class WebProcessingService:
 
         # Update similarity search configuration
         if frontend_config.similarity_search:
-            config["similarity_search"]["enabled"] = (
-                frontend_config.similarity_search.enabled
-            )
+            similarity_config = {
+                "enabled": frontend_config.similarity_search.enabled,
+            }
+
+            # Add clustering similarity thresholds
+            if frontend_config.similarity_search.clustering_similarity_thresholds:
+                similarity_config["clustering_similarity_thresholds"] = (
+                    frontend_config.similarity_search.clustering_similarity_thresholds
+                )
+
+            # Add fuzzy match similarity thresholds
+            if frontend_config.similarity_search.fuzzy_match_similarity_thresholds:
+                similarity_config["fuzzy_match_similarity_thresholds"] = (
+                    frontend_config.similarity_search.fuzzy_match_similarity_thresholds
+                )
+
+            # Add similarity threshold overrides
+            if frontend_config.similarity_search.similarity_threshold_overrides:
+                similarity_config["similarity_threshold_overrides"] = (
+                    frontend_config.similarity_search.similarity_threshold_overrides
+                )
+
+            # Add columns to copy configuration
+            if frontend_config.similarity_search.columns_to_copy:
+                columns_to_copy = {}
+                for (
+                    column_name,
+                    column_config,
+                ) in frontend_config.similarity_search.columns_to_copy.items():
+                    columns_to_copy[column_name] = {"enabled": column_config.enabled}
+                    if column_config.condition:
+                        columns_to_copy[column_name]["condition"] = (
+                            column_config.condition
+                        )
+                similarity_config["columns_to_copy"] = columns_to_copy
+
+            config["similarity_search"].update(similarity_config)
             logger.debug(
                 f"[WEB_SERVICE] Updated similarity_search config: enabled={frontend_config.similarity_search.enabled}"
             )
@@ -240,6 +274,18 @@ class WebProcessingService:
                 f"[WEB_SERVICE] Configuration merged successfully - job_id: {job_id}"
             )
 
+            # Get origin_project from similarity_search config if available
+            # Note: Pydantic validation ensures origin_project is present when similarity_search is enabled
+            origin_project = None
+            if (
+                processing_request.processing_config.similarity_search
+                and processing_request.processing_config.similarity_search.enabled
+            ):
+                origin_project = processing_request.processing_config.similarity_search.origin_project
+            else:
+                # Use None when similarity search is not enabled to avoid issues with filtering/queries
+                origin_project = None
+
             # Update the input file path in config to point to our uploaded file
             config["input_files"] = [
                 {
@@ -249,7 +295,7 @@ class WebProcessingService:
                         "month": 1,
                         "day": 1,
                     },
-                    "origin_project": processing_request.processing_config.origin_project,
+                    "origin_project": origin_project,
                 }
             ]
             logger.debug(
