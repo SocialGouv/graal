@@ -69,6 +69,26 @@ function AppContent() {
     const processingRequest = {
       processing_config: {
         origin_project: processingConfig.originProject,
+        allotments: {
+          enabled: processingConfig.allotments.enabled,
+          column: processingConfig.allotments.column,
+          similarity_threshold: processingConfig.allotments.similarity_threshold,
+        },
+        similarities_within_lectures: {
+          enabled: processingConfig.similaritiesWithinLectures.enabled,
+          column: processingConfig.similaritiesWithinLectures.column,
+          similarity_threshold: processingConfig.similaritiesWithinLectures.similarity_threshold,
+        },
+        similarity_search: {
+          enabled: processingConfig.similaritySearch.enabled,
+        },
+        attribution: {
+          enabled: processingConfig.attribution.enabled,
+          project_name: processingConfig.attribution.project_name,
+        },
+        default_opinion: {
+          enabled: processingConfig.defaultOpinion.enabled,
+        },
       },
     };
     uploadFileMutation.mutate({ file: uploadedFile, processingRequest });

@@ -41,13 +41,40 @@ export interface paths {
          *
          *     Args:
          *         file: JSON file containing amendments data
-         *         request: JSON string containing ProcessingRequest data
+         *         request: JSON string containing ProcessingRequest data (see ProcessingRequest model)
          *
          *     Returns:
          *         ProcessingResponse with job_id and initial status
          *
          *     Raises:
          *         HTTPException: 400 for validation errors, 413 for file too large, 422 for invalid JSON
+         *
+         *     Example request JSON:
+         *         {
+         *             "processing_config": {
+         *                 "origin_project": "PLF 2025",
+         *                 "allotments": {
+         *                     "enabled": true,
+         *                     "column": "Corps amdt",
+         *                     "similarity_threshold": 0.9999
+         *                 },
+         *                 "similarities_within_lectures": {
+         *                     "enabled": false,
+         *                     "column": "Exposé amdt",
+         *                     "similarity_threshold": 0.8
+         *                 },
+         *                 "similarity_search": {
+         *                     "enabled": false
+         *                 },
+         *                 "attribution": {
+         *                     "enabled": true,
+         *                     "project_name": "PLF"
+         *                 },
+         *                 "default_opinion": {
+         *                     "enabled": false
+         *                 }
+         *             }
+         *         }
          */
         post: operations["process_amendments_api_v1_process_post"];
         delete?: never;
