@@ -1,3 +1,10 @@
+# [1.0.0-beta.2](https://github.com/SocialGouv/graal/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-10-08)
+
+
+### Bug Fixes
+
+* images tag ([4eacbdd](https://github.com/SocialGouv/graal/commit/4eacbdd1873b3238fa2000ebf1a1b94234112607))
+
 # 1.0.0-beta.1 (2025-10-08)
 
 
