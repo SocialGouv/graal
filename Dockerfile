@@ -1,5 +1,5 @@
 # Multi-stage build pour optimiser la taille finale
-FROM python:3.11-slim as builder
+FROM python:3.14-slim as builder
 
 # Variables d'environnement pour optimiser pip
 ENV PIP_NO_CACHE_DIR=1 \
@@ -32,7 +32,7 @@ RUN poetry lock --no-update && \
     rm -rf $POETRY_CACHE_DIR
 
 # Stage final - image de runtime
-FROM python:3.11-slim as runtime
+FROM python:3.14-slim as runtime
 
 # Variables d'environnement
 ENV PYTHONDONTWRITEBYTECODE=1 \
