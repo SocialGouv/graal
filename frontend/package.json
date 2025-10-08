@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint --config eslint.config.mjs \"**/*.ts\" --fix && yarn typecheck",
     "preview": "vite preview",
-    "generate-types": "openapi-typescript http://localhost:8000/openapi.json -o src/types/api-generated.ts",
-    "generate-types:dev": "openapi-typescript http://localhost:8000/openapi.json -o src/types/api-generated.ts --prettier",
+    "generate-types": "openapi-typescript http://localhost:8000/openapi.json -o src/types/api-generated.ts && eslint src/types/api-generated.ts --fix",
+    "generate-types:dev": "openapi-typescript http://localhost:8000/openapi.json -o src/types/api-generated.ts && eslint src/types/api-generated.ts --fix",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
