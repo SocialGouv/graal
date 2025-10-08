@@ -73,7 +73,7 @@ class AllotmentFeature(BaseFeature):
 
         allotment_config = config.get("allotments", {})
         allotment_column = allotment_config.get("column", "Corps amdt")
-        similarity_threshold = allotment_config.get("similarity_threshold", 0.9999)
+        similarity_threshold = allotment_config.get("similarity_threshold", 0.999)
         tf_idf_threshold = config.get("similarity_thresholds", {}).get(
             "tf_idf_threshold", 0.4
         )

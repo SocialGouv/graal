@@ -10,7 +10,7 @@ similarity_thresholds:
 allotments:
   enabled: false
   column: "Corps amdt"  # Column used for similarity comparison
-  similarity_threshold: 0.9999  # Threshold above which amendments are considered similar
+  similarity_threshold: 0.999  # Threshold above which amendments are considered similar
 
 # Configuration for finding similarities within lecture documents
 similarities_within_lectures:

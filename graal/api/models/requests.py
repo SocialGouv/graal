@@ -18,7 +18,7 @@ class AllotmentsConfig(BaseModel):
         default="Corps amdt", description="Column used for similarity comparison"
     )
     similarity_threshold: float = Field(
-        default=0.9999,
+        default=0.999,
         ge=0.0,
         le=1.0,
         description="Threshold above which amendments are considered similar",

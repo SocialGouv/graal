@@ -139,7 +139,7 @@ tf_idf_threshold: 0.4
 allotments:
   enabled: true
   column: "Corps amdt"  # Column used for similarity comparison
-  similarity_threshold: 0.9999  # Threshold above which amendments are considered similar
+  similarity_threshold: 0.999  # Threshold above which amendments are considered similar
 ```
 
 #### LLM Client Configuration

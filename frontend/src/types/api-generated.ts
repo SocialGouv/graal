@@ -56,7 +56,7 @@ export interface paths {
      *                 "allotments": {
      *                     "enabled": true,
      *                     "column": "Corps amdt",
-     *                     "similarity_threshold": 0.9999
+     *                     "similarity_threshold": 0.999
      *                 },
      *                 "similarities_within_lectures": {
      *                     "enabled": false,

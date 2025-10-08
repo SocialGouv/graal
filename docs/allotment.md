@@ -81,7 +81,7 @@ La fonctionnalité d'allotissement peut être configurée via le fichier `config
     "allotments": {
         "enabled": true,
         "column": "Corps amdt",
-        "similarity_threshold": 0.9999
+        "similarity_threshold": 0.999
     }
 }
 ```
@@ -91,6 +91,6 @@ La fonctionnalité d'allotissement peut être configurée via le fichier `config
 - **tf_idf_threshold** : Seuil pour le clustering TF-IDF initial (valeur par défaut : 40%)
 - **allotments.enabled** : Active ou désactive la fonctionnalité d'allotissement
 - **allotments.column** : Colonne utilisée pour l'analyse de similarité (valeur par défaut : "Corps amdt")
-- **allotments.similarity_threshold** : Seuil de similarité pour la distance de Damerau-Levenshtein (valeur par défaut : 0.9999)
+- **allotments.similarity_threshold** : Seuil de similarité pour la distance de Damerau-Levenshtein (valeur par défaut : 0.999)
 
-Un seuil plus élevé pour `tf_idf_threshold` (par exemple 0.4) permet d'identifier des groupes d'amendements plus larges lors de la phase initiale, tandis qu'un seuil plus bas pour `similarity_threshold` (par exemple 0.9999) assure que seuls les amendements très similaires sont regroupés lors de la phase de raffinement.
+Un seuil plus élevé pour `tf_idf_threshold` (par exemple 0.4) permet d'identifier des groupes d'amendements plus larges lors de la phase initiale, tandis qu'un seuil plus bas pour `similarity_threshold` (par exemple 0.999) assure que seuls les amendements très similaires sont regroupés lors de la phase de raffinement.

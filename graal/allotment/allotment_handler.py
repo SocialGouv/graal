@@ -132,7 +132,7 @@ class AllotmentHandler:
     def process_allotments(
         amendments_df: pd.DataFrame,
         allotment_column: str,
-        similarity_threshold: float = 0.9999,
+        similarity_threshold: float = 0.999,
         group_by_columns: Optional[List[str]] = None,
         eps: float = 0.4,
         acronym_mapping: Optional[Dict[Acronym, str]] = None,

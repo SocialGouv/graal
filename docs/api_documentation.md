@@ -29,7 +29,7 @@
   ],
   "config": {
     "column": "Corps amdt",
-    "similarity_threshold": 0.9999,
+    "similarity_threshold": 0.999,
     "group_by_columns": ["Num article"],
     "clustering_similarity_threshold": 0.4
   }

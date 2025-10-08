@@ -414,7 +414,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
             selectedColumn={processingConfig.allotments.column}
             onColumnChange={handleAllotmentsColumnChange}
             columnError={allotmentsColumnError || undefined}
-            thresholdHint="Amendements considérés comme similaires au-dessus de ce seuil (0.9999 = quasi-identiques)"
+            thresholdHint="Amendements considérés comme similaires au-dessus de ce seuil (0.999 = quasi-identiques)"
             thresholdValue={processingConfig.allotments.similarity_threshold}
             onThresholdChange={handleSimilarityThresholdChange}
             thresholdError={similarityThresholdError || undefined}

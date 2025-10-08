@@ -84,7 +84,7 @@ const initialState = {
     allotments: {
       enabled: false,
       column: 'Corps amdt' as const,
-      similarity_threshold: 0.9999
+      similarity_threshold: 0.999
     },
     similaritiesWithinLectures: {
       enabled: false,
