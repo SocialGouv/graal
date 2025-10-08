@@ -14,5 +14,6 @@
         "build:ts": "tsc --build",
         "clean:ts": "tsc --build --clean",
         "install:all": "yarn install"
-    }
+    },
+    "version": "1.0.0-alpha.1"
 }
