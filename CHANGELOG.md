@@ -1,3 +1,19 @@
+# [1.0.0-beta.3](https://github.com/SocialGouv/graal/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2025-10-09)
+
+
+### Bug Fixes
+
+* Actually connect frontend configuration to backend processing ([1526ca2](https://github.com/SocialGouv/graal/commit/1526ca28eecfc0fb0f13fe271757a7e8f8dc4347))
+
+
+### Features
+
+* Add a processing configuration to API + UI ([709384b](https://github.com/SocialGouv/graal/commit/709384b9897deb2bd2cd324171cc46bdf901519a))
+* Add Allotment config drop down ([8169a94](https://github.com/SocialGouv/graal/commit/8169a945098786798e9331f1e812e15a4c26a42c))
+* Add columns to copy and threshold slider components ([9bb5044](https://github.com/SocialGouv/graal/commit/9bb5044ded4fe7b57425a50e017f3b7e01d196b5))
+* Add configs to similarity search ([9db35b9](https://github.com/SocialGouv/graal/commit/9db35b95dc096ca234390203370e46ad53ae945a))
+* Start adding processing configuration to the UI ([a7ac18d](https://github.com/SocialGouv/graal/commit/a7ac18d7eda2b7cae4b84559ec3f830ff262688f))
+
 # [1.0.0-beta.2](https://github.com/SocialGouv/graal/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-10-08)
 
 
