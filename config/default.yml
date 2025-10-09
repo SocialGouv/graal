@@ -29,7 +29,7 @@ similarity_search:
   fuzzy_match_similarity_thresholds:
     "Exposé amdt": 0.4
     "Corps amdt": 0.9
-  # Similarity threshold overrides for specific amendment types
+  # Similarity threshold overrides for specific columns and amendment types
   similarity_threshold_overrides:
     "Exposé amdt":
       "amendement redactionnel": 0.95

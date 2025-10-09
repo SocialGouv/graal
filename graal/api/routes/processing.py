@@ -33,13 +33,40 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):
 
     Args:
         file: JSON file containing amendments data
-        request: JSON string containing ProcessingRequest data
+        request: JSON string containing ProcessingRequest data (see ProcessingRequest model)
 
     Returns:
         ProcessingResponse with job_id and initial status
 
     Raises:
         HTTPException: 400 for validation errors, 413 for file too large, 422 for invalid JSON
+
+    Example request JSON:
+        {
+            "processing_config": {
+                "origin_project": "PLF 2025",
+                "allotments": {
+                    "enabled": true,
+                    "column": "Corps amdt",
+                    "similarity_threshold": 0.9999
+                },
+                "similarities_within_lectures": {
+                    "enabled": false,
+                    "column": "Exposé amdt",
+                    "similarity_threshold": 0.8
+                },
+                "similarity_search": {
+                    "enabled": false
+                },
+                "attribution": {
+                    "enabled": true,
+                    "project_name": "PLF"
+                },
+                "default_opinion": {
+                    "enabled": false
+                }
+            }
+        }
     """
     # Parse and validate the ProcessingRequest
     try:
@@ -59,7 +86,7 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):
         ) from e
 
     logger.info(
-        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}, origin_project: {processing_request.origin_project}"
+        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}"
     )
 
     if file.filename is None or file.filename == "":
@@ -90,7 +117,7 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):
         )
 
         logger.info(
-            f"[API] Processing job created successfully - job_id: {response.job_id}, filename: {file.filename}, origin_project: {processing_request.origin_project}, status: {response.status}"
+            f"[API] Processing job created successfully - job_id: {response.job_id}, filename: {file.filename}, status: {response.status}"
         )
         return response
 

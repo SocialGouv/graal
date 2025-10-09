@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pandas as pd
 import pytest
 
+from graal.api.models.requests import ProcessingConfig, ProcessingRequest
 from graal.api.models.responses import (
     AmendmentPreview,
     JobStatus,
@@ -85,6 +86,11 @@ class TestWebProcessingService:
         )
 
     @pytest.fixture
+    def mock_processing_request(self):
+        """Mock processing request with default configuration."""
+        return ProcessingRequest(processing_config=ProcessingConfig())
+
+    @pytest.fixture
     def service(self, tmp_path, mock_job_registry):
         """WebProcessingService instance with temporary directory."""
         service = WebProcessingService(job_registry=mock_job_registry)
@@ -117,7 +123,12 @@ class TestWebProcessingService:
 
     @pytest.mark.asyncio
     async def test_start_processing_valid_json(
-        self, service, mock_job_registry, mock_aiofiles, sample_json_data
+        self,
+        service,
+        mock_job_registry,
+        mock_aiofiles,
+        sample_json_data,
+        mock_processing_request,
     ):
         """Test start_processing with valid JSON file."""
         file_content = self.create_test_file_content(sample_json_data)
@@ -126,7 +137,9 @@ class TestWebProcessingService:
         with patch("uuid.uuid4") as mock_uuid:
             mock_uuid.return_value = "test-job-id"
 
-            result = await service.start_processing(file_content, filename)
+            result = await service.start_processing(
+                file_content, filename, mock_processing_request
+            )
 
         # Verify job creation
         mock_job_registry.create_job.assert_called_once_with(
@@ -144,32 +157,44 @@ class TestWebProcessingService:
         assert result.message == "Processing job started"
 
     @pytest.mark.asyncio
-    async def test_start_processing_file_too_large(self, service, sample_json_data):
+    async def test_start_processing_file_too_large(
+        self, service, sample_json_data, mock_processing_request
+    ):
         """Test start_processing with file exceeding size limit."""
         # Create file larger than 50MB
         file_content = self.create_test_file_content(sample_json_data, size_mb=51)
         filename = "large_file.json"
 
         with pytest.raises(ValueError, match="File size .* exceeds maximum"):
-            await service.start_processing(file_content, filename)
+            await service.start_processing(
+                file_content, filename, mock_processing_request
+            )
 
     @pytest.mark.asyncio
-    async def test_start_processing_invalid_json(self, service):
+    async def test_start_processing_invalid_json(
+        self, service, mock_processing_request
+    ):
         """Test start_processing with invalid JSON content."""
         file_content = b"invalid json content"
         filename = "invalid.json"
 
         with pytest.raises(ValueError, match="Invalid JSON content"):
-            await service.start_processing(file_content, filename)
+            await service.start_processing(
+                file_content, filename, mock_processing_request
+            )
 
     @pytest.mark.asyncio
-    async def test_start_processing_invalid_encoding(self, service):
+    async def test_start_processing_invalid_encoding(
+        self, service, mock_processing_request
+    ):
         """Test start_processing with invalid UTF-8 encoding."""
         file_content = b"\xff\xfe invalid utf-8"
         filename = "invalid_encoding.json"
 
         with pytest.raises(ValueError, match="Unable to decode file content as UTF-8"):
-            await service.start_processing(file_content, filename)
+            await service.start_processing(
+                file_content, filename, mock_processing_request
+            )
 
     @pytest.mark.asyncio
     async def test_process_file_async_success(
@@ -177,6 +202,7 @@ class TestWebProcessingService:
         service,
         mock_job_registry,
         tmp_path,
+        mock_processing_request,
     ):
         """Test successful async file processing."""
         job_id = "test-job-id"
@@ -212,8 +238,10 @@ class TestWebProcessingService:
         with open(input_file_path, "w") as f:
             json.dump(input_json_data, f)
 
-        # Create mock output file
+        # Create mock output files (both CSV and Excel)
         output_file_path.write_text("test,csv,content\n1,2,3")
+        excel_output_path = tmp_path / f"{job_id}_output_20240101_120000.xlsx"
+        excel_output_path.write_text("mock excel content")  # Mock Excel file
 
         # Setup job registry mock
         mock_job_registry.get_job.return_value = {
@@ -237,6 +265,7 @@ class TestWebProcessingService:
             mock_load_config.return_value = {
                 "input_files": [],
                 "output": {"file_prefix_template": "test_output"},
+                "similarity_search": {},
             }
 
             # Setup processing pipeline mock
@@ -245,7 +274,7 @@ class TestWebProcessingService:
             mock_processing_pipeline.return_value = mock_instance
 
             # Run the async processing
-            await service._process_file_async(job_id)
+            await service._process_file_async(job_id, mock_processing_request)
 
         # Verify job updates
         assert mock_job_registry.update_job.call_count >= 3
@@ -259,7 +288,7 @@ class TestWebProcessingService:
 
     @pytest.mark.asyncio
     async def test_process_file_async_pipeline_failure(
-        self, service, mock_job_registry
+        self, service, mock_job_registry, mock_processing_request
     ):
         """Test async processing with pipeline failure."""
         job_id = "test-job-id"
@@ -284,6 +313,7 @@ class TestWebProcessingService:
             mock_load_config.return_value = {
                 "input_files": [],
                 "output": {"file_prefix_template": "test_output"},
+                "similarity_search": {},
             }
 
             # Setup pipeline to fail
@@ -292,7 +322,7 @@ class TestWebProcessingService:
             )
 
             # Run the async processing
-            await service._process_file_async(job_id)
+            await service._process_file_async(job_id, mock_processing_request)
 
         # Verify failure handling
         final_call = mock_job_registry.update_job.call_args_list[-1]
@@ -301,7 +331,9 @@ class TestWebProcessingService:
         assert "Pipeline failed" in final_call[1]["message"]
 
     @pytest.mark.asyncio
-    async def test_process_file_async_timeout(self, service, mock_job_registry):
+    async def test_process_file_async_timeout(
+        self, service, mock_job_registry, mock_processing_request
+    ):
         """Test async processing timeout handling."""
         job_id = "test-job-id"
         input_file_path = "test_input.json"
@@ -331,6 +363,7 @@ class TestWebProcessingService:
                 mock_load_config.return_value = {
                     "input_files": [],
                     "output": {"file_prefix_template": "test_output"},
+                    "similarity_search": {},
                 }
 
                 # Setup processing pipeline mock
@@ -343,7 +376,7 @@ class TestWebProcessingService:
                 mock_executor.side_effect = asyncio.TimeoutError()
                 mock_loop.return_value.run_in_executor = mock_executor
 
-                await service._process_file_async(job_id)
+                await service._process_file_async(job_id, mock_processing_request)
 
                 # Verify timeout handling
                 final_call = mock_job_registry.update_job.call_args_list[-1]
@@ -354,13 +387,15 @@ class TestWebProcessingService:
             service.timeout_seconds = original_timeout
 
     @pytest.mark.asyncio
-    async def test_process_file_async_job_not_found(self, service, mock_job_registry):
+    async def test_process_file_async_job_not_found(
+        self, service, mock_job_registry, mock_processing_request
+    ):
         """Test async processing with non-existent job."""
         job_id = "non-existent-job"
         mock_job_registry.get_job.return_value = None
 
         # Should handle gracefully without raising exception
-        await service._process_file_async(job_id)
+        await service._process_file_async(job_id, mock_processing_request)
 
         # Should not call update_job since job doesn't exist
         mock_job_registry.update_job.assert_not_called()

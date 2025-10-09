@@ -12,7 +12,7 @@ from typing import Optional
 import aiofiles
 import pandas as pd
 
-from graal.api.models.requests import ProcessingRequest
+from graal.api.models.requests import ProcessingConfig, ProcessingRequest
 from graal.api.models.responses import (
     AmendmentPreview,
     JobStatus,
@@ -41,6 +41,109 @@ class WebProcessingService:
         self._background_tasks: set[asyncio.Task] = (
             set()
         )  # Track background tasks to prevent garbage collection
+
+    def _merge_frontend_config(  # noqa: C901
+        self, base_config: dict, frontend_config: ProcessingConfig
+    ) -> dict:
+        """
+        Merge frontend configuration with the base YAML configuration.
+
+        Args:
+            base_config: The loaded YAML configuration
+            frontend_config: The ProcessingConfig from the frontend request
+
+        Returns:
+            Updated configuration with frontend settings applied
+        """
+        logger.info("[WEB_SERVICE] Merging frontend configuration with base config")
+
+        # Create a copy to avoid modifying the original
+        config = base_config.copy()
+
+        # Update allotments configuration
+        if frontend_config.allotments:
+            config["allotments"] = {
+                "enabled": frontend_config.allotments.enabled,
+                "column": frontend_config.allotments.column,
+                "similarity_threshold": frontend_config.allotments.similarity_threshold,
+            }
+            logger.debug(
+                f"[WEB_SERVICE] Updated allotments config: enabled={frontend_config.allotments.enabled}"
+            )
+
+        # Update similarities within lectures configuration
+        if frontend_config.similarities_within_lectures:
+            config["similarities_within_lectures"] = {
+                "enabled": frontend_config.similarities_within_lectures.enabled,
+                "column": frontend_config.similarities_within_lectures.column,
+                "similarity_threshold": frontend_config.similarities_within_lectures.similarity_threshold,
+            }
+            logger.debug(
+                f"[WEB_SERVICE] Updated similarities_within_lectures config: enabled={frontend_config.similarities_within_lectures.enabled}"
+            )
+
+        # Update similarity search configuration
+        if frontend_config.similarity_search:
+            similarity_config = {
+                "enabled": frontend_config.similarity_search.enabled,
+            }
+
+            # Add clustering similarity thresholds
+            if frontend_config.similarity_search.clustering_similarity_thresholds:
+                similarity_config["clustering_similarity_thresholds"] = (
+                    frontend_config.similarity_search.clustering_similarity_thresholds
+                )
+
+            # Add fuzzy match similarity thresholds
+            if frontend_config.similarity_search.fuzzy_match_similarity_thresholds:
+                similarity_config["fuzzy_match_similarity_thresholds"] = (
+                    frontend_config.similarity_search.fuzzy_match_similarity_thresholds
+                )
+
+            # Add similarity threshold overrides
+            if frontend_config.similarity_search.similarity_threshold_overrides:
+                similarity_config["similarity_threshold_overrides"] = (
+                    frontend_config.similarity_search.similarity_threshold_overrides
+                )
+
+            # Add columns to copy configuration
+            if frontend_config.similarity_search.columns_to_copy:
+                columns_to_copy = {}
+                for (
+                    column_name,
+                    column_config,
+                ) in frontend_config.similarity_search.columns_to_copy.items():
+                    columns_to_copy[column_name] = {"enabled": column_config.enabled}
+                    if column_config.condition:
+                        columns_to_copy[column_name]["condition"] = (
+                            column_config.condition
+                        )
+                similarity_config["columns_to_copy"] = columns_to_copy
+
+            config["similarity_search"].update(similarity_config)
+            logger.debug(
+                f"[WEB_SERVICE] Updated similarity_search config: enabled={frontend_config.similarity_search.enabled}"
+            )
+
+        # Update attribution configuration
+        if frontend_config.attribution:
+            config["attribution"] = {
+                "enabled": frontend_config.attribution.enabled,
+                "project_name": frontend_config.attribution.project_name,
+            }
+            logger.debug(
+                f"[WEB_SERVICE] Updated attribution config: enabled={frontend_config.attribution.enabled}, project={frontend_config.attribution.project_name}"
+            )
+
+        # Update default opinion configuration
+        if frontend_config.default_opinion:
+            config["default_opinion"] = frontend_config.default_opinion.enabled
+            logger.debug(
+                f"[WEB_SERVICE] Updated default_opinion config: enabled={frontend_config.default_opinion.enabled}"
+            )
+
+        logger.info("[WEB_SERVICE] Frontend configuration merge completed")
+        return config
 
     async def start_processing(
         self, file_content: bytes, filename: str, processing_request: ProcessingRequest
@@ -160,6 +263,29 @@ class WebProcessingService:
                 f"[WEB_SERVICE] Configuration loaded successfully - job_id: {job_id}"
             )
 
+            # Merge frontend configuration with default config
+            logger.info(
+                f"[WEB_SERVICE] Merging frontend configuration - job_id: {job_id}"
+            )
+            config = self._merge_frontend_config(
+                config, processing_request.processing_config
+            )
+            logger.debug(
+                f"[WEB_SERVICE] Configuration merged successfully - job_id: {job_id}"
+            )
+
+            # Get origin_project from similarity_search config if available
+            # Note: Pydantic validation ensures origin_project is present when similarity_search is enabled
+            origin_project = None
+            if (
+                processing_request.processing_config.similarity_search
+                and processing_request.processing_config.similarity_search.enabled
+            ):
+                origin_project = processing_request.processing_config.similarity_search.origin_project
+            else:
+                # Use None when similarity search is not enabled to avoid issues with filtering/queries
+                origin_project = None
+
             # Update the input file path in config to point to our uploaded file
             config["input_files"] = [
                 {
@@ -169,7 +295,7 @@ class WebProcessingService:
                         "month": 1,
                         "day": 1,
                     },
-                    "origin_project": processing_request.origin_project,
+                    "origin_project": origin_project,
                 }
             ]
             logger.debug(
