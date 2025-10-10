@@ -106,11 +106,13 @@ class AmendmentsClusterFinder:
                         f"in group {group_key}"
                     )
                     # Recursively subdivide using TF-IDF with stricter eps
+                    # Start with 60% of original eps for subdivision
+                    subdivision_eps = max(eps * 0.6, 0.1)
                     sub_clusters = AmendmentsClusterFinder._recursive_subdivision(
                         df_group,
                         cluster,
                         text_column,
-                        eps=0.3,  # Stricter eps for subdivision
+                        eps=subdivision_eps,
                         min_eps=0.1,
                         depth=0,
                         max_depth=5,
