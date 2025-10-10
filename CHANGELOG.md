@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/SocialGouv/graal/compare/v1.0.0...v1.0.1) (2025-10-10)
+
+
+### Bug Fixes
+
+* default refinement_pct_threshold in ClusteringService ([6c470cf](https://github.com/SocialGouv/graal/commit/6c470cf32897985325e50f9a7558b762f2d147c1))
+
 # 1.0.0 (2025-10-09)
 
 
