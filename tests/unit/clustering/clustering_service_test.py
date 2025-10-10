@@ -197,3 +197,49 @@ def test_get_clusters(mock_apply_refinement, mock_create_clusters, sample_df):
         4: {5: 95.0},
         5: {4: 95.0},
     }
+
+
+def test_get_clusters_validates_eps_threshold(sample_df):
+    """Test that get_clusters raises ValueError for invalid eps values."""
+    with pytest.raises(ValueError, match="eps must be between 0.0 and 1.0"):
+        ClusteringService.get_clusters(
+            normalized_amdt_df=sample_df,
+            group_by_columns=["Num article"],
+            text_column="Corps amdt",
+            eps=1.5,  # Invalid: > 1.0
+            refinement_pct_threshold=0.8,
+        )
+
+    with pytest.raises(ValueError, match="eps must be between 0.0 and 1.0"):
+        ClusteringService.get_clusters(
+            normalized_amdt_df=sample_df,
+            group_by_columns=["Num article"],
+            text_column="Corps amdt",
+            eps=-0.1,  # Invalid: < 0.0
+            refinement_pct_threshold=0.8,
+        )
+
+
+def test_get_clusters_validates_refinement_pct_threshold(sample_df):
+    """Test that get_clusters raises ValueError for invalid refinement_pct_threshold values."""
+    with pytest.raises(
+        ValueError, match="refinement_pct_threshold must be between 0.0 and 1.0"
+    ):
+        ClusteringService.get_clusters(
+            normalized_amdt_df=sample_df,
+            group_by_columns=["Num article"],
+            text_column="Corps amdt",
+            eps=0.4,
+            refinement_pct_threshold=99.99,  # Invalid: should be 0.9999, not 99.99
+        )
+
+    with pytest.raises(
+        ValueError, match="refinement_pct_threshold must be between 0.0 and 1.0"
+    ):
+        ClusteringService.get_clusters(
+            normalized_amdt_df=sample_df,
+            group_by_columns=["Num article"],
+            text_column="Corps amdt",
+            eps=0.4,
+            refinement_pct_threshold=-0.1,  # Invalid: < 0.0
+        )

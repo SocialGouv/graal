@@ -167,7 +167,7 @@ class ClusteringService:
         group_by_columns: List[str],
         text_column: str,
         eps: float = 0.4,
-        refinement_pct_threshold: float = 99.99,
+        refinement_pct_threshold: float = 0.9999,
     ) -> Tuple[Dict[Tuple, List[List[IntIndex]]], Dict[int, Dict[int, float]]]:
         """
         Get clusters of similar amendments (combined TF-IDF and refinement)
@@ -176,14 +176,24 @@ class ClusteringService:
             normalized_amdt_df: Preprocessed amendments dataframe
             group_by_columns: Columns to group by
             text_column: Column containing the text to analyze for similarity
-            eps: Epsilon value for DBSCAN
-            refinement_pct_threshold: Threshold for Levenshtein refinement
+            eps: Epsilon value for DBSCAN (range: 0.0 to 1.0)
+            refinement_pct_threshold: Threshold for Levenshtein refinement as decimal percentage (range: 0.0 to 1.0)
 
         Returns:
             A tuple containing:
             - Dictionary of clusters
             - Dictionary of similarity percentages between amendments
+
+        Raises:
+            ValueError: If thresholds are outside valid range [0.0, 1.0]
         """
+        # Validate threshold parameters
+        if not 0.0 <= eps <= 1.0:
+            raise ValueError(f"eps must be between 0.0 and 1.0, got {eps}")
+        if not 0.0 <= refinement_pct_threshold <= 1.0:
+            raise ValueError(
+                f"refinement_pct_threshold must be between 0.0 and 1.0, got {refinement_pct_threshold}"
+            )
         logging.info(f"Get clusters of similar amendments using column {text_column}")
         tfidf_clusters = ClusteringService.create_tfidf_clusters(
             normalized_amdt_df=normalized_amdt_df,
