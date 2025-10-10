@@ -92,7 +92,7 @@ def test_apply_levenshtein_refinement_with_similarity_threshold(sample_df):
     tfidf_clusters = {("Article 1",): [[1, 2], [3, 4]]}
 
     with patch(
-        "graal.clustering.clustering_service.AmendmentsClusterFinder.refine_clusters_with_distance",
+        "graal.clustering.clustering_service.AmendmentsClusterFinder.refine_with_levenshtein",
         return_value=(
             {("Article 1",): [[1, 2], [3, 4]]},
             {1: {2: 90.0}, 2: {1: 90.0}, 3: {4: 85.0}, 4: {3: 85.0}},

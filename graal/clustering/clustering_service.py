@@ -100,7 +100,12 @@ class ClusteringService:
         eps: float = 0.4,
     ) -> Dict[Tuple, List[List[IntIndex]]]:
         """
-        Create initial clusters using TF-IDF and DBSCAN
+        Create complete TF-IDF clusters ready for Levenshtein refinement.
+
+        This performs COMPLETE TF-IDF clustering including:
+        - Initial TF-IDF + DBSCAN clustering
+        - Recursive subdivision of large clusters (>30 amendments)
+        - Returns ONLY clusters ≤30 amendments (ready for O(n²) Levenshtein)
 
         Args:
             normalized_amdt_df: Preprocessed amendments dataframe
@@ -109,10 +114,10 @@ class ClusteringService:
             eps: Epsilon value for DBSCAN
 
         Returns:
-            Dictionary of clusters
+            Dictionary of clusters, all with size ≤30 amendments
         """
         logging.info(
-            f"Creating initial clusters of similar amendments using TF-IDF on column {text_column}"
+            f"Creating complete TF-IDF clusters of similar amendments on column {text_column}"
         )
         tfidf_clusters = AmendmentsClusterFinder.find_similarity_clusters(
             amendments_df=normalized_amdt_df,
@@ -131,14 +136,19 @@ class ClusteringService:
         pct_threshold: float,
     ) -> Tuple[Dict[Tuple, List[List[IntIndex]]], Dict[int, Dict[int, float]]]:
         """
-        Refine clusters using Damerau-Levenshtein distance
+        Refine clusters using Damerau-Levenshtein distance.
+
+        This phase:
+        - Calculates precise edit distances between amendment pairs
+        - Uses DBSCAN to refine clusters based on string similarity
+        - Returns similarity percentages for downstream use
 
         Args:
             amendments_df: DataFrame containing amendments
             group_by_columns: Columns to group by when finding clusters
             text_column: Column containing the text to analyze for similarity
-            tfidf_clusters: Initial clusters from TF-IDF clustering
-            pct_threshold: The threshold value
+            tfidf_clusters: Complete TF-IDF clusters (all ≤30 amendments)
+            pct_threshold: Similarity threshold as decimal (0.0-1.0)
 
         Returns:
             A tuple containing:
@@ -151,7 +161,7 @@ class ClusteringService:
         distance_threshold = 1.0 - pct_threshold
 
         refined_clusters, similarity_percentages = (
-            AmendmentsClusterFinder.refine_clusters_with_distance(
+            AmendmentsClusterFinder.refine_with_levenshtein(
                 amendments_df=amendments_df,
                 group_by_columns=group_by_columns,
                 text_column=text_column,
