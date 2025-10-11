@@ -38,7 +38,7 @@ aiofiles = ">=24.1.0,<25.0.0"
 boto3 = ">=1.34.0"
 
 [tool.poetry.group.dev.dependencies]
-virtualenv = "20.35.1"
+virtualenv = "20.35.3"
 ipykernel = ">=6.29.5"
 
 [build-system]
