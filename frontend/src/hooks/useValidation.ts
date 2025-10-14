@@ -170,6 +170,26 @@ export const useValidation = () => {
     [validateSimilarityThreshold]
   )
 
+  /**
+   * Validates the config file selection
+   * @param configFile - The config file path
+   * @returns string error message or null if valid
+   */
+  const getConfigFileError = useCallback(
+    (configFile: string | null): string | null => {
+      if (!configFile) {
+        return 'Veuillez sélectionner un fichier de configuration'
+      }
+
+      if (!configFile.endsWith('.xlsx')) {
+        return 'Le fichier doit être au format Excel (.xlsx)'
+      }
+
+      return null
+    },
+    []
+  )
+
   return {
     validateOriginProject,
     isOriginProjectValid,
@@ -177,7 +197,8 @@ export const useValidation = () => {
     validateAllotmentsColumn,
     validateSimilarityThreshold,
     getAllotmentsColumnError,
-    getSimilarityThresholdError
+    getSimilarityThresholdError,
+    getConfigFileError
   }
 }
 

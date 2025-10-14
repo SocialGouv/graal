@@ -51,19 +51,30 @@ export interface AttributionConfig {
   project_name?: string
 }
 
-export interface DefaultOpinionConfig {
+export interface SummaryConfig {
+  enabled: boolean
+}
+
+export interface OpinionConfig {
   enabled: boolean
 }
 
 export interface ProcessingConfig {
-  allotments: AllotmentsConfig
-  similarities_within_lectures: SimilaritiesWithinLecturesConfig
-  similarity_search: SimilaritySearchConfig
-  attribution: AttributionConfig
-  default_opinion: DefaultOpinionConfig
+  allotments?: AllotmentsConfig
+  similarities_within_lectures?: SimilaritiesWithinLecturesConfig
+  similarity_search?: SimilaritySearchConfig
+  attribution?: AttributionConfig
+  opinion?: OpinionConfig
+  summary?: SummaryConfig
+}
+
+export interface ConfigFilesResponse {
+  files: string[]
+  total: number
 }
 
 export interface ProcessingRequest {
+  config_file: string
   processing_config: ProcessingConfig
 }
 

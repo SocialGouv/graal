@@ -42,6 +42,9 @@ export interface ProcessingState {
   uploadedFile: File | null
   uploadProgress: number
 
+  // Config file selection
+  selectedConfigFile: string | null
+
   // Processing configuration
   processingConfig: ProcessingConfig
 
@@ -63,6 +66,7 @@ export interface ProcessingState {
   // Actions
   setUploadedFile: (file: File | null) => void
   setUploadProgress: (progress: number) => void
+  setSelectedConfigFile: (filename: string | null) => void
   setProcessingConfig: (config: ProcessingConfig) => void
   setJobId: (id: string | null) => void
   updateProgress: (
@@ -80,6 +84,7 @@ export interface ProcessingState {
 const initialState = {
   uploadedFile: null,
   uploadProgress: 0,
+  selectedConfigFile: null,
   processingConfig: {
     allotments: {
       enabled: false,
@@ -142,6 +147,13 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
     set((state) => ({
       ...state,
       uploadProgress: progress
+    })),
+
+  setSelectedConfigFile: (filename) =>
+    set((state) => ({
+      ...state,
+      selectedConfigFile: filename,
+      error: null
     })),
 
   setProcessingConfig: (config) =>

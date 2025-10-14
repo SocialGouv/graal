@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosProgressEvent } from 'axios'
 import type {
   ApiError,
+  ConfigFilesResponse,
   JobStatusResponse,
   PreviewResponse,
   ProcessingRequest,
@@ -88,6 +89,28 @@ class ApiService {
   }
 
   /**
+   * List available configuration files from S3
+   */
+  async listConfigFiles(): Promise<ConfigFilesResponse> {
+    console.log('[API_CLIENT] Fetching available config files')
+
+    try {
+      const response =
+        await this.client.get<ConfigFilesResponse>('/config-files')
+
+      console.log('[API_CLIENT] Config files retrieved', {
+        total: response.data.total,
+        files: response.data.files
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch config files', error)
+      throw error
+    }
+  }
+
+  /**
    * Upload a JSON file and start processing
    */
   async uploadFile(
@@ -99,6 +122,7 @@ class ApiService {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
+      configFile: processingRequest.config_file,
       processingRequest: processingRequest
     })
 
