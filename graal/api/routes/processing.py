@@ -9,10 +9,12 @@ from fastapi.responses import FileResponse
 
 from graal.api.models.requests import ProcessingRequest
 from graal.api.models.responses import (
+    ConfigFilesResponse,
     PreviewResponse,
     ProcessingResponse,
     ProgressResponse,
 )
+from graal.utils.s3_config_service import get_s3_config_service
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +28,39 @@ def get_web_processing_service():
     return web_processing_service
 
 
+@router.get("/config-files", response_model=ConfigFilesResponse)
+async def list_config_files():
+    """
+    List available configuration files from S3.
+
+    Returns:
+        ConfigFilesResponse with list of available configuration files
+
+    Raises:
+        HTTPException: 503 if S3 is not available, 500 for other errors
+    """
+    logger.info("[API] Listing available configuration files")
+
+    try:
+        s3_service = get_s3_config_service()
+        files = s3_service.list_available_config_files()
+
+        logger.info(f"[API] Found {len(files)} configuration files")
+        return ConfigFilesResponse(files=files, total=len(files))
+
+    except Exception as e:
+        logger.error(f"[API] Failed to list config files: {str(e)}")
+        if "not enabled" in str(e).lower() or "not available" in str(e).lower():
+            raise HTTPException(
+                status_code=503, detail="S3 configuration service is not available"
+            ) from e
+        raise HTTPException(
+            status_code=500, detail=f"Failed to list configuration files: {str(e)}"
+        ) from e
+
+
 @router.post("/process", response_model=ProcessingResponse)
-async def process_amendments(file: UploadFile, request: str = Form(...)):
+async def process_amendments(file: UploadFile, request: str = Form(...)):  # noqa: C901
     """
     Upload and process a JSON file containing amendments.
 
@@ -85,8 +118,29 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):
             status_code=400, detail=f"Invalid request data: {str(e)}"
         ) from e
 
+    # Validate config file exists in S3
+    config_file = processing_request.config_file
+    logger.info(f"[API] Validating config file: {config_file}")
+
+    try:
+        s3_service = get_s3_config_service()
+        if not s3_service.validate_config_file_exists(config_file):
+            logger.warning(f"[API] Config file not found in S3: {config_file}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Configuration file '{config_file}' not found in S3",
+            )
+        logger.info(f"[API] Config file validated successfully: {config_file}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[API] Failed to validate config file: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to validate configuration file: {str(e)}"
+        ) from e
+
     logger.info(
-        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}"
+        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}, config_file: {config_file}"
     )
 
     if file.filename is None or file.filename == "":

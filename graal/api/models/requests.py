@@ -241,6 +241,30 @@ class ProcessingConfig(BaseModel):
 class ProcessingRequest(BaseModel):
     """Request model for processing amendments."""
 
+    config_file: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Name of the configuration Excel file from S3",
+    )
     processing_config: ProcessingConfig = Field(
         ..., description="Processing configuration parameters"
     )
+
+    @field_validator("config_file")
+    @classmethod
+    def validate_config_file(cls, v: str) -> str:
+        """Validate config_file field."""
+        if not v or not v.strip():
+            raise ValueError("config_file cannot be empty")
+
+        v = v.strip()
+
+        if not v.endswith(".xlsx"):
+            raise ValueError("config_file must be an Excel file (.xlsx)")
+
+        # Security: only safe characters allowed (including Unicode letters)
+        if not re.match(r"^[a-zA-Z0-9\u00C0-\u024F\s\-_\.()]+\.xlsx$", v):
+            raise ValueError("config_file contains invalid characters")
+
+        return v
