@@ -118,6 +118,14 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):  # noq
             status_code=400, detail=f"Invalid request data: {str(e)}"
         ) from e
 
+    # Validate that at least one feature is enabled
+    if not processing_request.processing_config.has_any_feature_enabled():
+        logger.warning("[API] Processing request rejected - no features enabled")
+        raise HTTPException(
+            status_code=400,
+            detail="At least one feature must be enabled to start processing",
+        )
+
     # Validate config file exists in S3
     config_file = processing_request.config_file
     logger.info(f"[API] Validating config file: {config_file}")
