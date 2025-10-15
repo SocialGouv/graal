@@ -35,6 +35,9 @@ export interface ProcessingConfig {
   defaultOpinion: {
     enabled: boolean
   }
+  // Processing options (top-level, not nested under any feature)
+  no_value_overwrite: boolean
+  placeholder_amdt_body: boolean
 }
 
 export interface ProcessingState {
@@ -120,7 +123,10 @@ const initialState = {
     },
     defaultOpinion: {
       enabled: false
-    }
+    },
+    // Processing options at top level
+    no_value_overwrite: false,
+    placeholder_amdt_body: false
   },
   jobId: null,
   processingStatus: 'idle' as const,

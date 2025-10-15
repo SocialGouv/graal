@@ -247,6 +247,92 @@ def test_populate():
     assert result_df.loc[2, "Objet"] == "Objet 3"
 
 
+def test_copy_matches_with_no_value_overwrite_enabled(sample_data):
+    """Test that no_value_overwrite prevents overwriting existing values."""
+    old_amendments_df, closest_amdts, target_df = sample_data
+
+    # Set existing values in target
+    target_df.loc[0, "Réponse"] = "Existing Response"
+    target_df.loc[1, "Réponse"] = ""  # Empty, should be filled
+    target_df.loc[2, "Réponse"] = "   "  # Whitespace only, should be filled
+
+    columns_config = {
+        "Réponse": {"enabled": True},
+        "Sort": {"enabled": True, "condition": "irrecevable"},
+    }
+
+    result_df = SimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+        columns_config=columns_config,
+        no_value_overwrite=True,
+    )
+
+    # First row should keep existing value
+    assert result_df.loc[0, "Réponse"] == "Existing Response"
+
+    # Second row should be filled (was empty)
+    assert result_df.loc[1, "Réponse"] == "Response 2"
+
+    # Third row should be filled (was whitespace only)
+    assert result_df.loc[2, "Réponse"] == "Response 3"
+
+
+def test_copy_matches_with_no_value_overwrite_disabled(sample_data):
+    """Test that values are overwritten when no_value_overwrite is False."""
+    old_amendments_df, closest_amdts, target_df = sample_data
+
+    # Set existing values in target
+    target_df.loc[0, "Réponse"] = "Existing Response"
+    target_df.loc[1, "Réponse"] = "Another Existing"
+
+    columns_config = {
+        "Réponse": {"enabled": True},
+        "Sort": {"enabled": False},
+    }
+
+    result_df = SimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+        columns_config=columns_config,
+        no_value_overwrite=False,  # Default behavior
+    )
+
+    # All values should be overwritten
+    assert result_df.loc[0, "Réponse"] == "Response 1"
+    assert result_df.loc[1, "Réponse"] == "Response 2"
+    assert result_df.loc[2, "Réponse"] == "Response 3"
+
+
+def test_copy_matches_with_no_value_overwrite_handles_none_and_nan(sample_data):
+    """Test that no_value_overwrite correctly handles None and NaN values."""
+    old_amendments_df, closest_amdts, target_df = sample_data
+
+    # Set various empty-like values
+    target_df.loc[0, "Réponse"] = None
+    target_df.loc[1, "Réponse"] = pd.NA
+    target_df.loc[2, "Réponse"] = float("nan")
+
+    columns_config = {
+        "Réponse": {"enabled": True},
+    }
+
+    result_df = SimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+        columns_config=columns_config,
+        no_value_overwrite=True,
+    )
+
+    # All should be filled as they're empty
+    assert result_df.loc[0, "Réponse"] == "Response 1"
+    assert result_df.loc[1, "Réponse"] == "Response 2"
+    assert result_df.loc[2, "Réponse"] == "Response 3"
+
+
 def test_populate_same_body_but_different_project_should_not_match():
     preprocessed_new_amendments_df = pd.DataFrame(
         {

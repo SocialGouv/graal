@@ -135,7 +135,10 @@ function AppContent() {
         ),
         default_opinion: buildConfigIfEnabled(
           processingConfig.defaultOpinion.enabled
-        )
+        ),
+        // Processing options at top level
+        no_value_overwrite: processingConfig.no_value_overwrite,
+        placeholder_amdt_body: processingConfig.placeholder_amdt_body
       }
     }
     uploadFileMutation.mutate({

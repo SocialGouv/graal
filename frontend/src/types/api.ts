@@ -66,6 +66,8 @@ export interface ProcessingConfig {
   attribution?: AttributionConfig
   opinion?: OpinionConfig
   summary?: SummaryConfig
+  no_value_overwrite?: boolean
+  placeholder_amdt_body?: boolean
 }
 
 export interface ConfigFilesResponse {

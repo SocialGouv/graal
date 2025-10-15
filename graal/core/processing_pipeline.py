@@ -36,7 +36,10 @@ from graal.summary.summary_generation_load_balancer import SummaryGenerationLoad
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.config_preprocessor import ConfigPreprocessor
 from graal.utils.sheet_data_loader import SheetDataLoader
-from graal.utils.text_utils import remove_gage_sentences
+from graal.utils.text_utils import (
+    add_placeholders_to_empty_column,
+    remove_gage_sentences,
+)
 
 logging.config.fileConfig("logging.conf")
 
@@ -87,6 +90,11 @@ class ProcessingPipeline:
             "[PIPELINE] Stored preprocessed original dataframe for allotment population"
         )
 
+        # Store original dataframe BEFORE clearing columns - this ensures that
+        # _preserve_original_values() can restore user-provided values when no_value_overwrite is enabled
+        dependencies["original_df"] = amendments_df.copy()
+        logging.debug("[PIPELINE] Stored original dataframe before column clearing")
+
         # Phase 2: Get features from dependencies (already created during data preparation)
         # NOTE: Column clearing happens in _load_and_prepare_data() via _determine_columns_to_clear()
         # This clearing happens ONCE at the very beginning, before any features run.
@@ -97,12 +105,6 @@ class ProcessingPipeline:
         logging.info(
             f"[PIPELINE] Phase 2: Feature setup - preprocessing: {len(preprocessing_features)}, regular: {len(features)}"
         )
-
-        # Store original dataframe AFTER clearing columns - this ensures that
-        # _preserve_original_values() will preserve the cleared (None) values
-        # instead of the old data that was supposed to be erased
-        dependencies["original_df"] = amendments_df.copy()
-        logging.debug("[PIPELINE] Stored original dataframe after column clearing")
 
         # Phase 3: Run orchestrated processing
         # Features run in parallel and write to their own copies. The orchestrator then
@@ -386,14 +388,14 @@ class ProcessingPipeline:
         return amendments_df
 
     def _add_placeholder_bodies(self, amendments_df: pd.DataFrame) -> pd.DataFrame:
-        """Add placeholder bodies for empty amendments."""
-        for index, row in amendments_df.iterrows():
-            amendments_df.at[index, "Corps amdt"] = (
-                row["Corps amdt"]
-                if pd.notna(row["Corps amdt"]) and row["Corps amdt"] not in [None, ""]
-                else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
-            )
-        return amendments_df
+        """Add placeholder bodies for empty amendments with indexed placeholders."""
+        return add_placeholders_to_empty_column(
+            df=amendments_df,
+            column="Corps amdt",
+            placeholder_generator=lambda idx, row: (
+                f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {idx}"
+            ),
+        )
 
     def _determine_columns_to_clear(
         self, config: dict[str, Any], all_features: list[BaseFeature]

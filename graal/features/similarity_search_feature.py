@@ -83,6 +83,9 @@ class SimilaritySearchFeature(BaseFeature):
         working_df = feature_input.amendments_df.copy()
         similarity_config = feature_input.config.get("similarity_search", {})
 
+        # Get processing options from config
+        no_value_overwrite = similarity_config.get("no_value_overwrite", False)
+
         # Get columns to copy configuration
         columns_to_copy_config = similarity_config.get("columns_to_copy", {})
         if not columns_to_copy_config:
@@ -124,6 +127,7 @@ class SimilaritySearchFeature(BaseFeature):
                 "Corps amdt": ["Num article"],
             },
             columns_to_copy_config=columns_to_copy_config,
+            no_value_overwrite=no_value_overwrite,
         )
         result_df.set_index("amdt_idx", inplace=True)
 

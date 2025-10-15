@@ -130,6 +130,16 @@ class ProcessingConfig(BaseModel):
         description="Default opinion feature configuration",
     )
 
+    # Processing options (pipeline-level)
+    no_value_overwrite: bool = Field(
+        default=False,
+        description="If true, only fill empty cells (don't overwrite existing values)",
+    )
+    placeholder_amdt_body: bool = Field(
+        default=False,
+        description="If true, use placeholder text for empty amendment bodies",
+    )
+
     # Constants for validation
     VALID_COLUMNS: ClassVar[list[str]] = ["Corps amdt", "Exposé amdt"]
 

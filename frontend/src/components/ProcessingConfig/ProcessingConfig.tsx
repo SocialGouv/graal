@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 import { Input } from '@codegouvfr/react-dsfr/Input'
+import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
 import { fr } from '@codegouvfr/react-dsfr'
 import { useProcessingStore } from '../../stores/processingStore'
 import { useValidation } from '../../hooks/useValidation'
@@ -9,6 +10,7 @@ import {
   ProjectSelectionConfig,
   ThresholdSliderConfig,
   ColumnsToCopyConfig,
+  SimpleToggleConfig,
   type ColumnOption,
   type ProjectOption
 } from '../FeatureConfig'
@@ -296,6 +298,26 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     [setProcessingConfig, processingConfig]
   )
 
+  const handleNoValueOverwriteChange = useCallback(
+    (checked: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        no_value_overwrite: checked
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  const handlePlaceholderAmdtBodyChange = useCallback(
+    (checked: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        placeholder_amdt_body: checked
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
   return (
     <div className={fr.cx('fr-mb-4w')}>
       <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>
@@ -469,6 +491,26 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
             disabled={disabled || isProcessing}
           />
         </FeatureConfigSection>
+      </div>
+
+      {/* Advanced Configuration */}
+      <div className={fr.cx('fr-mt-4w')}>
+        <Accordion label="Configuration avancée" defaultExpanded={false}>
+          <SimpleToggleConfig
+            label="Ne pas écraser les valeurs existantes"
+            description="Si activé, ne remplit que les cellules vides (préserve les valeurs déjà présentes)"
+            checked={processingConfig.no_value_overwrite}
+            onChange={handleNoValueOverwriteChange}
+            disabled={disabled || isProcessing}
+          />
+          <SimpleToggleConfig
+            label="Texte de remplacement pour corps vide"
+            description="Si activé, utilise un texte de remplacement pour les corps d'amendement vides"
+            checked={processingConfig.placeholder_amdt_body}
+            onChange={handlePlaceholderAmdtBodyChange}
+            disabled={disabled || isProcessing}
+          />
+        </Accordion>
       </div>
     </div>
   )

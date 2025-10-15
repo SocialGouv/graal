@@ -120,6 +120,9 @@ class WebProcessingService:
                         )
                 similarity_config["columns_to_copy"] = columns_to_copy
 
+            # Copy no_value_overwrite from processing options to similarity_search for feature use
+            similarity_config["no_value_overwrite"] = frontend_config.no_value_overwrite
+
             config["similarity_search"].update(similarity_config)
             logger.debug(
                 f"[WEB_SERVICE] Updated similarity_search config: enabled={frontend_config.similarity_search.enabled}"
@@ -141,6 +144,21 @@ class WebProcessingService:
             logger.debug(
                 f"[WEB_SERVICE] Updated default_opinion config: enabled={frontend_config.default_opinion.enabled}"
             )
+
+        # Update processing options (pipeline-level)
+        if "processing_options" not in config:
+            config["processing_options"] = {}
+
+        config["processing_options"]["no_value_overwrite"] = (
+            frontend_config.no_value_overwrite
+        )
+        config["processing_options"]["placeholder_amdt_body"] = (
+            frontend_config.placeholder_amdt_body
+        )
+        logger.debug(
+            f"[WEB_SERVICE] Updated processing_options: no_value_overwrite={frontend_config.no_value_overwrite}, "
+            f"placeholder_amdt_body={frontend_config.placeholder_amdt_body}"
+        )
 
         logger.info("[WEB_SERVICE] Frontend configuration merge completed")
         return config

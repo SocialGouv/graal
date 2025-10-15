@@ -8,8 +8,9 @@ from unidecode import unidecode
 from graal.attribution.project_configurations import (
     build_plfss_attribution_handler,
 )
+from graal.core.text_normalizers import AttributionTextNormalizer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import AttributionTextNormalizer, remove_gage_sentences
+from graal.utils.text_utils import remove_gage_sentences
 
 
 def test_integration_plfss_attribution():
@@ -44,11 +45,12 @@ def test_integration_plfss_attribution():
     amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
         lambda text: remove_gage_sentences(unidecode(text))
     )
+    normalizer = AttributionTextNormalizer()
     amendments_df["Corps amdt"] = original_amendments_df["Corps amdt"].apply(
-        lambda x: AttributionTextNormalizer.normalize_text(str(x))
+        lambda x: normalizer.normalize_for_feature(str(x))
     )
     amendments_df["Exposé amdt"] = original_amendments_df["Exposé amdt"].apply(
-        lambda x: AttributionTextNormalizer.normalize_text(str(x))
+        lambda x: normalizer.normalize_for_feature(str(x))
     )
 
     attribution_handler = build_plfss_attribution_handler(config_excel)
