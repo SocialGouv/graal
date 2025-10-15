@@ -45,7 +45,7 @@ This project comes with `PLFSS_2024.json` and `exports_lectures/PLFSS 2023`.
 
 ### Configuration Files (S3)
 
-Configuration files must be stored as `.xlsx` files in your S3 bucket at the path: `{S3_BUCKET_NAME}/{S3_OFFICE_DIRECTORIES}/`
+Configuration files must be stored as `.xlsx` files in your S3 bucket at the path: `{S3_BUCKET_NAME}/{S3_CONFIG_FOLDER}/`
 
 When using the web application, users select their desired configuration file from a dropdown before processing amendments. The system automatically loads available configuration files from S3.
 
@@ -65,7 +65,7 @@ export S3_BUCKET_SECRET_KEY="<secret_key>"
 export S3_BUCKET_ENDPOINT="https://s3.gra.io.cloud.ovh.net"
 export S3_BUCKET_NAME="graal-dev-app"
 export S3_BUCKET_REGION="gra"
-export S3_OFFICE_DIRECTORIES="office_directories"
+export S3_CONFIG_FOLDER="config_graal"
 
 # If your work with Albert API
 export ETALAB_API_KEY=<albert_api_token>
