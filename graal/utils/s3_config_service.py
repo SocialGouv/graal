@@ -43,7 +43,7 @@ class S3ConfigService:
             "S3_BUCKET_ENDPOINT",
             "S3_BUCKET_ACCESS_KEY",
             "S3_BUCKET_SECRET_KEY",
-            "S3_OFFICE_DIRECTORIES",
+            "S3_CONFIG_FOLDER",
         ]
         missing_vars = [var for var in required_vars if not os.getenv(var)]
 
@@ -54,7 +54,7 @@ class S3ConfigService:
 
         try:
             self._bucket_name = os.getenv("S3_BUCKET_NAME")
-            self._office_directories = os.getenv("S3_OFFICE_DIRECTORIES")
+            self._office_directories = os.getenv("S3_CONFIG_FOLDER")
 
             self._s3_client = boto3.client(
                 "s3",
