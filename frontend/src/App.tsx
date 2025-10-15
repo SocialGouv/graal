@@ -51,7 +51,7 @@ function AppContent() {
   const downloadExcelResultsMutation = useDownloadExcelResults()
 
   // Validation hook
-  const { isOriginProjectValid } = useValidation()
+  const { isOriginProjectValid, isAnyFeatureEnabled } = useValidation()
 
   // Job status polling - only when we have a jobId and processing
   useJobStatus(
@@ -70,13 +70,14 @@ function AppContent() {
     () =>
       uploadedFile &&
       selectedConfigFile &&
+      isAnyFeatureEnabled(processingConfig) &&
       (!processingConfig.similaritySearch.enabled ||
         isOriginProjectValid(processingConfig.similaritySearch.originProject)),
     [
       uploadedFile,
       selectedConfigFile,
-      processingConfig.similaritySearch.enabled,
-      processingConfig.similaritySearch.originProject,
+      processingConfig,
+      isAnyFeatureEnabled,
       isOriginProjectValid
     ]
   )

@@ -237,6 +237,24 @@ class ProcessingConfig(BaseModel):
                 raise ValueError(f"Project name must be one of: {valid_projects}")
         return v
 
+    def has_any_feature_enabled(self) -> bool:
+        """
+        Check if at least one feature is enabled.
+
+        Returns:
+            True if at least one feature is enabled, False otherwise
+        """
+        return bool(
+            (self.allotments and self.allotments.enabled)
+            or (
+                self.similarities_within_lectures
+                and self.similarities_within_lectures.enabled
+            )
+            or (self.similarity_search and self.similarity_search.enabled)
+            or (self.attribution and self.attribution.enabled)
+            or (self.default_opinion and self.default_opinion.enabled)
+        )
+
 
 class ProcessingRequest(BaseModel):
     """Request model for processing amendments."""

@@ -190,6 +190,30 @@ export const useValidation = () => {
     []
   )
 
+  /**
+   * Checks if at least one feature is enabled
+   * @param processingConfig - The processing configuration to check
+   * @returns boolean indicating if at least one feature is enabled
+   */
+  const isAnyFeatureEnabled = useCallback(
+    (processingConfig: {
+      allotments: { enabled: boolean }
+      similaritiesWithinLectures: { enabled: boolean }
+      similaritySearch: { enabled: boolean }
+      attribution: { enabled: boolean }
+      defaultOpinion: { enabled: boolean }
+    }): boolean => {
+      return (
+        processingConfig.allotments.enabled ||
+        processingConfig.similaritiesWithinLectures.enabled ||
+        processingConfig.similaritySearch.enabled ||
+        processingConfig.attribution.enabled ||
+        processingConfig.defaultOpinion.enabled
+      )
+    },
+    []
+  )
+
   return {
     validateOriginProject,
     isOriginProjectValid,
@@ -198,7 +222,8 @@ export const useValidation = () => {
     validateSimilarityThreshold,
     getAllotmentsColumnError,
     getSimilarityThresholdError,
-    getConfigFileError
+    getConfigFileError,
+    isAnyFeatureEnabled
   }
 }
 
