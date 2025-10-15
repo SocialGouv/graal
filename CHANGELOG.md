@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/SocialGouv/graal/compare/v1.1.0...v1.1.1) (2025-10-15)
+
+
+### Bug Fixes
+
+* Stop users from running "empty" processing (no feature enabled) ([fd96031](https://github.com/SocialGouv/graal/commit/fd960318043cecee527f856a84b5cef6bb686f79))
+
 # [1.1.0](https://github.com/SocialGouv/graal/compare/v1.0.1...v1.1.0) (2025-10-15)
 
 
