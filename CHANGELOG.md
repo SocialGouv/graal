@@ -726,6 +726,19 @@
 * Add config file drop down on UI ([e8440ad](https://github.com/SocialGouv/graal/commit/e8440ad617b1dd7a7b9a7477c13b2456277d3a38))
 * **backend:** Add support for fetching config files from S3 ([551c594](https://github.com/SocialGouv/graal/commit/551c594509b9176fca0b8bf23b1746471cba04b4))
 
+# [1.1.0](https://github.com/SocialGouv/graal/compare/v1.0.1...v1.1.0) (2025-10-15)
+
+
+### Bug Fixes
+
+* Stop features from overwritting each other's "commentaires" columns ([527f81f](https://github.com/SocialGouv/graal/commit/527f81fc4bd3d58b06059921349b7339dc0a4274))
+
+
+### Features
+
+* Add config file drop down on UI ([e8440ad](https://github.com/SocialGouv/graal/commit/e8440ad617b1dd7a7b9a7477c13b2456277d3a38))
+* **backend:** Add support for fetching config files from S3 ([551c594](https://github.com/SocialGouv/graal/commit/551c594509b9176fca0b8bf23b1746471cba04b4))
+
 ## [1.0.1](https://github.com/SocialGouv/graal/compare/v1.0.0...v1.0.1) (2025-10-10)
 
 
