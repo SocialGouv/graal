@@ -7,7 +7,7 @@ similarity_thresholds:
   tf_idf_threshold: 0.4
 
 # Allotment configuration - groups amendments by similarity
-allotments:
+allotment:
   enabled: false
   column: "Corps amdt"  # Column used for similarity comparison
   similarity_threshold: 0.999  # Threshold above which amendments are considered similar

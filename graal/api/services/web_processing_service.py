@@ -60,15 +60,15 @@ class WebProcessingService:
         # Create a copy to avoid modifying the original
         config = base_config.copy()
 
-        # Update allotments configuration
-        if frontend_config.allotments:
-            config["allotments"] = {
-                "enabled": frontend_config.allotments.enabled,
-                "column": frontend_config.allotments.column,
-                "similarity_threshold": frontend_config.allotments.similarity_threshold,
+        # Update allotment configuration
+        if frontend_config.allotment:
+            config["allotment"] = {
+                "enabled": frontend_config.allotment.enabled,
+                "column": frontend_config.allotment.column,
+                "similarity_threshold": frontend_config.allotment.similarity_threshold,
             }
             logger.debug(
-                f"[WEB_SERVICE] Updated allotments config: enabled={frontend_config.allotments.enabled}"
+                f"[WEB_SERVICE] Updated allotment config: enabled={frontend_config.allotment.enabled}"
             )
 
         # Update similarities within lectures configuration

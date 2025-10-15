@@ -51,7 +51,7 @@ class AllotmentFeature(BaseFeature):
 
     def is_enabled(self, config: dict[str, Any]) -> bool:
         """Check if allotment is enabled."""
-        return config.get("allotments", {}).get("enabled", False)
+        return config.get("allotment", {}).get("enabled", False)
 
     def get_columns_to_clear(self, config: dict[str, Any]) -> set[str]:
         """Return columns to clear if allotment is enabled."""
@@ -71,7 +71,7 @@ class AllotmentFeature(BaseFeature):
         working_df = feature_input.amendments_df.copy()
         config = feature_input.config
 
-        allotment_config = config.get("allotments", {})
+        allotment_config = config.get("allotment", {})
         allotment_column = allotment_config.get("column", "Corps amdt")
         similarity_threshold = allotment_config.get("similarity_threshold", 0.999)
         tf_idf_threshold = config.get("similarity_thresholds", {}).get(

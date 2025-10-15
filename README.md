@@ -144,7 +144,7 @@ See [config/default.yml](config/default.yml) for the configuration we use most o
 tf_idf_threshold: 0.4
 
 # Allotment configuration - groups amendments by similarity
-allotments:
+allotment:
   enabled: true
   column: "Corps amdt"  # Column used for similarity comparison
   similarity_threshold: 0.999  # Threshold above which amendments are considered similar

@@ -8,11 +8,11 @@ from typing import ClassVar, Dict, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-class AllotmentsConfig(BaseModel):
-    """Configuration for allotments feature."""
+class AllotmentConfig(BaseModel):
+    """Configuration for allotment feature."""
 
     enabled: bool = Field(
-        default=False, description="Whether allotments feature is enabled"
+        default=False, description="Whether allotment feature is enabled"
     )
     column: str = Field(
         default="Corps amdt", description="Column used for similarity comparison"
@@ -110,8 +110,8 @@ class ProcessingConfig(BaseModel):
     """Configuration model for processing parameters."""
 
     # Feature configurations
-    allotments: Optional[AllotmentsConfig] = Field(
-        default_factory=AllotmentsConfig, description="Allotments feature configuration"
+    allotment: Optional[AllotmentConfig] = Field(
+        default_factory=AllotmentConfig, description="Allotment feature configuration"
     )
     similarities_within_lectures: Optional[SimilaritiesWithinLecturesConfig] = Field(
         default_factory=SimilaritiesWithinLecturesConfig,
@@ -217,7 +217,7 @@ class ProcessingConfig(BaseModel):
 
         return params
 
-    @field_validator("allotments", "similarities_within_lectures", "attribution")
+    @field_validator("allotment", "similarities_within_lectures", "attribution")
     @classmethod
     def validate_column_choices(cls, v, info):
         """Validate column choices for features that use them."""
@@ -245,7 +245,7 @@ class ProcessingConfig(BaseModel):
             True if at least one feature is enabled, False otherwise
         """
         return bool(
-            (self.allotments and self.allotments.enabled)
+            (self.allotment and self.allotment.enabled)
             or (
                 self.similarities_within_lectures
                 and self.similarities_within_lectures.enabled
