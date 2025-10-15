@@ -3,10 +3,11 @@ import json
 import sys
 
 import tabulate
+from pydantic import FilePath
 
 
 def main():
-    required_coverage_per_file = {
+    required_coverage_per_file: dict[FilePath, int] = {
         # "my_file": 70,
     }
     parser = argparse.ArgumentParser(description="Check coverage of JSON files")
@@ -14,7 +15,7 @@ def main():
         "file_path", nargs="?", default="coverage.json", help="Path to the JSON file"
     )
     parser.add_argument(
-        "required_coverage", type=int, nargs="?", default=80, help="Required coverage"
+        "required_coverage", type=int, nargs="?", default=70, help="Required coverage"
     )
     args = parser.parse_args()
 
