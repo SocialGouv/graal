@@ -88,6 +88,10 @@ class ProcessingPipeline:
         )
 
         # Phase 2: Get features from dependencies (already created during data preparation)
+        # NOTE: Column clearing happens in _load_and_prepare_data() via _determine_columns_to_clear()
+        # This clearing happens ONCE at the very beginning, before any features run.
+        # After clearing, each feature receives a clean copy to work with, and the orchestrator
+        # merges results (with concatenation for configured columns like "Commentaires").
         preprocessing_features = dependencies["preprocessing_features"]
         features = dependencies["features"]
         logging.info(
@@ -101,6 +105,8 @@ class ProcessingPipeline:
         logging.debug("[PIPELINE] Stored original dataframe after column clearing")
 
         # Phase 3: Run orchestrated processing
+        # Features run in parallel and write to their own copies. The orchestrator then
+        # merges results, using concatenation for configured columns (like "Commentaires").
         logging.info("[PIPELINE] Phase 3: Starting orchestrated processing")
         orchestrator = PipelineOrchestrator(
             preprocessing_features=preprocessing_features,
@@ -392,7 +398,13 @@ class ProcessingPipeline:
     def _determine_columns_to_clear(
         self, config: dict[str, Any], all_features: list[BaseFeature]
     ) -> set[str]:
-        """Determine which columns should be cleared based on enabled features."""
+        """
+        Determine which columns should be cleared based on enabled features.
+
+        Clearing happens ONCE at the very beginning of processing, before any features run.
+        This removes old data from previous runs. After clearing, features write their data,
+        and the orchestrator merges results (with concatenation for configured columns).
+        """
         columns_to_clear = {"Commentaires"}  # Always clear comments
 
         # Get columns to clear from all features

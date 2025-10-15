@@ -74,47 +74,53 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
             eps=tf_idf_threshold,
         )
 
-        # Update comments with similarity information
-        result_df = working_df.copy()
-
-        if "Commentaires" not in result_df.columns:
-            result_df["Commentaires"] = ""
+        # Build a DataFrame with only the rows that have similarity results
+        # This ensures we don't overwrite existing comments with empty values
+        result_rows = []
 
         if similarity_results:
             for amdt_idx, similar_amdts in similarity_results.items():
                 # Skip if the amendment is not in our dataframe
-                amdt_mask = result_df["amdt_idx"] == amdt_idx
+                amdt_mask = working_df["amdt_idx"] == amdt_idx
                 if not amdt_mask.any():
                     continue
+
+                # Get the row for this amendment
+                row = working_df[amdt_mask].iloc[0].copy()
 
                 # Format the comment
                 similarity_comment = SimilaritiesHandler.format_similarity_comment(
                     similar_amdts
                 )
 
-                # Update the 'Commentaires' column
-                comment_mask = result_df["amdt_idx"] == amdt_idx
-                if not comment_mask.any():
-                    continue
-                current_comment = result_df.loc[comment_mask, "Commentaires"].iloc[0]
+                # Set the comment for this row
+                row["Commentaires"] = similarity_comment
+                result_rows.append(row)
 
-                if pd.isna(current_comment) or current_comment == "":
-                    new_comment = similarity_comment
-                else:
-                    new_comment = f"{similarity_comment}\n{current_comment}"
-
-                result_df.loc[result_df["amdt_idx"] == amdt_idx, "Commentaires"] = (
-                    new_comment
-                )
+        # Create result_df with only rows that have similarities
+        if result_rows:
+            result_df = pd.DataFrame(result_rows)
+            result_df.set_index("amdt_idx", inplace=True)
+        else:
+            # No similarities found, return empty result
+            result_df = pd.DataFrame(columns=["amdt_idx", "Commentaires"]).set_index(
+                "amdt_idx"
+            )
 
         # Create final result using declared output columns
         output_columns = self.get_output_columns()
         final_df = feature_input.amendments_df.copy()
 
-        # Update only the declared output columns
-        for col in output_columns:
-            if col in result_df.columns:
-                final_df[col] = result_df[col]
+        # Only include output columns if we have actual results to report
+        # Don't create empty columns that would interfere with concatenation from other features
+        if len(result_df) > 0:
+            for col in output_columns:
+                if col in result_df.columns:
+                    # Initialize column with pd.NA for all rows
+                    if col not in final_df.columns:
+                        final_df[col] = pd.NA
+                    # Then update only the rows with similarity results
+                    final_df.loc[result_df.index, col] = result_df[col]
 
         return FeatureOutput(
             amendments_df=final_df,
