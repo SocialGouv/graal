@@ -20,6 +20,18 @@ jobs:
         token-bureau-url: https://token-bureau.fabrique.social.gouv.fr
         audience: socialgouv
 
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ steps.token.outputs.token }}
+
+    - name: Clean Semantic Release notes to prevent loops
+      run: |
+        git fetch origin 'refs/notes/*:refs/notes/*' || true
+        git notes --ref=semantic-release prune || true
+        git push origin 'refs/notes/*:refs/notes/*' --force || true
+
     - uses: SocialGouv/actions/autodevops-release@v1
       with:
         github-token: ${{ steps.token.outputs.token }}
