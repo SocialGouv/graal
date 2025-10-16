@@ -159,6 +159,7 @@ class WebProcessingService:
         Returns:
             ProcessingResponse with job_id
         """
+        config_file = processing_request.config_file
         logger.info(
             f"[WEB_SERVICE] Starting processing for file: {filename}, size: {len(file_content)} bytes"
         )
@@ -210,9 +211,11 @@ class WebProcessingService:
 
         # Start processing in background
         logger.info(
-            f"[WEB_SERVICE] Starting background processing task - job_id: {job_id}"
+            f"[WEB_SERVICE] Starting background processing task - job_id: {job_id}, config_file: {config_file}"
         )
-        task = asyncio.create_task(self._process_file_async(job_id, processing_request))
+        task = asyncio.create_task(
+            self._process_file_async(job_id, config_file, processing_request)
+        )
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
 
@@ -223,10 +226,16 @@ class WebProcessingService:
             job_id=job_id, status=JobStatus.queued, message="Processing job started"
         )
 
-    async def _process_file_async(
-        self, job_id: str, processing_request: ProcessingRequest
+    async def _process_file_async(  # noqa: C901
+        self, job_id: str, config_file: str, processing_request: ProcessingRequest
     ) -> None:
-        """Process file asynchronously."""
+        """Process file asynchronously.
+
+        Args:
+            job_id: Unique job identifier
+            config_file: Name of the configuration file to use from S3
+            processing_request: Processing configuration parameters
+        """
         import time
 
         start_time = time.time()
@@ -256,14 +265,28 @@ class WebProcessingService:
                 message="Loading configuration and initializing pipeline",
             )
 
-            # Load configuration
-            logger.info(f"[WEB_SERVICE] Loading configuration from: {self.config_path}")
+            # Load base configuration
+            logger.info(
+                f"[WEB_SERVICE] Loading base configuration from: {self.config_path}"
+            )
             config = load_config(self.config_path)
             logger.debug(
-                f"[WEB_SERVICE] Configuration loaded successfully - job_id: {job_id}"
+                f"[WEB_SERVICE] Base configuration loaded successfully - job_id: {job_id}"
             )
 
-            # Merge frontend configuration with default config
+            # Update config with the selected config file
+            logger.info(
+                f"[WEB_SERVICE] Setting config file path - job_id: {job_id}, config_file: {config_file}"
+            )
+            # Ensure paths section exists
+            if "paths" not in config:
+                config["paths"] = {}
+            config["paths"]["graal_config_file"] = config_file
+            logger.debug(
+                f"[WEB_SERVICE] Config file path set successfully - job_id: {job_id}"
+            )
+
+            # Merge frontend configuration with base config
             logger.info(
                 f"[WEB_SERVICE] Merging frontend configuration - job_id: {job_id}"
             )

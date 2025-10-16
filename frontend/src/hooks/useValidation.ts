@@ -170,6 +170,50 @@ export const useValidation = () => {
     [validateSimilarityThreshold]
   )
 
+  /**
+   * Validates the config file selection
+   * @param configFile - The config file path
+   * @returns string error message or null if valid
+   */
+  const getConfigFileError = useCallback(
+    (configFile: string | null): string | null => {
+      if (!configFile) {
+        return 'Veuillez sélectionner un fichier de configuration'
+      }
+
+      if (!configFile.endsWith('.xlsx')) {
+        return 'Le fichier doit être au format Excel (.xlsx)'
+      }
+
+      return null
+    },
+    []
+  )
+
+  /**
+   * Checks if at least one feature is enabled
+   * @param processingConfig - The processing configuration to check
+   * @returns boolean indicating if at least one feature is enabled
+   */
+  const isAnyFeatureEnabled = useCallback(
+    (processingConfig: {
+      allotments: { enabled: boolean }
+      similaritiesWithinLectures: { enabled: boolean }
+      similaritySearch: { enabled: boolean }
+      attribution: { enabled: boolean }
+      defaultOpinion: { enabled: boolean }
+    }): boolean => {
+      return (
+        processingConfig.allotments.enabled ||
+        processingConfig.similaritiesWithinLectures.enabled ||
+        processingConfig.similaritySearch.enabled ||
+        processingConfig.attribution.enabled ||
+        processingConfig.defaultOpinion.enabled
+      )
+    },
+    []
+  )
+
   return {
     validateOriginProject,
     isOriginProjectValid,
@@ -177,7 +221,9 @@ export const useValidation = () => {
     validateAllotmentsColumn,
     validateSimilarityThreshold,
     getAllotmentsColumnError,
-    getSimilarityThresholdError
+    getSimilarityThresholdError,
+    getConfigFileError,
+    isAnyFeatureEnabled
   }
 }
 

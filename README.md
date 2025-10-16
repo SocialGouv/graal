@@ -43,11 +43,13 @@ make install
 Extracts amendments from Signale in JSON format and place them in your data folder.
 This project comes with `PLFSS_2024.json` and `exports_lectures/PLFSS 2023`.
 
-### Download the Excel configuration file
+### Configuration Files (S3)
 
-If you are part of the "Ministères sociaux", you should be able to access the [configuration file](https://msociauxfr.sharepoint.com/:x:/t/FabNum/EUAB4dL6TVNFs4bJsGvhS6cBRm5rmM6nXEbAznY4dNZIiA?e=OnPXEO) on your own, which you can copy and adapt to your use case.
+Configuration files must be stored as `.xlsx` files in your S3 bucket at the path: `{S3_BUCKET_NAME}/{S3_CONFIG_FOLDER}/`
 
-Otherwise, get in touch with the "Fabrique du numérique des ministères sociaux".
+When using the web application, users select their desired configuration file from a dropdown before processing amendments. The system automatically loads available configuration files from S3.
+
+For legacy access or manual downloads, configuration files may still be available through [SharePoint](https://msociauxfr.sharepoint.com/:x:/t/FabNum/EUAB4dL6TVNFs4bJsGvhS6cBRm5rmM6nXEbAznY4dNZIiA?e=OnPXEO) (Ministères sociaux only).
 
 ### Environment Variables
 
@@ -56,6 +58,14 @@ Set up the following environment variables:
 ```bash
 # Folder where your data can be found
 export DATA_FOLDER="data"
+
+# S3 Configuration (REQUIRED for config file selection)
+export S3_BUCKET_ACCESS_KEY="<access_key>"
+export S3_BUCKET_SECRET_KEY="<secret_key>"
+export S3_BUCKET_ENDPOINT="https://s3.gra.io.cloud.ovh.net"
+export S3_BUCKET_NAME="graal-dev-app"
+export S3_BUCKET_REGION="gra"
+export S3_CONFIG_FOLDER="config_graal"
 
 # If your work with Albert API
 export ETALAB_API_KEY=<albert_api_token>
@@ -68,12 +78,10 @@ export OLLAMA_USER=<user>
 export OLLAMA_PASSWORD=<password>
 export OLLAMA_MODEL_NAME="llama3.1:70b"
 
+# Scaleway Configuration
 export SCALEWAY_BASE_URL="https://<UUID_SCALEWAY>.ifr.fr-par.scaleway.com/v1"
 export SCALEWAY_MODEL_NAME="meta/llama-3.3-70b-instruct:bf16"
 export SCALEWAY_API_KEY="<API_KEY>"
-
-export S3_BUCKET_ACCESS_KEY="<access_key>"
-export S3_BUCKET_SECRET_KEY="<secret_key>"
 ```
 
 **NB:** You can still test GRAAL without using Albert or Ollama by using the FakeLLMAPIClient. See [pipeline](#pipeline)
@@ -351,9 +359,12 @@ make dev-help
 ### Usage
 
 1. Open <http://localhost:5173> in your browser
-2. Upload a JSON file containing amendments (max 50MB)
-3. Monitor processing progress in real-time
-4. View results table and download CSV when complete
+2. **Select a configuration file** from the dropdown (loaded from S3)
+3. Upload a JSON file containing amendments (max 50MB)
+4. Monitor processing progress in real-time
+5. View results table and download CSV when complete
+
+**Note**: You must select a configuration file before uploading amendments. Configuration files are automatically loaded from your S3 bucket.
 
 ### Features
 

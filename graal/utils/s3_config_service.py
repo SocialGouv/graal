@@ -1,106 +1,84 @@
 """
-Service for loading configuration files from S3 or local filesystem.
+Service for loading configuration files from S3.
 
-This service automatically detects whether S3 configuration is available
-and falls back to local files when needed.
+This service requires S3 to be configured and does not fall back to local files.
 """
 
 import logging
 import os
 from io import BytesIO
-from pathlib import Path
+from typing import Any
 
+import boto3
 import pandas as pd
+from botocore.exceptions import ClientError, NoCredentialsError
 
 logger = logging.getLogger(__name__)
 
-try:
-    import boto3
-    from botocore.exceptions import ClientError, NoCredentialsError
-
-    BOTO3_AVAILABLE = True
-except ImportError:
-    logger.info("boto3 not available, S3 functionality will be disabled")
-    BOTO3_AVAILABLE = False
-
 
 class S3ConfigService:
-    """Service for loading configuration files from S3 or local filesystem."""
-
-    # Mapping of configuration file names to S3 keys
-    CONFIG_FILE_MAPPING = {
-        "Fichier de configuration GRAAL - DSS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - DSS - latest.xlsx",
-        "Fichier de configuration GRAAL - PLF - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF - latest.xlsx",
-        "Fichier de configuration GRAAL - PLF_vDGCS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_vDGCS - latest.xlsx",
-        "Fichier de configuration GRAAL - PLF_DGCS et DGS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_DGCS et DGS - latest.xlsx",
-        "Fichier de configuration GRAAL - PLF_DGS - latest.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_DGS - latest.xlsx",
-        "Fichier de configuration GRAAL - PLF_DGS - v1.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_DGS - v1.xlsx",
-        "Fichier de configuration GRAAL - PLF_vDGCS - v1.xlsx": "office_directories/Fichier de configuration GRAAL - PLF_vDGCS - v1.xlsx",
-    }
+    """Service for loading configuration files from S3."""
 
     def __init__(self):
-        """Initialize the S3 config service."""
-        self._s3_client = None
-        self._s3_enabled = self._initialize_s3()
+        """Initialize the S3 config service.
 
-    def _initialize_s3(self) -> bool:
-        """Initialize S3 client if configuration is available.
-
-        Returns:
-            bool: True if S3 is available and configured, False otherwise.
+        Raises:
+            Exception: If S3 is not configured or not available.
         """
-        if not BOTO3_AVAILABLE:
-            logger.info("S3 disabled: boto3 not available")
-            return False
+        self._s3_client: Any = None
+        self._bucket_name: str | None = None
+        self._office_directories: str | None = None
+        self._initialize_s3()
+
+    def _initialize_s3(self) -> None:
+        """Initialize S3 client with required configuration.
+
+        Raises:
+            Exception: If S3 is not available or not properly configured.
+        """
 
         # Check if S3 configuration environment variables are available
         required_vars = [
             "S3_BUCKET_NAME",
-            "S3_ENDPOINT",
-            "S3_ACCESS_KEY",
-            "S3_SECRET_KEY",
+            "S3_BUCKET_ENDPOINT",
+            "S3_BUCKET_ACCESS_KEY",
+            "S3_BUCKET_SECRET_KEY",
+            "S3_CONFIG_FOLDER",
         ]
         missing_vars = [var for var in required_vars if not os.getenv(var)]
 
         if missing_vars:
-            logger.info(f"S3 disabled: Missing environment variables: {missing_vars}")
-            return False
-
-        # Check if S3 is explicitly disabled
-        if os.getenv("USE_S3_CONFIG", "").lower() in ["false", "0", "no"]:
-            logger.info("S3 disabled: USE_S3_CONFIG is set to false")
-            return False
+            raise Exception(
+                f"S3 initialization failed: Missing required environment variables: {missing_vars}"
+            )
 
         try:
+            self._bucket_name = os.getenv("S3_BUCKET_NAME")
+            self._office_directories = os.getenv("S3_CONFIG_FOLDER")
+
             self._s3_client = boto3.client(
                 "s3",
-                endpoint_url=os.getenv("S3_ENDPOINT"),
-                aws_access_key_id=os.getenv("S3_ACCESS_KEY"),
-                aws_secret_access_key=os.getenv("S3_SECRET_KEY"),
-                region_name=os.getenv("S3_REGION", "gra"),
+                endpoint_url=os.getenv("S3_BUCKET_ENDPOINT"),
+                aws_access_key_id=os.getenv("S3_BUCKET_ACCESS_KEY"),
+                aws_secret_access_key=os.getenv("S3_BUCKET_SECRET_KEY"),
+                region_name=os.getenv("S3_BUCKET_REGION", "gra"),
             )
 
             # Test connection by listing bucket (this will raise an exception if credentials are wrong)
-            bucket_name = os.getenv("S3_BUCKET_NAME")
-            self._s3_client.head_bucket(Bucket=bucket_name)
+            self._s3_client.head_bucket(Bucket=self._bucket_name)
 
-            logger.info(f"S3 enabled: Connected to bucket {bucket_name}")
-            return True
+            logger.info(
+                f"S3 enabled: Connected to bucket {self._bucket_name}, office_directories: {self._office_directories}"
+            )
 
         except (ClientError, NoCredentialsError) as e:
-            logger.warning(f"S3 disabled: Failed to initialize S3 client: {e}")
-            return False
+            raise Exception(
+                f"S3 initialization failed: Failed to initialize S3 client: {e}"
+            ) from e
         except Exception as e:
-            logger.warning(f"S3 disabled: Unexpected error initializing S3: {e}")
-            return False
-
-    def is_s3_enabled(self) -> bool:
-        """Check if S3 is enabled and configured.
-
-        Returns:
-            bool: True if S3 is available, False otherwise.
-        """
-        return self._s3_enabled
+            raise Exception(
+                f"S3 initialization failed: Unexpected error initializing S3: {e}"
+            ) from e
 
     def _download_from_s3(self, s3_key: str) -> BytesIO:
         """Download a file from S3 into memory.
@@ -114,17 +92,15 @@ class S3ConfigService:
         Raises:
             Exception: If the download fails.
         """
-        if not self._s3_enabled:
-            raise Exception("S3 is not enabled or configured")
-
-        bucket_name = os.getenv("S3_BUCKET_NAME")
+        if not self._s3_client or not self._bucket_name:
+            raise Exception("S3 client or bucket not configured")
 
         try:
             logger.info(
-                f"Downloading configuration file from S3: s3://{bucket_name}/{s3_key}"
+                f"Downloading configuration file from S3: s3://{self._bucket_name}/{s3_key}"
             )
 
-            response = self._s3_client.get_object(Bucket=bucket_name, Key=s3_key)
+            response = self._s3_client.get_object(Bucket=self._bucket_name, Key=s3_key)
             file_content = BytesIO(response["Body"].read())
 
             # Log file size
@@ -136,133 +112,132 @@ class S3ConfigService:
         except ClientError as e:
             error_code = e.response["Error"]["Code"]
             if error_code == "NoSuchKey":
-                raise FileNotFoundError(f"Configuration file not found in S3: {s3_key}")
+                raise FileNotFoundError(
+                    f"Configuration file not found in S3: {s3_key}"
+                ) from e
             else:
-                raise Exception(f"Failed to download from S3: {e}")
+                raise Exception(f"Failed to download from S3: {e}") from e
         except Exception as e:
-            raise Exception(f"Unexpected error downloading from S3: {e}")
+            raise Exception(f"Unexpected error downloading from S3: {e}") from e
 
-    def _get_local_path(self, filename: str) -> Path:
-        """Get the local path for a configuration file.
-
-        Args:
-            filename: The name of the configuration file.
+    def list_available_config_files(self) -> list[str]:
+        """List all available configuration files from S3.
 
         Returns:
-            Path: The local path to the file.
-        """
-        data_folder = os.getenv("DATA_FOLDER", "data")
-        return Path(data_folder) / "config_graal" / filename
+            list[str]: List of configuration file names (without paths).
 
-    def load_config_excel(self, filename: str) -> dict[str, pd.DataFrame]:
-        """Load a configuration Excel file from S3 or local filesystem.
+        Raises:
+            Exception: If S3 is not available or listing fails.
+        """
+        if not self._s3_client or not self._bucket_name or not self._office_directories:
+            raise Exception("S3 client, bucket, or office directories not configured")
+
+        try:
+            logger.info(
+                f"Listing configuration files from S3: {self._office_directories}/"
+            )
+
+            # Ensure office_directories ends with / for proper prefix matching
+            prefix = self._office_directories
+            if not prefix.endswith("/"):
+                prefix += "/"
+
+            response = self._s3_client.list_objects_v2(
+                Bucket=self._bucket_name, Prefix=prefix
+            )
+
+            files = []
+            if "Contents" in response:
+                for obj in response["Contents"]:
+                    s3_key = obj["Key"]
+                    # Extract filename from key and filter for .xlsx files
+                    filename = s3_key.split("/")[-1]
+                    if filename and filename.endswith(".xlsx"):
+                        files.append(filename)
+
+            logger.info(f"Found {len(files)} configuration files in S3")
+            return sorted(files)
+
+        except ClientError as e:
+            error_msg = f"Failed to list configuration files from S3: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = f"Unexpected error listing configuration files: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg) from e
+
+    def validate_config_file_exists(self, filename: str) -> bool:
+        """Check if a specific configuration file exists in S3.
 
         Args:
-            filename: Name of the Excel file or full path (e.g., "Fichier de configuration GRAAL - DSS - latest.xlsx")
+            filename: Name of the configuration file to check.
+
+        Returns:
+            bool: True if the file exists, False otherwise.
+        """
+        if not self._s3_client or not self._bucket_name or not self._office_directories:
+            return False
+
+        try:
+            # Construct S3 key
+            s3_key = f"{self._office_directories}/{filename}"
+            if self._office_directories.endswith("/"):
+                s3_key = f"{self._office_directories}{filename}"
+
+            # Try to get object metadata
+            self._s3_client.head_object(Bucket=self._bucket_name, Key=s3_key)
+            logger.info(f"Configuration file exists in S3: {filename}")
+            return True
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                logger.warning(f"Configuration file not found in S3: {filename}")
+                return False
+            else:
+                logger.error(f"Error checking file existence: {e}")
+                return False
+        except Exception as e:
+            logger.error(f"Unexpected error checking file existence: {e}")
+            return False
+
+    def load_config_excel(self, filename: str) -> dict[str, pd.DataFrame]:
+        """Load a configuration Excel file from S3.
+
+        Args:
+            filename: Name of the Excel file (e.g., "Fichier de configuration GRAAL - DSS - latest.xlsx")
 
         Returns:
             dict[str, pd.DataFrame]: Dictionary mapping sheet names to DataFrames.
 
         Raises:
-            FileNotFoundError: If the file is not found in S3 or locally.
+            FileNotFoundError: If the file is not found in S3.
             Exception: If there's an error loading the file.
         """
-        logger.info(f"Loading configuration file: {filename}")
+        if not self._office_directories:
+            raise Exception("S3 office directories not configured")
 
-        # Extract filename from path if it's a full path
-        from pathlib import Path
+        logger.info(f"Loading configuration file from S3: {filename}")
 
-        actual_filename = Path(filename).name
-
-        # Try S3 first if enabled
-        if self._s3_enabled:
-            s3_key = self.CONFIG_FILE_MAPPING.get(actual_filename)
-            if s3_key:
-                try:
-                    file_content = self._download_from_s3(s3_key)
-                    excel_data = pd.read_excel(file_content, sheet_name=None)
-                    logger.info(
-                        f"Loaded configuration from S3 - sheets: {list(excel_data.keys())}"
-                    )
-                    return excel_data
-                except Exception as e:
-                    # When S3 is enabled and the file is in the mapping, don't fallback to local
-                    # This prevents confusing error messages about missing local files in production
-                    logger.error(
-                        f"Failed to load configuration from S3: {e}. "
-                        f"S3 is enabled, so local fallback is disabled."
-                    )
-                    raise Exception(
-                        f"Failed to load configuration file '{actual_filename}' from S3: {e}"
-                    ) from e
-            else:
-                # File not in S3 mapping - when S3 is enabled, this should be an error
-                error_msg = (
-                    f"Configuration file '{actual_filename}' is not in the S3 mapping. "
-                    f"Available files in mapping: {list(self.CONFIG_FILE_MAPPING.keys())}"
-                )
-                logger.error(error_msg)
-                raise FileNotFoundError(error_msg)
-
-        # Fallback to local file
-        local_path = self._get_local_path(filename)
-
-        if not local_path.exists():
-            raise FileNotFoundError(
-                f"Configuration file not found locally: {local_path}"
-            )
+        # Construct S3 key
+        s3_key = f"{self._office_directories}/{filename}"
+        if self._office_directories.endswith("/"):
+            s3_key = f"{self._office_directories}{filename}"
 
         try:
-            logger.info(f"Loading configuration from local file: {local_path}")
-            excel_data = pd.read_excel(local_path, sheet_name=None)
+            file_content = self._download_from_s3(s3_key)
+            excel_data = pd.read_excel(file_content, sheet_name=None)
             logger.info(
-                f"Loaded configuration from local file - sheets: {list(excel_data.keys())}"
+                f"Loaded configuration from S3 - filename: {filename}, sheets: {list(excel_data.keys())}"
             )
             return excel_data
+        except FileNotFoundError:
+            # Re-raise FileNotFoundError as-is
+            raise
         except Exception as e:
-            raise Exception(
-                f"Failed to load local configuration file {local_path}: {e}"
-            )
-
-    def get_available_files(self) -> list[str]:
-        """Get list of available configuration files.
-
-        Returns:
-            list[str]: List of available configuration file names.
-        """
-        available_files = []
-
-        # Check S3 files if enabled
-        if self._s3_enabled:
-            try:
-                bucket_name = os.getenv("S3_BUCKET_NAME")
-                response = self._s3_client.list_objects_v2(
-                    Bucket=bucket_name, Prefix="office_directories/"
-                )
-
-                if "Contents" in response:
-                    for obj in response["Contents"]:
-                        s3_key = obj["Key"]
-                        # Find the filename that maps to this S3 key
-                        for filename, mapped_key in self.CONFIG_FILE_MAPPING.items():
-                            if mapped_key == s3_key:
-                                available_files.append(filename)
-                                break
-
-            except Exception as e:
-                logger.warning(f"Failed to list S3 files: {e}")
-
-        # Check local files
-        data_folder = os.getenv("DATA_FOLDER", "data")
-        local_config_dir = Path(data_folder) / "config_graal"
-
-        if local_config_dir.exists():
-            for file_path in local_config_dir.glob("*.xlsx"):
-                filename = file_path.name
-                if filename not in available_files:
-                    available_files.append(filename)
-
-        return sorted(available_files)
+            error_msg = f"Failed to load configuration file '{filename}' from S3: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg) from e
 
 
 # Global instance

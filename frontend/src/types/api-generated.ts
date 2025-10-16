@@ -26,6 +26,32 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/config-files': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Config Files
+     * @description List available configuration files from S3.
+     *
+     *     Returns:
+     *         ConfigFilesResponse with list of available configuration files
+     *
+     *     Raises:
+     *         HTTPException: 503 if S3 is not available, 500 for other errors
+     */
+    get: operations['list_config_files_api_v1_config_files_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/process': {
     parameters: {
       query?: never
@@ -249,6 +275,22 @@ export interface components {
       /** Request */
       request: string
     }
+    /**
+     * ConfigFilesResponse
+     * @description Response model for available configuration files.
+     */
+    ConfigFilesResponse: {
+      /**
+       * Files
+       * @description List of available configuration file names
+       */
+      files: string[]
+      /**
+       * Total
+       * @description Total number of available files
+       */
+      total: number
+    }
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -342,6 +384,26 @@ export interface operations {
         }
         content: {
           'application/json': unknown
+        }
+      }
+    }
+  }
+  list_config_files_api_v1_config_files_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConfigFilesResponse']
         }
       }
     }

@@ -88,7 +88,9 @@ class TestWebProcessingService:
     @pytest.fixture
     def mock_processing_request(self):
         """Mock processing request with default configuration."""
-        return ProcessingRequest(processing_config=ProcessingConfig())
+        return ProcessingRequest(
+            config_file="test_config.xlsx", processing_config=ProcessingConfig()
+        )
 
     @pytest.fixture
     def service(self, tmp_path, mock_job_registry):
@@ -274,7 +276,9 @@ class TestWebProcessingService:
             mock_processing_pipeline.return_value = mock_instance
 
             # Run the async processing
-            await service._process_file_async(job_id, mock_processing_request)
+            await service._process_file_async(
+                job_id, "test_config.xlsx", mock_processing_request
+            )
 
         # Verify job updates
         assert mock_job_registry.update_job.call_count >= 3
@@ -322,7 +326,9 @@ class TestWebProcessingService:
             )
 
             # Run the async processing
-            await service._process_file_async(job_id, mock_processing_request)
+            await service._process_file_async(
+                job_id, "test_config.xlsx", mock_processing_request
+            )
 
         # Verify failure handling
         final_call = mock_job_registry.update_job.call_args_list[-1]
@@ -376,7 +382,9 @@ class TestWebProcessingService:
                 mock_executor.side_effect = asyncio.TimeoutError()
                 mock_loop.return_value.run_in_executor = mock_executor
 
-                await service._process_file_async(job_id, mock_processing_request)
+                await service._process_file_async(
+                    job_id, "test_config.xlsx", mock_processing_request
+                )
 
                 # Verify timeout handling
                 final_call = mock_job_registry.update_job.call_args_list[-1]
@@ -395,7 +403,9 @@ class TestWebProcessingService:
         mock_job_registry.get_job.return_value = None
 
         # Should handle gracefully without raising exception
-        await service._process_file_async(job_id, mock_processing_request)
+        await service._process_file_async(
+            job_id, "test_config.xlsx", mock_processing_request
+        )
 
         # Should not call update_job since job doesn't exist
         mock_job_registry.update_job.assert_not_called()

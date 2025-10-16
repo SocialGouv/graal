@@ -131,9 +131,17 @@ class SimilaritySearchFeature(BaseFeature):
 
         # Create final result with declared output columns
         final_df = feature_input.amendments_df.copy()
-        for col in output_columns:
-            if col in result_df.columns:
-                final_df[col] = result_df[col]
+
+        # Only include output columns if we have actual results to report
+        # Don't create empty columns that would interfere with concatenation from other features
+        if len(result_df) > 0:
+            for col in output_columns:
+                if col in result_df.columns:
+                    # Initialize column with pd.NA for all rows
+                    if col not in final_df.columns:
+                        final_df[col] = pd.NA
+                    # Then update only the rows with search results
+                    final_df.loc[result_df.index, col] = result_df[col]
 
         return FeatureOutput(
             amendments_df=final_df,

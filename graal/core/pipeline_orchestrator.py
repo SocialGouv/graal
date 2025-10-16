@@ -41,12 +41,17 @@ class PipelineOrchestrator:
         """
         Process the full pipeline.
 
+        IMPORTANT: This method assumes that columns have already been cleared ONCE
+        by ProcessingPipeline._determine_columns_to_clear() before features run.
+        This orchestrator NEVER clears columns - it only merges feature results,
+        using concatenation for configured columns (like "Commentaires").
+
         1. Run preprocessing features (allotment) that can filter data
         2. Run regular features in parallel/any order
-        3. Merge results
+        3. Merge results (with concatenation for configured columns)
 
         Args:
-            amendments_df: Original clean amendments data
+            amendments_df: Original clean amendments data (with columns already cleared)
             config: Full pipeline configuration
 
         Returns:

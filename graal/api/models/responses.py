@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class JobStatus(str, Enum):
@@ -65,6 +65,13 @@ class PreviewResponse(BaseModel):
     total_rows: int
     preview_rows: List[AmendmentPreview]
     columns: List[str]
+
+
+class ConfigFilesResponse(BaseModel):
+    """Response model for available configuration files."""
+
+    files: List[str] = Field(description="List of available configuration file names")
+    total: int = Field(description="Total number of available files")
 
 
 class ErrorResponse(BaseModel):

@@ -6,6 +6,7 @@ import { fr } from '@codegouvfr/react-dsfr'
 
 // Import components and providers
 import QueryProvider from './providers/QueryProvider'
+import { ConfigFileSelector } from './components/ConfigFileSelector'
 import ProcessingConfig from './components/ProcessingConfig/ProcessingConfig'
 import FileUpload from './components/FileUpload/FileUpload'
 import ProcessingStatus from './components/ProcessingStatus/ProcessingStatus'
@@ -39,6 +40,7 @@ function AppContent() {
     processingStatus,
     processingConfig,
     uploadedFile,
+    selectedConfigFile,
     setUploadedFile,
     reset
   } = useProcessingStore()
@@ -49,7 +51,7 @@ function AppContent() {
   const downloadExcelResultsMutation = useDownloadExcelResults()
 
   // Validation hook
-  const { isOriginProjectValid } = useValidation()
+  const { isOriginProjectValid, isAnyFeatureEnabled } = useValidation()
 
   // Job status polling - only when we have a jobId and processing
   useJobStatus(
@@ -67,18 +69,21 @@ function AppContent() {
   const isFormValid = useMemo(
     () =>
       uploadedFile &&
+      selectedConfigFile &&
+      isAnyFeatureEnabled(processingConfig) &&
       (!processingConfig.similaritySearch.enabled ||
         isOriginProjectValid(processingConfig.similaritySearch.originProject)),
     [
       uploadedFile,
-      processingConfig.similaritySearch.enabled,
-      processingConfig.similaritySearch.originProject,
+      selectedConfigFile,
+      processingConfig,
+      isAnyFeatureEnabled,
       isOriginProjectValid
     ]
   )
 
   const handleStartProcessing = () => {
-    if (!uploadedFile || !isFormValid) return
+    if (!uploadedFile || !selectedConfigFile || !isFormValid) return
 
     // Helper function to build feature configuration conditionally
     const buildConfigIfEnabled = (enabled: boolean, config: object = {}) => {
@@ -86,6 +91,7 @@ function AppContent() {
     }
 
     const processingRequest = {
+      config_file: selectedConfigFile,
       processing_config: {
         allotments: buildConfigIfEnabled(processingConfig.allotments.enabled, {
           column: processingConfig.allotments.column,
@@ -133,7 +139,10 @@ function AppContent() {
         )
       }
     }
-    uploadFileMutation.mutate({ file: uploadedFile, processingRequest })
+    uploadFileMutation.mutate({
+      file: uploadedFile,
+      processingRequest
+    })
   }
 
   const handleDownloadCsv = () => {
@@ -212,13 +221,27 @@ function AppContent() {
             {/* Configuration and File Upload Section */}
             {!showResults && (
               <>
-                <ProcessingConfig disabled={uploadFileMutation.isPending} />
-                <FileUpload
-                  onFileSelect={handleFileSelect}
-                  onStartProcessing={handleStartProcessing}
-                  disabled={uploadFileMutation.isPending}
-                  isFormValid={!!isFormValid}
-                />
+                <section className={fr.cx('fr-mb-6w')}>
+                  <h2 className={fr.cx('fr-h3')}>1. Configuration</h2>
+                  <ConfigFileSelector disabled={uploadFileMutation.isPending} />
+                </section>
+
+                <section className={fr.cx('fr-mb-6w')}>
+                  <h2 className={fr.cx('fr-h3')}>
+                    2. Configuration du traitement
+                  </h2>
+                  <ProcessingConfig disabled={uploadFileMutation.isPending} />
+                </section>
+
+                <section className={fr.cx('fr-mb-6w')}>
+                  <h2 className={fr.cx('fr-h3')}>3. Upload de fichier</h2>
+                  <FileUpload
+                    onFileSelect={handleFileSelect}
+                    onStartProcessing={handleStartProcessing}
+                    disabled={uploadFileMutation.isPending}
+                    isFormValid={!!isFormValid}
+                  />
+                </section>
               </>
             )}
 
