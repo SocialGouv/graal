@@ -12,7 +12,7 @@ from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 logging.config.fileConfig("logging.conf")
 
 
-class SimilarityHandler:
+class WithinLectureSimilarityHandler:
     @staticmethod
     def preprocess_for_similarity(
         amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
@@ -75,6 +75,7 @@ class SimilarityHandler:
         column_filtering_funcs: Optional[
             dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
         ] = None,
+        should_overwrite: bool = True,
     ) -> pd.DataFrame:
         if column_filtering_funcs is None:
             column_filtering_funcs = {}
@@ -125,21 +126,25 @@ class SimilarityHandler:
                     merged_closest_amdts[amdt_idx] = match
 
         # Copy matched amendments to new_amendments_df
-        new_amendments_with_copies_df = SimilarityHandler.copy_matches_to_amendments_df(
-            target_df=original_new_amendments_df,
-            old_amendments_df=preprocessed_old_amendments_df,
-            closest_amdts=merged_closest_amdts,
-            columns_config=columns_to_copy_config,
+        new_amendments_with_copies_df = (
+            WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+                target_df=original_new_amendments_df,
+                old_amendments_df=preprocessed_old_amendments_df,
+                closest_amdts=merged_closest_amdts,
+                columns_config=columns_to_copy_config,
+                should_overwrite=should_overwrite,
+            )
         )
 
         return new_amendments_with_copies_df
 
     @staticmethod
-    def copy_matches_to_amendments_df(
+    def copy_matches_to_amendments_df(  # noqa: C901
         target_df: pd.DataFrame,
         old_amendments_df: pd.DataFrame,
         closest_amdts: dict,
         columns_config: dict,
+        should_overwrite: bool = True,
     ) -> pd.DataFrame:
         # Default configuration if none provided
 
@@ -219,6 +224,29 @@ class SimilarityHandler:
                     # Check if the column exists in the matching amendment
                     if column_name in matching_amendment.columns:
                         old_value = matching_amendment[column_name].values[0]
+
+                        # Check if should_overwrite is disabled
+                        if not should_overwrite:
+                            # Get current value in target
+                            current_value = (
+                                target_df.loc[amdt_idx_mask, column_name].values[0]
+                                if column_name in target_df.columns
+                                else None
+                            )
+
+                            # Check if target cell has a non-empty value
+                            has_existing_value = (
+                                current_value is not None
+                                and pd.notna(current_value)
+                                and str(current_value).strip() != ""
+                            )
+
+                            if has_existing_value:
+                                logging.debug(
+                                    f"Skipping overwrite for {column_name} at amdt_idx {new_amdt_idx} "
+                                    f"(existing value: {current_value})"
+                                )
+                                continue
 
                         # Check if there's a condition for copying
                         if "condition" in column_config and pd.notna(old_value):

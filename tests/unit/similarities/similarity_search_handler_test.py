@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from graal.custom_types import SimilarAmendment
-from graal.similarities.similarities_handler import SimilaritiesHandler
+from graal.similarities.similarity_search_handler import SimilaritySearchHandler
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def test_format_similarity_comment():
         {"amdt_num": 102, "similarity_percentage": 92.0},
     ]
 
-    result = SimilaritiesHandler.format_similarity_comment(similar_amendments)
+    result = SimilaritySearchHandler.format_similarity_comment(similar_amendments)
     expected = "Amdt similaires : 101 (86%), 102 (92%)"
 
     assert result == expected
@@ -66,7 +66,7 @@ def test_find_similar_amendments(mock_get_clusters, mock_preprocess, sample_df):
     mock_get_clusters.return_value = (None, similarity_percentages)
 
     # Call the function
-    result = SimilaritiesHandler.find_similar_amendments(
+    result = SimilaritySearchHandler.find_similar_amendments(
         amendments_df=sample_df,
         similarities_column="Corps amdt",
         pct_similarity_threshold=0.8,
@@ -117,7 +117,7 @@ def test_find_similar_amendments_with_default_group_by(
     mock_get_clusters.return_value = (None, {})
 
     # Call the function without specifying group_by_columns
-    SimilaritiesHandler.find_similar_amendments(
+    SimilaritySearchHandler.find_similar_amendments(
         amendments_df=sample_df, similarities_column="Corps amdt"
     )
 
@@ -143,7 +143,7 @@ def test_find_similar_amendments_empty_result(
     mock_get_clusters.return_value = (None, {})  # No similarities
 
     # Call the function
-    result = SimilaritiesHandler.find_similar_amendments(
+    result = SimilaritySearchHandler.find_similar_amendments(
         amendments_df=sample_df, similarities_column="Corps amdt"
     )
 

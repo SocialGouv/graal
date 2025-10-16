@@ -9,6 +9,7 @@ from typing import Any, Set
 import pandas as pd
 
 from graal.core.feature_interface import BaseFeature, FeatureInput, FeatureOutput
+from graal.similarities.similarity_search_handler import SimilaritySearchHandler
 
 
 class SimilaritiesWithinLecturesFeature(BaseFeature):
@@ -50,7 +51,6 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
         """
         Process amendments for similarities within lectures.
         """
-        from graal.similarities.similarities_handler import SimilaritiesHandler
 
         # Work with our own copy
         working_df = feature_input.amendments_df.copy()
@@ -66,7 +66,7 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
         )
 
         # Find similarities
-        similarity_results = SimilaritiesHandler.find_similar_amendments(
+        similarity_results = SimilaritySearchHandler.find_similar_amendments(
             amendments_df=working_df,
             similarities_column=similarities_column,
             pct_similarity_threshold=similarity_threshold,
@@ -74,38 +74,11 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
             eps=tf_idf_threshold,
         )
 
-        # Build a DataFrame with only the rows that have similarity results
-        # This ensures we don't overwrite existing comments with empty values
-        result_rows = []
-
-        if similarity_results:
-            for amdt_idx, similar_amdts in similarity_results.items():
-                # Skip if the amendment is not in our dataframe
-                amdt_mask = working_df["amdt_idx"] == amdt_idx
-                if not amdt_mask.any():
-                    continue
-
-                # Get the row for this amendment
-                row = working_df[amdt_mask].iloc[0].copy()
-
-                # Format the comment
-                similarity_comment = SimilaritiesHandler.format_similarity_comment(
-                    similar_amdts
-                )
-
-                # Set the comment for this row
-                row["Commentaires"] = similarity_comment
-                result_rows.append(row)
-
-        # Create result_df with only rows that have similarities
-        if result_rows:
-            result_df = pd.DataFrame(result_rows)
-            result_df.set_index("amdt_idx", inplace=True)
-        else:
-            # No similarities found, return empty result
-            result_df = pd.DataFrame(columns=["amdt_idx", "Commentaires"]).set_index(
-                "amdt_idx"
-            )
+        # Apply similarity comments using the handler's method
+        result_df = SimilaritySearchHandler.apply_similarity_comments(
+            amendments_df=working_df,
+            similarity_results=similarity_results,
+        )
 
         # Create final result using declared output columns
         output_columns = self.get_output_columns()

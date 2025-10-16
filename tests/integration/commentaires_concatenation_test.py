@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from graal.clustering.similarity_handler import SimilarityHandler
+from graal.clustering.within_lecture_similarity_handler import (
+    WithinLectureSimilarityHandler,
+)
 from graal.core.pipeline_orchestrator import PipelineOrchestrator
 from graal.features.attribution_feature import AttributionFeature
 from graal.features.similarities_within_lecture_feature import (
@@ -86,7 +88,9 @@ def similarity_db_file(tmp_path):
         }
     )
 
-    preprocessed_old = SimilarityHandler.preprocess_for_similarity(old_amendments, {})
+    preprocessed_old = WithinLectureSimilarityHandler.preprocess_for_similarity(
+        old_amendments, {}
+    )
     db_path = tmp_path / "test_similarity_db.pkl"
     preprocessed_old.to_pickle(db_path)
     return db_path

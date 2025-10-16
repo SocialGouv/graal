@@ -7,7 +7,9 @@ import pandas as pd
 from pydantic import FilePath
 from unidecode import unidecode
 
-from graal.clustering.similarity_handler import SimilarityHandler
+from graal.clustering.within_lecture_similarity_handler import (
+    WithinLectureSimilarityHandler,
+)
 from graal.custom_types import ColumnName
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.text_utils import remove_gage_sentences
@@ -69,12 +71,16 @@ def run_test(
     expected_result_df = new_amendments_df.copy()
 
     acronym_mapping = AmendmentPreProcessor.load_acronyms(config_excel["Acronymes"])
-    preprocessed_old_amendments_df = SimilarityHandler.preprocess_for_similarity(
-        old_amendments_df, acronym_mapping
+    preprocessed_old_amendments_df = (
+        WithinLectureSimilarityHandler.preprocess_for_similarity(
+            old_amendments_df, acronym_mapping
+        )
     )
 
-    preprocessed_new_amendments_df = SimilarityHandler.preprocess_for_similarity(
-        new_amendments_df, acronym_mapping
+    preprocessed_new_amendments_df = (
+        WithinLectureSimilarityHandler.preprocess_for_similarity(
+            new_amendments_df, acronym_mapping
+        )
     )
 
     preprocessed_new_amendments_df = (
@@ -92,7 +98,7 @@ def run_test(
             "Objet": {"enabled": False},
         }
 
-    new_amendments_with_copies_df = SimilarityHandler.populate(
+    new_amendments_with_copies_df = WithinLectureSimilarityHandler.populate(
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,
@@ -207,7 +213,7 @@ def test_integration_similarity_body():
         fuzzy_match_similarity_thresholds,
         similarity_threshold_overrides={},
         column_filtering_funcs={
-            "Corps amdt": SimilarityHandler.filter_old_amendments_by_project
+            "Corps amdt": WithinLectureSimilarityHandler.filter_old_amendments_by_project
         },
         column_group_by_columns={
             "Corps amdt": ["Num article"],

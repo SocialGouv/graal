@@ -4,7 +4,9 @@ from typing import Callable, Optional
 import pandas as pd
 import pytest
 
-from graal.clustering.similarity_handler import SimilarityHandler
+from graal.clustering.within_lecture_similarity_handler import (
+    WithinLectureSimilarityHandler,
+)
 
 
 @pytest.fixture
@@ -57,7 +59,7 @@ def test_copy_matches_to_amendments_df(sample_data):
         "Sort": {"enabled": True, "condition": "irrecevable"},
         "Objet": {"enabled": False},
     }
-    result_df = SimilarityHandler.copy_matches_to_amendments_df(
+    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
@@ -119,7 +121,7 @@ def test_copy_matches_to_amendments_df_with_custom_config(sample_data):
         "Objet": {"enabled": True},
     }
 
-    result_df = SimilarityHandler.copy_matches_to_amendments_df(
+    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
@@ -191,7 +193,7 @@ def test_populate():
         "Objet": {"enabled": True},
     }
 
-    result_df = SimilarityHandler.populate(
+    result_df = WithinLectureSimilarityHandler.populate(
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,
@@ -247,6 +249,92 @@ def test_populate():
     assert result_df.loc[2, "Objet"] == "Objet 3"
 
 
+def test_copy_matches_with_should_overwrite_false(sample_data):
+    """Test that should_overwrite=False preserves existing values."""
+    old_amendments_df, closest_amdts, target_df = sample_data
+
+    # Set existing values in target
+    target_df.loc[0, "Réponse"] = "Existing Response"
+    target_df.loc[1, "Réponse"] = ""  # Empty, should be filled
+    target_df.loc[2, "Réponse"] = "   "  # Whitespace only, should be filled
+
+    columns_config = {
+        "Réponse": {"enabled": True},
+        "Sort": {"enabled": True, "condition": "irrecevable"},
+    }
+
+    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+        columns_config=columns_config,
+        should_overwrite=False,
+    )
+
+    # First row should keep existing value
+    assert result_df.loc[0, "Réponse"] == "Existing Response"
+
+    # Second row should be filled (was empty)
+    assert result_df.loc[1, "Réponse"] == "Response 2"
+
+    # Third row should be filled (was whitespace only)
+    assert result_df.loc[2, "Réponse"] == "Response 3"
+
+
+def test_copy_matches_with_should_overwrite_true(sample_data):
+    """Test that should_overwrite=True overwrites existing values."""
+    old_amendments_df, closest_amdts, target_df = sample_data
+
+    # Set existing values in target
+    target_df.loc[0, "Réponse"] = "Existing Response"
+    target_df.loc[1, "Réponse"] = "Another Existing"
+
+    columns_config = {
+        "Réponse": {"enabled": True},
+        "Sort": {"enabled": False},
+    }
+
+    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+        columns_config=columns_config,
+        should_overwrite=True,  # Default behavior
+    )
+
+    # All values should be overwritten
+    assert result_df.loc[0, "Réponse"] == "Response 1"
+    assert result_df.loc[1, "Réponse"] == "Response 2"
+    assert result_df.loc[2, "Réponse"] == "Response 3"
+
+
+def test_copy_matches_with_should_overwrite_false_handles_none_and_nan(sample_data):
+    """Test that should_overwrite=False correctly handles None and NaN values."""
+    old_amendments_df, closest_amdts, target_df = sample_data
+
+    # Set various empty-like values
+    target_df.loc[0, "Réponse"] = None
+    target_df.loc[1, "Réponse"] = pd.NA
+    target_df.loc[2, "Réponse"] = float("nan")
+
+    columns_config = {
+        "Réponse": {"enabled": True},
+    }
+
+    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+        target_df=target_df,
+        old_amendments_df=old_amendments_df,
+        closest_amdts=closest_amdts,
+        columns_config=columns_config,
+        should_overwrite=False,
+    )
+
+    # All should be filled as they're empty
+    assert result_df.loc[0, "Réponse"] == "Response 1"
+    assert result_df.loc[1, "Réponse"] == "Response 2"
+    assert result_df.loc[2, "Réponse"] == "Response 3"
+
+
 def test_populate_same_body_but_different_project_should_not_match():
     preprocessed_new_amendments_df = pd.DataFrame(
         {
@@ -289,7 +377,7 @@ def test_populate_same_body_but_different_project_should_not_match():
     column_filtering_funcs: Optional[
         dict[str, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
     ] = {
-        "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
+        "Corps amdt": WithinLectureSimilarityHandler.filter_old_amendments_by_project,
     }
 
     # Use default configuration
@@ -299,7 +387,7 @@ def test_populate_same_body_but_different_project_should_not_match():
         "Objet": {"enabled": False},
     }
 
-    result_df = SimilarityHandler.populate(
+    result_df = WithinLectureSimilarityHandler.populate(
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,

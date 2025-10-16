@@ -11,7 +11,9 @@ from typing import Any
 
 import pandas as pd
 
-from graal.clustering.similarity_handler import SimilarityHandler
+from graal.clustering.within_lecture_similarity_handler import (
+    WithinLectureSimilarityHandler,
+)
 from graal.core.feature_interface import BaseFeature, FeatureInput, FeatureOutput
 from graal.core.text_normalizers import TextNormalizerFactory
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
@@ -83,6 +85,9 @@ class SimilaritySearchFeature(BaseFeature):
         working_df = feature_input.amendments_df.copy()
         similarity_config = feature_input.config.get("similarity_search", {})
 
+        # Get processing options from config
+        should_overwrite = similarity_config.get("should_overwrite", True)
+
         # Get columns to copy configuration
         columns_to_copy_config = similarity_config.get("columns_to_copy", {})
         if not columns_to_copy_config:
@@ -110,7 +115,7 @@ class SimilaritySearchFeature(BaseFeature):
         )
 
         # Process similarity search
-        result_df = SimilarityHandler.populate(
+        result_df = WithinLectureSimilarityHandler.populate(
             preprocessed_old_amendments_df=old_amendments_df,
             preprocessed_new_amendments_df=normalized_working_df,
             original_new_amendments_df=working_df,
@@ -118,12 +123,13 @@ class SimilaritySearchFeature(BaseFeature):
             fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
             similarity_threshold_overrides=similarity_threshold_overrides,
             column_filtering_funcs={
-                "Corps amdt": SimilarityHandler.filter_old_amendments_by_project,
+                "Corps amdt": WithinLectureSimilarityHandler.filter_old_amendments_by_project,
             },
             column_group_by_columns={
                 "Corps amdt": ["Num article"],
             },
             columns_to_copy_config=columns_to_copy_config,
+            should_overwrite=should_overwrite,
         )
         result_df.set_index("amdt_idx", inplace=True)
 

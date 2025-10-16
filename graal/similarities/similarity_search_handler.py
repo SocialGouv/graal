@@ -10,7 +10,7 @@ from graal.custom_types import SimilarAmendment, SimilarityResult
 logging.config.fileConfig("logging.conf")
 
 
-class SimilaritiesHandler:
+class SimilaritySearchHandler:
     """Handler for finding and processing similarities between amendments."""
 
     @staticmethod
@@ -29,6 +29,45 @@ class SimilaritiesHandler:
             for amdt in similar_amendments
         ]
         return f"Amdt similaires : {', '.join(formatted_amdts)}"
+
+    @staticmethod
+    def apply_similarity_comments(
+        amendments_df: pd.DataFrame,
+        similarity_results: SimilarityResult,
+    ) -> pd.DataFrame:
+        """
+        Apply similarity comments to the amendments dataframe.
+
+        Args:
+            amendments_df: The dataframe to update
+            similarity_results: Dictionary mapping amdt_idx to similar amendments
+            should_overwrite: If True, always add comments. If False, only add to empty fields.
+
+        Returns:
+            Updated dataframe with similarity comments
+        """
+        result_df = amendments_df.copy()
+
+        # Initialize Commentaires column if it doesn't exist
+        if "Commentaires" not in result_df.columns:
+            result_df["Commentaires"] = pd.NA
+
+        for amdt_idx, similar_amdts in similarity_results.items():
+            # Skip if the amendment is not in our dataframe
+            if amdt_idx not in result_df.index:
+                continue
+
+            # Format the comment
+            similarity_comment = SimilaritySearchHandler.format_similarity_comment(
+                similar_amdts
+            )
+
+            # Only set if the current value is empty/null
+            current_value = result_df.loc[amdt_idx, "Commentaires"]
+            if pd.isna(current_value) or current_value == "":
+                result_df.loc[amdt_idx, "Commentaires"] = similarity_comment
+
+        return result_df
 
     @staticmethod
     def find_similar_amendments(
