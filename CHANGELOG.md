@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/SocialGouv/graal/compare/v1.1.1...v1.1.2) (2025-10-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency zustand to v5 ([35ecf1a](https://github.com/SocialGouv/graal/commit/35ecf1aa8b9607bf4d6b4fda669cb4acfb484163))
+
 ## [1.1.1](https://github.com/SocialGouv/graal/compare/v1.1.0...v1.1.1) (2025-10-15)
 
 
