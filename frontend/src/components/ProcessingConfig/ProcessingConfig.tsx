@@ -1,14 +1,13 @@
 import React, { useCallback, useMemo } from 'react'
 import { Input } from '@codegouvfr/react-dsfr/Input'
+import { Select } from '@codegouvfr/react-dsfr/Select'
 import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
 import { fr } from '@codegouvfr/react-dsfr'
 import { useProcessingStore } from '../../stores/processingStore'
 import { useValidation } from '../../hooks/useValidation'
 import {
   FeatureConfigSection,
-  ColumnSimilarityConfig,
   ProjectSelectionConfig,
-  ThresholdSliderConfig,
   ColumnsToCopyConfig,
   SimpleToggleConfig,
   type ColumnOption,
@@ -28,11 +27,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     processingStatus !== 'idle' && processingStatus !== 'failed'
 
   // Use shared validation hook
-  const {
-    getOriginProjectError,
-    getAllotmentsColumnError,
-    getSimilarityThresholdError
-  } = useValidation()
+  const { getOriginProjectError, getAllotmentsColumnError } = useValidation()
 
   const handleSimilaritySearchEnabledChange = useCallback(
     (checked: boolean) => {
@@ -87,23 +82,10 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     [setProcessingConfig, processingConfig]
   )
 
-  const handleSimilarityThresholdChange = useCallback(
-    (value: number) => {
-      setProcessingConfig({
-        ...processingConfig,
-        allotments: {
-          ...processingConfig.allotments,
-          similarity_threshold: value
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
   const similaritySearchOriginProjectError = useMemo(
     () =>
       processingConfig.similaritySearch.enabled &&
-        processingConfig.similaritySearch.originProject
+      processingConfig.similaritySearch.originProject
         ? getOriginProjectError(processingConfig.similaritySearch.originProject)
         : null,
     [
@@ -127,20 +109,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     ]
   )
 
-  // Similarity threshold validation
-  const similarityThresholdError = useMemo(
-    () =>
-      getSimilarityThresholdError(
-        processingConfig.allotments.similarity_threshold,
-        processingConfig.allotments.enabled
-      ),
-    [
-      processingConfig.allotments.similarity_threshold,
-      processingConfig.allotments.enabled,
-      getSimilarityThresholdError
-    ]
-  )
-
   // SimilaritiesWithinLectures validation
   const similaritiesWithinLecturesColumnError = useMemo(
     () =>
@@ -152,18 +120,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
       processingConfig.similaritiesWithinLectures.column,
       processingConfig.similaritiesWithinLectures.enabled,
       getAllotmentsColumnError
-    ]
-  )
-  const similaritiesWithinLecturesThresholdError = useMemo(
-    () =>
-      getSimilarityThresholdError(
-        processingConfig.similaritiesWithinLectures.similarity_threshold,
-        processingConfig.similaritiesWithinLectures.enabled
-      ),
-    [
-      processingConfig.similaritiesWithinLectures.similarity_threshold,
-      processingConfig.similaritiesWithinLectures.enabled,
-      getSimilarityThresholdError
     ]
   )
 
@@ -239,18 +195,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     },
     [setProcessingConfig, processingConfig]
   )
-  const handleSimilaritiesWithinLecturesThresholdChange = useCallback(
-    (value: number) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritiesWithinLectures: {
-          ...processingConfig.similaritiesWithinLectures,
-          similarity_threshold: value
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
 
   // should_overwrite handlers for each feature
 
@@ -287,39 +231,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
         defaultOpinion: {
           ...processingConfig.defaultOpinion,
           should_overwrite: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  // Similarity search advanced handlers
-  const handleClusteringThresholdChange = useCallback(
-    (column: string, value: number) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          clusteringSimilarityThresholds: {
-            ...processingConfig.similaritySearch.clusteringSimilarityThresholds,
-            [column]: value
-          }
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleFuzzyMatchThresholdChange = useCallback(
-    (column: string, value: number) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          fuzzyMatchSimilarityThresholds: {
-            ...processingConfig.similaritySearch.fuzzyMatchSimilarityThresholds,
-            [column]: value
-          }
         }
       })
     },
@@ -364,18 +275,27 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           onEnabledChange={handleAllotmentsEnabledChange}
           disabled={disabled || isProcessing}
         >
-          <ColumnSimilarityConfig
-            columnHint="Choisissez la colonne utilisée pour comparer la similarité des amendements"
-            columnOptions={columnOptions}
-            selectedColumn={processingConfig.allotments.column}
-            onColumnChange={handleAllotmentsColumnChange}
-            columnError={allotmentsColumnError || undefined}
-            thresholdHint="Amendements considérés comme similaires au-dessus de ce seuil (0.999 = quasi-identiques)"
-            thresholdValue={processingConfig.allotments.similarity_threshold}
-            onThresholdChange={handleSimilarityThresholdChange}
-            thresholdError={similarityThresholdError || undefined}
-            disabled={disabled || isProcessing}
-          />
+          <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+              <Select
+                label="Colonne à analyser"
+                hint="Choisissez la colonne utilisée pour comparer la similarité des amendements"
+                state={allotmentsColumnError ? 'error' : 'default'}
+                stateRelatedMessage={allotmentsColumnError || undefined}
+                nativeSelectProps={{
+                  value: processingConfig.allotments.column,
+                  onChange: (e) => handleAllotmentsColumnChange(e.target.value),
+                  disabled: disabled || isProcessing
+                }}
+              >
+                {columnOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
         </FeatureConfigSection>
       </div>
 
@@ -441,59 +361,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
             </div>
           </div>
 
-          {/* Clustering Similarity Thresholds */}
-          <div className={fr.cx('fr-mb-4w')}>
-            <h4 className={fr.cx('fr-h6', 'fr-mb-2w')}>
-              Seuils de similarité pour le clustering initial (TF-IDF)
-            </h4>
-            <p className={fr.cx('fr-text--sm', 'fr-mb-3w')}>
-              Ces seuils sont utilisés pour le regroupement initial des
-              amendements par similarité TF-IDF.
-            </p>
-            {Object.entries(
-              processingConfig.similaritySearch.clusteringSimilarityThresholds
-            ).map(([column, threshold]) => (
-              <div key={`clustering-${column}`} className={fr.cx('fr-mb-2w')}>
-                <ThresholdSliderConfig
-                  label={`${column} - Clustering`}
-                  hint={`Seuil de similarité TF-IDF pour la colonne "${column}"`}
-                  value={threshold}
-                  onChange={(value) =>
-                    handleClusteringThresholdChange(column, value)
-                  }
-                  disabled={disabled || isProcessing}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Fuzzy Match Similarity Thresholds */}
-          <div className={fr.cx('fr-mb-4w')}>
-            <h4 className={fr.cx('fr-h6', 'fr-mb-2w')}>
-              Seuils de similarité pour la correspondance précise
-              (Damerau-Levenshtein)
-            </h4>
-            <p className={fr.cx('fr-text--sm', 'fr-mb-3w')}>
-              Ces seuils sont utilisés pour la comparaison précise des
-              amendements avec l'algorithme Damerau-Levenshtein.
-            </p>
-            {Object.entries(
-              processingConfig.similaritySearch.fuzzyMatchSimilarityThresholds
-            ).map(([column, threshold]) => (
-              <div key={`fuzzy-${column}`} className={fr.cx('fr-mb-2w')}>
-                <ThresholdSliderConfig
-                  label={`${column} - Correspondance précise`}
-                  hint={`Seuil de similarité Damerau-Levenshtein pour la colonne "${column}"`}
-                  value={threshold}
-                  onChange={(value) =>
-                    handleFuzzyMatchThresholdChange(column, value)
-                  }
-                  disabled={disabled || isProcessing}
-                />
-              </div>
-            ))}
-          </div>
-
           {/* Columns to Copy */}
           <div className={fr.cx('fr-mb-4w')}>
             <ColumnsToCopyConfig
@@ -523,22 +390,34 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           onEnabledChange={handleSimilaritiesWithinLecturesEnabledChange}
           disabled={disabled || isProcessing}
         >
-          <ColumnSimilarityConfig
-            columnHint="Colonne utilisée pour la comparaison des similarités intra-lecture"
-            columnOptions={columnOptions}
-            selectedColumn={processingConfig.similaritiesWithinLectures.column}
-            onColumnChange={handleSimilaritiesWithinLecturesColumnChange}
-            columnError={similaritiesWithinLecturesColumnError || undefined}
-            thresholdHint="Seuil de similarité pour les amendements intra-lecture"
-            thresholdValue={
-              processingConfig.similaritiesWithinLectures.similarity_threshold
-            }
-            onThresholdChange={handleSimilaritiesWithinLecturesThresholdChange}
-            thresholdError={
-              similaritiesWithinLecturesThresholdError || undefined
-            }
-            disabled={disabled || isProcessing}
-          />
+          <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+              <Select
+                label="Colonne à analyser"
+                hint="Colonne utilisée pour la comparaison des similarités intra-lecture"
+                state={
+                  similaritiesWithinLecturesColumnError ? 'error' : 'default'
+                }
+                stateRelatedMessage={
+                  similaritiesWithinLecturesColumnError || undefined
+                }
+                nativeSelectProps={{
+                  value: processingConfig.similaritiesWithinLectures.column,
+                  onChange: (e) =>
+                    handleSimilaritiesWithinLecturesColumnChange(
+                      e.target.value
+                    ),
+                  disabled: disabled || isProcessing
+                }}
+              >
+                {columnOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
         </FeatureConfigSection>
       </div>
 
