@@ -35,7 +35,7 @@ class OpinionFeature(BaseFeature):
 
     def is_enabled(self, config: dict[str, Any]) -> bool:
         """Check if default opinion is enabled."""
-        return config.get("default_opinion", False)
+        return config.get("default_opinion", {}).get("enabled", False)
 
     def get_columns_to_clear(self, config: dict[str, Any]) -> Set[str]:
         """Return columns to clear if default opinion is enabled."""
@@ -55,6 +55,10 @@ class OpinionFeature(BaseFeature):
         if not self.config_excel:
             raise ValueError("Opinion feature requires config_excel parameter")
 
+        # Get should_overwrite setting (default: True)
+        opinion_config = feature_input.config.get("default_opinion", {})
+        should_overwrite = opinion_config.get("should_overwrite", True)
+
         # Load opinion mappings
         group_to_default_opinion = AttributionDataLoader.load_group_to_default_opinion(
             self.config_excel
@@ -64,6 +68,7 @@ class OpinionFeature(BaseFeature):
         opinion_handler = OpinionHandler(
             amendments_df=working_df,
             group_to_default_opinion=group_to_default_opinion,
+            should_overwrite=should_overwrite,
         )
 
         # Process opinions

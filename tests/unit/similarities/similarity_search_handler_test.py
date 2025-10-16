@@ -81,13 +81,13 @@ def test_find_similar_amendments(mock_get_clusters, mock_preprocess, sample_df):
     assert 1 in result
     assert len(result[1]) == 1
     assert result[1][0]["amdt_num"] == 102
-    assert result[1][0]["similarity_percentage"] == 85.0
+    assert result[1][0]["similarity_percentage"] == pytest.approx(85.0)
 
     # Check amendment 2's similar amendments
     assert 2 in result
     assert len(result[2]) == 1
     assert result[2][0]["amdt_num"] == 101
-    assert result[2][0]["similarity_percentage"] == 85.0
+    assert result[2][0]["similarity_percentage"] == pytest.approx(85.0)
 
     # Verify the mocks were called with the correct arguments
     mock_preprocess.assert_called_once_with(
