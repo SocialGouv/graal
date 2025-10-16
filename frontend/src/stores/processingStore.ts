@@ -92,17 +92,17 @@ const initialState = {
   selectedConfigFile: null,
   processingConfig: {
     allotments: {
-      enabled: false,
+      enabled: true,
       column: 'Corps amdt' as const,
       similarity_threshold: 0.999
     },
     similaritiesWithinLectures: {
-      enabled: false,
+      enabled: true,
       column: 'Exposé amdt' as const,
       similarity_threshold: 0.8
     },
     similaritySearch: {
-      enabled: false,
+      enabled: true,
       originProject: '',
       clusteringSimilarityThresholds: {
         'Exposé amdt': 0.4,
@@ -122,11 +122,11 @@ const initialState = {
     },
     attribution: {
       enabled: true,
-      project_name: 'PLF',
+      project_name: 'PLFSS',
       should_overwrite: true
     },
     defaultOpinion: {
-      enabled: false,
+      enabled: true,
       should_overwrite: true
     },
     // Processing options at top level

@@ -355,6 +355,59 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
         Configuration du traitement
       </h3>
 
+      {/* Allotments Configuration Section */}
+      <div className={fr.cx('fr-mt-4w')}>
+        <FeatureConfigSection
+          title="Activer le regroupement d'amendements (allotissement)"
+          description="Groupe automatiquement les amendements similaires pour faciliter le traitement"
+          enabled={processingConfig.allotments.enabled}
+          onEnabledChange={handleAllotmentsEnabledChange}
+          disabled={disabled || isProcessing}
+        >
+          <ColumnSimilarityConfig
+            columnHint="Choisissez la colonne utilisée pour comparer la similarité des amendements"
+            columnOptions={columnOptions}
+            selectedColumn={processingConfig.allotments.column}
+            onColumnChange={handleAllotmentsColumnChange}
+            columnError={allotmentsColumnError || undefined}
+            thresholdHint="Amendements considérés comme similaires au-dessus de ce seuil (0.999 = quasi-identiques)"
+            thresholdValue={processingConfig.allotments.similarity_threshold}
+            onThresholdChange={handleSimilarityThresholdChange}
+            thresholdError={similarityThresholdError || undefined}
+            disabled={disabled || isProcessing}
+          />
+        </FeatureConfigSection>
+      </div>
+
+      {/* Attribution Configuration Section */}
+      <div className={fr.cx('fr-mt-4w')}>
+        <FeatureConfigSection
+          title="Attribution automatique"
+          description="Assigne automatiquement les amendements aux réviseurs appropriés"
+          enabled={processingConfig.attribution.enabled}
+          onEnabledChange={handleAttributionEnabledChange}
+          disabled={disabled || isProcessing}
+        >
+          <ProjectSelectionConfig
+            label="Type de projet"
+            hint="Sélectionnez le type de projet pour l'attribution"
+            projectOptions={projectOptions}
+            selectedProject={processingConfig.attribution.project_name}
+            onProjectChange={handleAttributionProjectChange}
+            disabled={disabled || isProcessing}
+          />
+
+          {/* should_overwrite toggle for attribution */}
+          <SimpleToggleConfig
+            label="Écraser les valeurs existantes"
+            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+            checked={processingConfig.attribution.should_overwrite}
+            onChange={handleAttributionShouldOverwriteChange}
+            disabled={disabled || isProcessing}
+          />
+        </FeatureConfigSection>
+      </div>
+
       {/* Similarity Search Configuration Section */}
       <div className={fr.cx('fr-mt-4w')}>
         <FeatureConfigSection
@@ -461,30 +514,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
         </FeatureConfigSection>
       </div>
 
-      {/* Allotments Configuration Section */}
-      <div className={fr.cx('fr-mt-4w')}>
-        <FeatureConfigSection
-          title="Activer le regroupement d'amendements (allotissement)"
-          description="Groupe automatiquement les amendements similaires pour faciliter le traitement"
-          enabled={processingConfig.allotments.enabled}
-          onEnabledChange={handleAllotmentsEnabledChange}
-          disabled={disabled || isProcessing}
-        >
-          <ColumnSimilarityConfig
-            columnHint="Choisissez la colonne utilisée pour comparer la similarité des amendements"
-            columnOptions={columnOptions}
-            selectedColumn={processingConfig.allotments.column}
-            onColumnChange={handleAllotmentsColumnChange}
-            columnError={allotmentsColumnError || undefined}
-            thresholdHint="Amendements considérés comme similaires au-dessus de ce seuil (0.999 = quasi-identiques)"
-            thresholdValue={processingConfig.allotments.similarity_threshold}
-            onThresholdChange={handleSimilarityThresholdChange}
-            thresholdError={similarityThresholdError || undefined}
-            disabled={disabled || isProcessing}
-          />
-        </FeatureConfigSection>
-      </div>
-
       {/* Similarities Within Lectures Configuration Section */}
       <div className={fr.cx('fr-mt-4w')}>
         <FeatureConfigSection
@@ -508,35 +537,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
             thresholdError={
               similaritiesWithinLecturesThresholdError || undefined
             }
-            disabled={disabled || isProcessing}
-          />
-        </FeatureConfigSection>
-      </div>
-
-      {/* Attribution Configuration Section */}
-      <div className={fr.cx('fr-mt-4w')}>
-        <FeatureConfigSection
-          title="Attribution automatique"
-          description="Assigne automatiquement les amendements aux réviseurs appropriés"
-          enabled={processingConfig.attribution.enabled}
-          onEnabledChange={handleAttributionEnabledChange}
-          disabled={disabled || isProcessing}
-        >
-          <ProjectSelectionConfig
-            label="Type de projet"
-            hint="Sélectionnez le type de projet pour l'attribution"
-            projectOptions={projectOptions}
-            selectedProject={processingConfig.attribution.project_name}
-            onProjectChange={handleAttributionProjectChange}
-            disabled={disabled || isProcessing}
-          />
-
-          {/* should_overwrite toggle for attribution */}
-          <SimpleToggleConfig
-            label="Écraser les valeurs existantes"
-            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
-            checked={processingConfig.attribution.should_overwrite}
-            onChange={handleAttributionShouldOverwriteChange}
             disabled={disabled || isProcessing}
           />
         </FeatureConfigSection>
