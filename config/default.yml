@@ -21,6 +21,8 @@ similarities_within_lectures:
 # Similarity search configuration - finds similar amendments from historical data
 similarity_search:
   enabled: false
+  # Whether to overwrite existing values in amendment fields (default: true)
+  should_overwrite: true
   # Clustering similarity thresholds for initial TF-IDF clustering
   clustering_similarity_thresholds:
     "Exposé amdt": 0.4
@@ -53,18 +55,17 @@ attribution:
 
 # Processing options
 processing_options:
-  # Whether to overwrite existing values in the amendment
-  # (used when agents have already started processing amendments in Signale before the export)
-  no_value_overwrite: false
   placeholder_amdt_body: false
 
 # Enable summary generation for amendments
 summary_generation:
   enabled: false
-  should_overwrite: false
+  should_overwrite: true
 
 # Enable default opinion for amendments
-default_opinion: false
+default_opinion:
+  enabled: false
+  should_overwrite: true
 
 # Filter for mission short titles
 # mission_short_title_filter: ["solidarite", "sante", "travail"]

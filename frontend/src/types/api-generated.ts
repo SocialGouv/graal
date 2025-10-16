@@ -79,7 +79,7 @@ export interface paths {
      *         {
      *             "processing_config": {
      *                 "origin_project": "PLF 2025",
-     *                 "allotments": {
+     *                 "allotment": {
      *                     "enabled": true,
      *                     "column": "Corps amdt",
      *                     "similarity_threshold": 0.999

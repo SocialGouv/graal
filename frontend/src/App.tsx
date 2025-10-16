@@ -102,7 +102,7 @@ function AppContent() {
           {
             column: processingConfig.similaritiesWithinLectures.column,
             similarity_threshold:
-              processingConfig.similaritiesWithinLectures.similarity_threshold
+              processingConfig.similaritiesWithinLectures.similarity_threshold,
           }
         ),
         similarity_search: buildConfigIfEnabled(
@@ -125,18 +125,25 @@ function AppContent() {
                   ...(value.condition && { condition: value.condition })
                 }
               ])
-            )
+            ),
+            should_overwrite: processingConfig.similaritySearch.should_overwrite
           }
         ),
         attribution: buildConfigIfEnabled(
           processingConfig.attribution.enabled,
           {
-            project_name: processingConfig.attribution.project_name
+            project_name: processingConfig.attribution.project_name,
+            should_overwrite: processingConfig.attribution.should_overwrite
           }
         ),
         default_opinion: buildConfigIfEnabled(
-          processingConfig.defaultOpinion.enabled
-        )
+          processingConfig.defaultOpinion.enabled,
+          {
+            should_overwrite: processingConfig.defaultOpinion.should_overwrite
+          }
+        ),
+        // Processing options at top level
+        placeholder_amdt_body: processingConfig.placeholder_amdt_body
       }
     }
     uploadFileMutation.mutate({

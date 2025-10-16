@@ -27,14 +27,19 @@ export interface ProcessingConfig {
     fuzzyMatchSimilarityThresholds: ThresholdConfig
     similarityThresholdOverrides: ThresholdOverrides
     columnsToCopy: Record<string, ColumnToCopyConfig>
+    should_overwrite: boolean
   }
   attribution: {
     enabled: boolean
     project_name: string
+    should_overwrite: boolean
   }
   defaultOpinion: {
     enabled: boolean
+    should_overwrite: boolean
   }
+  // Processing options (top-level, not nested under any feature)
+  placeholder_amdt_body: boolean
 }
 
 export interface ProcessingState {
@@ -112,15 +117,20 @@ const initialState = {
         Réponse: { enabled: true },
         Sort: { enabled: true, condition: 'irrecevable' },
         'Objet amdt': { enabled: false }
-      }
+      },
+      should_overwrite: true
     },
     attribution: {
       enabled: true,
-      project_name: 'PLF'
+      project_name: 'PLF',
+      should_overwrite: true
     },
     defaultOpinion: {
-      enabled: false
-    }
+      enabled: false,
+      should_overwrite: true
+    },
+    // Processing options at top level
+    placeholder_amdt_body: false
   },
   jobId: null,
   processingStatus: 'idle' as const,

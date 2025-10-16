@@ -44,19 +44,23 @@ export interface SimilaritySearchConfig {
   fuzzy_match_similarity_thresholds?: Record<string, number>
   similarity_threshold_overrides?: Record<string, number>
   columns_to_copy?: Record<string, { enabled: boolean; condition?: string }>
+  should_overwrite?: boolean
 }
 
 export interface AttributionConfig {
   enabled: boolean
   project_name?: string
+  should_overwrite?: boolean
 }
 
 export interface SummaryConfig {
   enabled: boolean
+  should_overwrite?: boolean
 }
 
 export interface OpinionConfig {
   enabled: boolean
+  should_overwrite?: boolean
 }
 
 export interface ProcessingConfig {
@@ -66,6 +70,7 @@ export interface ProcessingConfig {
   attribution?: AttributionConfig
   opinion?: OpinionConfig
   summary?: SummaryConfig
+  placeholder_amdt_body?: boolean
 }
 
 export interface ConfigFilesResponse {

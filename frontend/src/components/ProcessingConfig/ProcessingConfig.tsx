@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 import { Input } from '@codegouvfr/react-dsfr/Input'
+import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
 import { fr } from '@codegouvfr/react-dsfr'
 import { useProcessingStore } from '../../stores/processingStore'
 import { useValidation } from '../../hooks/useValidation'
@@ -9,6 +10,7 @@ import {
   ProjectSelectionConfig,
   ThresholdSliderConfig,
   ColumnsToCopyConfig,
+  SimpleToggleConfig,
   type ColumnOption,
   type ProjectOption
 } from '../FeatureConfig'
@@ -101,7 +103,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   const similaritySearchOriginProjectError = useMemo(
     () =>
       processingConfig.similaritySearch.enabled &&
-      processingConfig.similaritySearch.originProject
+        processingConfig.similaritySearch.originProject
         ? getOriginProjectError(processingConfig.similaritySearch.originProject)
         : null,
     [
@@ -250,6 +252,47 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     [setProcessingConfig, processingConfig]
   )
 
+  // should_overwrite handlers for each feature
+
+  const handleSimilaritySearchShouldOverwriteChange = useCallback(
+    (checked: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        similaritySearch: {
+          ...processingConfig.similaritySearch,
+          should_overwrite: checked
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  const handleAttributionShouldOverwriteChange = useCallback(
+    (checked: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        attribution: {
+          ...processingConfig.attribution,
+          should_overwrite: checked
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  const handleDefaultOpinionShouldOverwriteChange = useCallback(
+    (checked: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        defaultOpinion: {
+          ...processingConfig.defaultOpinion,
+          should_overwrite: checked
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
   // Similarity search advanced handlers
   const handleClusteringThresholdChange = useCallback(
     (column: string, value: number) => {
@@ -291,6 +334,16 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           ...processingConfig.similaritySearch,
           columnsToCopy
         }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  const handlePlaceholderAmdtBodyChange = useCallback(
+    (checked: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        placeholder_amdt_body: checked
       })
     },
     [setProcessingConfig, processingConfig]
@@ -396,6 +449,15 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               disabled={disabled || isProcessing}
             />
           </div>
+
+          {/* should_overwrite toggle for similarity search */}
+          <SimpleToggleConfig
+            label="Écraser les valeurs existantes"
+            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+            checked={processingConfig.similaritySearch.should_overwrite}
+            onChange={handleSimilaritySearchShouldOverwriteChange}
+            disabled={disabled || isProcessing}
+          />
         </FeatureConfigSection>
       </div>
 
@@ -468,7 +530,57 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
             onProjectChange={handleAttributionProjectChange}
             disabled={disabled || isProcessing}
           />
+
+          {/* should_overwrite toggle for attribution */}
+          <SimpleToggleConfig
+            label="Écraser les valeurs existantes"
+            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+            checked={processingConfig.attribution.should_overwrite}
+            onChange={handleAttributionShouldOverwriteChange}
+            disabled={disabled || isProcessing}
+          />
         </FeatureConfigSection>
+      </div>
+
+      {/* Default Opinion Configuration Section */}
+      <div className={fr.cx('fr-mt-4w')}>
+        <FeatureConfigSection
+          title="Avis par défaut"
+          description="Configure l'avis par défaut pour les amendements"
+          enabled={processingConfig.defaultOpinion.enabled}
+          onEnabledChange={(checked) =>
+            setProcessingConfig({
+              ...processingConfig,
+              defaultOpinion: {
+                ...processingConfig.defaultOpinion,
+                enabled: checked
+              }
+            })
+          }
+          disabled={disabled || isProcessing}
+        >
+          {/* should_overwrite toggle for default opinion */}
+          <SimpleToggleConfig
+            label="Écraser les valeurs existantes"
+            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+            checked={processingConfig.defaultOpinion.should_overwrite}
+            onChange={handleDefaultOpinionShouldOverwriteChange}
+            disabled={disabled || isProcessing}
+          />
+        </FeatureConfigSection>
+      </div>
+
+      {/* Advanced Configuration */}
+      <div className={fr.cx('fr-mt-4w')}>
+        <Accordion label="Configuration avancée" defaultExpanded={false}>
+          <SimpleToggleConfig
+            label="Texte de remplacement pour corps vide"
+            description="Si activé, utilise un texte de remplacement pour les corps d'amendement vides"
+            checked={processingConfig.placeholder_amdt_body}
+            onChange={handlePlaceholderAmdtBodyChange}
+            disabled={disabled || isProcessing}
+          />
+        </Accordion>
       </div>
     </div>
   )
