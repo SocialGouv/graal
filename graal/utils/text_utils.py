@@ -2,8 +2,9 @@ import html
 import logging
 import logging.config
 import re
-from typing import Optional
+from typing import Callable, Optional
 
+import pandas as pd
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -233,3 +234,77 @@ def remove_gage_sentences(text: str) -> str:
             "la charge pour l'état",
         ],
     )
+
+
+def add_placeholders_to_empty_column(
+    df: pd.DataFrame,
+    column: str,
+    placeholder_text: str | None = None,
+    placeholder_generator: Callable[[int, pd.Series], str] | None = None,
+) -> pd.DataFrame:
+    """
+    Add placeholder text to empty cells in a DataFrame column.
+
+    Supports two modes:
+    1. Static placeholder: Same text for all empty cells (use placeholder_text)
+    2. Dynamic placeholder: Different text per row (use placeholder_generator)
+
+    Args:
+        df: DataFrame to process
+        column: Column name to fill empty values in
+        placeholder_text: Static text to use for all empty cells (mutually exclusive with placeholder_generator)
+        placeholder_generator: Callable that takes (index, row) and returns placeholder text (mutually exclusive with placeholder_text)
+
+    Returns:
+        DataFrame with placeholders applied to empty cells in the specified column
+
+    Raises:
+        ValueError: If neither or both placeholder_text and placeholder_generator are provided
+        ValueError: If column doesn't exist in DataFrame
+
+    Examples:
+        # Static placeholder
+        df = add_placeholders_to_empty_column(df, "Corps amdt", placeholder_text="Corps d'amendement non renseigné")
+
+        # Dynamic placeholder with index
+        df = add_placeholders_to_empty_column(
+            df,
+            "Corps amdt",
+            placeholder_generator=lambda idx, row: f"Placeholder for amendment {idx}"
+        )
+    """
+
+    # Validate inputs
+    if placeholder_text is None and placeholder_generator is None:
+        raise ValueError(
+            "Either placeholder_text or placeholder_generator must be provided"
+        )
+    if placeholder_text is not None and placeholder_generator is not None:
+        raise ValueError(
+            "Only one of placeholder_text or placeholder_generator can be provided"
+        )
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame")
+
+    # Create mask for empty values (None, NaN, empty string, or whitespace-only)
+    empty_mask = df[column].isna() | (df[column].astype(str).str.strip() == "")
+
+    num_empty = empty_mask.sum()
+    if num_empty == 0:
+        return df
+
+    logging.info(
+        f"Applying placeholder text to {num_empty} empty cells in column '{column}'"
+    )
+
+    # Apply placeholders
+    if placeholder_text is not None:
+        # Static placeholder - use vectorized operation
+        df.loc[empty_mask, column] = placeholder_text
+    elif placeholder_generator is not None:
+        # Dynamic placeholder - need to iterate over empty rows
+        for index in df[empty_mask].index:
+            row = df.loc[index]
+            df.at[index, column] = placeholder_generator(index, row)
+
+    return df

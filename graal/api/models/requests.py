@@ -87,6 +87,10 @@ class SimilaritySearchConfig(BaseModel):
         },
         description="Configuration for which columns to copy from similar amendments",
     )
+    should_overwrite: bool = Field(
+        default=True,
+        description="If true, overwrite existing values; if false, preserve existing values",
+    )
 
 
 class AttributionConfig(BaseModel):
@@ -96,6 +100,10 @@ class AttributionConfig(BaseModel):
         default=True, description="Whether attribution feature is enabled"
     )
     project_name: str = Field(default="PLF", description="Project name for attribution")
+    should_overwrite: bool = Field(
+        default=True,
+        description="If true, overwrite existing values; if false, preserve existing values",
+    )
 
 
 class DefaultOpinionConfig(BaseModel):
@@ -103,6 +111,10 @@ class DefaultOpinionConfig(BaseModel):
 
     enabled: bool = Field(
         default=False, description="Whether default opinion feature is enabled"
+    )
+    should_overwrite: bool = Field(
+        default=True,
+        description="If true, overwrite existing values; if false, preserve existing values",
     )
 
 
@@ -128,6 +140,12 @@ class ProcessingConfig(BaseModel):
     default_opinion: Optional[DefaultOpinionConfig] = Field(
         default_factory=DefaultOpinionConfig,
         description="Default opinion feature configuration",
+    )
+
+    # Processing options (pipeline-level)
+    placeholder_amdt_body: bool = Field(
+        default=False,
+        description="If true, use placeholder text for empty amendment bodies",
     )
 
     # Constants for validation

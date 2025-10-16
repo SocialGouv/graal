@@ -120,6 +120,11 @@ class WebProcessingService:
                         )
                 similarity_config["columns_to_copy"] = columns_to_copy
 
+            # Add should_overwrite from feature config
+            similarity_config["should_overwrite"] = (
+                frontend_config.similarity_search.should_overwrite
+            )
+
             config["similarity_search"].update(similarity_config)
             logger.debug(
                 f"[WEB_SERVICE] Updated similarity_search config: enabled={frontend_config.similarity_search.enabled}"
@@ -130,6 +135,7 @@ class WebProcessingService:
             config["attribution"] = {
                 "enabled": frontend_config.attribution.enabled,
                 "project_name": frontend_config.attribution.project_name,
+                "should_overwrite": frontend_config.attribution.should_overwrite,
             }
             logger.debug(
                 f"[WEB_SERVICE] Updated attribution config: enabled={frontend_config.attribution.enabled}, project={frontend_config.attribution.project_name}"
@@ -137,10 +143,25 @@ class WebProcessingService:
 
         # Update default opinion configuration
         if frontend_config.default_opinion:
-            config["default_opinion"] = frontend_config.default_opinion.enabled
+            config["default_opinion"] = {
+                "enabled": frontend_config.default_opinion.enabled,
+                "should_overwrite": frontend_config.default_opinion.should_overwrite,
+            }
             logger.debug(
                 f"[WEB_SERVICE] Updated default_opinion config: enabled={frontend_config.default_opinion.enabled}"
             )
+
+        # Update processing options (pipeline-level)
+        if "processing_options" not in config:
+            config["processing_options"] = {}
+
+        config["processing_options"]["placeholder_amdt_body"] = (
+            frontend_config.placeholder_amdt_body
+        )
+        logger.debug(
+            f"[WEB_SERVICE] Updated processing_options: "
+            f"placeholder_amdt_body={frontend_config.placeholder_amdt_body}"
+        )
 
         logger.info("[WEB_SERVICE] Frontend configuration merge completed")
         return config

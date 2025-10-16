@@ -36,7 +36,10 @@ from graal.summary.summary_generation_load_balancer import SummaryGenerationLoad
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.config_preprocessor import ConfigPreprocessor
 from graal.utils.sheet_data_loader import SheetDataLoader
-from graal.utils.text_utils import remove_gage_sentences
+from graal.utils.text_utils import (
+    add_placeholders_to_empty_column,
+    remove_gage_sentences,
+)
 
 logging.config.fileConfig("logging.conf")
 
@@ -97,12 +100,6 @@ class ProcessingPipeline:
         logging.info(
             f"[PIPELINE] Phase 2: Feature setup - preprocessing: {len(preprocessing_features)}, regular: {len(features)}"
         )
-
-        # Store original dataframe AFTER clearing columns - this ensures that
-        # _preserve_original_values() will preserve the cleared (None) values
-        # instead of the old data that was supposed to be erased
-        dependencies["original_df"] = amendments_df.copy()
-        logging.debug("[PIPELINE] Stored original dataframe after column clearing")
 
         # Phase 3: Run orchestrated processing
         # Features run in parallel and write to their own copies. The orchestrator then
@@ -386,14 +383,14 @@ class ProcessingPipeline:
         return amendments_df
 
     def _add_placeholder_bodies(self, amendments_df: pd.DataFrame) -> pd.DataFrame:
-        """Add placeholder bodies for empty amendments."""
-        for index, row in amendments_df.iterrows():
-            amendments_df.at[index, "Corps amdt"] = (
-                row["Corps amdt"]
-                if pd.notna(row["Corps amdt"]) and row["Corps amdt"] not in [None, ""]
-                else f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {index}"
-            )
-        return amendments_df
+        """Add placeholder bodies for empty amendments with indexed placeholders."""
+        return add_placeholders_to_empty_column(
+            df=amendments_df,
+            column="Corps amdt",
+            placeholder_generator=lambda idx, row: (
+                f"Ce corps d'amendement peut être ignoré, il a été ajouté pour faciliter le traitement des amendements {idx}"
+            ),
+        )
 
     def _determine_columns_to_clear(
         self, config: dict[str, Any], all_features: list[BaseFeature]
@@ -407,10 +404,19 @@ class ProcessingPipeline:
         """
         columns_to_clear = {"Commentaires"}  # Always clear comments
 
-        # Get columns to clear from all features
+        # Get columns to clear from all features, respecting overwrite settings
         for feature in all_features:
-            feature_columns = feature.get_columns_to_clear(config)
-            columns_to_clear.update(feature_columns)
+            if not feature.is_enabled(config):
+                continue
+
+            # Get the feature-specific config
+            feature_name = feature.feature_name
+            feature_config = config.get(feature_name, {})
+
+            # Only clear columns if the feature will actually overwrite them
+            if feature_config.get("should_overwrite", True):
+                feature_columns = feature.get_columns_to_clear(config)
+                columns_to_clear.update(feature_columns)
 
         return columns_to_clear
 
@@ -427,22 +433,6 @@ class ProcessingPipeline:
         logging.info(
             f"[PIPELINE] Starting finalization with {len(result_df)} amendments"
         )
-
-        # Handle no_value_overwrite option
-        if config.get("processing_options", {}).get("no_value_overwrite", False):
-            logging.info(
-                "[PIPELINE] Preserving original values (no_value_overwrite enabled)"
-            )
-            original_df = dependencies.get("original_df")
-            if original_df is not None:
-                result_df = self._preserve_original_values(
-                    result_df, original_df, config
-                )
-                logging.debug("[PIPELINE] Original values preserved")
-            else:
-                logging.warning(
-                    "[PIPELINE] no_value_overwrite enabled but no original_df found"
-                )
 
         # Handle allotment result population (special case since allotment affects structure)
         allotment_outputs = processing_outputs.get("allotment", {})
@@ -469,51 +459,6 @@ class ProcessingPipeline:
         self._log_processing_summary(processing_outputs)
 
         logging.info("[PIPELINE] Finalization completed")
-
-    def _preserve_original_values(
-        self, result_df: pd.DataFrame, original_df: pd.DataFrame, config: dict[str, Any]
-    ) -> pd.DataFrame:
-        """Preserve original values for specified columns."""
-        # Determine which columns should preserve original values
-        columns_to_preserve = set()
-
-        if config.get("summary_generation", {}).get("enabled", False):
-            columns_to_preserve.add("Objet amdt")
-
-        if config.get("attribution", {}).get("enabled", False):
-            columns_to_preserve.update(
-                ["Affectation (email)", "Affectation (nom)", "Entité Pilote"]
-            )
-
-        # Add similarity search columns
-        if config.get("similarity_search", {}).get("enabled", False):
-            columns_to_copy_config = config["similarity_search"].get(
-                "columns_to_copy", {}
-            )
-            for column, col_config in columns_to_copy_config.items():
-                if col_config.get("enabled", False):
-                    columns_to_preserve.add(column)
-
-        if config.get("default_opinion", False):
-            columns_to_preserve.add("Avis du Gouvernement")
-
-        # Preserve original values where they exist
-        for column in columns_to_preserve:
-
-            def preserve_original_value(row, col=column):
-                matches = original_df.loc[
-                    original_df["amdt_idx"] == row["amdt_idx"], col
-                ]
-                original_value = matches.iloc[0] if len(matches) > 0 else None
-                return (
-                    original_value
-                    if pd.notna(original_value) and original_value not in [None, ""]
-                    else row[col]
-                )
-
-            result_df[column] = result_df.apply(preserve_original_value, axis=1)
-
-        return result_df
 
     def _populate_allotment_results(
         self,

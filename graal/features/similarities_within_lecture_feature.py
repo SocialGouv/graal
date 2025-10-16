@@ -65,6 +65,9 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
             "tf_idf_threshold", 0.4
         )
 
+        # Set index for easier handling
+        working_df = working_df.set_index("amdt_idx")
+
         # Find similarities
         similarity_results = SimilaritySearchHandler.find_similar_amendments(
             amendments_df=working_df,
@@ -80,28 +83,30 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
             similarity_results=similarity_results,
         )
 
-        # Create final result using declared output columns
-        output_columns = self.get_output_columns()
-        final_df = feature_input.amendments_df.copy()
+        # Reset index to match original format
+        result_df = result_df.reset_index()
 
-        # Only include output columns if we have actual results to report
-        # Don't create empty columns that would interfere with concatenation from other features
-        if len(result_df) > 0:
-            for col in output_columns:
-                if col in result_df.columns:
-                    # Initialize column with pd.NA for all rows
-                    if col not in final_df.columns:
-                        final_df[col] = pd.NA
-                    # Then update only the rows with similarity results
-                    final_df.loc[result_df.index, col] = result_df[col]
+        # Create final result
+        final_df = feature_input.amendments_df.copy()
+        if "Commentaires" not in final_df.columns:
+            final_df["Commentaires"] = pd.NA
+
+        # Update the Commentaires column if we have results
+        if len(similarity_results) > 0 and "Commentaires" in result_df.columns:
+            # Merge the comments back to the original dataframe
+            comments_map = result_df.set_index("amdt_idx")["Commentaires"]
+
+            final_df["Commentaires"] = final_df.index.map(comments_map).fillna(
+                final_df["Commentaires"]
+            )
 
         return FeatureOutput(
             amendments_df=final_df,
             outputs={
-                "processed_amendments": len(result_df),
-                "similarities_found": len(similarity_results)
-                if similarity_results
-                else 0,
+                "processed_amendments": len(
+                    [idx for idx in similarity_results if idx in working_df.index]
+                ),
+                "similarities_found": len(similarity_results),
                 "similarity_threshold": similarity_threshold,
             },
         )

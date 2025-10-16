@@ -119,8 +119,9 @@ class TestConfigPreprocessor(unittest.TestCase):
             "similarity_search": {
                 "enabled": True,
                 "thresholds": {"expose": 0.4, "corps": 0.9},
+                "should_overwrite": True,
             },
-            "processing_options": {"no_value_overwrite": False},
+            "processing_options": {"placeholder_amdt_body": False},
         }
 
         result = self.preprocessor.preprocess_config(config)
