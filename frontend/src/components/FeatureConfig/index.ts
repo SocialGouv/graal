@@ -6,15 +6,15 @@ export { SimpleToggleConfig } from './SimpleToggleConfig'
 export { ThresholdSliderConfig } from './ThresholdSliderConfig'
 
 export type {
-    ColumnOption,
-    ColumnSimilarityConfigProps
+  ColumnOption,
+  ColumnSimilarityConfigProps
 } from './ColumnSimilarityConfig'
 export type {
-    ColumnsToCopyConfigProps, ColumnToCopyConfig
+  ColumnsToCopyConfigProps, ColumnToCopyConfig
 } from './ColumnsToCopyConfig'
 export type {
-    ProjectOption,
-    ProjectSelectionConfigProps
+  AttributionProjectOption,
+  ProjectSelectionConfigProps
 } from './ProjectSelectionConfig'
 export type { SimpleToggleConfigProps } from './SimpleToggleConfig'
 export type { ThresholdSliderConfigProps } from './ThresholdSliderConfig'

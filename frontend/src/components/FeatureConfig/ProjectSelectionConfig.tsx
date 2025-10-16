@@ -1,30 +1,30 @@
-import React from 'react';
-import { Select } from '@codegouvfr/react-dsfr/Select';
-import { fr } from '@codegouvfr/react-dsfr';
+import React from 'react'
+import { Select } from '@codegouvfr/react-dsfr/Select'
+import { fr } from '@codegouvfr/react-dsfr'
 
-export interface ProjectOption {
-  label: string;
-  value: string;
+export interface AttributionProjectOption {
+  label: string
+  value: string
 }
 
 export interface ProjectSelectionConfigProps {
-  label?: string;
-  hint?: string;
-  projectOptions: ProjectOption[];
-  selectedProject: string;
-  onProjectChange: (value: string) => void;
-  error?: string;
-  disabled?: boolean;
+  label?: string
+  hint?: string
+  projectOptions: AttributionProjectOption[]
+  selectedProject: string
+  onProjectChange: (value: string) => void
+  error?: string
+  disabled?: boolean
 }
 
 export const ProjectSelectionConfig: React.FC<ProjectSelectionConfigProps> = ({
-  label = "Projet",
-  hint = "Sélectionnez le projet pour cette fonctionnalité",
+  label = 'Projet',
+  hint = 'Sélectionnez le projet pour cette fonctionnalité',
   projectOptions,
   selectedProject,
   onProjectChange,
   error,
-  disabled = false,
+  disabled = false
 }) => {
   return (
     <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
@@ -37,7 +37,7 @@ export const ProjectSelectionConfig: React.FC<ProjectSelectionConfigProps> = ({
           nativeSelectProps={{
             value: selectedProject,
             onChange: (e) => onProjectChange(e.target.value),
-            disabled,
+            disabled
           }}
         >
           <option value="" disabled>
@@ -51,7 +51,7 @@ export const ProjectSelectionConfig: React.FC<ProjectSelectionConfigProps> = ({
         </Select>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ProjectSelectionConfig;
+export default ProjectSelectionConfig

@@ -11,7 +11,7 @@ import {
   ColumnsToCopyConfig,
   SimpleToggleConfig,
   type ColumnOption,
-  type ProjectOption
+  type AttributionProjectOption
 } from '../FeatureConfig'
 
 interface ProcessingConfigProps {
@@ -133,7 +133,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   )
 
   // Project options for attribution
-  const projectOptions: ProjectOption[] = useMemo(
+  const projectOptions: AttributionProjectOption[] = useMemo(
     () => [
       { label: 'PLF (Projet de Loi de Finances)', value: 'PLF' },
       {
