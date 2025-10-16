@@ -1,3 +1,13 @@
+# [1.2.0](https://github.com/SocialGouv/graal/compare/v1.1.2...v1.2.0) (2025-10-16)
+
+
+### Features
+
+* Add overwrite configs to the UI ([3c57cad](https://github.com/SocialGouv/graal/commit/3c57cadf805fe68bec543be06158a27a345b6ed3))
+* Handle overwritting config in the backend ([851fa5c](https://github.com/SocialGouv/graal/commit/851fa5c6a39421fe51cb557837dc7b8bc70c522b))
+* Handle overwritting for attribution ([d80e377](https://github.com/SocialGouv/graal/commit/d80e377f855059e10ccb09da7d709d192116f302))
+* Handle overwritting in default opinion feature ([fc797a1](https://github.com/SocialGouv/graal/commit/fc797a10ac8e9b4807e81fe669517b8ce37b1d34))
+
 ## [1.1.2](https://github.com/SocialGouv/graal/compare/v1.1.1...v1.1.2) (2025-10-16)
 
 
