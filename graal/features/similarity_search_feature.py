@@ -11,11 +11,11 @@ from typing import Any
 
 import pandas as pd
 
-from graal.clustering.within_lecture_similarity_handler import (
-    WithinLectureSimilarityHandler,
-)
 from graal.core.feature_interface import BaseFeature, FeatureInput, FeatureOutput
 from graal.core.text_normalizers import TextNormalizerFactory
+from graal.similarities.similarity_search_handler import (
+    SimilaritySearchHandler,
+)
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
@@ -115,7 +115,7 @@ class SimilaritySearchFeature(BaseFeature):
         )
 
         # Process similarity search
-        result_df = WithinLectureSimilarityHandler.populate(
+        result_df = SimilaritySearchHandler.populate(
             preprocessed_old_amendments_df=old_amendments_df,
             preprocessed_new_amendments_df=normalized_working_df,
             original_new_amendments_df=working_df,
@@ -123,7 +123,7 @@ class SimilaritySearchFeature(BaseFeature):
             fuzzy_match_similarity_thresholds=fuzzy_match_similarity_thresholds,
             similarity_threshold_overrides=similarity_threshold_overrides,
             column_filtering_funcs={
-                "Corps amdt": WithinLectureSimilarityHandler.filter_old_amendments_by_project,
+                "Corps amdt": SimilaritySearchHandler.filter_old_amendments_by_project,
             },
             column_group_by_columns={
                 "Corps amdt": ["Num article"],

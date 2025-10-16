@@ -1,138 +1,264 @@
 import logging
 import logging.config
-from typing import List, Optional
+import textwrap
+from typing import Callable, Optional
 
 import pandas as pd
 
-from graal.clustering.clustering_service import ClusteringService
-from graal.custom_types import SimilarAmendment, SimilarityResult
+from graal.clustering.similarity_finder import SimilarityFinder
+from graal.custom_types import ColumnName
+from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 
 logging.config.fileConfig("logging.conf")
 
 
 class SimilaritySearchHandler:
-    """Handler for finding and processing similarities between amendments."""
+    @staticmethod
+    def preprocess_for_similarity(
+        amendments_df: pd.DataFrame, acronym_mapping: dict[str, str]
+    ) -> pd.DataFrame:
+        amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
+            amendments_df=amendments_df
+        )
+        amendments_df = AmendmentPreProcessor.replace_acronyms(
+            amendments_df=amendments_df,
+            acronym_mapping=acronym_mapping,
+            columns_to_normalize=["Exposé amdt", "Corps amdt"],
+        )
+        amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
+            amendments_df=amendments_df,
+            columns_to_filter=["Exposé amdt", "Corps amdt", "Num article"],
+        )
+        amendments_df = AmendmentPreProcessor.handle_common_amendment_bodies(
+            amendments_df=amendments_df
+        )
+        amendments_df = (
+            AmendmentPreProcessor.handle_common_amendment_expose_and_redactional(
+                amendments_df=amendments_df
+            )
+        )
+        amendments_df = AmendmentPreProcessor.normalize_amendments(
+            amendments_df=amendments_df,
+            columns_to_normalize=["Exposé amdt", "Corps amdt"],
+        )
+
+        return amendments_df
 
     @staticmethod
-    def format_similarity_comment(similar_amendments: List[SimilarAmendment]) -> str:
-        """
-        Format a list of similar amendments into a comment string
-
-        Args:
-            similar_amendments: List of SimilarAmendment objects
-
-        Returns:
-            Formatted comment string
-        """
-        formatted_amdts = [
-            f"{amdt['amdt_num']} ({amdt['similarity_percentage']:.0f}%)"
-            for amdt in similar_amendments
-        ]
-        return f"Amdt similaires : {', '.join(formatted_amdts)}"
-
-    @staticmethod
-    def apply_similarity_comments(
-        amendments_df: pd.DataFrame,
-        similarity_results: SimilarityResult,
+    def filter_old_amendments_by_project(
+        preprocessed_old_amendments_df: pd.DataFrame,
+        preprocessed_new_amendments_df: pd.DataFrame,
     ) -> pd.DataFrame:
         """
-        Apply similarity comments to the amendments dataframe.
-
-        Args:
-            amendments_df: The dataframe to update
-            similarity_results: Dictionary mapping amdt_idx to similar amendments
-            should_overwrite: If True, always add comments. If False, only add to empty fields.
-
-        Returns:
-            Updated dataframe with similarity comments
+        Filters old amendments by project based on the corresponding values in the first row of
+        new amendments.
         """
-        result_df = amendments_df.copy()
+        first_new_amendment = preprocessed_new_amendments_df.iloc[0]
+        origin_project = first_new_amendment["origin_project"]
 
-        # Initialize Commentaires column if it doesn't exist
-        if "Commentaires" not in result_df.columns:
-            result_df["Commentaires"] = pd.NA
-
-        for amdt_idx, similar_amdts in similarity_results.items():
-            # Skip if the amendment is not in our dataframe
-            if amdt_idx not in result_df.index:
-                continue
-
-            # Format the comment
-            similarity_comment = SimilaritySearchHandler.format_similarity_comment(
-                similar_amdts
-            )
-
-            # Only set if the current value is empty/null
-            current_value = result_df.loc[amdt_idx, "Commentaires"]
-            if pd.isna(current_value) or current_value == "":
-                result_df.loc[amdt_idx, "Commentaires"] = similarity_comment
-
-        return result_df
+        return preprocessed_old_amendments_df[
+            (preprocessed_old_amendments_df["origin_project"] == origin_project)
+        ]
 
     @staticmethod
-    def find_similar_amendments(
-        amendments_df: pd.DataFrame,
-        similarities_column: str,
-        pct_similarity_threshold: float = 0.8,
-        group_by_columns: Optional[List[str]] = None,
-        eps: float = 0.4,
-    ) -> SimilarityResult:
-        """
-        Find similar amendments and return a dictionary mapping amendment indices
-        to lists of similar amendments with similarity percentages.
+    def populate(
+        preprocessed_old_amendments_df: pd.DataFrame,
+        preprocessed_new_amendments_df: pd.DataFrame,
+        original_new_amendments_df: pd.DataFrame,
+        clustering_similarity_thresholds: dict[ColumnName, float],
+        fuzzy_match_similarity_thresholds: dict[ColumnName, float],
+        similarity_threshold_overrides: dict[ColumnName, dict[str, float]],
+        column_group_by_columns: dict[ColumnName, list[ColumnName]],
+        columns_to_copy_config: dict,
+        default_clustering_similarity_threshold: float = 0.4,
+        default_fuzzy_match_similarity_threshold: float = 0.9,
+        column_filtering_funcs: Optional[
+            dict[ColumnName, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
+        ] = None,
+        should_overwrite: bool = True,
+    ) -> pd.DataFrame:
+        if column_filtering_funcs is None:
+            column_filtering_funcs = {}
+        columns_to_process = clustering_similarity_thresholds.keys()
 
-        Args:
-            amendments_df: The dataframe containing amendments
-            similarities_column: The column to use for similarity calculation
-            pct_similarity_threshold: Threshold for similarity (0.0 to 1.0)
-            group_by_columns: Columns to group by (default: ["Num article"])
-            eps: Epsilon value for DBSCAN clustering
+        merged_closest_amdts: dict[int, dict] = {}
 
-        Returns:
-            A dictionary mapping amendment indices to lists of similar amendments
-        """
-        # Preprocess amendments
-        if group_by_columns is None:
-            group_by_columns = ["Num article"]
-
-        normalized_df = ClusteringService.preprocess_amendments(
-            amendments_df=amendments_df,
-            columns_to_filter=[similarities_column],
-            columns_to_normalize=[similarities_column],
-        )
-
-        # Get clusters and similarity percentages
-        _, similarity_percentages = ClusteringService.get_clusters(
-            normalized_amdt_df=normalized_df,
-            group_by_columns=group_by_columns,
-            text_column=similarities_column,
-            eps=eps,
-            refinement_pct_threshold=pct_similarity_threshold,
-        )
-
-        # Convert to the desired return format
-        result: SimilarityResult = {}
-
-        # Create a mapping from amdt_idx to Num amdt for quick lookups
-        idx_to_num = dict(
-            zip(amendments_df["amdt_idx"], amendments_df["Num amdt"], strict=False)
-        )
-
-        for amdt_idx, similarities in similarity_percentages.items():
-            if not similarities:
+        for column in columns_to_process:
+            # In some cases we want to look for similarity only in a subset of the old amendments (origin_project) for example
+            filter_func = column_filtering_funcs.get(column, lambda x, _y: x)
+            df_to_compare = filter_func(
+                preprocessed_old_amendments_df, preprocessed_new_amendments_df
+            )
+            if df_to_compare.empty:
+                logging.warning(
+                    f"No old amendments to compare for column {column}. Skipping..."
+                )
                 continue
+            similarity_finder = SimilarityFinder(
+                old_amendments_df=df_to_compare,
+                new_amendments_df=preprocessed_new_amendments_df,
+                group_by_columns=column_group_by_columns.get(column, None),
+            )
+            clusters = similarity_finder.clusterize_similar_amdts(
+                column_used_for_clustering=column,
+                clustering_similarity_threshold=clustering_similarity_thresholds.get(
+                    column, default_clustering_similarity_threshold
+                ),
+            )
 
-            similar_amdts: list[SimilarAmendment] = []
-            current_num = idx_to_num.get(amdt_idx)
+            closest_amdts = similarity_finder.find_best_matches(
+                column_used_for_similarity=column,
+                clusters=clusters,
+                fuzzy_match_similarity_threshold=fuzzy_match_similarity_thresholds.get(
+                    column, default_fuzzy_match_similarity_threshold
+                ),
+                similarity_threshold_overrides=similarity_threshold_overrides.get(
+                    column, {}
+                ),
+            )
 
-            for similar_idx, percentage in similarities.items():
-                similar_num = idx_to_num.get(similar_idx)
-                if similar_num is not None and similar_num != current_num:
-                    similar_amdts.append(
-                        {"amdt_num": similar_num, "similarity_percentage": percentage}
-                    )
+            for amdt_idx, match in closest_amdts.items():
+                if amdt_idx in merged_closest_amdts:
+                    existing_match = merged_closest_amdts[amdt_idx]
+                    if match["similarity_ratio"] > existing_match["similarity_ratio"]:
+                        merged_closest_amdts[amdt_idx] = match
+                else:
+                    merged_closest_amdts[amdt_idx] = match
 
-            if similar_amdts:
-                result[amdt_idx] = similar_amdts
+        # Copy matched amendments to new_amendments_df
+        new_amendments_with_copies_df = (
+            SimilaritySearchHandler.copy_matches_to_amendments_df(
+                target_df=original_new_amendments_df,
+                old_amendments_df=preprocessed_old_amendments_df,
+                closest_amdts=merged_closest_amdts,
+                columns_config=columns_to_copy_config,
+                should_overwrite=should_overwrite,
+            )
+        )
 
-        return result
+        return new_amendments_with_copies_df
+
+    @staticmethod
+    def copy_matches_to_amendments_df(  # noqa: C901
+        target_df: pd.DataFrame,
+        old_amendments_df: pd.DataFrame,
+        closest_amdts: dict,
+        columns_config: dict,
+        should_overwrite: bool = True,
+    ) -> pd.DataFrame:
+        # Default configuration if none provided
+
+        if "Commentaires" not in target_df.columns:
+            target_df["Commentaires"] = ""
+
+        # Iterate over the closest documents
+        for new_amdt_idx, closest_doc in closest_amdts.items():
+            amdt_idx_mask = target_df["amdt_idx"] == new_amdt_idx
+
+            # Get the best match details
+            best_matching_doc_amdt_idx = closest_doc["best_matching_doc_amdt_idx"]
+            column_used_for_comparison = closest_doc["column_used_for_comparison"]
+
+            # Filter old amendments for the best match
+            old_amendment_mask = (
+                old_amendments_df["amdt_idx"] == best_matching_doc_amdt_idx
+            )
+            matching_amendment = old_amendments_df.loc[old_amendment_mask]
+
+            if not matching_amendment.empty:
+                # Extract the matching details
+                matching_origin_project = matching_amendment["origin_project"].values[0]
+                matching_num_amdt = matching_amendment["Num amdt"].values[0]
+                matching_lecture = (
+                    matching_amendment["Lecture"].values[0]
+                    if "Lecture" in matching_amendment.columns
+                    else ""
+                )
+                matching_organe = (
+                    matching_amendment["Organe"].values[0]
+                    if "Organe" in matching_amendment.columns
+                    else ""
+                )
+
+                # Update target DataFrame with the matched details
+                current_comments = target_df.loc[amdt_idx_mask, "Commentaires"].values[
+                    0
+                ]
+                if current_comments:
+                    target_df.loc[amdt_idx_mask, "Commentaires"] += "\n"
+                else:
+                    target_df.loc[amdt_idx_mask, "Commentaires"] = ""
+
+                # Determine which columns are enabled for copying
+                enabled_columns = [
+                    col_name
+                    for col_name, col_config in columns_config.items()
+                    if col_config.get("enabled", False)
+                ]
+
+                # Generate the appropriate prefix
+                columns_text = ", ".join(enabled_columns)
+                prefix = f"Copie de {columns_text} depuis"
+
+                # Handle None values in origin_project for display
+                display_origin_project = (
+                    matching_origin_project
+                    if matching_origin_project is not None
+                    else "Projet inconnu"
+                )
+
+                target_df.loc[amdt_idx_mask, "Commentaires"] += textwrap.dedent(f"""
+                        {prefix} : {display_origin_project}
+                        Numéro d'amendement : {matching_num_amdt}
+                        Lecture : {matching_lecture}
+                        Organe : {matching_organe}
+                        Colonne similaire : {column_used_for_comparison}
+                    """).strip()
+
+                # Process each configured column
+                for column_name, column_config in columns_config.items():
+                    # Skip disabled columns
+                    if not column_config.get("enabled", False):
+                        continue
+
+                    # Check if the column exists in the matching amendment
+                    if column_name in matching_amendment.columns:
+                        old_value = matching_amendment[column_name].values[0]
+
+                        # Check if should_overwrite is disabled
+                        if not should_overwrite:
+                            # Get current value in target
+                            current_value = (
+                                target_df.loc[amdt_idx_mask, column_name].values[0]
+                                if column_name in target_df.columns
+                                else None
+                            )
+
+                            # Check if target cell has a non-empty value
+                            has_existing_value = (
+                                current_value is not None
+                                and pd.notna(current_value)
+                                and str(current_value).strip() != ""
+                            )
+
+                            if has_existing_value:
+                                logging.debug(
+                                    f"Skipping overwrite for {column_name} at amdt_idx {new_amdt_idx} "
+                                    f"(existing value: {current_value})"
+                                )
+                                continue
+
+                        # Check if there's a condition for copying
+                        if "condition" in column_config and pd.notna(old_value):
+                            condition = column_config["condition"]
+                            if condition.lower() in str(old_value).lower():
+                                target_df.loc[amdt_idx_mask, column_name] = old_value
+                                # Add to comments
+                                target_df.loc[amdt_idx_mask, "Commentaires"] += (
+                                    f"\n{column_name} copié : {old_value}"
+                                )
+                        else:
+                            # No condition, just copy
+                            target_df.loc[amdt_idx_mask, column_name] = old_value
+
+        return target_df

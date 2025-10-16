@@ -4,8 +4,8 @@ from typing import Callable, Optional
 import pandas as pd
 import pytest
 
-from graal.clustering.within_lecture_similarity_handler import (
-    WithinLectureSimilarityHandler,
+from graal.similarities.similarity_search_handler import (
+    SimilaritySearchHandler,
 )
 
 
@@ -59,7 +59,7 @@ def test_copy_matches_to_amendments_df(sample_data):
         "Sort": {"enabled": True, "condition": "irrecevable"},
         "Objet": {"enabled": False},
     }
-    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+    result_df = SimilaritySearchHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
@@ -121,7 +121,7 @@ def test_copy_matches_to_amendments_df_with_custom_config(sample_data):
         "Objet": {"enabled": True},
     }
 
-    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+    result_df = SimilaritySearchHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
@@ -193,7 +193,7 @@ def test_populate():
         "Objet": {"enabled": True},
     }
 
-    result_df = WithinLectureSimilarityHandler.populate(
+    result_df = SimilaritySearchHandler.populate(
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,
@@ -263,7 +263,7 @@ def test_copy_matches_with_should_overwrite_false(sample_data):
         "Sort": {"enabled": True, "condition": "irrecevable"},
     }
 
-    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+    result_df = SimilaritySearchHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
@@ -294,7 +294,7 @@ def test_copy_matches_with_should_overwrite_true(sample_data):
         "Sort": {"enabled": False},
     }
 
-    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+    result_df = SimilaritySearchHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
@@ -321,7 +321,7 @@ def test_copy_matches_with_should_overwrite_false_handles_none_and_nan(sample_da
         "Réponse": {"enabled": True},
     }
 
-    result_df = WithinLectureSimilarityHandler.copy_matches_to_amendments_df(
+    result_df = SimilaritySearchHandler.copy_matches_to_amendments_df(
         target_df=target_df,
         old_amendments_df=old_amendments_df,
         closest_amdts=closest_amdts,
@@ -377,7 +377,7 @@ def test_populate_same_body_but_different_project_should_not_match():
     column_filtering_funcs: Optional[
         dict[str, Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame]]
     ] = {
-        "Corps amdt": WithinLectureSimilarityHandler.filter_old_amendments_by_project,
+        "Corps amdt": SimilaritySearchHandler.filter_old_amendments_by_project,
     }
 
     # Use default configuration
@@ -387,7 +387,7 @@ def test_populate_same_body_but_different_project_should_not_match():
         "Objet": {"enabled": False},
     }
 
-    result_df = WithinLectureSimilarityHandler.populate(
+    result_df = SimilaritySearchHandler.populate(
         preprocessed_old_amendments_df=preprocessed_old_amendments_df,
         preprocessed_new_amendments_df=preprocessed_new_amendments_df,
         original_new_amendments_df=original_new_amendments_df,

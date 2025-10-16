@@ -19,10 +19,10 @@ import pandas as pd
 from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
-from graal.clustering.within_lecture_similarity_handler import (
-    WithinLectureSimilarityHandler,
-)
 from graal.custom_types import Acronym, IntIndex
+from graal.similarities.similarity_search_handler import (
+    SimilaritySearchHandler,
+)
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.project_config_manager import ProjectConfigManager
 from graal.utils.sheet_data_loader import SheetDataLoader
@@ -83,7 +83,7 @@ def load_and_preprocess_amendments(
         amendments_df_json = AmendmentPreProcessor.load_amendments_json(
             list(file_configs_json.keys()), file_configs_json
         )
-        amendments_df_json = WithinLectureSimilarityHandler.preprocess_for_similarity(
+        amendments_df_json = SimilaritySearchHandler.preprocess_for_similarity(
             amendments_df_json, acronym_mapping
         )
     else:
@@ -92,7 +92,7 @@ def load_and_preprocess_amendments(
         amendments_df_excel = AmendmentPreProcessor.load_amendments_excel(
             list(file_configs_excel.keys()), file_configs_excel
         )
-        amendments_df_excel = WithinLectureSimilarityHandler.preprocess_for_similarity(
+        amendments_df_excel = SimilaritySearchHandler.preprocess_for_similarity(
             amendments_df_excel, acronym_mapping
         )
     else:

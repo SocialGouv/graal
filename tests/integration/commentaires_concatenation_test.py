@@ -8,15 +8,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from graal.clustering.within_lecture_similarity_handler import (
-    WithinLectureSimilarityHandler,
-)
 from graal.core.pipeline_orchestrator import PipelineOrchestrator
 from graal.features.attribution_feature import AttributionFeature
 from graal.features.similarities_within_lecture_feature import (
     SimilaritiesWithinLecturesFeature,
 )
 from graal.features.similarity_search_feature import SimilaritySearchFeature
+from graal.similarities.similarity_search_handler import (
+    SimilaritySearchHandler,
+)
 
 logging.config.fileConfig("logging.conf")
 
@@ -88,7 +88,7 @@ def similarity_db_file(tmp_path):
         }
     )
 
-    preprocessed_old = WithinLectureSimilarityHandler.preprocess_for_similarity(
+    preprocessed_old = SimilaritySearchHandler.preprocess_for_similarity(
         old_amendments, {}
     )
     db_path = tmp_path / "test_similarity_db.pkl"

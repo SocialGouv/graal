@@ -9,7 +9,9 @@ from typing import Any, Set
 import pandas as pd
 
 from graal.core.feature_interface import BaseFeature, FeatureInput, FeatureOutput
-from graal.similarities.similarity_search_handler import SimilaritySearchHandler
+from graal.similarities.within_lecture_similarity_handler import (
+    WithinLectureSimilarityHandler,
+)
 
 
 class SimilaritiesWithinLecturesFeature(BaseFeature):
@@ -69,7 +71,7 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
         working_df = working_df.set_index("amdt_idx")
 
         # Find similarities
-        similarity_results = SimilaritySearchHandler.find_similar_amendments(
+        similarity_results = WithinLectureSimilarityHandler.find_similar_amendments(
             amendments_df=working_df,
             similarities_column=similarities_column,
             pct_similarity_threshold=similarity_threshold,
@@ -78,7 +80,7 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
         )
 
         # Apply similarity comments using the handler's method
-        result_df = SimilaritySearchHandler.apply_similarity_comments(
+        result_df = WithinLectureSimilarityHandler.apply_similarity_comments(
             amendments_df=working_df,
             similarity_results=similarity_results,
         )
