@@ -26,6 +26,7 @@ class AttributionHandler:
         name_to_user_info_mapping: dict[str, dict[str, str]],
         attribution_strategy: AttributionStrategy,
         columns_to_match_on: Optional[list[AttributionColumns]] = None,
+        should_overwrite: bool = True,
     ):
         """
         Initialize the AttributionHandler.
@@ -36,12 +37,14 @@ class AttributionHandler:
             name_to_user_info_mapping: Mapping of names to user info (email, entity)
             columns_to_match: List of column names to match against (default: ["Corps amdt", "Exposé amdt"])
             attribution_strategy: Strategy for attribution ("aggregate" or "early_exit")
+            should_overwrite: Whether to overwrite existing values (default: True)
         """
         self.matchers = matchers
         self.cpu_count = cpu_count()
         self.default_attributions = default_attributions
         self.name_to_user_info_mapping = name_to_user_info_mapping
         self.columns_to_match_on = columns_to_match_on or ["Corps amdt", "Exposé amdt"]
+        self.should_overwrite = should_overwrite
         logging.info(
             f"Building attribution handler with strategy: '{attribution_strategy}'"
         )
@@ -147,7 +150,7 @@ class AttributionHandler:
             full_comment = f"{full_comment}\n\nAutres affectations possibles:\n{other_possible_matches_comment}\n"
         return full_comment
 
-    def _process_single_amendments(
+    def _process_single_amendments(  # noqa: C901
         self, idx: int, shared_result_dict: DictProxy
     ) -> None:
         amendment = shared_result_dict[idx]
@@ -168,18 +171,33 @@ class AttributionHandler:
         selected_attribution = self._select_match(all_matches)
 
         if selected_attribution:
-            amendment["Affectation (nom)"] = selected_attribution
+            # Only write if should_overwrite is True OR the field is empty
+            existing_nom = amendment.get("Affectation (nom)")
+
+            if self.should_overwrite or not existing_nom:
+                amendment["Affectation (nom)"] = selected_attribution
             comments = self._get_attribution_comments(all_matches, selected_attribution)
         else:  # No matches found, use default attribution
-            amendment["Affectation (nom)"] = random.choice(self.default_attributions)
+            existing_nom = amendment.get("Affectation (nom)")
+
+            if self.should_overwrite or not existing_nom:
+                amendment["Affectation (nom)"] = random.choice(
+                    self.default_attributions
+                )
             comments = "Attribution par défaut"
 
         # Add user info
         user_info = self.name_to_user_info_mapping.get(
             amendment["Affectation (nom)"], {}
         )
-        amendment["Affectation (email)"] = user_info.get("Mail", "")
-        amendment["Entité Pilote"] = user_info.get("Entité Pilote", "")
+
+        existing_email = amendment.get("Affectation (email)")
+        existing_pilot_entity = amendment.get("Entité Pilote")
+
+        if self.should_overwrite or not existing_email:
+            amendment["Affectation (email)"] = user_info.get("Mail", "")
+        if self.should_overwrite or not existing_pilot_entity:
+            amendment["Entité Pilote"] = user_info.get("Entité Pilote", "")
 
         # Update comments
         if comments:

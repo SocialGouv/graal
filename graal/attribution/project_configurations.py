@@ -29,6 +29,7 @@ def get_attribution_handler_builder_func(project_name: ProjectName):
 
 def build_plf_attribution_handler(
     config_excel: dict[str, pd.DataFrame],
+    should_overwrite: bool = True,
 ) -> AttributionHandler:
     """Build attribution handler for PLF project."""
     name_to_user_info_mapping = AttributionDataLoader.load_name_to_user_info_mappings(
@@ -63,11 +64,13 @@ def build_plf_attribution_handler(
         name_to_user_info_mapping=name_to_user_info_mapping,
         columns_to_match_on=["Exposé amdt", "Corps amdt original"],
         attribution_strategy="early_exit",
+        should_overwrite=should_overwrite,
     )
 
 
 def build_plfss_attribution_handler(
     config_excel: dict[str, pd.DataFrame],
+    should_overwrite: bool = True,
 ) -> AttributionHandler:
     name_to_user_info_mapping = AttributionDataLoader.load_name_to_user_info_mappings(
         config_excel
@@ -123,4 +126,5 @@ def build_plfss_attribution_handler(
         name_to_user_info_mapping=name_to_user_info_mapping,
         columns_to_match_on=["Exposé amdt", "Corps amdt"],
         attribution_strategy="aggregate",
+        should_overwrite=should_overwrite,
     )

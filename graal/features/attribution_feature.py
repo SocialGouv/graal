@@ -74,7 +74,8 @@ class AttributionFeature(BaseFeature):
         """
         # Work with our own copy
         working_df = feature_input.amendments_df.copy()
-        config = feature_input.config.get("attribution", {})
+        attribution_config = feature_input.config.get("attribution", {})
+        should_overwrite = attribution_config.get("should_overwrite", True)
 
         # Create normalized columns for internal processing only
         working_df = self._normalize_text_columns(working_df)
@@ -84,9 +85,11 @@ class AttributionFeature(BaseFeature):
             raise ValueError("Attribution feature requires config_excel parameter")
 
         # Get project configuration
-        project_name = config.get("project_name", "PLF")
+        project_name = attribution_config.get("project_name", "PLF")
         builder_func = get_attribution_handler_builder_func(project_name)
-        attribution_handler = builder_func(self.config_excel)
+        attribution_handler = builder_func(
+            self.config_excel, should_overwrite=should_overwrite
+        )
 
         # Process attributions
         result_df = attribution_handler.process_amendments(working_df)
