@@ -29,3 +29,16 @@
 - Batch processing: Process chunks for large datasets
 - Column ownership: Each feature owns specific output columns
 - Value preservation: Respect `no_value_overwrite` configuration
+
+## Similarity Database Storage
+
+**Storage Format**: Parquet files stored on S3 only
+- **Rationale**: Efficient columnar format, cloud-native storage, better compression and performance
+- **Location**: `{S3_SIMILARITY_DB_FOLDER}/project_name/*.parquet`
+- **Loading**: Full database loaded into memory (required by TF-IDF algorithm)
+- **Caching**: Databases cached in memory to avoid redundant S3 downloads
+
+**Memory Considerations**:
+- Similarity databases must be loaded completely into memory for TF-IDF vectorization
+- Memory cache strategy reduces repeated S3 downloads of identical databases
+- Use [`SimilarityDatabaseLoader`](graal/utils/similarity_db_loader.py) for async S3 loading

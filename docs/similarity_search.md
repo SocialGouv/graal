@@ -25,8 +25,9 @@ La fonctionnalité de recherche de similarités permet d'identifier automatiquem
      - L'amendement avec une réponse (prioritaire sur ceux sans réponse)
 
 4. **Sauvegarde**
-   - Stockage des amendements prétraités dans un fichier pickle
+   - Stockage des amendements prétraités dans un fichier Parquet sur S3
    - Conservation des métadonnées essentielles (projet, lecture, réponses)
+   - Format Parquet optimisé pour le stockage cloud et les performances
 
 ## Processus de Recherche de Similarités
 

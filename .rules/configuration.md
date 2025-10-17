@@ -16,6 +16,7 @@
 - Processing settings: Worker counts, timeouts, parallel execution
 - LLM configuration: Provider settings, rate limits, model parameters
 - Path configuration: Input/output directories, reference files
+- Similarity database: S3 location, database file selection
 
 ## Validation
 - Use Pydantic models for structure validation
@@ -27,3 +28,20 @@
 - Load with [`ConfigPreprocessor`](graal/utils/config/config_preprocessor.py)
 - Access via [`ProjectConfigManager`](graal/utils/config/project_config_manager.py)
 - Feature configs: Nested under feature name keys
+
+## Environment Variables
+
+### Similarity Database Configuration
+- **`S3_SIMILARITY_DB_FOLDER`**: S3 folder containing similarity databases as Parquet files
+  - Default: `"similarity_dbs"`
+  - Example: Databases stored at `s3://bucket/similarity_dbs/PLFSS/*.parquet`
+  - Used by UI to list available databases and by loader to fetch files
+
+### Feature Configuration Fields
+
+**Similarity Search** (`similarity_search` key):
+- `database_file`: (required) S3 path to Parquet similarity database file
+  - Format: `"PLFSS/2024.parquet"` (relative to S3 similarity folder)
+  - Only Parquet format on S3 is supported
+  - Selected via UI dropdown when using web application
+  - Must be present when similarity search feature is enabled

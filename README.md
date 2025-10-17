@@ -470,11 +470,17 @@ The Dockerfile includes frontend build steps:
 docker build -t smart-amendments .
 ```
 
-## Similarity Data Base
+## Similarity Database
 
-The system includes functionality to build a DB with old amendments for similarity search. This preprocessed data is used to find similarities between new and old amendments in the pipeline.
+The system includes functionality to build and use databases of historical amendments for similarity search. These preprocessed databases enable efficient comparison between new amendments and historical data to find similar past amendments.
 
-### Running the Script
+### S3-Based Database Selection
+
+In production, similarity search databases are stored as **Parquet files on S3** for efficient storage and access. Users can select pre-processed databases directly from the UI.
+
+### Building Databases
+
+#### Running the Script
 
 You can run the script with specific projects or all projects:
 
@@ -489,16 +495,16 @@ python graal/utils/build_similarity_db.py
 python graal/utils/build_similarity_db.py --drop-empty-columns Réponse "Objet amdt"
 
 # Specify output file path
-python graal/utils/build_similarity_db.py --output data/preprocessed/custom_db.pkl
+python graal/utils/build_similarity_db.py --output data/preprocessed/custom_db.parquet
 ```
 
 The script supports the following command-line options:
 
 - `--projects`: List of projects to include (e.g., PLFSS PLACSS). If not specified, includes all projects.
-- `--output`: Output pickle file path (default: data/preprocessed/pre_processed_old_amdts.pkl)
+- `--output`: Output Parquet file path (default: data/preprocessed/pre_processed_old_amdts.parquet)
 - `--drop-empty-columns`: List of columns to drop rows from if they are empty (default: ['Réponse'])
 
-### Adding New Projects
+#### Adding New Projects
 
 To add support for a new project type:
 
@@ -530,7 +536,7 @@ That's it! No need to modify any Python code. The system will automatically load
 You can then run the script with your new project:
 
 ```bash
-python graal/utils/build_similarity_db.py --projects MY_PROJECT --output data/preprocessed/my_project_db.pkl
+python graal/utils/build_similarity_db.py --projects MY_PROJECT --output data/preprocessed/my_project_db.parquet
 ```
 
 ## Run through Docker

@@ -34,3 +34,18 @@ class MyFeature(BaseFeature):
         return df
 
 ```
+
+## Similarity Database Loading
+
+The similarity search feature uses [`SimilarityDatabaseLoader`](graal/utils/similarity_db_loader.py) for loading historical amendment databases from S3:
+
+- **S3 Parquet only**: Only supports Parquet files stored on S3 (cloud-native, efficient columnar format)
+- **Intelligent caching**: Implements memory caching to avoid redundant S3 downloads
+- **Async loading**: Uses async/await for non-blocking S3 operations
+- **Memory-efficient**: Loads full database into memory (required by TF-IDF algorithm) but caches results
+
+**Pattern**: Use the loader to load from S3:
+```python
+loader = get_similarity_db_loader()
+db_df = await loader.load_from_s3(database_file)  # S3 path like "PLFSS/2024.parquet"
+```
