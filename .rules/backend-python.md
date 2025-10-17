@@ -14,6 +14,8 @@
 
 ## Key Patterns
 - Features: Extend [`BaseFeature`](graal/core/feature_interface.py), implement `process()` method
+- Handlers: Use for stateless operations (process amendments, no state management)
+- Services: Extend service pattern for stateful operations, use singleton pattern via `get_service()` functions
 - Async handlers: Use `async def`, await all I/O operations
 - Pydantic models: Use for API request/response validation
 - Module imports: `from graal.features import FeatureName`

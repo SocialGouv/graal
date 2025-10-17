@@ -42,3 +42,26 @@
 - Similarity databases must be loaded completely into memory for TF-IDF vectorization
 - Memory cache strategy reduces repeated S3 downloads of identical databases
 - Use [`SimilarityDatabaseLoader`](graal/utils/similarity_db_loader.py) for async S3 loading
+
+## Similarity Database Building
+
+**Builder Responsibility**: [`SimilarityDatabaseBuilderService`](../graal/utils/similarity_db_builder_service.py) only builds the processed DataFrame:
+- Amendment preprocessing (text normalization, acronym expansion)
+- Deduplication via clustering (DBSCAN)
+- Returns processed DataFrame ready for persistence
+
+**Caller Responsibility**: File persistence and storage operations:
+- Local file saving: Use `df.to_parquet(path, index=False)`
+- S3 uploads: Caller handles S3 client and upload logic
+- Any other storage operations
+
+**Core Method**: `build_database()` returns the processed DataFrame:
+```python
+builder = get_similarity_db_builder()
+df = await builder.build_database(
+    project_names=["PLFSS"],
+    drop_empty_columns=["Réponse"],
+    similarity_threshold=0.99,
+    eps=0.4
+)
+```

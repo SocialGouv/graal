@@ -49,3 +49,13 @@ The similarity search feature uses [`SimilarityDatabaseLoader`](graal/utils/simi
 loader = get_similarity_db_loader()
 db_df = await loader.load_from_s3(database_file)  # S3 path like "PLFSS/2024.parquet"
 ```
+
+## Similarity Database Building
+
+The [`SimilarityDatabaseBuilderService`](../graal/utils/similarity_db_builder_service.py) creates similarity databases from amendments following the **Service Pattern** (not Handler):
+
+- **Service Pattern choice**: Manages stateful operations (file I/O), orchestrates handlers (preprocessing, clustering), performs async I/O
+- **Single Responsibility Principle**: Service builds DataFrame only, caller handles all persistence operations (file saving, S3 uploads)
+- **Singleton pattern**: Global instance via `get_similarity_db_builder()` for reuse
+- **Async-first**: All I/O operations use async/await
+- **Parquet only**: S3 storage in Parquet format for cloud-native efficiency
