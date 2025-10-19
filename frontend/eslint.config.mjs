@@ -1,8 +1,11 @@
 import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
 import tsParser from '@typescript-eslint/parser'
+import prettierConfig from 'eslint-config-prettier'
+import prettierPlugin from 'eslint-plugin-prettier'
 import { defineConfig } from 'eslint/config'
 import globals from 'globals'
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,13 +17,20 @@ const compat = new FlatCompat({
   allConfig: js.configs.all
 })
 
+// Load Prettier config from src/.prettierrc
+const prettierrcPath = path.join(__dirname, 'src', '.prettierrc')
+const prettierOptions = JSON.parse(fs.readFileSync(prettierrcPath, 'utf-8'))
+
 export default defineConfig([
   {
     extends: compat.extends(
       'eslint:recommended',
-      'plugin:@typescript-eslint/recommended',
-      'plugin:prettier/recommended'
+      'plugin:@typescript-eslint/recommended'
     ),
+
+    plugins: {
+      prettier: prettierPlugin
+    },
 
     languageOptions: {
       globals: {
@@ -33,6 +43,7 @@ export default defineConfig([
     },
 
     rules: {
+      ...prettierConfig.rules,
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -40,7 +51,7 @@ export default defineConfig([
         }
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
-      'prettier/prettier': 'error'
+      'prettier/prettier': ['error', prettierOptions]
     }
   }
 ])

@@ -225,6 +225,140 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/databases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Databases
+     * @description List all available similarity databases from S3.
+     *
+     *     Returns:
+     *         DatabaseListResponse: List of available databases with metadata
+     *
+     *     Raises:
+     *         HTTPException: 500 if listing fails
+     */
+    get: operations['list_databases_api_v1_databases_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/databases/upload-file': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Upload Amendment File
+     * @description Upload an amendment file for database building.
+     *
+     *     The file is stored temporarily and will be used when building the database.
+     *     Returns the upload ID that should be included in the build request.
+     *
+     *     Args:
+     *         file: The amendment file to upload
+     *         metadata: JSON string with default_processing_timestamp and origin_project
+     *
+     *     Returns:
+     *         dict: Upload information including upload_id, filename, size, and metadata
+     *
+     *     Raises:
+     *         HTTPException: 500 if upload fails
+     */
+    post: operations['upload_amendment_file_api_v1_databases_upload_file_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/databases/build': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Build Database
+     * @description Start building a similarity database in the background.
+     *
+     *     Args:
+     *         request: DatabaseBuildRequest with build configuration
+     *
+     *     Returns:
+     *         ProcessingResponse: Job information for tracking build progress
+     *
+     *     Raises:
+     *         HTTPException: 400 for validation errors, 500 for build errors
+     *
+     *     Example request:
+     *         {
+     *             "config_file": "Fichier de configuration GRAAL - DSS - latest.xlsx",
+     *             "database_name": "PLFSS_2024",
+     *             "files_metadata": [
+     *                 {
+     *                     "filename": "amendments_2024.json",
+     *                     "default_processing_timestamp": 1704067200,
+     *                     "origin_project": "PLFSS 2024"
+     *                 }
+     *             ],
+     *             "drop_empty_columns": ["Réponse"],
+     *             "similarity_threshold": 0.99,
+     *             "eps": 0.4,
+     *             "group_by_columns": ["Lecture", "origin_project", "Num article"]
+     *         }
+     */
+    post: operations['build_database_api_v1_databases_build_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/databases/uploads/{upload_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Uploaded File
+     * @description Delete an uploaded file that's no longer needed.
+     *
+     *     Args:
+     *         upload_id: The upload ID of the file to delete
+     *
+     *     Returns:
+     *         dict: Success message
+     *
+     *     Raises:
+     *         HTTPException: 404 if upload not found, 500 if deletion fails
+     */
+    delete: operations['delete_uploaded_file_api_v1_databases_uploads__upload_id__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -275,6 +409,16 @@ export interface components {
       /** Request */
       request: string
     }
+    /** Body_upload_amendment_file_api_v1_databases_upload_file_post */
+    Body_upload_amendment_file_api_v1_databases_upload_file_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string
+      /** Metadata */
+      metadata: string
+    }
     /**
      * ConfigFilesResponse
      * @description Response model for available configuration files.
@@ -290,6 +434,121 @@ export interface components {
        * @description Total number of available files
        */
       total: number
+    }
+    /**
+     * DatabaseBuildRequest
+     * @description Request to build a similarity database.
+     */
+    DatabaseBuildRequest: {
+      /**
+       * Config File
+       * @description Office configuration Excel file to use
+       */
+      config_file: string
+      /**
+       * Database Name
+       * @description Name for the database (without extension)
+       */
+      database_name: string
+      /**
+       * File References
+       * @description References to uploaded files
+       */
+      file_references: components['schemas']['FileUploadReference'][]
+      /**
+       * Drop Empty Columns
+       * @description Columns where empty rows should be dropped
+       * @default [
+       *       "Réponse"
+       *     ]
+       */
+      drop_empty_columns: string[]
+      /**
+       * Similarity Threshold
+       * @description Threshold for Levenshtein refinement
+       * @default 0.99
+       */
+      similarity_threshold: number
+      /**
+       * Eps
+       * @description Epsilon value for DBSCAN clustering
+       * @default 0.4
+       */
+      eps: number
+      /**
+       * Group By Columns
+       * @description Columns to group by during clustering
+       * @default [
+       *       "Lecture",
+       *       "origin_project",
+       *       "Num article"
+       *     ]
+       */
+      group_by_columns: string[]
+    }
+    /**
+     * DatabaseInfo
+     * @description Information about a similarity database.
+     */
+    DatabaseInfo: {
+      /**
+       * Name
+       * @description Database name (without extension)
+       */
+      name: string
+      /**
+       * Size Bytes
+       * @description File size in bytes
+       */
+      size_bytes: number
+      /**
+       * Last Modified
+       * Format: date-time
+       * @description Last modification timestamp
+       */
+      last_modified: string
+    }
+    /**
+     * DatabaseListResponse
+     * @description Response containing list of available databases.
+     */
+    DatabaseListResponse: {
+      /**
+       * Databases
+       * @description List of databases
+       */
+      databases: components['schemas']['DatabaseInfo'][]
+      /**
+       * Total
+       * @description Total number of databases
+       */
+      total: number
+    }
+    /**
+     * FileUploadReference
+     * @description Reference to an uploaded file.
+     */
+    FileUploadReference: {
+      /**
+       * Upload Id
+       * @description Upload ID from file upload
+       */
+      upload_id: string
+      /**
+       * Filename
+       * @description Original filename
+       */
+      filename: string
+      /**
+       * Default Processing Timestamp
+       * @description Unix timestamp for processing
+       */
+      default_processing_timestamp: number
+      /**
+       * Origin Project
+       * @description Origin project name
+       */
+      origin_project: string
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -540,6 +799,123 @@ export interface operations {
       header?: never
       path: {
         job_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_databases_api_v1_databases_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatabaseListResponse']
+        }
+      }
+    }
+  }
+  upload_amendment_file_api_v1_databases_upload_file_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_upload_amendment_file_api_v1_databases_upload_file_post']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': Record<string, never>
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  build_database_api_v1_databases_build_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DatabaseBuildRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProcessingResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_uploaded_file_api_v1_databases_uploads__upload_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        upload_id: string
       }
       cookie?: never
     }

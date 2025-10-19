@@ -1,8 +1,8 @@
-import type { Plugin } from 'vite'
-import chokidar from 'chokidar'
 import { exec } from 'child_process'
-import { promisify } from 'util'
+import chokidar from 'chokidar'
 import path from 'path'
+import { promisify } from 'util'
+import type { Plugin } from 'vite'
 
 const execAsync = promisify(exec)
 
@@ -25,7 +25,9 @@ interface AutoTypeGenerationOptions {
   generateOnStart?: boolean
 }
 
-export function autoTypeGeneration(options: AutoTypeGenerationOptions = {}): Plugin {
+export function autoTypeGeneration(
+  options: AutoTypeGenerationOptions = {}
+): Plugin {
   const {
     watchPaths = [
       '../graal/api/routes/**/*.py',
@@ -84,14 +86,16 @@ export function autoTypeGeneration(options: AutoTypeGenerationOptions = {}): Plu
 
     async buildStart() {
       if (generateOnStart) {
-        console.log('🚀 Starting development server with auto type generation...')
+        console.log(
+          '🚀 Starting development server with auto type generation...'
+        )
         await generateTypes()
       }
     },
 
     configureServer(server) {
       // Set up file watcher
-      const absoluteWatchPaths = watchPaths.map(watchPath =>
+      const absoluteWatchPaths = watchPaths.map((watchPath) =>
         path.resolve(process.cwd(), watchPath)
       )
 

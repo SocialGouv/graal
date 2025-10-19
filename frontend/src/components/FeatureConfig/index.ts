@@ -10,7 +10,8 @@ export type {
   ColumnSimilarityConfigProps
 } from './ColumnSimilarityConfig'
 export type {
-  ColumnsToCopyConfigProps, ColumnToCopyConfig
+  ColumnsToCopyConfigProps,
+  ColumnToCopyConfig
 } from './ColumnsToCopyConfig'
 export type {
   AttributionProjectOption,

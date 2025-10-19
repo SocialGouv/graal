@@ -23,6 +23,7 @@ export interface ProcessingConfig {
   similaritySearch: {
     enabled: boolean
     originProject: string
+    selectedDatabase: string | null
     clusteringSimilarityThresholds: ThresholdConfig
     fuzzyMatchSimilarityThresholds: ThresholdConfig
     similarityThresholdOverrides: ThresholdOverrides
@@ -40,6 +41,23 @@ export interface ProcessingConfig {
   }
   // Processing options (top-level, not nested under any feature)
   placeholder_amdt_body: boolean
+}
+
+export interface UploadedFileInfo {
+  uploadId: string
+  filename: string
+  size: number
+  timestamp: number
+  originProject: string
+  uploadProgress: number
+}
+
+export interface DatabaseBuilderState {
+  selectedConfigFile: string | null
+  databaseName: string
+  uploadedFiles: UploadedFileInfo[]
+  buildProgress: number
+  isBuilding: boolean
 }
 
 export interface ProcessingState {
@@ -68,6 +86,9 @@ export interface ProcessingState {
   // Error handling
   error: string | null
 
+  // Database builder state
+  databaseBuilder: DatabaseBuilderState
+
   // Actions
   setUploadedFile: (file: File | null) => void
   setUploadProgress: (progress: number) => void
@@ -84,6 +105,16 @@ export interface ProcessingState {
   setResults: (results: AmendmentPreview[], totalRows: number) => void
   setError: (error: string | null) => void
   reset: () => void
+
+  // Database builder actions
+  setDatabaseConfigFile: (filename: string | null) => void
+  setDatabaseName: (name: string) => void
+  addUploadedFile: (file: Omit<UploadedFileInfo, 'uploadProgress'>) => void
+  removeUploadedFile: (uploadId: string) => void
+  updateFileUploadProgress: (uploadId: string, progress: number) => void
+  setBuildProgress: (progress: number) => void
+  setIsBuilding: (isBuilding: boolean) => void
+  resetDatabaseBuilder: () => void
 }
 
 const initialState = {
@@ -104,6 +135,7 @@ const initialState = {
     similaritySearch: {
       enabled: true,
       originProject: '',
+      selectedDatabase: null,
       clusteringSimilarityThresholds: {
         'Exposé amdt': 0.4,
         'Corps amdt': 0.4
@@ -140,7 +172,14 @@ const initialState = {
   updatedAt: null,
   resultsPreview: null,
   totalRows: 0,
-  error: null
+  error: null,
+  databaseBuilder: {
+    selectedConfigFile: null,
+    databaseName: '',
+    uploadedFiles: [],
+    buildProgress: 0,
+    isBuilding: false
+  }
 }
 
 export const useProcessingStore = create<ProcessingState>((set) => ({
@@ -203,5 +242,71 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
       processingStatus: error ? 'failed' : state.processingStatus
     })),
 
-  reset: () => set(initialState)
+  reset: () => set(initialState),
+
+  // Database builder action implementations
+  setDatabaseConfigFile: (filename) =>
+    set((state) => ({
+      databaseBuilder: {
+        ...state.databaseBuilder,
+        selectedConfigFile: filename
+      }
+    })),
+
+  setDatabaseName: (name) =>
+    set((state) => ({
+      databaseBuilder: { ...state.databaseBuilder, databaseName: name }
+    })),
+
+  addUploadedFile: (file) =>
+    set((state) => ({
+      databaseBuilder: {
+        ...state.databaseBuilder,
+        uploadedFiles: [
+          ...state.databaseBuilder.uploadedFiles,
+          { ...file, uploadProgress: 100 }
+        ]
+      }
+    })),
+
+  removeUploadedFile: (uploadId) =>
+    set((state) => ({
+      databaseBuilder: {
+        ...state.databaseBuilder,
+        uploadedFiles: state.databaseBuilder.uploadedFiles.filter(
+          (f) => f.uploadId !== uploadId
+        )
+      }
+    })),
+
+  updateFileUploadProgress: (uploadId, progress) =>
+    set((state) => ({
+      databaseBuilder: {
+        ...state.databaseBuilder,
+        uploadedFiles: state.databaseBuilder.uploadedFiles.map((f) =>
+          f.uploadId === uploadId ? { ...f, uploadProgress: progress } : f
+        )
+      }
+    })),
+
+  setBuildProgress: (progress) =>
+    set((state) => ({
+      databaseBuilder: { ...state.databaseBuilder, buildProgress: progress }
+    })),
+
+  setIsBuilding: (isBuilding) =>
+    set((state) => ({
+      databaseBuilder: { ...state.databaseBuilder, isBuilding }
+    })),
+
+  resetDatabaseBuilder: () =>
+    set((_state) => ({
+      databaseBuilder: {
+        selectedConfigFile: null,
+        databaseName: '',
+        uploadedFiles: [],
+        buildProgress: 0,
+        isBuilding: false
+      }
+    }))
 }))

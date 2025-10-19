@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Header } from '@codegouvfr/react-dsfr/Header'
 import { Footer } from '@codegouvfr/react-dsfr/Footer'
 import { Button } from '@codegouvfr/react-dsfr/Button'
+import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl'
 import { fr } from '@codegouvfr/react-dsfr'
 
 // Import components and providers
@@ -12,6 +13,7 @@ import FileUpload from './components/FileUpload/FileUpload'
 import ProcessingStatus from './components/ProcessingStatus/ProcessingStatus'
 import ResultsTable from './components/ResultsTable/ResultsTable'
 import DownloadButton from './components/DownloadButton/DownloadButton'
+import { DatabaseBuilder } from './components/DatabaseBuilder'
 
 // Import hooks and store
 import { useProcessingStore } from './stores/processingStore'
@@ -35,6 +37,10 @@ const Container = ({
 )
 
 function AppContent() {
+  const [activeView, setActiveView] = useState<'processing' | 'database'>(
+    'processing'
+  )
+
   const {
     jobId,
     processingStatus,
@@ -102,13 +108,15 @@ function AppContent() {
           {
             column: processingConfig.similaritiesWithinLectures.column,
             similarity_threshold:
-              processingConfig.similaritiesWithinLectures.similarity_threshold,
+              processingConfig.similaritiesWithinLectures.similarity_threshold
           }
         ),
         similarity_search: buildConfigIfEnabled(
           processingConfig.similaritySearch.enabled,
           {
             origin_project: processingConfig.similaritySearch.originProject,
+            selected_database:
+              processingConfig.similaritySearch.selectedDatabase,
             clustering_similarity_thresholds:
               processingConfig.similaritySearch.clusteringSimilarityThresholds,
             fuzzy_match_similarity_thresholds:
@@ -191,83 +199,120 @@ function AppContent() {
 
       <Container>
         <main className={fr.cx('fr-py-6w')}>
-          <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
-            <div className={fr.cx('fr-col-12', 'fr-col-md-8')}>
-              <h1>Traitement automatisé des amendements</h1>
-              <p className={fr.cx('fr-text--lead')}>
-                GRAAL permet de traiter et analyser les amendements législatifs
-                pour faciliter le travail des agents gouvernementaux.
-              </p>
+          {/* View Selector */}
+          <div className={fr.cx('fr-mb-4w')}>
+            <SegmentedControl
+              legend="Select view"
+              hideLegend
+              segments={[
+                {
+                  label: 'Amendment Processing',
+                  nativeInputProps: {
+                    checked: activeView === 'processing',
+                    onChange: () => setActiveView('processing')
+                  }
+                },
+                {
+                  label: 'Database Builder',
+                  nativeInputProps: {
+                    checked: activeView === 'database',
+                    onChange: () => setActiveView('database')
+                  }
+                }
+              ]}
+            />
+          </div>
 
-              {!showProcessing && (
-                <p>
-                  Téléchargez un fichier JSON contenant des amendements pour
-                  commencer le traitement automatisé.
-                </p>
-              )}
-            </div>
+          {/* Database Builder View */}
+          {activeView === 'database' && <DatabaseBuilder />}
 
-            {showResults && (
-              <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
-                <div style={{ textAlign: 'right' }}>
-                  <Button
-                    priority="secondary"
-                    size="small"
-                    onClick={handleReset}
-                    iconId="fr-icon-refresh-line"
-                    iconPosition="left"
-                  >
-                    Nouveau traitement
-                  </Button>
+          {/* Processing View */}
+          {activeView === 'processing' && (
+            <>
+              <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+                <div className={fr.cx('fr-col-12', 'fr-col-md-8')}>
+                  <h1>Traitement automatisé des amendements</h1>
+                  <p className={fr.cx('fr-text--lead')}>
+                    GRAAL permet de traiter et analyser les amendements
+                    législatifs pour faciliter le travail des agents
+                    gouvernementaux.
+                  </p>
+
+                  {!showProcessing && (
+                    <p>
+                      Téléchargez un fichier JSON contenant des amendements pour
+                      commencer le traitement automatisé.
+                    </p>
+                  )}
                 </div>
+
+                {showResults && (
+                  <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
+                    <div style={{ textAlign: 'right' }}>
+                      <Button
+                        priority="secondary"
+                        size="small"
+                        onClick={handleReset}
+                        iconId="fr-icon-refresh-line"
+                        iconPosition="left"
+                      >
+                        Nouveau traitement
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className={fr.cx('fr-mt-4w')}>
-            {/* Configuration and File Upload Section */}
-            {!showResults && (
-              <>
-                <section className={fr.cx('fr-mb-6w')}>
-                  <h2 className={fr.cx('fr-h3')}>1. Configuration</h2>
-                  <ConfigFileSelector disabled={uploadFileMutation.isPending} />
-                </section>
+              <div className={fr.cx('fr-mt-4w')}>
+                {/* Configuration and File Upload Section */}
+                {!showResults && (
+                  <>
+                    <section className={fr.cx('fr-mb-6w')}>
+                      <h2 className={fr.cx('fr-h3')}>1. Configuration</h2>
+                      <ConfigFileSelector
+                        disabled={uploadFileMutation.isPending}
+                      />
+                    </section>
 
-                <section className={fr.cx('fr-mb-6w')}>
-                  <h2 className={fr.cx('fr-h3')}>
-                    2. Configuration du traitement
-                  </h2>
-                  <ProcessingConfig disabled={uploadFileMutation.isPending} />
-                </section>
+                    <section className={fr.cx('fr-mb-6w')}>
+                      <h2 className={fr.cx('fr-h3')}>
+                        2. Configuration du traitement
+                      </h2>
+                      <ProcessingConfig
+                        disabled={uploadFileMutation.isPending}
+                      />
+                    </section>
 
-                <section className={fr.cx('fr-mb-6w')}>
-                  <h2 className={fr.cx('fr-h3')}>3. Upload de fichier</h2>
-                  <FileUpload
-                    onFileSelect={handleFileSelect}
-                    onStartProcessing={handleStartProcessing}
-                    disabled={uploadFileMutation.isPending}
-                    isFormValid={!!isFormValid}
-                  />
-                </section>
-              </>
-            )}
+                    <section className={fr.cx('fr-mb-6w')}>
+                      <h2 className={fr.cx('fr-h3')}>3. Upload de fichier</h2>
+                      <FileUpload
+                        onFileSelect={handleFileSelect}
+                        onStartProcessing={handleStartProcessing}
+                        disabled={uploadFileMutation.isPending}
+                        isFormValid={!!isFormValid}
+                      />
+                    </section>
+                  </>
+                )}
 
-            {/* Processing Status Section */}
-            {showProcessing && <ProcessingStatus />}
+                {/* Processing Status Section */}
+                {showProcessing && <ProcessingStatus />}
 
-            {/* Results Section */}
-            {showResults && (
-              <>
-                <DownloadButton
-                  onDownloadCsv={handleDownloadCsv}
-                  onDownloadExcel={handleDownloadExcel}
-                  isCsvLoading={downloadResultsMutation.isPending}
-                  isExcelLoading={downloadExcelResultsMutation.isPending}
-                />
-                <ResultsTable />
-              </>
-            )}
-          </div>
+                {/* Results Section */}
+                {showResults && (
+                  <>
+                    <DownloadButton
+                      onDownloadCsv={handleDownloadCsv}
+                      onDownloadExcel={handleDownloadExcel}
+                      isCsvLoading={downloadResultsMutation.isPending}
+                      isExcelLoading={downloadExcelResultsMutation.isPending}
+                    />
+                    <ResultsTable />
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </main>
       </Container>
 

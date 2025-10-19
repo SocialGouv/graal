@@ -8,12 +8,20 @@ import { useProcessingStore } from '../../stores/processingStore'
 
 interface ConfigFileSelectorProps {
   disabled?: boolean
+  onChange?: (filename: string | null) => void
+  value?: string | null
 }
 
 export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
-  disabled = false
+  disabled = false,
+  onChange,
+  value
 }) => {
   const { selectedConfigFile, setSelectedConfigFile } = useProcessingStore()
+
+  // Use provided props if available, otherwise fall back to store
+  const currentValue = value !== undefined ? value : selectedConfigFile
+  const handleChange = onChange || setSelectedConfigFile
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['config-files'],
@@ -23,8 +31,8 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
   })
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
-    setSelectedConfigFile(value || null)
+    const selectedValue = e.target.value
+    handleChange(selectedValue || null)
   }
 
   return (
@@ -33,7 +41,7 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
         label="Fichier de configuration"
         hint="Sélectionnez un fichier de configuration depuis S3"
         nativeSelectProps={{
-          value: selectedConfigFile ?? '',
+          value: currentValue ?? '',
           onChange: handleSelect,
           disabled: disabled || isLoading
         }}

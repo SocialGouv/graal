@@ -40,6 +40,7 @@ export interface SimilaritiesWithinLecturesConfig {
 export interface SimilaritySearchConfig {
   enabled: boolean
   origin_project?: string
+  selected_database?: string | null
   clustering_similarity_thresholds?: Record<string, number>
   fuzzy_match_similarity_thresholds?: Record<string, number>
   similarity_threshold_overrides?: Record<string, number>
@@ -86,4 +87,47 @@ export interface ProcessingRequest {
 export interface ApiError {
   detail: string
   status_code: number
+}
+
+// Database Builder Types
+export interface UploadFileResponse {
+  upload_id: string
+  filename: string
+  size: number
+  metadata: {
+    default_processing_timestamp: number
+    origin_project: string
+  }
+}
+
+export interface FileReference {
+  upload_id: string
+  filename: string
+  default_processing_timestamp: number
+  origin_project: string
+}
+
+export interface BuildDatabaseRequest {
+  config_file: string
+  database_name: string
+  file_references: FileReference[]
+  drop_empty_columns?: string[]
+  similarity_threshold?: number
+  eps?: number
+  group_by_columns?: string[]
+}
+
+export interface DatabaseInfo {
+  name: string
+  size_bytes: number
+  last_modified: string
+}
+
+export interface DatabaseListResponse {
+  databases: DatabaseInfo[]
+  total: number
+}
+
+export interface DeleteFileResponse {
+  message: string
 }

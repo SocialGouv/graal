@@ -3,8 +3,10 @@ import { Input } from '@codegouvfr/react-dsfr/Input'
 import { Select } from '@codegouvfr/react-dsfr/Select'
 import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
 import { fr } from '@codegouvfr/react-dsfr'
+import { useQuery } from '@tanstack/react-query'
 import { useProcessingStore } from '../../stores/processingStore'
 import { useValidation } from '../../hooks/useValidation'
+import { apiService } from '../../services/api'
 import {
   FeatureConfigSection,
   ProjectSelectionConfig,
@@ -54,6 +56,26 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     },
     [setProcessingConfig, processingConfig]
   )
+
+  const handleSimilaritySearchDatabaseChange = useCallback(
+    (value: string) => {
+      setProcessingConfig({
+        ...processingConfig,
+        similaritySearch: {
+          ...processingConfig.similaritySearch,
+          selectedDatabase: value || null
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  // Fetch available databases
+  const { data: databasesData, isLoading: isLoadingDatabases } = useQuery({
+    queryKey: ['databases'],
+    queryFn: () => apiService.listDatabases(),
+    staleTime: 30000 // 30 seconds
+  })
 
   // Allotments handlers
   const handleAllotmentsEnabledChange = useCallback(
@@ -358,6 +380,32 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                   maxLength: 100
                 }}
               />
+            </div>
+          </div>
+
+          {/* Database Selector */}
+          <div
+            className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
+          >
+            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+              <Select
+                label="Base de données de similarité (optionnel)"
+                hint="Sélectionnez une base pré-construite pour la recherche de similarités"
+                disabled={disabled || isProcessing || isLoadingDatabases}
+                nativeSelectProps={{
+                  value:
+                    processingConfig.similaritySearch.selectedDatabase || '',
+                  onChange: (e) =>
+                    handleSimilaritySearchDatabaseChange(e.target.value)
+                }}
+              >
+                <option value="">Aucune (recherche standard)</option>
+                {databasesData?.databases.map((db) => (
+                  <option key={db.name} value={db.name}>
+                    {db.name}
+                  </option>
+                ))}
+              </Select>
             </div>
           </div>
 
