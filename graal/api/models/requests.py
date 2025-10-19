@@ -67,6 +67,10 @@ class SimilaritySearchConfig(BaseModel):
         max_length=100,
         description="Name of the legislative project for similarity search (e.g., 'PLFSS 2025')",
     )
+    selected_database: Optional[str] = Field(
+        default=None,
+        description="Optional pre-built database name to use for similarity search",
+    )
     clustering_similarity_thresholds: Dict[str, float] = Field(
         default_factory=lambda: {"Exposé amdt": 0.4, "Corps amdt": 0.4},
         description="Clustering similarity thresholds for initial TF-IDF clustering by column",
@@ -303,4 +307,56 @@ class ProcessingRequest(BaseModel):
         if not re.match(r"^[a-zA-Z0-9\u00C0-\u024F\s\-_\.()]+\.xlsx$", v):
             raise ValueError("config_file contains invalid characters")
 
+        return v
+
+
+class FileUploadReference(BaseModel):
+    """Reference to an uploaded file."""
+
+    upload_id: str = Field(..., description="Upload ID from file upload")
+    filename: str = Field(..., description="Original filename")
+    default_processing_timestamp: int = Field(
+        ..., description="Unix timestamp for processing"
+    )
+    origin_project: str = Field(..., description="Origin project name")
+
+
+class DatabaseBuildRequest(BaseModel):
+    """Request to build a similarity database."""
+
+    config_file: str = Field(
+        ..., description="Office configuration Excel file to use", min_length=1
+    )
+    database_name: str = Field(
+        ..., description="Name for the database (without extension)", min_length=1
+    )
+    file_references: list[FileUploadReference] = Field(
+        ..., description="References to uploaded files"
+    )
+    drop_empty_columns: list[str] = Field(
+        default=["Réponse"],
+        description="Columns where empty rows should be dropped",
+    )
+    similarity_threshold: float = Field(
+        default=0.99,
+        ge=0.0,
+        le=1.0,
+        description="Threshold for Levenshtein refinement",
+    )
+    eps: float = Field(
+        default=0.4, ge=0.0, le=1.0, description="Epsilon value for DBSCAN clustering"
+    )
+    group_by_columns: list[str] = Field(
+        default=["Lecture", "origin_project", "Num article"],
+        description="Columns to group by during clustering",
+    )
+
+    @field_validator("file_references")
+    @classmethod
+    def validate_file_references(
+        cls, v: list[FileUploadReference]
+    ) -> list[FileUploadReference]:
+        """Validate that file_references has at least one file."""
+        if not v or len(v) < 1:
+            raise ValueError("At least one file must be provided")
         return v

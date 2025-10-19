@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import pandas as pd
 
-from graal.utils.s3_config_service import get_s3_config_service
+from graal.utils.s3_service import get_s3_service
 
 
 class SheetDataLoader:
@@ -32,7 +32,7 @@ class SheetDataLoader:
         file_path_str = str(self.file_path)
 
         # Load from S3 using the S3 config service
-        s3_service = get_s3_config_service()
+        s3_service = get_s3_service()
         logging.info(f"Loading configuration from S3: {file_path_str}")
         return s3_service.load_config_excel(file_path_str)
 

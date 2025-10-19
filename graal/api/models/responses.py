@@ -80,3 +80,18 @@ class ErrorResponse(BaseModel):
     error: str
     message: str
     details: Optional[Dict[str, Any]] = None
+
+
+class DatabaseInfo(BaseModel):
+    """Information about a similarity database."""
+
+    name: str = Field(..., description="Database name (without extension)")
+    size_bytes: int = Field(..., description="File size in bytes")
+    last_modified: datetime = Field(..., description="Last modification timestamp")
+
+
+class DatabaseListResponse(BaseModel):
+    """Response containing list of available databases."""
+
+    databases: list[DatabaseInfo] = Field(..., description="List of databases")
+    total: int = Field(..., description="Total number of databases")
