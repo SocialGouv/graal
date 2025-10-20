@@ -11,6 +11,13 @@ import { useProcessingStore } from '../../stores/processingStore'
 import { ConfigFileSelector } from '../ConfigFileSelector'
 import type { FileReference } from '../../types/api'
 
+interface PendingFile {
+  file: File
+  timestamp: string
+  originProject: string
+  id: string
+}
+
 export const DatabaseBuilder: React.FC = () => {
   const {
     databaseBuilder,
@@ -21,9 +28,7 @@ export const DatabaseBuilder: React.FC = () => {
     setJobId
   } = useProcessingStore()
 
-  const [currentFile, setCurrentFile] = useState<File | null>(null)
-  const [timestamp, setTimestamp] = useState<string>('')
-  const [originProject, setOriginProject] = useState<string>('')
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [buildError, setBuildError] = useState<string | null>(null)
 
@@ -48,10 +53,6 @@ export const DatabaseBuilder: React.FC = () => {
         timestamp: variables.metadata.default_processing_timestamp,
         originProject: variables.metadata.origin_project
       })
-      // Reset form
-      setCurrentFile(null)
-      setTimestamp('')
-      setOriginProject('')
       setUploadError(null)
     },
     onError: (error: Error) => {
@@ -89,21 +90,50 @@ export const DatabaseBuilder: React.FC = () => {
     }
   })
 
-  const handleFileUpload = () => {
-    if (!currentFile || !timestamp || !originProject) {
-      setUploadError('Please fill in all fields')
+  const handleBatchUpload = async () => {
+    // Validate all pending files have complete configuration
+    const incompleteFiles = pendingFiles.filter(
+      (pf) => !pf.timestamp || !pf.originProject
+    )
+
+    if (incompleteFiles.length > 0) {
+      setUploadError(
+        `${incompleteFiles.length} fichier(s) ont une configuration incomplète. Veuillez remplir l'horodatage et le projet d'origine pour tous les fichiers.`
+      )
       return
     }
 
-    const timestampSeconds = new Date(timestamp).getTime() / 1000
+    if (pendingFiles.length === 0) {
+      setUploadError('Aucun fichier à télécharger')
+      return
+    }
 
-    uploadMutation.mutate({
-      file: currentFile,
-      metadata: {
-        default_processing_timestamp: timestampSeconds,
-        origin_project: originProject
+    setUploadError(null)
+
+    // Upload files sequentially
+    for (const pendingFile of pendingFiles) {
+      try {
+        // Parse date as YYYY-MM-DD, create Date at 00:00 UTC
+        const [year, month, day] = pendingFile.timestamp.split('-').map(Number)
+        const timestampSeconds = Date.UTC(year, month - 1, day) / 1000
+
+        await uploadMutation.mutateAsync({
+          file: pendingFile.file,
+          metadata: {
+            default_processing_timestamp: timestampSeconds,
+            origin_project: pendingFile.originProject
+          }
+        })
+      } catch (error) {
+        setUploadError(
+          `Erreur lors du téléchargement de ${pendingFile.file.name}: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+        )
+        return // Stop on first error
       }
-    })
+    }
+
+    // Clear pending files after successful upload of all files
+    setPendingFiles([])
   }
 
   const handleBuildDatabase = () => {
@@ -192,63 +222,102 @@ export const DatabaseBuilder: React.FC = () => {
 
         <div className={fr.cx('fr-mb-3w')}>
           <Upload
-            label="Sélectionner un fichier d'amendement"
-            hint="Fichiers JSON ou Excel (.json, .xlsx, .xls)"
+            label="Sélectionner des fichiers d'amendements"
+            hint="Sélectionnez un ou plusieurs fichiers JSON ou Excel (.json, .xlsx, .xls)"
             nativeInputProps={{
               onChange: (e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  setCurrentFile(file)
+                const files = e.target.files
+                if (files && files.length > 0) {
+                  const newPendingFiles: PendingFile[] = Array.from(files).map(
+                    (file) => ({
+                      file,
+                      timestamp: '',
+                      originProject: '',
+                      id: crypto.randomUUID()
+                    })
+                  )
+                  setPendingFiles((prev) => [...prev, ...newPendingFiles])
                   setUploadError(null)
+                  // Reset the input to allow re-selecting the same files
+                  e.target.value = ''
                 }
               },
               accept: '.json,.xlsx,.xls',
+              multiple: true,
               disabled:
                 !databaseBuilder.selectedConfigFile ||
                 !databaseBuilder.databaseName
             }}
           />
-          {currentFile && (
-            <p className={fr.cx('fr-text--sm', 'fr-mt-1w')}>
-              Sélectionné : {currentFile.name} (
-              {formatFileSize(currentFile.size)})
-            </p>
-          )}
         </div>
 
-        <Input
-          label="Horodatage de traitement"
-          hintText="Date et heure du traitement des amendements"
-          nativeInputProps={{
-            type: 'datetime-local',
-            value: timestamp,
-            onChange: (e) => {
-              setTimestamp(e.target.value)
-              setUploadError(null)
-            },
-            disabled:
-              !databaseBuilder.selectedConfigFile ||
-              !databaseBuilder.databaseName
-          }}
-          className={fr.cx('fr-mb-2w')}
-        />
-
-        <Input
-          label="Projet d'origine"
-          hintText="Nom du projet législatif (ex: PLFSS 2024)"
-          nativeInputProps={{
-            value: originProject,
-            onChange: (e) => {
-              setOriginProject(e.target.value)
-              setUploadError(null)
-            },
-            placeholder: 'ex: PLFSS 2024',
-            disabled:
-              !databaseBuilder.selectedConfigFile ||
-              !databaseBuilder.databaseName
-          }}
-          className={fr.cx('fr-mb-3w')}
-        />
+        {/* Pending Files Configuration Table */}
+        {pendingFiles.length > 0 && (
+          <div className={fr.cx('fr-mb-3w')}>
+            <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>
+              Fichiers en attente de configuration ({pendingFiles.length})
+            </h3>
+            <Table
+              headers={[
+                'Nom de fichier',
+                'Taille',
+                'Horodatage',
+                "Projet d'origine",
+                'Actions'
+              ]}
+              data={pendingFiles.map((pendingFile) => [
+                pendingFile.file.name,
+                formatFileSize(pendingFile.file.size),
+                <input
+                  key={`timestamp-${pendingFile.id}`}
+                  type="date"
+                  className={fr.cx('fr-input')}
+                  value={pendingFile.timestamp}
+                  onChange={(e) => {
+                    setPendingFiles((prev) =>
+                      prev.map((pf) =>
+                        pf.id === pendingFile.id
+                          ? { ...pf, timestamp: e.target.value }
+                          : pf
+                      )
+                    )
+                    setUploadError(null)
+                  }}
+                />,
+                <input
+                  key={`project-${pendingFile.id}`}
+                  type="text"
+                  className={fr.cx('fr-input')}
+                  value={pendingFile.originProject}
+                  onChange={(e) => {
+                    setPendingFiles((prev) =>
+                      prev.map((pf) =>
+                        pf.id === pendingFile.id
+                          ? { ...pf, originProject: e.target.value }
+                          : pf
+                      )
+                    )
+                    setUploadError(null)
+                  }}
+                  placeholder="ex: PLFSS 2024"
+                />,
+                <Button
+                  key={`remove-${pendingFile.id}`}
+                  size="small"
+                  priority="tertiary no outline"
+                  onClick={() => {
+                    setPendingFiles((prev) =>
+                      prev.filter((pf) => pf.id !== pendingFile.id)
+                    )
+                  }}
+                  iconId="fr-icon-delete-line"
+                >
+                  Retirer
+                </Button>
+              ])}
+            />
+          </div>
+        )}
 
         {uploadError && (
           <Alert
@@ -260,13 +329,11 @@ export const DatabaseBuilder: React.FC = () => {
         )}
 
         <Button
-          onClick={handleFileUpload}
+          onClick={handleBatchUpload}
           disabled={
             !databaseBuilder.selectedConfigFile ||
             !databaseBuilder.databaseName ||
-            !currentFile ||
-            !timestamp ||
-            !originProject ||
+            pendingFiles.length === 0 ||
             uploadMutation.isPending
           }
           iconId="fr-icon-upload-line"
@@ -274,7 +341,7 @@ export const DatabaseBuilder: React.FC = () => {
         >
           {uploadMutation.isPending
             ? 'Téléchargement...'
-            : 'Ajouter le fichier'}
+            : `Télécharger ${pendingFiles.length} fichier(s)`}
         </Button>
         {(!databaseBuilder.selectedConfigFile ||
           !databaseBuilder.databaseName) && (
