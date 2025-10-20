@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/SocialGouv/graal/compare/v1.4.0...v1.5.0) (2025-10-20)
+
+
+### Features
+
+* Add auto data extraction when building amendment DB ([1728d0b](https://github.com/SocialGouv/graal/commit/1728d0badc12361eeb68d1abe2d67caece6708f6))
+* Add date extractor from amendment file ([d23f997](https://github.com/SocialGouv/graal/commit/d23f997b281578e960415e519ecc675e00cae9f2))
+
 # [1.4.0](https://github.com/SocialGouv/graal/compare/v1.3.0...v1.4.0) (2025-10-20)
 
 
