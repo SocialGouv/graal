@@ -23,7 +23,7 @@ export interface ProcessingConfig {
   similaritySearch: {
     enabled: boolean
     originProject: string
-    selectedDatabase: string | null
+    databaseFile: string | null
     clusteringSimilarityThresholds: ThresholdConfig
     fuzzyMatchSimilarityThresholds: ThresholdConfig
     similarityThresholdOverrides: ThresholdOverrides
@@ -123,19 +123,19 @@ const initialState = {
   selectedConfigFile: null,
   processingConfig: {
     allotments: {
-      enabled: true,
+      enabled: false,
       column: 'Corps amdt' as const,
       similarity_threshold: 0.999
     },
     similaritiesWithinLectures: {
-      enabled: true,
+      enabled: false,
       column: 'Exposé amdt' as const,
       similarity_threshold: 0.8
     },
     similaritySearch: {
       enabled: true,
       originProject: '',
-      selectedDatabase: null,
+      databaseFile: null,
       clusteringSimilarityThresholds: {
         'Exposé amdt': 0.4,
         'Corps amdt': 0.4
@@ -153,12 +153,12 @@ const initialState = {
       should_overwrite: true
     },
     attribution: {
-      enabled: true,
+      enabled: false,
       project_name: 'PLFSS',
       should_overwrite: true
     },
     defaultOpinion: {
-      enabled: true,
+      enabled: false,
       should_overwrite: true
     },
     // Processing options at top level

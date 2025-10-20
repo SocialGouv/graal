@@ -66,6 +66,7 @@ export S3_BUCKET_ENDPOINT="https://s3.gra.io.cloud.ovh.net"
 export S3_BUCKET_NAME="graal-dev-app"
 export S3_BUCKET_REGION="gra"
 export S3_CONFIG_FOLDER="config_graal"
+export S3_SIMILARITY_DB_FOLDER="similarity_dbs" # Folder in which to store similarity DBs as parquet files
 
 # If your work with Albert API
 export ETALAB_API_KEY=<albert_api_token>

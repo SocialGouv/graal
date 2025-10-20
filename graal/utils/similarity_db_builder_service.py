@@ -79,6 +79,7 @@ class SimilarityDatabaseBuilderService:
         similarity_threshold: float = 0.99,
         eps: float = 0.4,
         group_by_columns: Optional[list[str]] = None,
+        office_config_file_path: Optional[str] = None,
     ) -> pd.DataFrame:
         """
         Build a similarity database from project amendments.
@@ -94,6 +95,8 @@ class SimilarityDatabaseBuilderService:
             similarity_threshold: Threshold for Levenshtein refinement in clustering (default: 0.99).
             eps: Epsilon value for DBSCAN clustering (default: 0.4).
             group_by_columns: Columns to group by during clustering.
+            office_config_file_path: Path to the office configuration Excel file.
+                                    If provided, overrides the instance default.
 
         Returns:
             pd.DataFrame: The processed similarity database.
@@ -120,11 +123,16 @@ class SimilarityDatabaseBuilderService:
             # Load project configurations
             logger.info("Loading project configurations...")
 
-            # Load acronym mappings from office config
-            logger.info(
-                f"Loading acronym mappings from: {self._office_config_file_path}"
+            # Determine which config file to use
+            config_file_to_use = (
+                office_config_file_path
+                if office_config_file_path is not None
+                else self._office_config_file_path
             )
-            sheet_loader = SheetDataLoader(self._office_config_file_path)
+
+            # Load acronym mappings from office config
+            logger.info(f"Loading acronym mappings from: {config_file_to_use}")
+            sheet_loader = SheetDataLoader(config_file_to_use)
             office_config_file = sheet_loader.excel_data
             acronym_mapping = AmendmentPreProcessor.load_acronyms(
                 office_config_file["Acronymes"]
@@ -133,7 +141,7 @@ class SimilarityDatabaseBuilderService:
 
             # Load and preprocess amendments
             logger.info("Loading and preprocessing amendments...")
-            amendments_df = await self._load_and_preprocess_amendments(
+            amendments_df = self._load_and_preprocess_amendments(
                 amendment_files=amendment_files,
                 acronym_mapping=acronym_mapping,
                 empty_columns_to_drop=drop_empty_columns,

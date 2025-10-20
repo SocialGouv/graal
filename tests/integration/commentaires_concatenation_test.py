@@ -66,7 +66,11 @@ def test_amendments_df():
 
 @pytest.fixture
 def similarity_db_file(tmp_path):
-    """Create temporary similarity database."""
+    """Create temporary similarity database as Parquet file.
+
+    Note: This test currently uses a local Parquet file, but the feature
+    now expects S3 paths. This test may need to be updated to mock S3 access.
+    """
     old_amendments = pd.DataFrame(
         {
             "amdt_idx": [100, 101],
@@ -91,8 +95,8 @@ def similarity_db_file(tmp_path):
     preprocessed_old = SimilaritySearchHandler.preprocess_for_similarity(
         old_amendments, {}
     )
-    db_path = tmp_path / "test_similarity_db.pkl"
-    preprocessed_old.to_pickle(db_path)
+    db_path = tmp_path / "test_similarity_db.parquet"
+    preprocessed_old.to_parquet(db_path, index=False)
     return db_path
 
 
@@ -115,7 +119,7 @@ def test_multiple_features_commentaires_concatenation(
         },
         "similarity_search": {
             "enabled": True,
-            "similarity_db_file": str(similarity_db_file),
+            "database_file": str(similarity_db_file),
             "clustering_similarity_thresholds": {
                 "Exposé amdt": 0.2,
                 "Corps amdt": 0.2,

@@ -1,15 +1,18 @@
 """Service for building similarity databases via API."""
 
 import logging
+import logging.config
 import uuid
 from pathlib import Path
 
 from graal.api.services.job_registry import InMemoryJobRegistry
 from graal.utils.config.base_config import InputFileConfig
 from graal.utils.s3_service import get_s3_service
-from graal.utils.similarity_db_builder_service import get_similarity_db_builder
+from graal.utils.similarity_db_builder_service import (
+    get_similarity_db_builder,
+)
 
-logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf")
 
 
 class DatabaseBuilderService:
@@ -51,7 +54,7 @@ class DatabaseBuilderService:
         try:
             # Update job status to running
             self.job_registry.update_job(job_id, status="running", percent=0)
-            logger.info(f"[Job {job_id}] Starting database build: {database_name}")
+            logging.info(f"[Job {job_id}] Starting database build: {database_name}")
 
             # Load amendment files from temporary upload directory
             temp_upload_dir = Path("tmp/db_builder_uploads")
@@ -69,7 +72,7 @@ class DatabaseBuilderService:
                 self.job_registry.update_job(
                     job_id, percent=progress, message=f"Loading {filename}..."
                 )
-                logger.info(
+                logging.info(
                     f"[Job {job_id}] Processing file {idx + 1}/{len(files_metadata)}: {filename}"
                 )
 
@@ -91,20 +94,24 @@ class DatabaseBuilderService:
             self.job_registry.update_job(
                 job_id, percent=40, message="Building similarity database..."
             )
-            logger.info(
+            logging.info(
                 f"[Job {job_id}] Starting database build with {len(amendment_files)} files"
+            )
+            logging.info(f"[Job {job_id}] Config file from UI: {config_file}")
+            logging.info(
+                f"[Job {job_id}] Config file in builder: {self.db_builder._office_config_file_path}"
             )
 
             df = await self.db_builder.build_database(
-                office_config_file_path=config_file,
                 amendment_files=amendment_files,
                 drop_empty_columns=drop_empty_columns,
                 similarity_threshold=similarity_threshold,
                 eps=eps,
                 group_by_columns=group_by_columns,
+                office_config_file_path=config_file,
             )
 
-            logger.info(
+            logging.info(
                 f"[Job {job_id}] Database built successfully with {len(df)} rows"
             )
 
@@ -112,11 +119,11 @@ class DatabaseBuilderService:
             self.job_registry.update_job(
                 job_id, percent=80, message="Uploading database to S3..."
             )
-            logger.info(f"[Job {job_id}] Uploading database to S3: {database_name}")
+            logging.info(f"[Job {job_id}] Uploading database to S3: {database_name}")
 
             await self.s3_service.upload_database_parquet(df, database_name)
 
-            logger.info(f"[Job {job_id}] Database uploaded successfully")
+            logging.info(f"[Job {job_id}] Database uploaded successfully")
 
             # Cleanup uploaded files
             self.job_registry.update_job(
@@ -125,9 +132,9 @@ class DatabaseBuilderService:
             for file_path in amendment_files.keys():
                 try:
                     file_path.unlink()
-                    logger.info(f"[Job {job_id}] Deleted uploaded file: {file_path}")
+                    logging.info(f"[Job {job_id}] Deleted uploaded file: {file_path}")
                 except Exception as e:
-                    logger.warning(
+                    logging.warning(
                         f"[Job {job_id}] Failed to cleanup uploaded file {file_path}: {e}"
                     )
 
@@ -138,10 +145,10 @@ class DatabaseBuilderService:
                 message="Database build complete!",
                 status="completed",
             )
-            logger.info(f"[Job {job_id}] Database build completed successfully")
+            logging.info(f"[Job {job_id}] Database build completed successfully")
 
         except Exception as e:
-            logger.error(f"[Job {job_id}] Error building database: {e}", exc_info=True)
+            logging.error(f"[Job {job_id}] Error building database: {e}", exc_info=True)
             self.job_registry.update_job(
                 job_id, status="failed", error=str(e), message=f"Build failed: {str(e)}"
             )

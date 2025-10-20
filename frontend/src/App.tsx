@@ -115,8 +115,7 @@ function AppContent() {
           processingConfig.similaritySearch.enabled,
           {
             origin_project: processingConfig.similaritySearch.originProject,
-            selected_database:
-              processingConfig.similaritySearch.selectedDatabase,
+            database_file: processingConfig.similaritySearch.databaseFile,
             clustering_similarity_thresholds:
               processingConfig.similaritySearch.clusteringSimilarityThresholds,
             fuzzy_match_similarity_thresholds:

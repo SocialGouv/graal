@@ -1,15 +1,16 @@
 import axios, { type AxiosInstance, type AxiosProgressEvent } from 'axios'
 import type {
   ApiError,
+  BuildDatabaseRequest,
   ConfigFilesResponse,
+  DatabaseListResponse,
+  DeleteFileResponse,
   JobStatusResponse,
   PreviewResponse,
   ProcessingRequest,
   ProcessJobResponse,
-  UploadFileResponse,
-  BuildDatabaseRequest,
-  DatabaseListResponse,
-  DeleteFileResponse
+  SimilarityDatabasesListResponse,
+  UploadFileResponse
 } from '../types/api'
 
 class ApiService {
@@ -110,6 +111,29 @@ class ApiService {
       return response.data
     } catch (error) {
       console.error('[API_CLIENT] Failed to fetch config files', error)
+      throw error
+    }
+  }
+
+  /**
+   * List available similarity database files from S3
+   */
+  async listSimilarityDatabases(): Promise<string[]> {
+    console.log('[API_CLIENT] Fetching available similarity databases')
+
+    try {
+      const response = await this.client.get<SimilarityDatabasesListResponse>(
+        '/similarity-databases'
+      )
+
+      console.log('[API_CLIENT] Similarity databases retrieved', {
+        total: response.data.total,
+        databases: response.data.databases
+      })
+
+      return response.data.databases
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch similarity databases', error)
       throw error
     }
   }

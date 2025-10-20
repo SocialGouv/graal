@@ -4,9 +4,9 @@ Similarity search feature implementation.
 This feature finds similarities with historical amendments.
 """
 
+import asyncio
 import logging
 import logging.config
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -17,8 +17,10 @@ from graal.similarities.similarity_search_handler import (
     SimilaritySearchHandler,
 )
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.similarity_db_loader import get_similarity_db_loader
 
 logging.config.fileConfig("logging.conf")
+logger = logging.getLogger(__name__)
 
 
 class SimilaritySearchFeature(BaseFeature):
@@ -95,9 +97,8 @@ class SimilaritySearchFeature(BaseFeature):
                 "Columns to copy configuration must be specified in similarity_search.columns_to_copy"
             )
 
-        # Load historical amendments (path is already preprocessed)
-        similarity_db_file = Path(similarity_config.get("similarity_db_file", ""))
-        old_amendments_df = pd.read_pickle(similarity_db_file)  # nosec B301
+        # Load historical amendments from S3 Parquet
+        old_amendments_df = self._load_similarity_database(similarity_config)
 
         # Create our own normalized version for processing
         normalized_working_df = self._create_normalized_dataframe(working_df)
@@ -183,3 +184,33 @@ class SimilaritySearchFeature(BaseFeature):
         )
 
         return normalized_df
+
+    def _load_similarity_database(
+        self, similarity_config: dict[str, Any]
+    ) -> pd.DataFrame:
+        """Load similarity database from S3 Parquet.
+
+        Args:
+            similarity_config: The similarity search configuration
+
+        Returns:
+            pd.DataFrame: The loaded similarity database
+
+        Raises:
+            ValueError: If database_file is not configured
+            FileNotFoundError: If the specified file is not found in S3
+        """
+        database_file = similarity_config.get("database_file")
+        if not database_file:
+            raise ValueError(
+                "No similarity database configured. Please provide 'database_file' "
+                "with the S3 path to a Parquet file (e.g., 'PLFSS/2024.parquet')."
+            )
+
+        logger.info(f"Loading similarity database from S3: {database_file}")
+        # Use asyncio to run the async S3 loader
+        # asyncio.run() creates a new event loop, which works in worker threads
+        loader = get_similarity_db_loader()
+        df = asyncio.run(loader.load_from_s3(database_file))
+        logger.info(f"Loaded Parquet database from S3, shape: {df.shape}")
+        return df

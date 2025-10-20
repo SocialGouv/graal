@@ -61,15 +61,15 @@ class SimilaritySearchConfig(BaseModel):
     enabled: bool = Field(
         default=False, description="Whether similarity search feature is enabled"
     )
+    database_file: Optional[str] = Field(
+        default=None,
+        description="S3 path to the Parquet database file (e.g., 'PLFSS/2024.parquet'). Required when similarity search is enabled.",
+    )
     origin_project: Optional[str] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="Name of the legislative project for similarity search (e.g., 'PLFSS 2025')",
-    )
-    selected_database: Optional[str] = Field(
-        default=None,
-        description="Optional pre-built database name to use for similarity search",
     )
     clustering_similarity_thresholds: Dict[str, float] = Field(
         default_factory=lambda: {"Exposé amdt": 0.4, "Corps amdt": 0.4},
@@ -230,6 +230,13 @@ class ProcessingConfig(BaseModel):
     ) -> SimilaritySearchConfig:
         """Validate similarity search configuration."""
         if params and params.enabled:
+            # Validate database_file is provided when enabled
+            if not params.database_file:
+                raise ValueError(
+                    "database_file is required when similarity search is enabled. "
+                    "Please select a similarity database."
+                )
+
             params.origin_project = cls._validate_origin_project(params.origin_project)
             cls._validate_clustering_thresholds(params.clustering_similarity_thresholds)
             cls._validate_fuzzy_match_thresholds(

@@ -43,7 +43,7 @@ class TestConfigPreprocessor(unittest.TestCase):
         config = {
             "similarity_search": {
                 "enabled": True,
-                "similarity_db_file": "${DATA_FOLDER}/preprocessed/db.pkl",
+                "database_file": "PLFSS/2024.parquet",
                 "thresholds": {"expose": 0.4, "corps": 0.9},
             },
             "output": {"file_prefix_template": "${DATA_FOLDER}/results_%Y-%m-%d"},
@@ -55,7 +55,7 @@ class TestConfigPreprocessor(unittest.TestCase):
         expected = {
             "similarity_search": {
                 "enabled": True,
-                "similarity_db_file": "/home/user/graal_data/preprocessed/db.pkl",
+                "database_file": "PLFSS/2024.parquet",
                 "thresholds": {"expose": 0.4, "corps": 0.9},
             },
             "output": {
@@ -190,7 +190,7 @@ class TestConfigPreprocessor(unittest.TestCase):
         # Should be detected as paths
         self.assertTrue(preprocessor._is_file_path("/home/user/file.txt"))
         self.assertTrue(preprocessor._is_file_path("./relative/path.json"))
-        self.assertTrue(preprocessor._is_file_path("../parent/file.pkl"))
+        self.assertTrue(preprocessor._is_file_path("../parent/file.parquet"))
         self.assertTrue(preprocessor._is_file_path("data/file.xlsx"))
 
         # Should not be detected as paths

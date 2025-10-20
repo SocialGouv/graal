@@ -13,6 +13,7 @@ from graal.api.models.responses import (
     PreviewResponse,
     ProcessingResponse,
     ProgressResponse,
+    SimilarityDatabasesResponse,
 )
 from graal.utils.s3_service import get_s3_service
 
@@ -56,6 +57,39 @@ async def list_config_files():
             ) from e
         raise HTTPException(
             status_code=500, detail=f"Failed to list configuration files: {str(e)}"
+        ) from e
+
+
+@router.get("/similarity-databases", response_model=SimilarityDatabasesResponse)
+async def list_similarity_databases():
+    """
+    List available similarity database files from S3.
+
+    Returns:
+        SimilarityDatabasesResponse with list of available database files
+
+    Raises:
+        HTTPException: 503 if S3 is not available, 500 for other errors
+    """
+    logger.info("[API] Listing available similarity database files")
+
+    try:
+        s3_service = get_s3_service()
+        databases = await s3_service.list_database_files()
+
+        logger.info(f"[API] Found {len(databases)} similarity database files")
+        return SimilarityDatabasesResponse(databases=databases, total=len(databases))
+
+    except Exception as e:
+        logger.error(f"[API] Failed to list similarity databases: {str(e)}")
+        if "not enabled" in str(e).lower() or "not available" in str(e).lower():
+            raise HTTPException(
+                status_code=503,
+                detail="S3 similarity database service is not available",
+            ) from e
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list similarity databases: {str(e)}",
         ) from e
 
 

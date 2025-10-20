@@ -179,7 +179,7 @@ async def build_database(request: DatabaseBuildRequest):
         logger.info(f"[API] Number of file references: {len(request.file_references)}")
 
         try:
-            files_metadata = [ref.dict() for ref in request.file_references]
+            files_metadata = [ref.model_dump() for ref in request.file_references]
             logger.info(f"[API] Converted file references to dicts: {files_metadata}")
         except Exception as e:
             logger.error(

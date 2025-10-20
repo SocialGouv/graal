@@ -61,12 +61,13 @@ export const DatabaseBuilder: React.FC = () => {
 
   // Mutation for building database
   const buildMutation = useMutation({
-    mutationFn: (fileReferences: FileReference[]) =>
-      apiService.buildDatabase({
+    mutationFn: (fileReferences: FileReference[]) => {
+      return apiService.buildDatabase({
         config_file: databaseBuilder.selectedConfigFile!,
         database_name: databaseBuilder.databaseName,
         file_references: fileReferences
-      }),
+      })
+    },
     onSuccess: (data) => {
       setJobId(data.job_id)
       setBuildError(null)
@@ -75,8 +76,8 @@ export const DatabaseBuilder: React.FC = () => {
         void refetchDatabases()
       }, 2000)
     },
-    onError: (error: Error) => {
-      setBuildError(error.message || 'Failed to build database')
+    onError: (error: any) => {
+      setBuildError(error.detail || error.message || 'Failed to build database')
     }
   })
 

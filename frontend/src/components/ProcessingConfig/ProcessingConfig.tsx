@@ -15,6 +15,7 @@ import {
   type ColumnOption,
   type AttributionProjectOption
 } from '../FeatureConfig'
+import DatabaseSelectorConfig from '../FeatureConfig/DatabaseSelectorConfig'
 
 interface ProcessingConfigProps {
   disabled?: boolean
@@ -63,7 +64,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
         ...processingConfig,
         similaritySearch: {
           ...processingConfig.similaritySearch,
-          selectedDatabase: value || null
+          databaseFile: value || null
         }
       })
     },
@@ -76,6 +77,19 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     queryFn: () => apiService.listDatabases(),
     staleTime: 30000 // 30 seconds
   })
+
+  const handleSimilaritySearchDatabaseFileChange = useCallback(
+    (value: string | null) => {
+      setProcessingConfig({
+        ...processingConfig,
+        similaritySearch: {
+          ...processingConfig.similaritySearch,
+          databaseFile: value
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
 
   // Allotments handlers
   const handleAllotmentsEnabledChange = useCallback(
@@ -359,6 +373,15 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           onEnabledChange={handleSimilaritySearchEnabledChange}
           disabled={disabled || isProcessing}
         >
+          {/* Database Selector */}
+          <div className={fr.cx('fr-mb-4w')}>
+            <DatabaseSelectorConfig
+              value={processingConfig.similaritySearch.databaseFile}
+              onChange={handleSimilaritySearchDatabaseFileChange}
+              disabled={disabled || isProcessing}
+            />
+          </div>
+
           {/* Origin Project */}
           <div
             className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
@@ -393,8 +416,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                 hint="Sélectionnez une base pré-construite pour la recherche de similarités"
                 disabled={disabled || isProcessing || isLoadingDatabases}
                 nativeSelectProps={{
-                  value:
-                    processingConfig.similaritySearch.selectedDatabase || '',
+                  value: processingConfig.similaritySearch.databaseFile || '',
                   onChange: (e) =>
                     handleSimilaritySearchDatabaseChange(e.target.value)
                 }}

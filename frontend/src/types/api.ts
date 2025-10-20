@@ -40,7 +40,7 @@ export interface SimilaritiesWithinLecturesConfig {
 export interface SimilaritySearchConfig {
   enabled: boolean
   origin_project?: string
-  selected_database?: string | null
+  database_file?: string | null
   clustering_similarity_thresholds?: Record<string, number>
   fuzzy_match_similarity_thresholds?: Record<string, number>
   similarity_threshold_overrides?: Record<string, number>
@@ -76,6 +76,11 @@ export interface ProcessingConfig {
 
 export interface ConfigFilesResponse {
   files: string[]
+  total: number
+}
+
+export interface SimilarityDatabasesListResponse {
+  databases: string[]
   total: number
 }
 

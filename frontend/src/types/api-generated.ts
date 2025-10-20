@@ -52,6 +52,32 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/similarity-databases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Similarity Databases
+     * @description List available similarity database files from S3.
+     *
+     *     Returns:
+     *         SimilarityDatabasesResponse with list of available database files
+     *
+     *     Raises:
+     *         HTTPException: 503 if S3 is not available, 500 for other errors
+     */
+    get: operations['list_similarity_databases_api_v1_similarity_databases_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/process': {
     parameters: {
       query?: never
@@ -609,6 +635,22 @@ export interface components {
        */
       updated_at: string
     }
+    /**
+     * SimilarityDatabasesResponse
+     * @description Response model for available similarity database files.
+     */
+    SimilarityDatabasesResponse: {
+      /**
+       * Databases
+       * @description List of available similarity database file paths (relative to similarity folder)
+       */
+      databases: string[]
+      /**
+       * Total
+       * @description Total number of available database files
+       */
+      total: number
+    }
     /** ValidationError */
     ValidationError: {
       /** Location */
@@ -663,6 +705,26 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ConfigFilesResponse']
+        }
+      }
+    }
+  }
+  list_similarity_databases_api_v1_similarity_databases_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SimilarityDatabasesResponse']
         }
       }
     }

@@ -332,7 +332,7 @@ class S3Service:
         """Load a similarity database parquet file from S3.
 
         Args:
-            database_name: Name of database (without .parquet extension)
+            database_name: Name of database (with or without .parquet extension)
 
         Returns:
             pd.DataFrame: DataFrame with similarity database content
@@ -352,10 +352,17 @@ class S3Service:
 
         logging.info(f"Loading similarity database from S3: {database_name}")
 
+        # Strip .parquet extension if already present to avoid double extension
+        database_name_clean = (
+            database_name.rstrip(".parquet")
+            if database_name.endswith(".parquet")
+            else database_name
+        )
+
         # Construct S3 key with .parquet extension
-        s3_key = f"{self._similarity_db_folder}/{database_name}.parquet"
+        s3_key = f"{self._similarity_db_folder}/{database_name_clean}.parquet"
         if self._similarity_db_folder.endswith("/"):
-            s3_key = f"{self._similarity_db_folder}{database_name}.parquet"
+            s3_key = f"{self._similarity_db_folder}{database_name_clean}.parquet"
 
         try:
             logging.info(
@@ -389,7 +396,7 @@ class S3Service:
             error_code = e.response["Error"]["Code"]
             if error_code == "NoSuchKey":
                 raise FileNotFoundError(
-                    f"Similarity database not found in S3: {database_name}.parquet"
+                    f"Similarity database not found in S3: {database_name}"
                 ) from e
             else:
                 raise Exception(f"Failed to download database from S3: {e}") from e

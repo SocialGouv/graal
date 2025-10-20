@@ -3,7 +3,6 @@ import chokidar from 'chokidar'
 import path from 'path'
 import { promisify } from 'util'
 import type { Plugin } from 'vite'
-
 const execAsync = promisify(exec)
 
 interface AutoTypeGenerationOptions {
