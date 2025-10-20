@@ -67,10 +67,7 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
             "tf_idf_threshold", 0.4
         )
 
-        # Set index for easier handling
-        working_df = working_df.set_index("amdt_idx")
-
-        # Find similarities
+        # Find similarities (keep amdt_idx as column for clustering pipeline)
         similarity_results = WithinLectureSimilarityHandler.find_similar_amendments(
             amendments_df=working_df,
             similarities_column=similarities_column,
@@ -79,9 +76,12 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
             eps=tf_idf_threshold,
         )
 
+        # Set index before applying comments (required by apply_similarity_comments)
+        working_df_indexed = working_df.set_index("amdt_idx")
+
         # Apply similarity comments using the handler's method
         result_df = WithinLectureSimilarityHandler.apply_similarity_comments(
-            amendments_df=working_df,
+            amendments_df=working_df_indexed,
             similarity_results=similarity_results,
         )
 
@@ -95,12 +95,14 @@ class SimilaritiesWithinLecturesFeature(BaseFeature):
 
         # Update the Commentaires column if we have results
         if len(similarity_results) > 0 and "Commentaires" in result_df.columns:
-            # Merge the comments back to the original dataframe
+            # Merge the comments back to the original dataframe using amdt_idx
             comments_map = result_df.set_index("amdt_idx")["Commentaires"]
 
-            final_df["Commentaires"] = final_df.index.map(comments_map).fillna(
-                final_df["Commentaires"]
-            )
+            # Map using amdt_idx column instead of index
+            mapped_comments = final_df["amdt_idx"].map(comments_map)
+
+            # Fill nulls with existing Commentaires values
+            final_df["Commentaires"] = mapped_comments.fillna(final_df["Commentaires"])
 
         return FeatureOutput(
             amendments_df=final_df,
