@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/SocialGouv/graal/compare/v1.3.0...v1.4.0) (2025-10-20)
+
+
+### Bug Fixes
+
+* Similarity within lectures crash ([0c576e6](https://github.com/SocialGouv/graal/commit/0c576e65dccc231e29d939359d6f2efd4b063b6d))
+
+
+### Features
+
+* Allow for the batch upload of DB files ([fbab773](https://github.com/SocialGouv/graal/commit/fbab773faa3988c823b984708846361e5661d562))
+
 # [1.3.0](https://github.com/SocialGouv/graal/compare/v1.2.0...v1.3.0) (2025-10-20)
 
 
