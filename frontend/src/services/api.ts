@@ -361,7 +361,7 @@ class ApiService {
    */
   async uploadAmendmentFile(
     file: File,
-    metadata: { default_processing_timestamp: number; origin_project: string },
+    metadata: { default_processing_timestamp?: number; origin_project: string },
     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
   ): Promise<UploadFileResponse> {
     console.log('[API_CLIENT] Uploading amendment file for database builder', {

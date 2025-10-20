@@ -50,6 +50,7 @@ export interface UploadedFileInfo {
   timestamp: number
   originProject: string
   uploadProgress: number
+  dateAutoExtracted?: boolean
 }
 
 export interface DatabaseBuilderState {

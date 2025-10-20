@@ -4,6 +4,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input'
 import { Upload } from '@codegouvfr/react-dsfr/Upload'
 import { Table } from '@codegouvfr/react-dsfr/Table'
 import { Alert } from '@codegouvfr/react-dsfr/Alert'
+import { Badge } from '@codegouvfr/react-dsfr/Badge'
 import { fr } from '@codegouvfr/react-dsfr'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { apiService } from '../../services/api'
@@ -16,6 +17,46 @@ interface PendingFile {
   timestamp: string
   originProject: string
   id: string
+  dateAutoExtracted?: boolean
+}
+
+/**
+ * Extract date from amendment JSON file content.
+ * Looks for first non-empty date_derniere_modif in amendments array.
+ * @param fileContent - JSON file content as string
+ * @returns Formatted date string (YYYY-MM-DD) or null if not found
+ */
+const extractDateFromAmendmentJSON = (fileContent: string): string | null => {
+  try {
+    const json = JSON.parse(fileContent)
+
+    // Look for amendments array
+    if (!json.amendements || !Array.isArray(json.amendements)) {
+      return null
+    }
+
+    // Find first amendment with non-empty date_derniere_modif
+    for (const amendment of json.amendements) {
+      if (amendment.date_derniere_modif) {
+        // Convert datetime string to YYYY-MM-DD format
+        const dateStr = amendment.date_derniere_modif
+        const date = new Date(dateStr)
+
+        if (!Number.isNaN(date.getTime())) {
+          // Format as YYYY-MM-DD
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        }
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error extracting date from JSON:', error)
+    return null
+  }
 }
 
 export const DatabaseBuilder: React.FC = () => {
@@ -43,16 +84,25 @@ export const DatabaseBuilder: React.FC = () => {
   const uploadMutation = useMutation({
     mutationFn: (params: {
       file: File
-      metadata: { default_processing_timestamp: number; origin_project: string }
+      metadata: {
+        default_processing_timestamp?: number
+        origin_project: string
+      }
+      dateAutoExtracted: boolean
     }) => apiService.uploadAmendmentFile(params.file, params.metadata),
     onSuccess: (data, variables) => {
+      // Use the timestamp from the metadata we sent to backend
+      const timestamp = variables.metadata.default_processing_timestamp!
+
       addUploadedFile({
         uploadId: data.upload_id,
         filename: data.filename,
         size: data.size,
-        timestamp: variables.metadata.default_processing_timestamp,
-        originProject: variables.metadata.origin_project
+        timestamp,
+        originProject: variables.metadata.origin_project,
+        dateAutoExtracted: variables.dateAutoExtracted
       })
+
       setUploadError(null)
     },
     onError: (error: Error) => {
@@ -91,14 +141,20 @@ export const DatabaseBuilder: React.FC = () => {
   })
 
   const handleBatchUpload = async () => {
-    // Validate all pending files have complete configuration
-    const incompleteFiles = pendingFiles.filter(
-      (pf) => !pf.timestamp || !pf.originProject
-    )
+    // Validate all pending files have both origin_project AND timestamp
+    const filesWithoutProject = pendingFiles.filter((pf) => !pf.originProject)
+    const filesWithoutTimestamp = pendingFiles.filter((pf) => !pf.timestamp)
 
-    if (incompleteFiles.length > 0) {
+    if (filesWithoutProject.length > 0) {
       setUploadError(
-        `${incompleteFiles.length} fichier(s) ont une configuration incomplète. Veuillez remplir l'horodatage et le projet d'origine pour tous les fichiers.`
+        `${filesWithoutProject.length} fichier(s) n'ont pas de projet d'origine. Veuillez remplir le projet d'origine pour tous les fichiers.`
+      )
+      return
+    }
+
+    if (filesWithoutTimestamp.length > 0) {
+      setUploadError(
+        `${filesWithoutTimestamp.length} fichier(s) n'ont pas d'horodatage. Veuillez fournir un horodatage pour tous les fichiers avant le téléchargement.`
       )
       return
     }
@@ -113,16 +169,27 @@ export const DatabaseBuilder: React.FC = () => {
     // Upload files sequentially
     for (const pendingFile of pendingFiles) {
       try {
-        // Parse date as YYYY-MM-DD, create Date at 00:00 UTC
-        const [year, month, day] = pendingFile.timestamp.split('-').map(Number)
-        const timestampSeconds = Date.UTC(year, month - 1, day) / 1000
+        // Build metadata - only include timestamp if provided by user
+        const metadata: {
+          default_processing_timestamp?: number
+          origin_project: string
+        } = {
+          origin_project: pendingFile.originProject
+        }
+
+        if (pendingFile.timestamp) {
+          // Parse date as YYYY-MM-DD, create Date at 00:00 UTC
+          const [year, month, day] = pendingFile.timestamp
+            .split('-')
+            .map(Number)
+          metadata.default_processing_timestamp =
+            Date.UTC(year, month - 1, day) / 1000
+        }
 
         await uploadMutation.mutateAsync({
           file: pendingFile.file,
-          metadata: {
-            default_processing_timestamp: timestampSeconds,
-            origin_project: pendingFile.originProject
-          }
+          metadata,
+          dateAutoExtracted: pendingFile.dateAutoExtracted || false
         })
       } catch (error) {
         setUploadError(
@@ -143,7 +210,19 @@ export const DatabaseBuilder: React.FC = () => {
       databaseBuilder.uploadedFiles.length === 0
     ) {
       setBuildError(
-        'Please select a config file, provide a database name and upload at least one file'
+        'Veuillez sélectionner un fichier de configuration, fournir un nom de base de données et télécharger au moins un fichier'
+      )
+      return
+    }
+
+    // Validate that all uploaded files have timestamps (either manual or auto-extracted)
+    const filesWithoutTimestamp = databaseBuilder.uploadedFiles.filter(
+      (file) => !file.timestamp
+    )
+
+    if (filesWithoutTimestamp.length > 0) {
+      setBuildError(
+        `${filesWithoutTimestamp.length} fichier(s) n'ont pas d'horodatage. Veuillez fournir un horodatage pour tous les fichiers avant de construire la base de données.`
       )
       return
     }
@@ -225,19 +304,54 @@ export const DatabaseBuilder: React.FC = () => {
             label="Sélectionner des fichiers d'amendements"
             hint="Sélectionnez un ou plusieurs fichiers JSON ou Excel (.json, .xlsx, .xls)"
             nativeInputProps={{
-              onChange: (e) => {
+              onChange: async (e) => {
                 const files = e.target.files
                 if (files && files.length > 0) {
-                  const newPendingFiles: PendingFile[] = Array.from(files).map(
-                    (file) => ({
+                  setUploadError(null)
+
+                  // Process files and extract dates for JSON files
+                  const filePromises = Array.from(files).map(async (file) => {
+                    const pendingFile: PendingFile = {
                       file,
                       timestamp: '',
                       originProject: '',
-                      id: crypto.randomUUID()
-                    })
-                  )
+                      id: crypto.randomUUID(),
+                      dateAutoExtracted: false
+                    }
+
+                    // Try to extract date from JSON files
+                    if (file.name.toLowerCase().endsWith('.json')) {
+                      try {
+                        const fileContent = await new Promise<string>(
+                          (resolve, reject) => {
+                            const reader = new FileReader()
+                            reader.onload = (event) =>
+                              resolve(event.target?.result as string)
+                            reader.onerror = (error) => reject(error)
+                            reader.readAsText(file)
+                          }
+                        )
+
+                        const extractedDate =
+                          extractDateFromAmendmentJSON(fileContent)
+                        if (extractedDate) {
+                          pendingFile.timestamp = extractedDate
+                          pendingFile.dateAutoExtracted = true
+                        }
+                      } catch (error) {
+                        console.error(
+                          `Failed to read file ${file.name}:`,
+                          error
+                        )
+                      }
+                    }
+
+                    return pendingFile
+                  })
+
+                  const newPendingFiles = await Promise.all(filePromises)
                   setPendingFiles((prev) => [...prev, ...newPendingFiles])
-                  setUploadError(null)
+
                   // Reset the input to allow re-selecting the same files
                   e.target.value = ''
                 }
@@ -268,22 +382,40 @@ export const DatabaseBuilder: React.FC = () => {
               data={pendingFiles.map((pendingFile) => [
                 pendingFile.file.name,
                 formatFileSize(pendingFile.file.size),
-                <input
+                <div
                   key={`timestamp-${pendingFile.id}`}
-                  type="date"
-                  className={fr.cx('fr-input')}
-                  value={pendingFile.timestamp}
-                  onChange={(e) => {
-                    setPendingFiles((prev) =>
-                      prev.map((pf) =>
-                        pf.id === pendingFile.id
-                          ? { ...pf, timestamp: e.target.value }
-                          : pf
+                  className={fr.cx('fr-raw-list')}
+                >
+                  <input
+                    type="date"
+                    className={fr.cx('fr-input')}
+                    value={pendingFile.timestamp}
+                    onChange={(e) => {
+                      setPendingFiles((prev) =>
+                        prev.map((pf) =>
+                          pf.id === pendingFile.id
+                            ? {
+                                ...pf,
+                                timestamp: e.target.value,
+                                dateAutoExtracted: false
+                              }
+                            : pf
+                        )
                       )
-                    )
-                    setUploadError(null)
-                  }}
-                />,
+                      setUploadError(null)
+                    }}
+                  />
+                  {pendingFile.dateAutoExtracted && (
+                    <Badge
+                      severity="success"
+                      noIcon
+                      small
+                      className={fr.cx('fr-mt-1v')}
+                    >
+                      Auto-extrait
+                    </Badge>
+                  )}
+                </div>,
                 <input
                   key={`project-${pendingFile.id}`}
                   type="text"
@@ -300,6 +432,7 @@ export const DatabaseBuilder: React.FC = () => {
                     setUploadError(null)
                   }}
                   placeholder="ex: PLFSS 2024"
+                  required
                 />,
                 <Button
                   key={`remove-${pendingFile.id}`}
@@ -368,7 +501,22 @@ export const DatabaseBuilder: React.FC = () => {
               data={databaseBuilder.uploadedFiles.map((file) => [
                 file.filename,
                 file.originProject,
-                new Date(file.timestamp * 1000).toLocaleDateString('fr-FR'),
+                <div
+                  key={`timestamp-${file.uploadId}`}
+                  className={fr.cx('fr-raw-list')}
+                >
+                  {new Date(file.timestamp * 1000).toLocaleDateString('fr-FR')}
+                  {file.dateAutoExtracted && (
+                    <Badge
+                      severity="success"
+                      noIcon
+                      small
+                      className={fr.cx('fr-ml-1w')}
+                    >
+                      Auto-extrait
+                    </Badge>
+                  )}
+                </div>,
                 formatFileSize(file.size),
                 <Button
                   key={file.uploadId}

@@ -72,11 +72,11 @@ async def list_databases():
         raise HTTPException(status_code=500, detail="Failed to list databases") from e
 
 
-@router.post("/upload-file", response_model=dict)
+@router.post("/upload-file")
 async def upload_amendment_file(
     file: UploadFile,
     metadata: Annotated[str, Form()],
-):
+) -> dict:
     """Upload an amendment file for database building.
 
     The file is stored temporarily and will be used when building the database.
@@ -84,7 +84,7 @@ async def upload_amendment_file(
 
     Args:
         file: The amendment file to upload
-        metadata: JSON string with default_processing_timestamp and origin_project
+        metadata: JSON string with required default_processing_timestamp and origin_project
 
     Returns:
         dict: Upload information including upload_id, filename, size, and metadata
@@ -116,7 +116,7 @@ async def upload_amendment_file(
 
         return {
             "upload_id": upload_id,
-            "filename": file.filename,
+            "filename": file.filename or "",
             "size": len(contents),
             "metadata": file_metadata,
         }
