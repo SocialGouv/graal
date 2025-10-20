@@ -50,3 +50,10 @@ dev-help:
 	@echo "  Backend API: http://localhost:8000"
 	@echo "  Frontend:    http://localhost:5173"
 	@echo "  API Docs:    http://localhost:8000/docs"
+
+s3-list:
+	AWS_ACCESS_KEY_ID=${S3_BUCKET_ACCESS_KEY} AWS_SECRET_ACCESS_KEY=${S3_BUCKET_SECRET_KEY} aws s3 ls s3://$(S3_BUCKET_NAME)/${S3_CONFIG_FOLDER}/ --endpoint-url=$(S3_BUCKET_ENDPOINT) --region=$(S3_BUCKET_REGION)
+	AWS_ACCESS_KEY_ID=${S3_BUCKET_ACCESS_KEY} AWS_SECRET_ACCESS_KEY=${S3_BUCKET_SECRET_KEY} aws s3 ls s3://$(S3_BUCKET_NAME)/${S3_SIMILARITY_DB_FOLDER}/ --endpoint-url=$(S3_BUCKET_ENDPOINT) --region=$(S3_BUCKET_REGION)
+
+s3-upload-config:
+	poetry run python scripts/s3_upload.py data/config_graal/* --destination $(S3_CONFIG_FOLDER)
