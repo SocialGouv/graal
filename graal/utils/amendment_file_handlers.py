@@ -6,14 +6,84 @@ from various file formats (JSON, Excel, etc.) without coupling the main
 processing logic to specific file types.
 """
 
+import json
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.base_config import InputFileConfig
+
+
+def extract_date_from_amendment_json(file_content: str) -> Optional[int]:
+    """
+    Extract the first non-empty date_derniere_modif from an amendment JSON file.
+
+    Parses the JSON content and searches for the "amendements" array. Returns the
+    first non-empty "date_derniere_modif" value as a Unix timestamp in seconds.
+
+    Args:
+        file_content: Raw JSON string content from an amendment file.
+
+    Returns:
+        Unix timestamp in seconds if a valid date is found, None otherwise.
+
+    Example:
+        >>> json_str = '{"amendements": [{"date_derniere_modif": "2025-01-30 14:55:20.366848"}]}'
+        >>> timestamp = extract_date_from_amendment_json(json_str)
+        >>> timestamp
+        1738247720
+
+    Note:
+        Expected date format is "YYYY-MM-DD HH:MM:SS.ffffff" but the function
+        also handles dates without microseconds.
+    """
+    try:
+        data = json.loads(file_content)
+    except json.JSONDecodeError as e:
+        logger.warning(f"Failed to parse JSON content: {e}")
+        return None
+
+    # Look for "amendements" array
+    amendements = data.get("amendements")
+    if not isinstance(amendements, list):
+        logger.warning("No 'amendements' array found in JSON")
+        return None
+
+    # Iterate through amendments to find first non-empty date
+    for amendment in amendements:
+        if not isinstance(amendment, dict):
+            continue
+
+        date_str = amendment.get("date_derniere_modif")
+        if not date_str or not isinstance(date_str, str):
+            continue
+
+        # Try to parse the datetime string
+        try:
+            # Handle both with and without microseconds
+            # Format: "YYYY-MM-DD HH:MM:SS.ffffff" or "YYYY-MM-DD HH:MM:SS"
+            if "." in date_str:
+                dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S.%f")
+            else:
+                dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+
+            # Convert to Unix timestamp (seconds)
+            timestamp = int(dt.timestamp())
+            return timestamp
+
+        except (ValueError, OSError) as e:
+            logger.warning(f"Failed to parse date '{date_str}': {e}")
+            continue
+
+    # No valid date found
+    logger.info("No valid date_derniere_modif found in amendments")
+    return None
+
 
 logger = logging.getLogger(__name__)
 
