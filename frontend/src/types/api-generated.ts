@@ -295,11 +295,10 @@ export interface paths {
      *
      *     Args:
      *         file: The amendment file to upload
-     *         metadata: JSON string with optional default_processing_timestamp and origin_project
+     *         metadata: JSON string with required default_processing_timestamp and origin_project
      *
      *     Returns:
-     *         FileUploadResponse: Upload information including upload_id, filename, size,
-     *                           metadata, and whether date was auto-extracted
+     *         dict: Upload information including upload_id, filename, size, and metadata
      *
      *     Raises:
      *         HTTPException: 500 if upload fails
@@ -576,32 +575,6 @@ export interface components {
        * @description Origin project name
        */
       origin_project: string
-    }
-    /**
-     * FileUploadResponse
-     * @description Response model for file upload.
-     */
-    FileUploadResponse: {
-      /**
-       * Upload Id
-       * @description Unique upload identifier
-       */
-      upload_id: string
-      /**
-       * Filename
-       * @description Name of uploaded file
-       */
-      filename: string
-      /**
-       * Size
-       * @description File size in bytes
-       */
-      size: number
-      /**
-       * Metadata
-       * @description File metadata
-       */
-      metadata: Record<string, any>
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -952,7 +925,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['FileUploadResponse']
+          'application/json': Record<string, never>
         }
       }
       /** @description Validation Error */

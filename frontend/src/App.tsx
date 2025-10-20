@@ -99,7 +99,7 @@ function AppContent() {
     const processingRequest = {
       config_file: selectedConfigFile,
       processing_config: {
-        allotments: buildConfigIfEnabled(processingConfig.allotments.enabled, {
+        allotment: buildConfigIfEnabled(processingConfig.allotments.enabled, {
           column: processingConfig.allotments.column,
           similarity_threshold: processingConfig.allotments.similarity_threshold
         }),
