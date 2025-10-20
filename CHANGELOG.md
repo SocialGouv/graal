@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/SocialGouv/graal/compare/v1.5.0...v1.5.1) (2025-10-20)
+
+
+### Bug Fixes
+
+* Allotment was not being run ([b342aef](https://github.com/SocialGouv/graal/commit/b342aef92bc3ab6df02dc5ff75548c0da4979ab5))
+
 # [1.5.0](https://github.com/SocialGouv/graal/compare/v1.4.0...v1.5.0) (2025-10-20)
 
 
