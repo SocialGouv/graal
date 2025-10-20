@@ -1,3 +1,12 @@
+# [1.3.0](https://github.com/SocialGouv/graal/compare/v1.2.0...v1.3.0) (2025-10-20)
+
+
+### Features
+
+* Add backend for amdt building DB ([9bc8190](https://github.com/SocialGouv/graal/commit/9bc8190b802eee6c7015e0f71c99a85f44885ee2))
+* Add early UI for amdt database building ([b004955](https://github.com/SocialGouv/graal/commit/b0049556365b543df5d3f4b50dd6acd4490af686))
+* Add similarity DB builder service ([7a218dd](https://github.com/SocialGouv/graal/commit/7a218ddcf1c9355d0231990308d4d7c52eebd167))
+
 # [1.2.0](https://github.com/SocialGouv/graal/compare/v1.1.2...v1.2.0) (2025-10-16)
 
 
