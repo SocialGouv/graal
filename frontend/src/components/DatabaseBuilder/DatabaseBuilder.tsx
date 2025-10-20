@@ -368,7 +368,7 @@ export const DatabaseBuilder: React.FC = () => {
               data={databaseBuilder.uploadedFiles.map((file) => [
                 file.filename,
                 file.originProject,
-                new Date(file.timestamp * 1000).toLocaleString('fr-FR'),
+                new Date(file.timestamp * 1000).toLocaleDateString('fr-FR'),
                 formatFileSize(file.size),
                 <Button
                   key={file.uploadId}
