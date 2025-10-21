@@ -18,6 +18,7 @@ from graal.features.similarity_search_feature import SimilaritySearchFeature
 from graal.similarities.similarity_search_handler import (
     SimilaritySearchHandler,
 )
+from graal.utils.similarity_db_loader import get_similarity_db_loader
 
 logging.config.fileConfig("logging.conf")
 
@@ -66,12 +67,9 @@ def test_amendments_df():
 
 
 @pytest.fixture
-def similarity_db_file(tmp_path):
-    """Create temporary similarity database as Parquet file.
-
-    Note: This test currently uses a local Parquet file, but the feature
-    now expects S3 paths. This test may need to be updated to mock S3 access.
-    """
+def similarity_db_cache_key(tmp_path):
+    """Create temporary similarity database and pre-populate the cache."""
+    # Create test database
     old_amendments = pd.DataFrame(
         {
             "amdt_idx": [100, 101],
@@ -93,16 +91,23 @@ def similarity_db_file(tmp_path):
         }
     )
 
-    preprocessed_old = SimilaritySearchHandler.preprocess_for_similarity(
+    # Preprocess and save to local file
+    preprocessed_old_df = SimilaritySearchHandler.preprocess_for_similarity(
         old_amendments, {}
     )
-    db_path = tmp_path / "test_similarity_db.parquet"
-    preprocessed_old.to_parquet(db_path, index=False)
-    return db_path
+
+    # Load from local file and pre-populate cache
+    loader = get_similarity_db_loader()
+
+    # Use a test-specific cache key
+    cache_key = "test_commentaires_concatenation_db"
+    loader.add_to_cache(cache_key, preprocessed_old_df)
+
+    return cache_key
 
 
 def test_multiple_features_commentaires_concatenation(
-    test_config_excel, test_amendments_df, similarity_db_file
+    test_config_excel, test_amendments_df, similarity_db_cache_key
 ):
     """Test that multiple features writing to Commentaires concatenate correctly."""
     amendments_df = test_amendments_df.copy()
@@ -120,7 +125,7 @@ def test_multiple_features_commentaires_concatenation(
         },
         "similarity_search": {
             "enabled": True,
-            "database_file": str(similarity_db_file),
+            "database_file": similarity_db_cache_key,
             "clustering_similarity_thresholds": {
                 "Exposé amdt": 0.2,
                 "Corps amdt": 0.2,

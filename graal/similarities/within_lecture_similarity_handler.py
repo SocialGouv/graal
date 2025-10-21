@@ -28,7 +28,7 @@ class WithinLectureSimilarityHandler:
             f"{amdt['amdt_num']} ({amdt['similarity_percentage']:.0f}%)"
             for amdt in similar_amendments
         ]
-        return f"\nAmdt similaires : {', '.join(formatted_amdts)}"
+        return f"Amdt similaires : {', '.join(formatted_amdts)}"
 
     @staticmethod
     def apply_similarity_comments(
