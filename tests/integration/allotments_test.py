@@ -1,4 +1,5 @@
 import logging
+import logging.config
 
 import pandas as pd
 from unidecode import unidecode
@@ -8,6 +9,8 @@ from graal.clustering.clustering_service import ClusteringService
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.sheet_data_loader import SheetDataLoader
 from graal.utils.text_utils import remove_gage_sentences
+
+logging.config.fileConfig("logging.conf")
 
 
 def load_test_file_to_compare(

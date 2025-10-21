@@ -1,6 +1,7 @@
 """Integration test for Commentaires column concatenation across multiple features."""
 
 import logging
+import logging.config
 import random
 from pathlib import Path
 
@@ -17,6 +18,8 @@ from graal.features.similarity_search_feature import SimilaritySearchFeature
 from graal.similarities.similarity_search_handler import (
     SimilaritySearchHandler,
 )
+
+logging.config.fileConfig("logging.conf")
 
 logging.config.fileConfig("logging.conf")
 

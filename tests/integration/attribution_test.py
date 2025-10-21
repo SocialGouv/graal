@@ -1,4 +1,5 @@
 import logging
+import logging.config
 import random
 
 import numpy as np
@@ -11,6 +12,8 @@ from graal.attribution.project_configurations import (
 from graal.core.text_normalizers import AttributionTextNormalizer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.text_utils import remove_gage_sentences
+
+logging.config.fileConfig("logging.conf")
 
 
 def test_integration_plfss_attribution():
