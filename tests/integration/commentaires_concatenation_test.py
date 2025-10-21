@@ -21,8 +21,6 @@ from graal.similarities.similarity_search_handler import (
 
 logging.config.fileConfig("logging.conf")
 
-logging.config.fileConfig("logging.conf")
-
 TEST_DATA_DIR = Path("tests/integration/test_data")
 CONFIG_FILE = TEST_DATA_DIR / "Fichier de configuration GRAAL - Test integrations.xlsx"
 
