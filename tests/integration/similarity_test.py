@@ -6,14 +6,12 @@ from typing import Callable, Optional
 
 import pandas as pd
 from pydantic import FilePath
-from unidecode import unidecode
 
 from graal.custom_types import ColumnName
 from graal.similarities.similarity_search_handler import (
     SimilaritySearchHandler,
 )
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import remove_gage_sentences
 
 logging.config.fileConfig("logging.conf")
 
@@ -45,11 +43,11 @@ def run_test(
     # old_amendments_df = old_amendments_df[old_amendments_df["Num amdt"].isin([3, 4])]
     old_amendments_df["amdt_idx"] = range(len(old_amendments_df))
     set_timestamps(old_amendments_df)
-    old_amendments_df["Corps amdt"] = old_amendments_df["Corps amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
-    )
-    old_amendments_df["Exposé amdt"] = old_amendments_df["Exposé amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
+    # Apply universal preprocessing to old amendments
+    old_amendments_df = AmendmentPreProcessor.apply_universal_preprocessing(
+        amendments_df=old_amendments_df,
+        acronym_mapping=None,
+        columns_to_process=["Corps amdt", "Exposé amdt"],
     )
 
     new_amendments_df = pd.read_excel(file_path, sheet_name="nouveaux amendements")
@@ -62,11 +60,11 @@ def run_test(
         columns_to_clear=["Réponse", "Sort", "Commentaires"],
     )
 
-    new_amendments_df["Corps amdt"] = new_amendments_df["Corps amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
-    )
-    new_amendments_df["Exposé amdt"] = new_amendments_df["Exposé amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
+    # Apply universal preprocessing to new amendments
+    new_amendments_df = AmendmentPreProcessor.apply_universal_preprocessing(
+        amendments_df=new_amendments_df,
+        acronym_mapping=None,
+        columns_to_process=["Corps amdt", "Exposé amdt"],
     )
 
     expected_result_df = new_amendments_df.copy()

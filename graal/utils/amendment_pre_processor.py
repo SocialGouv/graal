@@ -439,3 +439,52 @@ class AmendmentPreProcessor:
             logging.info(f'Column "{column}" normalized.\n')
 
         return amendments_df
+
+    @staticmethod
+    def apply_universal_preprocessing(
+        amendments_df: pd.DataFrame,
+        acronym_mapping: Optional[dict[Acronym, str]] = None,
+        columns_to_process: Optional[list[ColumnName]] = None,
+    ) -> pd.DataFrame:
+        """
+        Apply universal preprocessing steps that are always done in the pipeline.
+
+        This includes:
+        1. Acronym replacement (if mapping provided)
+        2. Gage sentence removal with unidecode
+
+        These steps happen in processing_pipeline.py before any features run.
+
+        Args:
+            amendments_df: DataFrame to preprocess
+            acronym_mapping: Optional mapping of acronyms to full text
+            columns_to_process: Columns to apply preprocessing to (default: ["Corps amdt", "Exposé amdt"])
+
+        Returns:
+            Preprocessed DataFrame
+        """
+        from graal.utils.text_utils import remove_gage_sentences
+
+        if columns_to_process is None:
+            columns_to_process = ["Corps amdt", "Exposé amdt"]
+
+        # Replace acronyms if mapping provided
+        if acronym_mapping:
+            amendments_df = AmendmentPreProcessor.replace_acronyms(
+                amendments_df=amendments_df,
+                acronym_mapping=acronym_mapping,
+                columns_to_normalize=columns_to_process,
+            )
+            logging.debug("[PREPROCESSING] Acronyms replaced")
+
+        # Remove gage sentences with unidecode (universal preprocessing)
+        for column in columns_to_process:
+            if column in amendments_df.columns:
+                amendments_df[column] = amendments_df[column].apply(
+                    lambda text: remove_gage_sentences(unidecode(text))
+                    if pd.notna(text)
+                    else text
+                )
+        logging.debug("[PREPROCESSING] Gage sentences removed with unidecode")
+
+        return amendments_df

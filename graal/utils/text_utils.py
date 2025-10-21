@@ -2,6 +2,7 @@ import html
 import logging
 import logging.config
 import re
+import unicodedata
 from typing import Callable, Optional
 
 import pandas as pd
@@ -221,6 +222,12 @@ def extract_plain_text_from_html(encoded_html: str) -> str:
     # Parse HTML and extract text
     soup = BeautifulSoup(decoded_html, "html.parser")
     plain_text = soup.get_text()
+
+    # Normalize Unicode to NFC form to ensure consistent representation
+    # This handles cases where accented characters may be encoded as:
+    # - Precomposed (NFC): single character like 'é' (U+00E9)
+    # - Decomposed (NFD): base letter + combining mark like 'e' + U+0301
+    plain_text = unicodedata.normalize("NFC", plain_text)
     logging.debug(f"[HTML_EXTRACTION] Final plain text: '{plain_text}'")
 
     return plain_text

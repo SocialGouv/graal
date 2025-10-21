@@ -38,7 +38,6 @@ from graal.utils.config.config_preprocessor import ConfigPreprocessor
 from graal.utils.sheet_data_loader import SheetDataLoader
 from graal.utils.text_utils import (
     add_placeholders_to_empty_column,
-    remove_gage_sentences,
 )
 
 logging.config.fileConfig("logging.conf")
@@ -208,22 +207,14 @@ class ProcessingPipeline:
             f"[PIPELINE] Empty rows dropped - amendments: {original_count} -> {len(amendments_df)}"
         )
 
-        amendments_df = AmendmentPreProcessor.replace_acronyms(
+        # Apply universal preprocessing (acronym replacement + gage sentence removal)
+        logging.debug("[PIPELINE] Applying universal preprocessing")
+        amendments_df = AmendmentPreProcessor.apply_universal_preprocessing(
             amendments_df=amendments_df,
             acronym_mapping=acronym_mapping,
-            columns_to_normalize=["Exposé amdt", "Corps amdt"],
+            columns_to_process=["Corps amdt", "Exposé amdt"],
         )
-        logging.debug("[PIPELINE] Acronyms replaced in text columns")
-
-        # Remove gage sentences (this is universal preprocessing)
-        logging.debug("[PIPELINE] Removing gage sentences from amendment text")
-        amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
-            lambda text: remove_gage_sentences(text)
-        )
-        amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
-            lambda text: remove_gage_sentences(text)
-        )
-        logging.debug("[PIPELINE] Gage sentences removed")
+        logging.debug("[PIPELINE] Universal preprocessing complete")
 
         # Handle common amendment patterns
         logging.debug("[PIPELINE] Handling common amendment patterns")

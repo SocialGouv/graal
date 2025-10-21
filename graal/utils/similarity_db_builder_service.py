@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.custom_types import Acronym, IntIndex
@@ -22,7 +21,6 @@ from graal.utils.amendment_file_handlers import AmendmentFileHandlerRegistry
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.base_config import InputFileConfig
 from graal.utils.sheet_data_loader import SheetDataLoader
-from graal.utils.text_utils import remove_gage_sentences
 
 logger = logging.getLogger(__name__)
 
@@ -268,17 +266,14 @@ class SimilarityDatabaseBuilderService:
             )
             logger.info(f"After dropping empty rows: {len(amendments_df)} amendments")
 
-            # Apply text cleaning (remove gage sentences and normalize)
-            logger.info("Applying text cleaning to Corps amdt and Exposé amdt...")
-            amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
-                lambda text: remove_gage_sentences(unidecode(text))
-                if pd.notna(text)
-                else text
+            # Apply universal preprocessing (remove gage sentences with unidecode)
+            logger.info(
+                "Applying universal preprocessing to Corps amdt and Exposé amdt..."
             )
-            amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
-                lambda text: remove_gage_sentences(unidecode(text))
-                if pd.notna(text)
-                else text
+            amendments_df = AmendmentPreProcessor.apply_universal_preprocessing(
+                amendments_df=amendments_df,
+                acronym_mapping=None,  # No acronym replacement for similarity DB
+                columns_to_process=["Corps amdt", "Exposé amdt"],
             )
 
             # Handle empty Corps amdt by generating placeholder text

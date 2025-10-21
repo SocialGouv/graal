@@ -4,14 +4,12 @@ import random
 
 import numpy as np
 import pandas as pd
-from unidecode import unidecode
 
 from graal.attribution.project_configurations import (
     build_plfss_attribution_handler,
 )
 from graal.core.text_normalizers import AttributionTextNormalizer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import remove_gage_sentences
 
 logging.config.fileConfig("logging.conf")
 
@@ -42,11 +40,11 @@ def test_integration_plfss_attribution():
         amendments_df=amendments_df,
         columns_to_clear=["Affectation (email)", "Affectation (nom)", "Entité Pilote"],
     )
-    amendments_df["Corps amdt"] = amendments_df["Corps amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
-    )
-    amendments_df["Exposé amdt"] = amendments_df["Exposé amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
+    # Apply universal preprocessing (gage sentence removal with unidecode)
+    amendments_df = AmendmentPreProcessor.apply_universal_preprocessing(
+        amendments_df=amendments_df,
+        acronym_mapping=None,
+        columns_to_process=["Corps amdt", "Exposé amdt"],
     )
     normalizer = AttributionTextNormalizer()
     amendments_df["Corps amdt"] = original_amendments_df["Corps amdt"].apply(

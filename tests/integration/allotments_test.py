@@ -2,12 +2,10 @@ import logging
 import logging.config
 
 import pandas as pd
-from unidecode import unidecode
 
 from graal.allotment.allotment_handler import AllotmentHandler
-from graal.clustering.clustering_service import ClusteringService
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.text_utils import remove_gage_sentences
+from graal.utils.text_utils import extract_plain_text_from_html
 
 logging.config.fileConfig("logging.conf")
 
@@ -37,44 +35,40 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
     test_df["Réponse"] = None
     test_df["Lecture"] = "test_lecture"
 
-    # Process the data frame as if it were a real lecture
+    # Simulate JSON data preprocessing: extract HTML (with Unicode normalization)
+    # This mimics clean_up_json_columns() in production
+    test_df["Corps amdt"] = (
+        test_df["Corps amdt"].fillna("").apply(extract_plain_text_from_html)
+    )
+    test_df["Exposé amdt"] = (
+        test_df["Exposé amdt"].fillna("").apply(extract_plain_text_from_html)
+    )
+
+    # Apply universal preprocessing (acronyms + gage sentence removal)
+    # This mimics processing_pipeline.py preprocessing that happens before features
+    test_df = AmendmentPreProcessor.apply_universal_preprocessing(
+        amendments_df=test_df,
+        acronym_mapping=acronym_mapping,
+        columns_to_process=["Corps amdt", "Exposé amdt"],
+    )
+
+    # Keep a copy of the original data before processing
     original_amendments_df = test_df.copy()
     original_amendments_df["Allotissement"] = None
-    normalized_amdt_df = original_amendments_df.copy()
-
-    normalized_amdt_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
-        amendments_df=normalized_amdt_df, columns_to_filter=["Corps amdt"]
-    )
-    normalized_amdt_df = AmendmentPreProcessor.replace_acronyms(
-        amendments_df=normalized_amdt_df,
-        acronym_mapping=acronym_mapping,
-        columns_to_normalize=["Exposé amdt", "Corps amdt"],
-    )
-    normalized_amdt_df["Corps amdt"] = normalized_amdt_df["Corps amdt"].apply(
-        lambda text: remove_gage_sentences(unidecode(text))
-    )
-    normalized_amdt_df = AmendmentPreProcessor.handle_common_amendment_bodies(
-        amendments_df=normalized_amdt_df
-    )
-    normalized_amdt_df = AmendmentPreProcessor.normalize_amendments(
-        amendments_df=normalized_amdt_df, columns_to_normalize=["Corps amdt"]
-    )
 
     # Use the same thresholds as in the configuration
     tf_idf_threshold = 0.4
     similarity_threshold = 0.999
 
-    allotted_amdt_clusters, _ = ClusteringService.get_clusters(
-        normalized_amdt_df=normalized_amdt_df,
+    # Use the production preprocessing and clustering flow
+    # This is what AllotmentFeature.process() does in production
+    normalized_amdt_df, allotted_amdt_clusters = AllotmentHandler.process_allotments(
+        amendments_df=original_amendments_df,
+        allotment_column="Corps amdt",
+        similarity_threshold=similarity_threshold,
         group_by_columns=["Lecture"],
         eps=tf_idf_threshold,
-        refinement_pct_threshold=similarity_threshold,
-        text_column="Corps amdt",
-    )
-
-    normalized_amdt_df = AllotmentHandler.filter_amdts_to_keep_one_per_allotment(
-        normalized_amdt_df=normalized_amdt_df,
-        allotted_amdt_clusters=allotted_amdt_clusters,
+        acronym_mapping=acronym_mapping,
     )
 
     alloted_amendments_df = AllotmentHandler.populate(
@@ -104,6 +98,7 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
 
     total_nb_matches = 0
     total_nb_test_lot = 0
+    failed_rows = []
     for _i, row in merged_df.iterrows():
         algo = row["Allotissement_algo"].split(",") if row["Allotissement_algo"] else []
         test = row["Allotissement_test"].split(",") if row["Allotissement_test"] else []
@@ -111,15 +106,33 @@ def test_populate_allotments_ratio_matching_allotments() -> None:
         nb_matches = len([x for x in test if x in algo])
         nb_test_lot = len(test)
         if nb_matches != nb_test_lot:
-            print(
-                f"Row {_i} has different nb_matches and nb_test_lot: {nb_matches} vs {nb_test_lot}"
+            failed_rows.append(
+                {
+                    "index": _i,
+                    "num_amdt": row.get("Num amdt", "N/A"),
+                    "expected": test,
+                    "got": algo,
+                    "matches": nb_matches,
+                    "expected_count": nb_test_lot,
+                }
             )
 
         total_nb_matches += nb_matches
         total_nb_test_lot += nb_test_lot
 
+    if failed_rows:
+        logging.error(f"\n❌ Found {len(failed_rows)} rows with mismatches:")
+        for fail in failed_rows[:10]:  # Show first 10
+            logging.error(
+                f"  Num amdt {fail['num_amdt']}: expected {fail['expected_count']} allotments, got {fail['matches']} matches"
+            )
+            logging.error(f"    Expected: {fail['expected']}")
+            logging.error(f"    Got: {fail['got']}")
+    else:
+        logging.info(f"✓ All {len(merged_df)} rows matched perfectly!")
+
     coverage_test_allotments = total_nb_matches / total_nb_test_lot
     logging.info(f"Total number of allotments: {total_nb_matches}")
     logging.info(f"Coverage test: {coverage_test_allotments}")
 
-    assert coverage_test_allotments > 0.99
+    assert coverage_test_allotments > 0.9999
