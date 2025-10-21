@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/SocialGouv/graal/compare/v1.5.1...v1.5.2) (2025-10-21)
+
+
+### Bug Fixes
+
+* Logging import in integration tests ([833c3ef](https://github.com/SocialGouv/graal/commit/833c3efca759e045d37dbc5870d6780633b6d3e0))
+
 ## [1.5.1](https://github.com/SocialGouv/graal/compare/v1.5.0...v1.5.1) (2025-10-20)
 
 
