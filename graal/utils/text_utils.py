@@ -166,43 +166,34 @@ def normalize_text(text: str) -> str:
     special characters, and extra whitespaces.
     """
     original_text = text
-    logging.debug(f"[TEXT_NORMALIZATION] Original text: '{original_text}'")
 
     text = remove_small_roman_numerals(text)
-    logging.debug(f"[TEXT_NORMALIZATION] After removing roman numerals: '{text}'")
 
     # Remove accents
     text = unidecode(text)
     text = text.strip().lower()
-    logging.debug(f"[TEXT_NORMALIZATION] After unidecode and lowercase: '{text}'")
 
     # Replace apostrophes, backticks, underscores with spaces
     text = re.sub(r"['`'_]", " ", text)
-    logging.debug(
-        f"[TEXT_NORMALIZATION] After replacing apostrophes/backticks: '{text}'"
-    )
+
+    # Remove spaces around dashes when between numbers (e.g., "130- 1" or "130 -1" → "130-1")
+    text = re.sub(r"(\d)\s*-\s*(\d)", r"\1-\2", text)
 
     # Replace dashes with a space unless they are surrounded by numbers
     text = re.sub(r"(?<!\d)-(?!\d)", " ", text)
-    logging.debug(f"[TEXT_NORMALIZATION] After replacing dashes: '{text}'")
 
     # Remove most special characters
     text = re.sub(r"[^a-zA-Z0-9\s\-%]", "", text)
-    logging.debug(f"[TEXT_NORMALIZATION] After removing special characters: '{text}'")
 
     text = remove_stop_words(text)
-    logging.debug(f"[TEXT_NORMALIZATION] After removing stop words: '{text}'")
 
     text = digitize_small_french_numbers(text)
-    logging.debug(f"[TEXT_NORMALIZATION] After digitizing numbers: '{text}'")
 
     text = " ".join(remove_french_plurals(word) for word in text.split())
-    logging.debug(f"[TEXT_NORMALIZATION] After removing plurals: '{text}'")
 
     # Remove extra whitespaces
     text = re.sub(r"\s+", " ", text)
     final_text = text.strip()
-    logging.debug(f"[TEXT_NORMALIZATION] Final normalized text: '{final_text}'")
 
     if not final_text:
         logging.warning(
@@ -213,22 +204,43 @@ def normalize_text(text: str) -> str:
 
 
 def extract_plain_text_from_html(encoded_html: str) -> str:
-    logging.debug(f"[HTML_EXTRACTION] Original HTML: '{encoded_html}'")
+    r"""
+    Extract plain text from HTML, handling various edge cases:
+    - Escaped HTML tags (e.g., <\/p> from JSON)
+    - HTML entities (e.g., &lt;, &gt;)
+    - Malformed or partial HTML
+    - Multiple whitespace sequences
+    """
 
-    # Decode HTML entities
-    decoded_html = html.unescape(encoded_html)
-    logging.debug(f"[HTML_EXTRACTION] After HTML unescape: '{decoded_html}'")
+    # Step 1: Handle escaped forward slashes in HTML tags (common in JSON)
+    # Example: <\/p> → </p>, <\/div> → </div>
+    decoded_html = encoded_html.replace(r"\/", "/")
 
-    # Parse HTML and extract text
+    # Step 2: Decode HTML entities (&lt; → <, &amp; → &, etc.)
+    decoded_html = html.unescape(decoded_html)
+
+    # Step 3: Use BeautifulSoup to parse HTML and extract text
+    # This handles well-formed HTML properly
     soup = BeautifulSoup(decoded_html, "html.parser")
     plain_text = soup.get_text()
 
-    # Normalize Unicode to NFC form to ensure consistent representation
-    # This handles cases where accented characters may be encoded as:
+    # Step 4: Safety net - Remove any remaining HTML-like tags using regex
+    # This catches tags that BeautifulSoup might have missed (malformed HTML, edge cases)
+    plain_text = re.sub(r"<[^>]+>", " ", plain_text)
+
+    # Step 5: Convert literal '\n', '\t', '\r' sequences to actual whitespace
+    # This handles cases where escape sequences are stored literally in the data
+    plain_text = plain_text.replace(r"\n", " ").replace(r"\t", " ").replace(r"\r", " ")
+
+    # Step 6: Normalize all whitespace to single spaces
+    # This handles newlines, tabs, multiple spaces, and other whitespace characters
+    plain_text = re.sub(r"\s+", " ", plain_text).strip()
+
+    # Step 7: Normalize Unicode to NFC form for consistent character representation
+    # This handles cases where accented characters may be encoded differently:
     # - Precomposed (NFC): single character like 'é' (U+00E9)
     # - Decomposed (NFD): base letter + combining mark like 'e' + U+0301
     plain_text = unicodedata.normalize("NFC", plain_text)
-    logging.debug(f"[HTML_EXTRACTION] Final plain text: '{plain_text}'")
 
     return plain_text
 
