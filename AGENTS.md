@@ -22,6 +22,7 @@ Rule files contain essential project-specific requirements, patterns, and constr
 | [`data-processing.md`](.rules/data-processing.md) | Data Processing | DataFrame operations, data validation |
 | [`testing-standards.md`](.rules/testing-standards.md) | Testing | Test structure, fixtures, coverage |
 | [`configuration.md`](.rules/configuration.md) | Configuration | Config files, environment variables |
+| [`storage-s3.md`](.rules/storage-s3.md) | Storage & S3 | S3 operations, Parquet files, config/database storage |
 | [`llm-integration.md`](.rules/llm-integration.md) | LLM Integration | Prompt engineering, LLM client usage |
 | [`performance.md`](.rules/performance.md) | Performance | Async operations, optimization patterns |
 
@@ -36,6 +37,7 @@ Rule files contain essential project-specific requirements, patterns, and constr
 
 **SHOULD READ:**
 - `.rules/architecture-features.md` (if implementing features)
+- `.rules/storage-s3.md` (if S3 operations needed)
 - `.rules/performance.md` (if async/performance critical)
 
 ### Frontend Component Development
@@ -61,6 +63,7 @@ Rule files contain essential project-specific requirements, patterns, and constr
 - `.rules/backend-python.md`
 
 **SHOULD READ:**
+- `.rules/storage-s3.md` (if loading/saving databases)
 - `.rules/performance.md` (for large datasets)
 
 ### Testing Work
@@ -79,6 +82,16 @@ Rule files contain essential project-specific requirements, patterns, and constr
 ### Configuration Changes
 **MUST READ:**
 - `.rules/configuration.md`
+- `.rules/storage-s3.md` (if config files on S3)
+
+### S3 Storage & Database Management
+**MUST READ:**
+- `.rules/storage-s3.md`
+- `.rules/backend-python.md`
+
+**SHOULD READ:**
+- `.rules/data-processing.md` (if working with similarity databases)
+- `.rules/performance.md` (for async S3 operations)
 
 ### Performance Optimization
 **MUST READ:**

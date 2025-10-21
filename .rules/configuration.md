@@ -31,6 +31,9 @@
 
 ## Environment Variables
 
+### S3 Configuration
+For detailed S3 configuration and usage, see [storage-s3.md](storage-s3.md).
+
 ### Similarity Database Configuration
 - **`S3_SIMILARITY_DB_FOLDER`**: S3 folder containing similarity databases as Parquet files
   - Default: `"similarity_dbs"`

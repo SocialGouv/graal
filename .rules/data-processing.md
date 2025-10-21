@@ -32,11 +32,14 @@
 
 ## Similarity Database Storage
 
-**Storage Format**: Parquet files stored on S3 only
+**Storage Format**: Parquet files stored on S3 only (pickle format is deprecated)
 - **Rationale**: Efficient columnar format, cloud-native storage, better compression and performance
-- **Location**: `{S3_SIMILARITY_DB_FOLDER}/project_name/*.parquet`
+- **Location**: `s3://{S3_BUCKET_NAME}/{S3_SIMILARITY_DB_FOLDER}/{project}/*.parquet`
+- **Example**: `s3://graal-dev-app/similarity_dbs/PLFSS/2024.parquet`
 - **Loading**: Full database loaded into memory (required by TF-IDF algorithm)
 - **Caching**: Databases cached in memory to avoid redundant S3 downloads
+
+**Format Migration**: The project has migrated from pickle files (`.pkl`) to Parquet files (`.parquet`). All new databases MUST use Parquet format. See [storage-s3.md](storage-s3.md) for details.
 
 **Memory Considerations**:
 - Similarity databases must be loaded completely into memory for TF-IDF vectorization
