@@ -1,3 +1,15 @@
+# [1.6.0](https://github.com/SocialGouv/graal/compare/v1.5.2...v1.6.0) (2025-10-21)
+
+
+### Bug Fixes
+
+* Allotment integration test ([6bc3182](https://github.com/SocialGouv/graal/commit/6bc318227a6a4ac3ec972f5cdf75e480910cb0f0))
+
+
+### Features
+
+* Add load_from_local to SimilarityDBLoader ([0826373](https://github.com/SocialGouv/graal/commit/0826373bfb65acc62440d6ae5a5928f23acef1b8))
+
 ## [1.5.2](https://github.com/SocialGouv/graal/compare/v1.5.1...v1.5.2) (2025-10-21)
 
 
