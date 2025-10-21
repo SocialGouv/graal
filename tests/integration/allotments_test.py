@@ -7,7 +7,6 @@ from unidecode import unidecode
 from graal.allotment.allotment_handler import AllotmentHandler
 from graal.clustering.clustering_service import ClusteringService
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
-from graal.utils.sheet_data_loader import SheetDataLoader
 from graal.utils.text_utils import remove_gage_sentences
 
 logging.config.fileConfig("logging.conf")
@@ -16,8 +15,8 @@ logging.config.fileConfig("logging.conf")
 def load_test_file_to_compare(
     excel_test_file_path: str, sheet_name: str
 ) -> pd.DataFrame:
-    data_extractor = SheetDataLoader(excel_test_file_path)
-    return data_extractor.extract_sheet_data(sheet_name)
+    # Load directly from local filesystem for integration tests
+    return pd.read_excel(excel_test_file_path, sheet_name=sheet_name)
 
 
 def test_populate_allotments_ratio_matching_allotments() -> None:
