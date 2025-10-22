@@ -282,9 +282,6 @@ class WebProcessingService:
             )
 
             # Update status to running
-            logger.debug(
-                f"[WEB_SERVICE] Updating job status to running - job_id: {job_id}"
-            )
             self.job_registry.update_job(
                 job_id,
                 status=JobStatus.running,
@@ -297,9 +294,6 @@ class WebProcessingService:
                 f"[WEB_SERVICE] Loading base configuration from: {self.config_path}"
             )
             config = load_config(self.config_path)
-            logger.debug(
-                f"[WEB_SERVICE] Base configuration loaded successfully - job_id: {job_id}"
-            )
 
             # Update config with the selected config file
             logger.info(
@@ -309,9 +303,6 @@ class WebProcessingService:
             if "paths" not in config:
                 config["paths"] = {}
             config["paths"]["graal_config_file"] = config_file
-            logger.debug(
-                f"[WEB_SERVICE] Config file path set successfully - job_id: {job_id}"
-            )
 
             # Merge frontend configuration with base config
             logger.info(
@@ -319,9 +310,6 @@ class WebProcessingService:
             )
             config = self._merge_frontend_config(
                 config, processing_request.processing_config
-            )
-            logger.debug(
-                f"[WEB_SERVICE] Configuration merged successfully - job_id: {job_id}"
             )
 
             # Get origin_project from similarity_search config if available
@@ -348,17 +336,11 @@ class WebProcessingService:
                     "origin_project": origin_project,
                 }
             ]
-            logger.debug(
-                f"[WEB_SERVICE] Updated config with input file - job_id: {job_id}, path: {input_file_path}"
-            )
 
             # Set output path
             output_file_path = self.tmp_dir / f"{job_id}_output.csv"
             config["output"]["file_prefix_template"] = str(output_file_path).replace(
                 ".csv", ""
-            )
-            logger.debug(
-                f"[WEB_SERVICE] Set output path template - job_id: {job_id}, template: {config['output']['file_prefix_template']}"
             )
 
             logger.info(
@@ -370,9 +352,6 @@ class WebProcessingService:
 
             # Run pipeline with timeout
             pipeline = ProcessingPipeline()
-            logger.debug(
-                f"[WEB_SERVICE] Created ProcessingPipeline instance - job_id: {job_id}"
-            )
 
             # Run in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
