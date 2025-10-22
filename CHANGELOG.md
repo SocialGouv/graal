@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/SocialGouv/graal/compare/v1.6.0...v1.6.1) (2025-10-22)
+
+
+### Bug Fixes
+
+* Better HTML preprocessing ([39e6ed5](https://github.com/SocialGouv/graal/commit/39e6ed5813b9637e83e7e014a61e68adace1259c))
+
 # [1.6.0](https://github.com/SocialGouv/graal/compare/v1.5.2...v1.6.0) (2025-10-21)
 
 
