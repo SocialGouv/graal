@@ -1,0 +1,204 @@
+/**
+ * Styles for DatabaseSelectorConfig component
+ * Custom combobox with left-aligned dropdown and single arrow
+ */
+
+.databaseSelectorWrapper {
+  position: relative;
+}
+
+/**
+ * Clear button (X) - appears when input has value
+ */
+.clearButton {
+  position: absolute;
+  right: 2.5rem;
+  top: 4.9rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  z-index: 2;
+}
+
+.clearButton:hover {
+  color: #000091;
+}
+
+.clearButton:focus {
+  outline: 2px solid #000091;
+  outline-offset: 2px;
+}
+
+/**
+ * Dropdown toggle button - single arrow indicator
+ */
+.dropdownToggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 4.9rem;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  z-index: 2;
+}
+
+.dropdownToggle:hover:not(:disabled) {
+  color: #000091;
+}
+
+.dropdownToggle:focus {
+  outline: 2px solid #000091;
+  outline-offset: 2px;
+}
+
+.dropdownToggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dropdownToggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+/**
+ * Dropdown menu - custom styled list
+ */
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+}
+
+/**
+ * Dropdown items - left-aligned with hover effect
+ */
+.dropdownItem {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background-color: #f6f6f6;
+}
+
+.dropdownItem[aria-selected='true'] {
+  background-color: #e8edff;
+  font-weight: 500;
+}
+
+/**
+ * Empty state message
+ */
+.dropdownEmpty {
+  padding: 0.75rem 1rem;
+  color: #666;
+  text-align: left;
+  font-style: italic;
+}
+
+/**
+ * Input adjustments to accommodate buttons
+ */
+.databaseSelectorInput input {
+  padding-right: 4.5rem;
+}
+
+/**
+ * Loading state styling
+ */
+.databaseSelectorInput input[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/**
+ * Dark mode support
+ */
+@media (prefers-color-scheme: dark) {
+
+  /**
+   * Clear button - light color for visibility on dark backgrounds
+   */
+  .clearButton {
+    color: #cecece;
+  }
+
+  .clearButton:hover {
+    color: #8585f6;
+  }
+
+  .clearButton:focus {
+    outline-color: #8585f6;
+  }
+
+  /**
+   * Dropdown toggle button - light color for visibility
+   */
+  .dropdownToggle {
+    color: #cecece;
+  }
+
+  .dropdownToggle:hover:not(:disabled) {
+    color: #8585f6;
+  }
+
+  .dropdownToggle:focus {
+    outline-color: #8585f6;
+  }
+
+  /**
+   * Dropdown menu - dark background with light text
+   */
+  .dropdownMenu {
+    background-color: #242424;
+    border-color: #3a3a3a;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    color: #f0f0f0;
+  }
+
+  /**
+   * Dropdown items - dark theme with proper contrast
+   */
+  .dropdownItem {
+    color: #f0f0f0;
+  }
+
+  .dropdownItem:hover {
+    background-color: #333333;
+  }
+
+  .dropdownItem[aria-selected='true'] {
+    background-color: #2c3e5c;
+    color: #ffffff;
+  }
+
+  /**
+   * Empty state message - light text for dark background
+   */
+  .dropdownEmpty {
+    color: #cecece;
+  }
+}

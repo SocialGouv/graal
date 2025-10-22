@@ -1,19 +1,17 @@
-import React, { useCallback, useMemo } from 'react'
+import { fr } from '@codegouvfr/react-dsfr'
+import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
 import { Input } from '@codegouvfr/react-dsfr/Input'
 import { Select } from '@codegouvfr/react-dsfr/Select'
-import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
-import { fr } from '@codegouvfr/react-dsfr'
-import { useQuery } from '@tanstack/react-query'
-import { useProcessingStore } from '../../stores/processingStore'
+import React, { useCallback, useMemo } from 'react'
 import { useValidation } from '../../hooks/useValidation'
-import { apiService } from '../../services/api'
+import { useProcessingStore } from '../../stores/processingStore'
 import {
+  ColumnsToCopyConfig,
   FeatureConfigSection,
   ProjectSelectionConfig,
-  ColumnsToCopyConfig,
   SimpleToggleConfig,
-  type ColumnOption,
-  type AttributionProjectOption
+  type AttributionProjectOption,
+  type ColumnOption
 } from '../FeatureConfig'
 import DatabaseSelectorConfig from '../FeatureConfig/DatabaseSelectorConfig'
 
@@ -57,26 +55,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     },
     [setProcessingConfig, processingConfig]
   )
-
-  const handleSimilaritySearchDatabaseChange = useCallback(
-    (value: string) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          databaseFile: value || null
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  // Fetch available databases
-  const { data: databasesData, isLoading: isLoadingDatabases } = useQuery({
-    queryKey: ['databases'],
-    queryFn: () => apiService.listDatabases(),
-    staleTime: 30000 // 30 seconds
-  })
 
   const handleSimilaritySearchDatabaseFileChange = useCallback(
     (value: string | null) => {
@@ -297,7 +275,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   )
 
   return (
-    <div className={fr.cx('fr-mb-4w')}>
+    <div>
       <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>
         Configuration du traitement
       </h3>
@@ -373,23 +351,14 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           onEnabledChange={handleSimilaritySearchEnabledChange}
           disabled={disabled || isProcessing}
         >
-          {/* Database Selector */}
-          <div className={fr.cx('fr-mb-4w')}>
-            <DatabaseSelectorConfig
-              value={processingConfig.similaritySearch.databaseFile}
-              onChange={handleSimilaritySearchDatabaseFileChange}
-              disabled={disabled || isProcessing}
-            />
-          </div>
-
           {/* Origin Project */}
           <div
             className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
           >
             <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
               <Input
-                label="Projet d'origine"
-                hintText="Nom du projet législatif (ex: PLFSS 2025, PLF 2024)"
+                label="Nom du projet législatif (ex: PLFSS 2025, PLF 2024)"
+                hintText="Permet de faire aussi une recherche de similarité via le corps des amendements de lectures précédentes sur le même projet"
                 state={similaritySearchOriginProjectError ? 'error' : 'default'}
                 stateRelatedMessage={
                   similaritySearchOriginProjectError || undefined
@@ -407,28 +376,12 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           </div>
 
           {/* Database Selector */}
-          <div
-            className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
-          >
-            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
-              <Select
-                label="Base de données de similarité (optionnel)"
-                hint="Sélectionnez une base pré-construite pour la recherche de similarités"
-                disabled={disabled || isProcessing || isLoadingDatabases}
-                nativeSelectProps={{
-                  value: processingConfig.similaritySearch.databaseFile || '',
-                  onChange: (e) =>
-                    handleSimilaritySearchDatabaseChange(e.target.value)
-                }}
-              >
-                <option value="">Aucune (recherche standard)</option>
-                {databasesData?.databases.map((db) => (
-                  <option key={db.name} value={db.name}>
-                    {db.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
+          <div>
+            <DatabaseSelectorConfig
+              value={processingConfig.similaritySearch.databaseFile}
+              onChange={handleSimilaritySearchDatabaseFileChange}
+              disabled={disabled || isProcessing}
+            />
           </div>
 
           {/* Columns to Copy */}
