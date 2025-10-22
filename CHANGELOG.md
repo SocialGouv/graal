@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/SocialGouv/graal/compare/v1.6.1...v1.7.0) (2025-10-22)
+
+
+### Bug Fixes
+
+* Database selector was wrong. Now uses combobox ([d4c4254](https://github.com/SocialGouv/graal/commit/d4c42542a49eb903b21698a2634ebfcc6f605ad8))
+
+
+### Features
+
+* Add combobox component to the UI ([a7ed289](https://github.com/SocialGouv/graal/commit/a7ed289c0ae5d698845e43e1d70517285b15d453))
+
 ## [1.6.1](https://github.com/SocialGouv/graal/compare/v1.6.0...v1.6.1) (2025-10-22)
 
 
