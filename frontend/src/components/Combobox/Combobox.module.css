@@ -1,19 +1,28 @@
 /**
- * Styles for DatabaseSelectorConfig component
- * Custom combobox with left-aligned dropdown and single arrow
+ * Styles for Combobox component
+ * Reusable combobox with autocomplete functionality
  */
 
-.databaseSelectorWrapper {
+.comboboxWrapper {
+  position: relative;
+}
+
+/**
+ * Input container - wraps Input component and buttons
+ * Provides positioning context for buttons anchored to input field
+ */
+.inputContainer {
   position: relative;
 }
 
 /**
  * Clear button (X) - appears when input has value
+ * Positioned absolutely at bottom of input field for adaptive positioning
  */
 .clearButton {
   position: absolute;
   right: 2.5rem;
-  top: 4.9rem;
+  bottom: 0.5rem;
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -34,12 +43,13 @@
 }
 
 /**
- * Dropdown toggle button - single arrow indicator
+ * Dropdown toggle button - arrow indicator
+ * Positioned absolutely at bottom of input field for adaptive positioning
  */
 .dropdownToggle {
   position: absolute;
   right: 0.5rem;
-  top: 4.9rem;
+  bottom: 0.5rem;
   background: none;
   border: none;
   padding: 0.5rem;
@@ -91,7 +101,7 @@
 }
 
 /**
- * Dropdown items - left-aligned with hover effect
+ * Dropdown items - with hover effect
  */
 .dropdownItem {
   padding: 0.75rem 1rem;
@@ -122,14 +132,14 @@
 /**
  * Input adjustments to accommodate buttons
  */
-.databaseSelectorInput input {
+.comboboxInput input {
   padding-right: 4.5rem;
 }
 
 /**
  * Loading state styling
  */
-.databaseSelectorInput input[disabled] {
+.comboboxInput input[disabled] {
   opacity: 0.6;
   cursor: not-allowed;
 }

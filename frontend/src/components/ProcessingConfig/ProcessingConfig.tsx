@@ -357,14 +357,14 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           >
             <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
               <Input
-                label="Nom du projet législatif (ex: PLFSS 2025, PLF 2024)"
+                label="Nom du projet législatif"
                 hintText="Permet de faire aussi une recherche de similarité via le corps des amendements de lectures précédentes sur le même projet"
                 state={similaritySearchOriginProjectError ? 'error' : 'default'}
                 stateRelatedMessage={
                   similaritySearchOriginProjectError || undefined
                 }
                 nativeInputProps={{
-                  placeholder: 'Ex: PLFSS 2025',
+                  placeholder: 'Ex: PLFSS 2025, PLF 2024...',
                   value: processingConfig.similaritySearch.originProject || '',
                   onChange: (e) =>
                     handleSimilaritySearchOriginProjectChange(e.target.value),

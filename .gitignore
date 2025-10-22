@@ -19,6 +19,7 @@ tmp
 # TypeScript build outputs
 frontend/dist/
 frontend/tsconfig.tsbuildinfo
+frontend/tsconfig.build.tsbuildinfo
 
 # Editor directories and files
 .vscode/*

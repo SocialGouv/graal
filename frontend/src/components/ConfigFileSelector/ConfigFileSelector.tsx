@@ -1,10 +1,10 @@
 import { fr } from '@codegouvfr/react-dsfr'
-import { Select } from '@codegouvfr/react-dsfr/Select'
 import { Alert } from '@codegouvfr/react-dsfr/Alert'
 import { Button } from '@codegouvfr/react-dsfr/Button'
 import { useQuery } from '@tanstack/react-query'
 import { apiService } from '../../services/api'
 import { useProcessingStore } from '../../stores/processingStore'
+import { Combobox } from '../Combobox'
 
 interface ConfigFileSelectorProps {
   disabled?: boolean
@@ -30,37 +30,33 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
     retry: 3
   })
 
-  const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValue = e.target.value
-    handleChange(selectedValue || null)
-  }
+  const configFiles = data?.files || []
+
+  const errorMessage = error
+    ? 'Impossible de charger les fichiers de configuration'
+    : undefined
+
+  const placeholder = isLoading
+    ? 'Chargement...'
+    : error
+      ? 'Erreur de chargement'
+      : 'Tapez ou sélectionnez un fichier...'
 
   return (
     <div className={fr.cx('fr-mb-4w')}>
-      <Select
+      <Combobox
+        options={configFiles}
+        value={currentValue}
+        onChange={handleChange}
         label="Fichier de configuration"
         hint="Sélectionnez un fichier de configuration depuis S3"
-        nativeSelectProps={{
-          value: currentValue ?? '',
-          onChange: handleSelect,
-          disabled: disabled || isLoading
-        }}
         state={error ? 'error' : 'default'}
-        stateRelatedMessage={
-          error
-            ? 'Impossible de charger les fichiers de configuration'
-            : undefined
-        }
-      >
-        <option value="" disabled>
-          -- Sélectionnez un fichier --
-        </option>
-        {data?.files.map((file) => (
-          <option key={file} value={file}>
-            {file}
-          </option>
-        ))}
-      </Select>
+        stateRelatedMessage={errorMessage}
+        disabled={disabled}
+        isLoading={isLoading}
+        placeholder={placeholder}
+        emptyMessage="Aucun fichier trouvé"
+      />
 
       {error && (
         <div className={fr.cx('fr-mt-2w')}>
