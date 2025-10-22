@@ -79,6 +79,9 @@ class ProcessingPipeline:
         # Phase 1: Load and prepare data
         logging.info("[PIPELINE] Phase 1: Loading and preparing data")
         amendments_df, dependencies = self._load_and_prepare_data(preprocessed_config)
+        # amendments_df = amendments_df[amendments_df["Num amdt"].isin([281, 829, 1207])]
+        # logging.warning(f"amendments_df {amendments_df}")
+
         logging.info(
             f"[PIPELINE] Data loading completed - amendments: {len(amendments_df)}"
         )
