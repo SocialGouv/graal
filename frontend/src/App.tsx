@@ -1,30 +1,30 @@
-import React, { useMemo, useState } from 'react'
-import { Header } from '@codegouvfr/react-dsfr/Header'
-import { Footer } from '@codegouvfr/react-dsfr/Footer'
-import { Button } from '@codegouvfr/react-dsfr/Button'
-import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl'
 import { fr } from '@codegouvfr/react-dsfr'
+import { Button } from '@codegouvfr/react-dsfr/Button'
+import { Footer } from '@codegouvfr/react-dsfr/Footer'
+import { Header } from '@codegouvfr/react-dsfr/Header'
+import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl'
+import React, { useMemo, useState } from 'react'
 
 // Import components and providers
-import QueryProvider from './providers/QueryProvider'
 import { ConfigFileSelector } from './components/ConfigFileSelector'
-import ProcessingConfig from './components/ProcessingConfig/ProcessingConfig'
+import { DatabaseBuilder } from './components/DatabaseBuilder'
+import DownloadButton from './components/DownloadButton/DownloadButton'
 import FileUpload from './components/FileUpload/FileUpload'
+import ProcessingConfig from './components/ProcessingConfig/ProcessingConfig'
 import ProcessingStatus from './components/ProcessingStatus/ProcessingStatus'
 import ResultsTable from './components/ResultsTable/ResultsTable'
-import DownloadButton from './components/DownloadButton/DownloadButton'
-import { DatabaseBuilder } from './components/DatabaseBuilder'
+import QueryProvider from './providers/QueryProvider'
 
 // Import hooks and store
-import { useProcessingStore } from './stores/processingStore'
 import {
-  useUploadFile,
+  useDownloadExcelResults,
+  useDownloadResults,
   useJobStatus,
   useResultsPreview,
-  useDownloadResults,
-  useDownloadExcelResults
+  useUploadFile
 } from './hooks/useApi'
 import { useValidation } from './hooks/useValidation'
+import { useProcessingStore } from './stores/processingStore'
 
 // Container is a simple div wrapper, we can create it ourselves or use a regular div
 const Container = ({
@@ -78,7 +78,11 @@ function AppContent() {
       selectedConfigFile &&
       isAnyFeatureEnabled(processingConfig) &&
       (!processingConfig.similaritySearch.enabled ||
-        isOriginProjectValid(processingConfig.similaritySearch.originProject)),
+        (isOriginProjectValid(
+          processingConfig.similaritySearch.originProject
+        ) &&
+          processingConfig.similaritySearch.databaseFile !== null &&
+          processingConfig.similaritySearch.databaseFile !== '')),
     [
       uploadedFile,
       selectedConfigFile,

@@ -40,7 +40,7 @@ export interface SimilaritiesWithinLecturesConfig {
 export interface SimilaritySearchConfig {
   enabled: boolean
   origin_project?: string
-  database_file?: string | null
+  database_file: string
   clustering_similarity_thresholds?: Record<string, number>
   fuzzy_match_similarity_thresholds?: Record<string, number>
   similarity_threshold_overrides?: Record<string, number>
