@@ -6,16 +6,17 @@ from amendment files, including initialization, database building, and
 exception handling.
 """
 
+from pathlib import Path
+from unittest.mock import MagicMock
+
 import pandas as pd
 import pytest
-from pathlib import Path
-from unittest.mock import AsyncMock
 
 from graal.utils.config.base_config import InputFileConfig
 from graal.utils.similarity_db_builder_service import (
-    SimilarityDatabaseBuilderService,
-    InvalidProjectError,
     EmptyDatasetError,
+    InvalidProjectError,
+    SimilarityDatabaseBuilderService,
     SimilarityDBBuildError,
     get_similarity_db_builder,
 )
@@ -52,8 +53,8 @@ class TestSimilarityDatabaseBuilderService:
             "graal.utils.similarity_db_builder_service.AmendmentPreProcessor.load_acronyms",
             return_value={},
         )
-        # Use AsyncMock since build_database awaits this method
-        service._load_and_preprocess_amendments = AsyncMock(return_value=pd.DataFrame())
+        # Use MagicMock since _load_and_preprocess_amendments is synchronous
+        service._load_and_preprocess_amendments = MagicMock(return_value=pd.DataFrame())
 
         amendment_files: dict[Path, InputFileConfig] = {
             Path("test.json"): {
@@ -95,8 +96,8 @@ class TestSimilarityDatabaseBuilderService:
             "graal.utils.similarity_db_builder_service.AmendmentPreProcessor.load_acronyms",
             return_value={},
         )
-        # Use AsyncMock since build_database awaits this method
-        service._load_and_preprocess_amendments = AsyncMock(return_value=sample_df)
+        # Use MagicMock since _load_and_preprocess_amendments is synchronous
+        service._load_and_preprocess_amendments = MagicMock(return_value=sample_df)
         mocker.patch(
             "graal.utils.similarity_db_builder_service.AllotmentHandler.process_allotments",
             return_value=(sample_df, []),
