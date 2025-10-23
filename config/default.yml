@@ -65,9 +65,9 @@ summary_generation:
   strategy: "legacy"  # Options: "dspy" or "legacy"
   # DSPy-specific configuration (only used when strategy is "dspy")
   dspy:
-    office_name: "default_office"  # Office/team name for prompt management
-    s3_prompt_bucket: "graal-prompts"  # S3 bucket for storing optimized prompts
-    s3_prompt_prefix: "summary_prompts/"  # Prefix path in S3 bucket
+    office_name: "office_A"  # Office/team name for prompt management
+    s3_prompt_base: "summary_prompts/"  # S3 base path for storing optimized prompts
+    cache_ttl_seconds: 300  # Cache time-to-live in seconds (5 minutes)
     # Evaluation metric weights for optimization
     metrics:
       semantic_weight: 0.7  # Weight for semantic similarity (0-1)

@@ -112,20 +112,20 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 ## Phase 4: S3 Storage Infrastructure
 
 ### 4.1 Prompt Storage Module
-- [ ] Create `storage.py`
-- [ ] Implement `DSPyPromptStorage` class:
-  - [ ] `save_optimized_prompt(office, model, prompt_data)`
-  - [ ] `load_optimized_prompt(office, model)`
-  - [ ] `list_available_prompts(office)`
-  - [ ] Handle versioning (timestamp-based)
-- [ ] Use existing S3 utilities from `graal/utils/s3_utils.py`
-- [ ] Add caching layer for frequently accessed prompts
-- [ ] Write integration tests with mocked S3
+- [x] Create `storage.py`
+- [x] Implement `DSPyPromptStorage` class:
+  - [x] `save_optimized_prompt(office, model, prompt_data)`
+  - [x] `load_optimized_prompt(office, model)`
+  - [x] `list_available_prompts(office)`
+  - [x] Handle versioning (timestamp-based)
+- [x] Use existing S3 utilities from `graal/utils/s3_utils.py`
+- [x] Add caching layer for frequently accessed prompts
+- [x] Write integration tests with mocked S3
 
 ### 4.2 S3 Bucket Structure
-- [ ] Define S3 path structure:
+- [x] Define S3 path structure:
   ```
-  s3://graal-prompts/summary_prompts/
+  s3://summary_prompts/
   ├── office_A/
   │   ├── albert/
   │   │   ├── latest.json
@@ -135,8 +135,8 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
   ├── office_B/
   └── shared/  # optional: shared prompts
   ```
-- [ ] Document storage format (JSON schema)
-- [ ] Implement prompt metadata (timestamp, metrics, training info)
+- [x] Document storage format (JSON schema)
+- [x] Implement prompt metadata (timestamp, metrics, training info)
 
 ---
 
@@ -390,8 +390,10 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
   - **Decision**: Using `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` for French text support
 - [ ] Determine optimal training dataset size per model
 - [ ] Define re-optimization schedule
-- [ ] Choose S3 bucket name and region
-- [ ] Decide on prompt caching strategy (Redis? In-memory?)
+- [x] Choose S3 bucket name and region
+  - **Decision**: Using `s3://summary_prompts/` as base path
+- [x] Decide on prompt caching strategy (Redis? In-memory?)
+  - **Decision**: In-memory caching with 5-minute TTL using custom cache implementation
 
 ### Future Enhancements
 - Support for more LLM providers
