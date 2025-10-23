@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/SocialGouv/graal/compare/v1.8.0...v1.9.0) (2025-10-23)
+
+
+### Features
+
+* Start adding support for DSPy ([79e9372](https://github.com/SocialGouv/graal/commit/79e937225890a4ce3f1c5616d862127c714a5fa5))
+
 # [1.8.0](https://github.com/SocialGouv/graal/compare/v1.7.1...v1.8.0) (2025-10-23)
 
 
