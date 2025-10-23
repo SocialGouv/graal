@@ -19,11 +19,10 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 
 ### 1.1 Dependencies & Project Structure
 - [x] Add `dspy-ai` to `pyproject.toml`
-- [ ] Run `poetry install` to install DSPy
+- [x] Run `poetry install` to install DSPy
 - [x] Create directory structure:
   ```
   graal/summary/dspy_modules/
-  ├── __init__.py
   ├── signatures.py          # DSPy signature definitions
   ├── programs.py            # DSPy module implementations
   ├── adapters.py            # LLM client → DSPy LM adapters
@@ -52,19 +51,19 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 ## Phase 2: DSPy Adapters & Core Components
 
 ### 2.1 LLM Client Adapters
-- [ ] Create `adapters.py` to wrap existing LLM clients as DSPy LMs
-- [ ] Implement `GraalLMAdapter` base class
-- [ ] Create specific adapters:
-  - [ ] `AlbertDSPyAdapter`
-  - [ ] `ScalewayDSPyAdapter`
-  - [ ] `OllamaDSPyAdapter`
-  - [ ] `VllmDSPyAdapter`
-- [ ] Test adapters with DSPy `Predict` module
-- [ ] Add unit tests for each adapter
+- [x] Create `adapters.py` to wrap existing LLM clients as DSPy LMs
+- [x] Implement `GraalLMAdapter` base class
+- [x] Create specific adapters:
+  - [x] `AlbertDSPyAdapter`
+  - [x] `ScalewayDSPyAdapter`
+  - [x] `OllamaDSPyAdapter`
+  - [x] `VllmDSPyAdapter`
+- [x] Test adapters with DSPy `Predict` module
+- [x] Add unit tests for each adapter
 
 ### 2.2 DSPy Signature Definition
-- [ ] Create `signatures.py`
-- [ ] Define `AmendmentSummary` signature:
+- [x] Create `signatures.py`
+- [x] Define `AmendmentSummary` signature:
   ```python
   class AmendmentSummary(dspy.Signature):
       """Generate concise French summary for legislative amendment"""
@@ -72,15 +71,15 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
       corps_amdt: str = dspy.InputField(desc="Corps de l'amendement")
       summary: str = dspy.OutputField(desc="Résumé (8-20 mots, commencer par verbe infinitif)")
   ```
-- [ ] Add documentation with examples
-- [ ] Write unit tests for signature
+- [x] Add documentation with examples
+- [x] Write unit tests for signature
 
 ### 2.3 DSPy Program Implementation
-- [ ] Create `programs.py`
-- [ ] Implement `AmendmentSummarizer` using `dspy.ChainOfThought`
-- [ ] Add support for model-specific configurations
-- [ ] Test program with different LM adapters
-- [ ] Write unit tests
+- [x] Create `programs.py`
+- [x] Implement `AmendmentSummarizer` using `dspy.ChainOfThought`
+- [x] Add support for model-specific configurations
+- [x] Test program with different LM adapters
+- [x] Write unit tests
 
 ---
 

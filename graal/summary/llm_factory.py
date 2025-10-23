@@ -110,7 +110,11 @@ def create_ollama_client(
 
 
 def create_fake_client() -> LLMAPIClient:
-    """Create a fake LLM API client."""
+    """Create a fake LLM API client.
+
+    WARNING: This client returns random lorem ipsum text.
+    DO NOT use for DSPy optimization. Use create_fake_dspy_client() instead.
+    """
     return FakeLLMAPIClient(name="fake")
 
 
@@ -217,7 +221,8 @@ def create_llm_api_clients(
                 )
             else:
                 raise ValueError(
-                    f"Unsupported LLM client type: {client_type}. Supported types are: 'scaleway', 'ollama', 'albert', 'fake', 'vllm'."
+                    f"Unsupported LLM client type: {client_type}. "
+                    f"Supported types are: 'scaleway', 'ollama', 'albert', 'fake', 'fake_dspy', 'vllm'."
                 )
 
     return llm_api_clients
