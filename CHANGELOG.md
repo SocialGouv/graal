@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/SocialGouv/graal/compare/v1.9.0...v1.10.0) (2025-10-23)
+
+
+### Features
+
+* Add DSPy adapters and core components ([f7da401](https://github.com/SocialGouv/graal/commit/f7da4015683285ec9532f74caf54d71b06468094))
+
 # [1.9.0](https://github.com/SocialGouv/graal/compare/v1.8.0...v1.9.0) (2025-10-23)
 
 
