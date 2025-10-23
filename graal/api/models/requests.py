@@ -3,7 +3,7 @@ API request models.
 """
 
 import re
-from typing import ClassVar, Dict, Optional
+from typing import ClassVar, Dict, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -122,6 +122,70 @@ class DefaultOpinionConfig(BaseModel):
     )
 
 
+class LLMCredentials(BaseModel):
+    """Credentials for LLM API clients."""
+
+    model_config = {"protected_namespaces": ()}  # Allow model_ prefix
+
+    # OpenAI-compatible credentials (for scaleway, albert)
+    base_url: Optional[str] = Field(
+        default=None,
+        description="Base URL for OpenAI-compatible APIs (scaleway, albert)",
+    )
+    api_key: Optional[str] = Field(
+        default=None,
+        description="API key for authentication (scaleway, albert)",
+    )
+    model_name: Optional[str] = Field(
+        default=None,
+        description="Model name to use",
+    )
+
+    # Ollama/vLLM credentials
+    endpoint: Optional[str] = Field(
+        default=None,
+        description="Endpoint URL for Ollama or vLLM",
+    )
+    user: Optional[str] = Field(
+        default=None,
+        description="Username for authentication (ollama, vllm)",
+    )
+    password: Optional[str] = Field(
+        default=None,
+        description="Password for authentication (ollama, vllm)",
+    )
+
+
+class SummaryGenerationConfig(BaseModel):
+    """Configuration for summary generation (Objet amdt) feature."""
+
+    enabled: bool = Field(
+        default=False, description="Whether summary generation feature is enabled"
+    )
+    should_overwrite: bool = Field(
+        default=True,
+        description="If true, overwrite existing values; if false, preserve existing values",
+    )
+    llm_type: Optional[Literal["scaleway", "albert", "ollama", "vllm", "fake"]] = Field(
+        default=None,
+        description="Type of LLM provider to use. Required when enabled.",
+    )
+    llm_credentials: Optional[LLMCredentials] = Field(
+        default=None,
+        description="Credentials for the LLM provider. If not provided, uses environment variables.",
+    )
+
+    @field_validator("llm_type")
+    @classmethod
+    def validate_llm_type_when_enabled(cls, v, info):
+        """Validate that llm_type is provided when enabled."""
+        # Access the 'enabled' field from the model's data
+        data = info.data
+        if data.get("enabled") and not v:
+            raise ValueError("llm_type is required when summary generation is enabled")
+        return v
+
+
 class ProcessingConfig(BaseModel):
     """Configuration model for processing parameters."""
 
@@ -144,6 +208,10 @@ class ProcessingConfig(BaseModel):
     default_opinion: Optional[DefaultOpinionConfig] = Field(
         default_factory=DefaultOpinionConfig,
         description="Default opinion feature configuration",
+    )
+    summary_generation: Optional[SummaryGenerationConfig] = Field(
+        default_factory=SummaryGenerationConfig,
+        description="Summary generation (Objet amdt) feature configuration",
     )
 
     # Processing options (pipeline-level)
@@ -269,20 +337,23 @@ class ProcessingConfig(BaseModel):
     def has_any_feature_enabled(self) -> bool:
         """
         Check if at least one feature is enabled.
+        Future-proof: Automatically checks all fields with an 'enabled' attribute.
 
         Returns:
             True if at least one feature is enabled, False otherwise
         """
-        return bool(
-            (self.allotment and self.allotment.enabled)
-            or (
-                self.similarities_within_lectures
-                and self.similarities_within_lectures.enabled
-            )
-            or (self.similarity_search and self.similarity_search.enabled)
-            or (self.attribution and self.attribution.enabled)
-            or (self.default_opinion and self.default_opinion.enabled)
-        )
+        # Iterate through all fields in this model
+        # and check if any have an 'enabled' attribute set to True
+        for field_name in self.model_fields:
+            field_value = getattr(self, field_name, None)
+            # Check if the field is an object with an 'enabled' attribute
+            if (
+                field_value is not None
+                and hasattr(field_value, "enabled")
+                and field_value.enabled is True
+            ):
+                return True
+        return False
 
 
 class ProcessingRequest(BaseModel):

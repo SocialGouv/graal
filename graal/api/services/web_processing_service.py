@@ -158,6 +158,43 @@ class WebProcessingService:
                 f"[WEB_SERVICE] Updated default_opinion config: enabled={frontend_config.default_opinion.enabled}"
             )
 
+        # Update summary generation configuration
+        if frontend_config.summary_generation:
+            config["summary_generation"] = {
+                "enabled": frontend_config.summary_generation.enabled,
+                "should_overwrite": frontend_config.summary_generation.should_overwrite,
+            }
+
+            # Store LLM credentials for later use (when creating LLM clients)
+            if (
+                frontend_config.summary_generation.enabled
+                and frontend_config.summary_generation.llm_type
+            ):
+                # Create llm_clients config section if summary generation is enabled
+                config["llm_clients"] = {
+                    frontend_config.summary_generation.llm_type: {
+                        "nb_instances": 8,  # Default to 8 instances
+                        "timeout": 30,  # Default to 30 seconds
+                    }
+                }
+
+                # Store credentials separately for passing to llm_factory
+                if frontend_config.summary_generation.llm_credentials:
+                    if "llm_credentials" not in config:
+                        config["llm_credentials"] = {}
+
+                    creds = frontend_config.summary_generation.llm_credentials
+                    config["llm_credentials"][
+                        frontend_config.summary_generation.llm_type
+                    ] = {
+                        "base_url": creds.base_url,
+                        "api_key": creds.api_key,
+                        "model_name": creds.model_name,
+                        "endpoint": creds.endpoint,
+                        "user": creds.user,
+                        "password": creds.password,
+                    }
+
         # Update processing options (pipeline-level)
         if "processing_options" not in config:
             config["processing_options"] = {}

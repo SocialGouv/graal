@@ -230,7 +230,9 @@ class ProcessingPipeline:
 
         # Create LLM clients for summary generation
         logging.info("[PIPELINE] Creating LLM clients for summary generation")
-        llm_api_clients = create_llm_api_clients(config)
+        # Extract credentials if provided from frontend (stored in llm_credentials)
+        credentials = config.get("llm_credentials", None)
+        llm_api_clients = create_llm_api_clients(config, credentials=credentials)
         rate_limiting_config = get_rate_limiting_config(config)
         summary_gen_load_balancer = SummaryGenerationLoadBalancer(
             clients=llm_api_clients,
