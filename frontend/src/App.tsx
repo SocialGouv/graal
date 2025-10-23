@@ -118,8 +118,8 @@ function AppContent() {
         similarity_search: buildConfigIfEnabled(
           processingConfig.similaritySearch.enabled,
           {
-            origin_project: processingConfig.similaritySearch.originProject,
             database_file: processingConfig.similaritySearch.databaseFile,
+            origin_project: processingConfig.similaritySearch.originProject,
             clustering_similarity_thresholds:
               processingConfig.similaritySearch.clusteringSimilarityThresholds,
             fuzzy_match_similarity_thresholds:
@@ -151,6 +151,15 @@ function AppContent() {
           processingConfig.defaultOpinion.enabled,
           {
             should_overwrite: processingConfig.defaultOpinion.should_overwrite
+          }
+        ),
+        summary_generation: buildConfigIfEnabled(
+          processingConfig.summaryGeneration.enabled,
+          {
+            should_overwrite:
+              processingConfig.summaryGeneration.should_overwrite,
+            llm_type: processingConfig.summaryGeneration.llm_type,
+            llm_credentials: processingConfig.summaryGeneration.llm_credentials
           }
         ),
         // Processing options at top level

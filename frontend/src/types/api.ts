@@ -40,7 +40,7 @@ export interface SimilaritiesWithinLecturesConfig {
 export interface SimilaritySearchConfig {
   enabled: boolean
   origin_project?: string
-  database_file: string
+  database_file?: string | null
   clustering_similarity_thresholds?: Record<string, number>
   fuzzy_match_similarity_thresholds?: Record<string, number>
   similarity_threshold_overrides?: Record<string, number>
@@ -54,12 +54,22 @@ export interface AttributionConfig {
   should_overwrite?: boolean
 }
 
-export interface SummaryConfig {
+export interface SummaryGenerationConfig {
   enabled: boolean
   should_overwrite?: boolean
+  llm_type?: 'scaleway' | 'albert' | 'ollama' | 'vllm' | 'fake' | null
+  llm_credentials?: {
+    base_url?: string
+    api_key?: string
+    model_name?: string
+    endpoint?: string
+    user?: string
+    password?: string
+  }
+  timeout?: number
 }
 
-export interface OpinionConfig {
+export interface DefaultOpinionConfig {
   enabled: boolean
   should_overwrite?: boolean
 }
@@ -69,8 +79,8 @@ export interface ProcessingConfig {
   similarities_within_lectures?: SimilaritiesWithinLecturesConfig
   similarity_search?: SimilaritySearchConfig
   attribution?: AttributionConfig
-  opinion?: OpinionConfig
-  summary?: SummaryConfig
+  default_opinion?: DefaultOpinionConfig
+  summary_generation?: SummaryGenerationConfig
   placeholder_amdt_body?: boolean
 }
 

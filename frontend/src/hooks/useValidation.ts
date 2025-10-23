@@ -192,23 +192,20 @@ export const useValidation = () => {
 
   /**
    * Checks if at least one feature is enabled
+   * Future-proof: Automatically checks all properties with an 'enabled' field
    * @param processingConfig - The processing configuration to check
    * @returns boolean indicating if at least one feature is enabled
    */
   const isAnyFeatureEnabled = useCallback(
-    (processingConfig: {
-      allotments: { enabled: boolean }
-      similaritiesWithinLectures: { enabled: boolean }
-      similaritySearch: { enabled: boolean }
-      attribution: { enabled: boolean }
-      defaultOpinion: { enabled: boolean }
-    }): boolean => {
-      return (
-        processingConfig.allotments.enabled ||
-        processingConfig.similaritiesWithinLectures.enabled ||
-        processingConfig.similaritySearch.enabled ||
-        processingConfig.attribution.enabled ||
-        processingConfig.defaultOpinion.enabled
+    (processingConfig: Record<string, any>): boolean => {
+      // Iterate through all properties in processingConfig
+      // and check if any have an 'enabled' property set to true
+      return Object.values(processingConfig).some(
+        (featureConfig) =>
+          featureConfig &&
+          typeof featureConfig === 'object' &&
+          'enabled' in featureConfig &&
+          featureConfig.enabled === true
       )
     },
     []

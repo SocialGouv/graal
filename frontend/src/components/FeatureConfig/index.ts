@@ -4,6 +4,7 @@ export { DatabaseSelectorConfig } from './DatabaseSelectorConfig'
 export { FeatureConfigSection } from './FeatureConfigSection'
 export { ProjectSelectionConfig } from './ProjectSelectionConfig'
 export { SimpleToggleConfig } from './SimpleToggleConfig'
+export { SummaryGenerationConfig } from './SummaryGenerationConfig'
 export { ThresholdSliderConfig } from './ThresholdSliderConfig'
 
 export type {
@@ -20,4 +21,5 @@ export type {
   ProjectSelectionConfigProps
 } from './ProjectSelectionConfig'
 export type { SimpleToggleConfigProps } from './SimpleToggleConfig'
+export type { SummaryGenerationConfigProps } from './SummaryGenerationConfig'
 export type { ThresholdSliderConfigProps } from './ThresholdSliderConfig'

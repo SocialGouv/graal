@@ -11,6 +11,7 @@ import {
   FeatureConfigSection,
   ProjectSelectionConfig,
   SimpleToggleConfig,
+  SummaryGenerationConfig,
   type AttributionProjectOption,
   type ColumnOption
 } from '../FeatureConfig'
@@ -275,6 +276,59 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     [setProcessingConfig, processingConfig]
   )
 
+  // Summary Generation handlers
+  const handleSummaryGenerationEnabledChange = useCallback(
+    (enabled: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        summaryGeneration: {
+          ...processingConfig.summaryGeneration,
+          enabled
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  const handleSummaryGenerationShouldOverwriteChange = useCallback(
+    (shouldOverwrite: boolean) => {
+      setProcessingConfig({
+        ...processingConfig,
+        summaryGeneration: {
+          ...processingConfig.summaryGeneration,
+          should_overwrite: shouldOverwrite
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  const handleSummaryGenerationLlmTypeChange = useCallback(
+    (llmType: string) => {
+      setProcessingConfig({
+        ...processingConfig,
+        summaryGeneration: {
+          ...processingConfig.summaryGeneration,
+          llm_type: llmType as any
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
+  const handleSummaryGenerationCredentialsChange = useCallback(
+    (credentials: any) => {
+      setProcessingConfig({
+        ...processingConfig,
+        summaryGeneration: {
+          ...processingConfig.summaryGeneration,
+          llm_credentials: credentials
+        }
+      })
+    },
+    [setProcessingConfig, processingConfig]
+  )
+
   return (
     <div>
       <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>
@@ -473,6 +527,35 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           />
         </FeatureConfigSection>
       </div>
+
+      {/* Summary Generation Configuration Section */}
+      {DEFAULT_FEATURE_FLAGS.showSummaryGeneration && (
+        <div className={fr.cx('fr-mt-4w')}>
+          <FeatureConfigSection
+            title="Génération d'objets d'amendements (LLM)"
+            description="Génère automatiquement des résumés (Objet amdt) pour les amendements en utilisant un LLM"
+            enabled={processingConfig.summaryGeneration.enabled}
+            onEnabledChange={handleSummaryGenerationEnabledChange}
+            disabled={disabled || isProcessing}
+          >
+            <SummaryGenerationConfig
+              shouldOverwrite={
+                processingConfig.summaryGeneration.should_overwrite
+              }
+              llmType={processingConfig.summaryGeneration.llm_type}
+              llmCredentials={
+                processingConfig.summaryGeneration.llm_credentials
+              }
+              onShouldOverwriteChange={
+                handleSummaryGenerationShouldOverwriteChange
+              }
+              onLlmTypeChange={handleSummaryGenerationLlmTypeChange}
+              onCredentialsChange={handleSummaryGenerationCredentialsChange}
+              disabled={disabled || isProcessing}
+            />
+          </FeatureConfigSection>
+        </div>
+      )}
 
       {/* Advanced Configuration */}
       <div className={fr.cx('fr-mt-4w')}>

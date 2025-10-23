@@ -36,6 +36,8 @@ export interface ColumnToCopyVisibility {
 export interface FeatureFlags {
   /** Controls which columns to copy are visible in the UI */
   columnsToCopyVisibility: ColumnToCopyVisibility
+  /** Whether to show the summary generation (Objet amdt) feature in the UI */
+  showSummaryGeneration: boolean
 }
 
 /**
@@ -51,5 +53,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
     showSort: false,
     // Show Objet amdt as it's user-configurable
     showObjetAmdt: true
-  }
+  },
+  // Show summary generation feature
+  showSummaryGeneration: true
 }

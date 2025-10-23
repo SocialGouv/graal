@@ -39,6 +39,19 @@ export interface ProcessingConfig {
     enabled: boolean
     should_overwrite: boolean
   }
+  summaryGeneration: {
+    enabled: boolean
+    should_overwrite: boolean
+    llm_type: 'scaleway' | 'albert' | 'ollama' | 'vllm' | 'fake' | null
+    llm_credentials: {
+      base_url?: string
+      api_key?: string
+      model_name?: string
+      endpoint?: string
+      user?: string
+      password?: string
+    }
+  }
   // Processing options (top-level, not nested under any feature)
   placeholder_amdt_body: boolean
 }
@@ -124,17 +137,17 @@ const initialState = {
   selectedConfigFile: null,
   processingConfig: {
     allotments: {
-      enabled: true,
+      enabled: false,
       column: 'Corps amdt' as const,
       similarity_threshold: 0.999
     },
     similaritiesWithinLectures: {
-      enabled: true,
+      enabled: false,
       column: 'Exposé amdt' as const,
       similarity_threshold: 0.8
     },
     similaritySearch: {
-      enabled: true,
+      enabled: false,
       originProject: '',
       databaseFile: null,
       clusteringSimilarityThresholds: {
@@ -154,13 +167,19 @@ const initialState = {
       should_overwrite: true
     },
     attribution: {
-      enabled: true,
+      enabled: false,
       project_name: 'PLFSS',
       should_overwrite: true
     },
     defaultOpinion: {
-      enabled: true,
+      enabled: false,
       should_overwrite: true
+    },
+    summaryGeneration: {
+      enabled: true,
+      should_overwrite: true,
+      llm_type: null,
+      llm_credentials: {}
     },
     // Processing options at top level
     placeholder_amdt_body: false
