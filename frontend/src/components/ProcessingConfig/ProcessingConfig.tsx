@@ -3,6 +3,7 @@ import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
 import { Input } from '@codegouvfr/react-dsfr/Input'
 import { Select } from '@codegouvfr/react-dsfr/Select'
 import React, { useCallback, useMemo } from 'react'
+import { DEFAULT_FEATURE_FLAGS } from '../../config/featureFlags'
 import { useValidation } from '../../hooks/useValidation'
 import { useProcessingStore } from '../../stores/processingStore'
 import {
@@ -322,21 +323,21 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           onEnabledChange={handleAttributionEnabledChange}
           disabled={disabled || isProcessing}
         >
-          <ProjectSelectionConfig
-            label="Type de projet"
-            hint="Sélectionnez le type de projet pour l'attribution"
-            projectOptions={projectOptions}
-            selectedProject={processingConfig.attribution.project_name}
-            onProjectChange={handleAttributionProjectChange}
-            disabled={disabled || isProcessing}
-          />
-
           {/* should_overwrite toggle for attribution */}
           <SimpleToggleConfig
             label="Écraser les valeurs existantes"
             description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
             checked={processingConfig.attribution.should_overwrite}
             onChange={handleAttributionShouldOverwriteChange}
+            disabled={disabled || isProcessing}
+          />
+
+          <ProjectSelectionConfig
+            label="Type de projet"
+            hint="Sélectionnez le type de projet pour l'attribution"
+            projectOptions={projectOptions}
+            selectedProject={processingConfig.attribution.project_name}
+            onProjectChange={handleAttributionProjectChange}
             disabled={disabled || isProcessing}
           />
         </FeatureConfigSection>
@@ -351,6 +352,15 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           onEnabledChange={handleSimilaritySearchEnabledChange}
           disabled={disabled || isProcessing}
         >
+          {/* should_overwrite toggle for similarity search */}
+          <SimpleToggleConfig
+            label="Écraser les valeurs existantes"
+            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+            checked={processingConfig.similaritySearch.should_overwrite}
+            onChange={handleSimilaritySearchShouldOverwriteChange}
+            disabled={disabled || isProcessing}
+          />
+
           {/* Origin Project */}
           <div
             className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
@@ -385,22 +395,14 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
           </div>
 
           {/* Columns to Copy */}
-          <div className={fr.cx('fr-mb-4w')}>
+          <div>
             <ColumnsToCopyConfig
               columnsToCopy={processingConfig.similaritySearch.columnsToCopy}
               onChange={handleColumnsToCopyChange}
               disabled={disabled || isProcessing}
+              featureFlags={DEFAULT_FEATURE_FLAGS}
             />
           </div>
-
-          {/* should_overwrite toggle for similarity search */}
-          <SimpleToggleConfig
-            label="Écraser les valeurs existantes"
-            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
-            checked={processingConfig.similaritySearch.should_overwrite}
-            onChange={handleSimilaritySearchShouldOverwriteChange}
-            disabled={disabled || isProcessing}
-          />
         </FeatureConfigSection>
       </div>
 

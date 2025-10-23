@@ -1,7 +1,10 @@
 import { fr } from '@codegouvfr/react-dsfr'
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox'
-import { Input } from '@codegouvfr/react-dsfr/Input'
 import React from 'react'
+import {
+  DEFAULT_FEATURE_FLAGS,
+  type FeatureFlags
+} from '../../config/featureFlags'
 
 export interface ColumnToCopyConfig {
   enabled: boolean
@@ -12,12 +15,15 @@ export interface ColumnsToCopyConfigProps {
   columnsToCopy: Record<string, ColumnToCopyConfig>
   onChange: (columnsToCopy: Record<string, ColumnToCopyConfig>) => void
   disabled?: boolean
+  /** Feature flags to control which columns are visible in the UI */
+  featureFlags?: FeatureFlags
 }
 
 export const ColumnsToCopyConfig: React.FC<ColumnsToCopyConfigProps> = ({
   columnsToCopy,
   onChange,
-  disabled = false
+  disabled = false,
+  featureFlags = DEFAULT_FEATURE_FLAGS
 }) => {
   const handleColumnEnabledChange = (columnName: string, enabled: boolean) => {
     const updatedColumns = {
@@ -30,19 +36,30 @@ export const ColumnsToCopyConfig: React.FC<ColumnsToCopyConfigProps> = ({
     onChange(updatedColumns)
   }
 
-  const handleColumnConditionChange = (
-    columnName: string,
-    condition: string
-  ) => {
-    const updatedColumns = {
-      ...columnsToCopy,
-      [columnName]: {
-        ...columnsToCopy[columnName],
-        condition: condition.trim() || undefined
-      }
+  /**
+   * Filter columns based on feature flags.
+   * Hidden columns will still work with their backend default values,
+   * they're just not shown in the UI.
+   */
+  const isColumnVisible = (columnName: string): boolean => {
+    const visibility = featureFlags.columnsToCopyVisibility
+    switch (columnName) {
+      case 'Réponse':
+        return visibility.showReponse
+      case 'Sort':
+        return visibility.showSort
+      case 'Objet amdt':
+        return visibility.showObjetAmdt
+      default:
+        // Show unknown columns by default for forward compatibility
+        return true
     }
-    onChange(updatedColumns)
   }
+
+  // Filter columns to only show visible ones
+  const visibleColumns = Object.entries(columnsToCopy).filter(([columnName]) =>
+    isColumnVisible(columnName)
+  )
 
   return (
     <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
@@ -52,21 +69,18 @@ export const ColumnsToCopyConfig: React.FC<ColumnsToCopyConfigProps> = ({
         </h4>
         <p className={fr.cx('fr-text--sm', 'fr-mb-3w')}>
           Configurez quelles colonnes doivent être copiées depuis les
-          amendements similaires trouvés.
+          amendements similaires trouvés en plus de "Réponse" et "Sort".
         </p>
 
-        {Object.entries(columnsToCopy).length === 0 ? (
+        {visibleColumns.length === 0 ? (
           <p className={fr.cx('fr-text--sm')}>
             Aucune colonne disponible à configurer.
           </p>
         ) : (
-          Object.entries(columnsToCopy).map(([columnName, config]) => (
-            <div
-              key={columnName}
-              className={fr.cx('fr-mb-3w', 'fr-p-2w', 'fr-fieldset')}
-            >
+          visibleColumns.map(([columnName, config]) => (
+            <div key={columnName} className={fr.cx('fr-p-2w')}>
               <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
-                <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+                <div className={fr.cx('fr-col-12')}>
                   <Checkbox
                     options={[
                       {
@@ -84,25 +98,6 @@ export const ColumnsToCopyConfig: React.FC<ColumnsToCopyConfigProps> = ({
                     ]}
                   />
                 </div>
-
-                {config.enabled && (
-                  <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
-                    <Input
-                      label="Condition (optionnelle)"
-                      hintText="Ne copier que si la valeur correspond à cette condition"
-                      nativeInputProps={{
-                        placeholder: 'Ex: irrecevable',
-                        value: config.condition || '',
-                        onChange: (e) =>
-                          handleColumnConditionChange(
-                            columnName,
-                            e.target.value
-                          ),
-                        disabled
-                      }}
-                    />
-                  </div>
-                )}
               </div>
             </div>
           ))
