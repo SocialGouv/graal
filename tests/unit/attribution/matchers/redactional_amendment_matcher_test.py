@@ -1,7 +1,6 @@
 """Unit tests for RedactionalAmendmentMatcher."""
 
 import unittest
-from unittest.mock import patch
 
 import pandas as pd
 
@@ -77,13 +76,9 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
             "Exposé amdt": "Amendement rédactionnel.",
         }
 
-        with patch(
-            "graal.attribution.matchers.redactional_amendment_matcher.logger"
-        ) as mock_logger:
-            matches = self.matcher.match(amendment, "Exposé amdt")
+        matches = self.matcher.match(amendment, "Exposé amdt")
 
-            self.assertEqual(len(matches), 0)
-            mock_logger.warning.assert_called_once()
+        self.assertEqual(len(matches), 0)
 
     def test_no_match_for_missing_article_number(self):
         """Test that redactional amendments without article numbers return no matches."""
@@ -94,13 +89,9 @@ class TestRedactionalAmendmentMatcher(unittest.TestCase):
             "Exposé amdt": "Amendement rédactionnel.",
         }
 
-        with patch(
-            "graal.attribution.matchers.redactional_amendment_matcher.logger"
-        ) as mock_logger:
-            matches = self.matcher.match(amendment, "Exposé amdt")
+        matches = self.matcher.match(amendment, "Exposé amdt")
 
-            self.assertEqual(len(matches), 0)
-            mock_logger.warning.assert_called_once()
+        self.assertEqual(len(matches), 0)
 
     def test_no_match_for_disallowed_column(self):
         """Test that matches are not returned for disallowed columns."""

@@ -3,6 +3,7 @@ Processing API routes for GRAAL amendment processing.
 """
 
 import logging
+import logging.config
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -17,8 +18,7 @@ from graal.api.models.responses import (
 )
 from graal.utils.s3_service import get_s3_service
 
-logger = logging.getLogger(__name__)
-
+logging.config.fileConfig("logging.conf")
 router = APIRouter()
 
 
@@ -40,17 +40,17 @@ async def list_config_files():
     Raises:
         HTTPException: 503 if S3 is not available, 500 for other errors
     """
-    logger.info("[API] Listing available configuration files")
+    logging.info("[API] Listing available configuration files")
 
     try:
         s3_service = get_s3_service()
         files = s3_service.list_available_config_files()
 
-        logger.info(f"[API] Found {len(files)} configuration files")
+        logging.info(f"[API] Found {len(files)} configuration files")
         return ConfigFilesResponse(files=files, total=len(files))
 
     except Exception as e:
-        logger.error(f"[API] Failed to list config files: {str(e)}")
+        logging.error(f"[API] Failed to list config files: {str(e)}")
         if "not enabled" in str(e).lower() or "not available" in str(e).lower():
             raise HTTPException(
                 status_code=503, detail="S3 configuration service is not available"
@@ -71,17 +71,17 @@ async def list_similarity_databases():
     Raises:
         HTTPException: 503 if S3 is not available, 500 for other errors
     """
-    logger.info("[API] Listing available similarity database files")
+    logging.info("[API] Listing available similarity database files")
 
     try:
         s3_service = get_s3_service()
         databases = await s3_service.list_database_files()
 
-        logger.info(f"[API] Found {len(databases)} similarity database files")
+        logging.info(f"[API] Found {len(databases)} similarity database files")
         return SimilarityDatabasesResponse(databases=databases, total=len(databases))
 
     except Exception as e:
-        logger.error(f"[API] Failed to list similarity databases: {str(e)}")
+        logging.error(f"[API] Failed to list similarity databases: {str(e)}")
         if "not enabled" in str(e).lower() or "not available" in str(e).lower():
             raise HTTPException(
                 status_code=503,
@@ -142,19 +142,19 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):  # noq
         request_data = json.loads(request)
         processing_request = ProcessingRequest(**request_data)
     except json.JSONDecodeError as e:
-        logger.warning(f"[API] Invalid JSON in request parameter: {str(e)}")
+        logging.warning(f"[API] Invalid JSON in request parameter: {str(e)}")
         raise HTTPException(
             status_code=400, detail="Invalid JSON in request parameter"
         ) from e
     except Exception as e:
-        logger.warning(f"[API] Invalid ProcessingRequest: {str(e)}")
+        logging.warning(f"[API] Invalid ProcessingRequest: {str(e)}")
         raise HTTPException(
             status_code=400, detail=f"Invalid request data: {str(e)}"
         ) from e
 
     # Validate that at least one feature is enabled
     if not processing_request.processing_config.has_any_feature_enabled():
-        logger.warning("[API] Processing request rejected - no features enabled")
+        logging.warning("[API] Processing request rejected - no features enabled")
         raise HTTPException(
             status_code=400,
             detail="At least one feature must be enabled to start processing",
@@ -162,49 +162,49 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):  # noq
 
     # Validate config file exists in S3
     config_file = processing_request.config_file
-    logger.info(f"[API] Validating config file: {config_file}")
+    logging.info(f"[API] Validating config file: {config_file}")
 
     try:
         s3_service = get_s3_service()
         if not s3_service.validate_config_file_exists(config_file):
-            logger.warning(f"[API] Config file not found in S3: {config_file}")
+            logging.warning(f"[API] Config file not found in S3: {config_file}")
             raise HTTPException(
                 status_code=404,
                 detail=f"Configuration file '{config_file}' not found in S3",
             )
-        logger.info(f"[API] Config file validated successfully: {config_file}")
+        logging.info(f"[API] Config file validated successfully: {config_file}")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[API] Failed to validate config file: {str(e)}")
+        logging.error(f"[API] Failed to validate config file: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to validate configuration file: {str(e)}"
         ) from e
 
-    logger.info(
+    logging.info(
         f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}, config_file: {config_file}"
     )
 
     if file.filename is None or file.filename == "":
-        logger.warning("[API] File upload rejected - no filename provided")
+        logging.warning("[API] File upload rejected - no filename provided")
         raise HTTPException(status_code=400, detail="No file uploaded")
 
     # Validate file type
     if not file.filename.endswith(".json"):
-        logger.warning(
+        logging.warning(
             f"[API] File upload rejected - invalid file type: {file.filename}"
         )
         raise HTTPException(status_code=422, detail="Only JSON files are supported")
 
     try:
         # Read file content
-        logger.debug(f"[API] Reading file content for: {file.filename}")
+        logging.debug(f"[API] Reading file content for: {file.filename}")
         file_content = await file.read()
         file_size = len(file_content)
-        logger.info(f"[API] File content read successfully - size: {file_size} bytes")
+        logging.info(f"[API] File content read successfully - size: {file_size} bytes")
 
         # Start processing
-        logger.info(f"[API] Starting processing service for file: {file.filename}")
+        logging.info(f"[API] Starting processing service for file: {file.filename}")
         service = get_web_processing_service()
         response = await service.start_processing(
             file_content=file_content,
@@ -212,24 +212,24 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):  # noq
             processing_request=processing_request,
         )
 
-        logger.info(
+        logging.info(
             f"[API] Processing job created successfully - job_id: {response.job_id}, filename: {file.filename}, status: {response.status}"
         )
         return response
 
     except ValueError as e:
         if "exceeds maximum" in str(e):
-            logger.error(
+            logging.error(
                 f"[API] File too large - filename: {file.filename}, error: {str(e)}"
             )
             raise HTTPException(status_code=413, detail=str(e)) from e
         else:
-            logger.error(
+            logging.error(
                 f"[API] File validation failed - filename: {file.filename}, error: {str(e)}"
             )
             raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
-        logger.error(
+        logging.error(
             f"[API] Unexpected error during processing start - filename: {file.filename}, error: {str(e)}",
             exc_info=True,
         )
@@ -250,15 +250,15 @@ async def get_processing_status(job_id: str):
     Raises:
         HTTPException: 404 if job not found
     """
-    logger.debug(f"[API] Status request for job_id: {job_id}")
+    logging.debug(f"[API] Status request for job_id: {job_id}")
 
     service = get_web_processing_service()
     status = service.get_job_status(job_id)
     if not status:
-        logger.warning(f"[API] Status request failed - job not found: {job_id}")
+        logging.warning(f"[API] Status request failed - job not found: {job_id}")
         raise HTTPException(status_code=404, detail="Job not found")
 
-    logger.debug(
+    logging.debug(
         f"[API] Status retrieved for job_id: {job_id}, status: {status.status}, progress: {status.percent}%"
     )
     return status
@@ -278,17 +278,17 @@ async def get_results_preview(job_id: str):
     Raises:
         HTTPException: 404 if job not found, 400 if job not completed
     """
-    logger.info(f"[API] Preview request for job_id: {job_id}")
+    logging.info(f"[API] Preview request for job_id: {job_id}")
 
     # Check if job exists and is completed
     service = get_web_processing_service()
     status = service.get_job_status(job_id)
     if not status:
-        logger.warning(f"[API] Preview request failed - job not found: {job_id}")
+        logging.warning(f"[API] Preview request failed - job not found: {job_id}")
         raise HTTPException(status_code=404, detail="Job not found")
 
     if status.status != "completed":
-        logger.warning(
+        logging.warning(
             f"[API] Preview request failed - job not completed: {job_id}, current status: {status.status}"
         )
         raise HTTPException(
@@ -297,15 +297,15 @@ async def get_results_preview(job_id: str):
         )
 
     # Get results preview
-    logger.debug(f"[API] Generating results preview for job_id: {job_id}")
+    logging.debug(f"[API] Generating results preview for job_id: {job_id}")
     preview = service.get_results_preview(job_id)
     if not preview:
-        logger.error(f"[API] Failed to generate results preview for job_id: {job_id}")
+        logging.error(f"[API] Failed to generate results preview for job_id: {job_id}")
         raise HTTPException(
             status_code=500, detail="Failed to generate results preview"
         )
 
-    logger.info(
+    logging.info(
         f"[API] Preview generated successfully for job_id: {job_id}, total_rows: {preview.total_rows}, preview_rows: {len(preview.preview_rows)}"
     )
     return preview
@@ -325,17 +325,17 @@ async def download_results(job_id: str):
     Raises:
         HTTPException: 404 if job not found, 400 if job not completed
     """
-    logger.info(f"[API] CSV download request for job_id: {job_id}")
+    logging.info(f"[API] CSV download request for job_id: {job_id}")
 
     # Check if job exists and is completed
     service = get_web_processing_service()
     status = service.get_job_status(job_id)
     if not status:
-        logger.warning(f"[API] Download request failed - job not found: {job_id}")
+        logging.warning(f"[API] Download request failed - job not found: {job_id}")
         raise HTTPException(status_code=404, detail="Job not found")
 
     if status.status != "completed":
-        logger.warning(
+        logging.warning(
             f"[API] Download request failed - job not completed: {job_id}, current status: {status.status}"
         )
         raise HTTPException(
@@ -344,13 +344,13 @@ async def download_results(job_id: str):
         )
 
     # Get results file path
-    logger.debug(f"[API] Retrieving CSV results file path for job_id: {job_id}")
+    logging.debug(f"[API] Retrieving CSV results file path for job_id: {job_id}")
     file_path = service.get_results_file_path(job_id)
     if not file_path:
-        logger.error(f"[API] CSV results file not found for job_id: {job_id}")
+        logging.error(f"[API] CSV results file not found for job_id: {job_id}")
         raise HTTPException(status_code=500, detail="Results file not found")
 
-    logger.info(
+    logging.info(
         f"[API] Serving CSV download for job_id: {job_id}, file_path: {file_path}"
     )
     return FileResponse(
@@ -372,17 +372,19 @@ async def download_excel_results(job_id: str):
     Raises:
         HTTPException: 404 if job not found, 400 if job not completed
     """
-    logger.info(f"[API] Excel download request for job_id: {job_id}")
+    logging.info(f"[API] Excel download request for job_id: {job_id}")
 
     # Check if job exists and is completed
     service = get_web_processing_service()
     status = service.get_job_status(job_id)
     if not status:
-        logger.warning(f"[API] Excel download request failed - job not found: {job_id}")
+        logging.warning(
+            f"[API] Excel download request failed - job not found: {job_id}"
+        )
         raise HTTPException(status_code=404, detail="Job not found")
 
     if status.status != "completed":
-        logger.warning(
+        logging.warning(
             f"[API] Excel download request failed - job not completed: {job_id}, current status: {status.status}"
         )
         raise HTTPException(
@@ -391,13 +393,13 @@ async def download_excel_results(job_id: str):
         )
 
     # Get Excel results file path
-    logger.debug(f"[API] Retrieving Excel results file path for job_id: {job_id}")
+    logging.debug(f"[API] Retrieving Excel results file path for job_id: {job_id}")
     file_path = service.get_excel_results_file_path(job_id)
     if not file_path:
-        logger.error(f"[API] Excel results file not found for job_id: {job_id}")
+        logging.error(f"[API] Excel results file not found for job_id: {job_id}")
         raise HTTPException(status_code=500, detail="Excel results file not found")
 
-    logger.info(
+    logging.info(
         f"[API] Serving Excel download for job_id: {job_id}, file_path: {file_path}"
     )
     return FileResponse(

@@ -3,6 +3,7 @@ FastAPI main application for GRAAL web interface.
 """
 
 import logging
+import logging.config
 import os
 from contextlib import asynccontextmanager
 
@@ -16,13 +17,8 @@ from graal.api.services.database_builder_service import DatabaseBuilderService
 from graal.api.services.job_registry import InMemoryJobRegistry
 from graal.api.services.web_processing_service import WebProcessingService
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf")
+
 
 # Global services
 job_registry = InMemoryJobRegistry()
@@ -34,10 +30,10 @@ database_builder_service = DatabaseBuilderService(job_registry=job_registry)
 async def lifespan(app: FastAPI):
     """Application lifespan event handler."""
     # Startup
-    logger.info("GRAAL Web API starting up...")
+    logging.info("GRAAL Web API starting up...")
     yield
     # Shutdown
-    logger.info("GRAAL Web API shutting down...")
+    logging.info("GRAAL Web API shutting down...")
 
 
 # Create FastAPI application
@@ -56,7 +52,7 @@ frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
     cors_origins.append(frontend_url)
 
-logger.info(f"CORS origins configured: {cors_origins}")
+logging.info(f"CORS origins configured: {cors_origins}")
 
 app.add_middleware(
     CORSMiddleware,

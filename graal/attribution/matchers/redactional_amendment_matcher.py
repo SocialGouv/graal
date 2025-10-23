@@ -10,7 +10,6 @@ from graal.attribution.matchers.base_matcher import BaseMatcher
 from graal.custom_types import AttributionMatcherType, ColumnName
 
 logging.config.fileConfig("logging.conf")
-logger = logging.getLogger(__name__)
 
 
 class RedactionalAmendmentMatcher(BaseMatcher):
@@ -69,7 +68,7 @@ class RedactionalAmendmentMatcher(BaseMatcher):
         # Extract article number from the amendment
         article_num = amendment.get("Num article", "").strip().lower()
         if not article_num:
-            logger.warning(
+            logging.warning(
                 f"Redactional amendment {amendment.get('amdt_idx', 'unknown')} "
                 f"has no article number."
             )
@@ -78,7 +77,7 @@ class RedactionalAmendmentMatcher(BaseMatcher):
         # Look up attribution in subsidiary table
         attribution = self.article_to_attribution.get(article_num)
         if not attribution:
-            logger.warning(
+            logging.warning(
                 f"Article number '{article_num}' not found in subsidiary table "
                 f"for redactional amendment {amendment.get('amdt_idx', 'unknown')}. "
                 f"Will fall back to default attribution."

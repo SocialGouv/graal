@@ -9,13 +9,13 @@ This module handles preprocessing of configuration files, including:
 
 import copy
 import logging
+import logging.config
 import os
 import re
 from pathlib import Path
 from typing import Any, Dict
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf")
 
 
 class ConfigPreprocessor:
@@ -49,7 +49,7 @@ class ConfigPreprocessor:
         Raises:
             ValueError: If required environment variables are missing
         """
-        logger.info("Starting configuration preprocessing")
+        logging.info("Starting configuration preprocessing")
 
         # Deep copy to avoid modifying the original
         preprocessed_config = copy.deepcopy(config)
@@ -57,7 +57,7 @@ class ConfigPreprocessor:
         # Recursively process all values in the config
         self._process_dict_recursive(preprocessed_config)
 
-        logger.info("Configuration preprocessing completed")
+        logging.info("Configuration preprocessing completed")
         return preprocessed_config
 
     def _process_dict_recursive(self, obj: Any) -> None:
@@ -102,7 +102,7 @@ class ConfigPreprocessor:
                     f"Found in config value: '{value}'"
                 )
 
-            logger.debug(f"Resolved ${{{var_name}}} -> {env_value}")
+            logging.debug(f"Resolved ${{{var_name}}} -> {env_value}")
             return env_value
 
         resolved_value = self.ENV_VAR_PATTERN.sub(replace_env_var, value)
@@ -155,7 +155,7 @@ class ConfigPreprocessor:
 
         # For template paths (containing % formatting), skip validation
         if "%" in resolved_path:
-            logger.debug(f"Skipping validation for template path: {resolved_path}")
+            logging.debug(f"Skipping validation for template path: {resolved_path}")
             return
 
         # Check if path exists (file or directory)
@@ -163,12 +163,12 @@ class ConfigPreprocessor:
             # For some paths, the parent directory should exist even if the file doesn't
             parent = path.parent
             if parent.exists():
-                logger.debug(
+                logging.debug(
                     f"Path doesn't exist but parent directory does: {resolved_path}"
                 )
                 return
 
-            logger.warning(
+            logging.warning(
                 f"Resolved path does not exist: {resolved_path} "
                 f"(from config value: {original_value})"
             )

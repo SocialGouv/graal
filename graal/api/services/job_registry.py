@@ -1,4 +1,5 @@
 import logging
+import logging.config
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -7,7 +8,7 @@ from graal.api.models.responses import (
     JobStatus,
 )
 
-logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf")
 
 
 class JobRegistry(ABC):

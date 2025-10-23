@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import logging.config
 from pathlib import Path
 from typing import Annotated
 
@@ -21,8 +22,7 @@ from graal.api.services.database_builder_service import (
 )
 from graal.utils.s3_service import get_s3_service
 
-logger = logging.getLogger(__name__)
-
+logging.config.fileConfig("logging.conf")
 router = APIRouter(prefix="/databases", tags=["databases"])
 
 
@@ -43,7 +43,7 @@ async def list_databases():
     Raises:
         HTTPException: 500 if listing fails
     """
-    logger.info("[API] Listing available similarity databases")
+    logging.info("[API] Listing available similarity databases")
 
     try:
         s3_service = get_s3_service()
@@ -62,13 +62,13 @@ async def list_databases():
                     )
                 )
             except Exception as e:
-                logger.warning(f"Failed to get metadata for database {name}: {e}")
+                logging.warning(f"Failed to get metadata for database {name}: {e}")
 
-        logger.info(f"[API] Found {len(databases)} similarity databases")
+        logging.info(f"[API] Found {len(databases)} similarity databases")
         return DatabaseListResponse(databases=databases, total=len(databases))
 
     except Exception as e:
-        logger.error(f"[API] Error listing databases: {e}", exc_info=True)
+        logging.error(f"[API] Error listing databases: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to list databases") from e
 
 
@@ -110,7 +110,7 @@ async def upload_amendment_file(
         with open(file_path, "wb") as f:
             f.write(contents)
 
-        logger.info(
+        logging.info(
             f"[API] File uploaded successfully: {file.filename} (upload_id: {upload_id})"
         )
 
@@ -121,7 +121,7 @@ async def upload_amendment_file(
             "metadata": file_metadata,
         }
     except Exception as e:
-        logger.error(f"[API] Error uploading file: {e}", exc_info=True)
+        logging.error(f"[API] Error uploading file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to upload file") from e
 
 
@@ -155,7 +155,7 @@ async def build_database(request: DatabaseBuildRequest):
             "group_by_columns": ["Lecture", "origin_project", "Num article"]
         }
     """
-    logger.info(f"[API] Received database build request: {request.database_name}")
+    logging.info(f"[API] Received database build request: {request.database_name}")
 
     try:
         # Create job
@@ -167,22 +167,22 @@ async def build_database(request: DatabaseBuildRequest):
             job_id=job_id, input_file_path=f"database_build_{request.database_name}"
         )
 
-        logger.info(
+        logging.info(
             f"[API] Created job {job_id} for database build: {request.database_name}"
         )
 
         # Start background task
-        logger.info(f"[API] About to create background task for job {job_id}")
-        logger.info(f"[API] Config file: {request.config_file}")
-        logger.info(f"[API] Database name: {request.database_name}")
-        logger.info(f"[API] File references: {request.file_references}")
-        logger.info(f"[API] Number of file references: {len(request.file_references)}")
+        logging.info(f"[API] About to create background task for job {job_id}")
+        logging.info(f"[API] Config file: {request.config_file}")
+        logging.info(f"[API] Database name: {request.database_name}")
+        logging.info(f"[API] File references: {request.file_references}")
+        logging.info(f"[API] Number of file references: {len(request.file_references)}")
 
         try:
             files_metadata = [ref.model_dump() for ref in request.file_references]
-            logger.info(f"[API] Converted file references to dicts: {files_metadata}")
+            logging.info(f"[API] Converted file references to dicts: {files_metadata}")
         except Exception as e:
-            logger.error(
+            logging.error(
                 f"[API] Error converting file references to dict: {e}", exc_info=True
             )
             raise
@@ -200,26 +200,26 @@ async def build_database(request: DatabaseBuildRequest):
                     group_by_columns=request.group_by_columns,
                 )
             )
-            logger.info(f"[API] Background task created successfully: {task}")
+            logging.info(f"[API] Background task created successfully: {task}")
         except Exception as e:
-            logger.error(f"[API] Error creating background task: {e}", exc_info=True)
+            logging.error(f"[API] Error creating background task: {e}", exc_info=True)
             raise
 
         # Add callback to log task completion or errors
         def _log_task_result(task_future):
             try:
                 task_future.result()
-                logger.info(
+                logging.info(
                     f"[API] Background task completed successfully for job {job_id}"
                 )
             except Exception as e:
-                logger.error(
+                logging.error(
                     f"[API] Background task failed for job {job_id}: {e}", exc_info=True
                 )
 
         task.add_done_callback(_log_task_result)
 
-        logger.info(
+        logging.info(
             f"[API] Database build job started successfully - job_id: {job_id}, database: {request.database_name}"
         )
         return ProcessingResponse(
@@ -227,7 +227,7 @@ async def build_database(request: DatabaseBuildRequest):
         )
 
     except Exception as e:
-        logger.error(
+        logging.error(
             f"[API] Error starting database build for {request.database_name}: {e}",
             exc_info=True,
         )
@@ -255,12 +255,12 @@ async def delete_uploaded_file(upload_id: str):
         # Find file with this upload_id
         for file_path in temp_upload_dir.glob(f"{upload_id}_*"):
             file_path.unlink()
-            logger.info(f"[API] Deleted uploaded file: {file_path}")
+            logging.info(f"[API] Deleted uploaded file: {file_path}")
             return {"message": "File deleted successfully"}
 
         raise HTTPException(status_code=404, detail="Upload not found")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[API] Error deleting uploaded file: {e}", exc_info=True)
+        logging.error(f"[API] Error deleting uploaded file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to delete file") from e

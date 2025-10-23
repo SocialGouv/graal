@@ -9,6 +9,7 @@ is the responsibility of the caller.
 """
 
 import logging
+import logging.config
 from pathlib import Path
 from typing import Optional
 
@@ -22,7 +23,7 @@ from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.base_config import InputFileConfig
 from graal.utils.sheet_data_loader import SheetDataLoader
 
-logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf")
 
 
 # Custom exception classes
@@ -66,7 +67,7 @@ class SimilarityDatabaseBuilderService:
                                     containing acronym mappings (default: DSS config file).
         """
         self._office_config_file_path = office_config_file_path
-        logger.info(
+        logging.info(
             f"Initialized SimilarityDatabaseBuilderService with office config: {office_config_file_path}"
         )
 
@@ -113,13 +114,13 @@ class SimilarityDatabaseBuilderService:
             group_by_columns = ["Lecture", "origin_project", "Num article"]
 
         try:
-            logger.info("=" * 80)
-            logger.info("Starting similarity database build process")
-            logger.info(f"Similarity threshold: {similarity_threshold}, eps: {eps}")
-            logger.info("=" * 80)
+            logging.info("=" * 80)
+            logging.info("Starting similarity database build process")
+            logging.info(f"Similarity threshold: {similarity_threshold}, eps: {eps}")
+            logging.info("=" * 80)
 
             # Load project configurations
-            logger.info("Loading project configurations...")
+            logging.info("Loading project configurations...")
 
             # Determine which config file to use
             config_file_to_use = (
@@ -129,16 +130,16 @@ class SimilarityDatabaseBuilderService:
             )
 
             # Load acronym mappings from office config
-            logger.info(f"Loading acronym mappings from: {config_file_to_use}")
+            logging.info(f"Loading acronym mappings from: {config_file_to_use}")
             sheet_loader = SheetDataLoader(config_file_to_use)
             office_config_file = sheet_loader.excel_data
             acronym_mapping = AmendmentPreProcessor.load_acronyms(
                 office_config_file["Acronymes"]
             )
-            logger.info(f"Loaded {len(acronym_mapping)} acronym mappings")
+            logging.info(f"Loaded {len(acronym_mapping)} acronym mappings")
 
             # Load and preprocess amendments
-            logger.info("Loading and preprocessing amendments...")
+            logging.info("Loading and preprocessing amendments...")
             amendments_df = self._load_and_preprocess_amendments(
                 amendment_files=amendment_files,
                 acronym_mapping=acronym_mapping,
@@ -150,12 +151,12 @@ class SimilarityDatabaseBuilderService:
                     "No amendments available after preprocessing. Check input files and filters."
                 )
 
-            logger.info(
+            logging.info(
                 f"Preprocessed {len(amendments_df)} amendments, starting deduplication..."
             )
 
             # Apply clustering and deduplication
-            logger.info("Applying deduplication via clustering...")
+            logging.info("Applying deduplication via clustering...")
             filtered_df, _clusters = AllotmentHandler.process_allotments(
                 amendments_df=amendments_df,
                 allotment_column="Exposé amdt",
@@ -165,16 +166,16 @@ class SimilarityDatabaseBuilderService:
                 removal_strategy_func=self._get_all_indices_oldest_or_shorter_responses,
             )
 
-            logger.info(
+            logging.info(
                 f"Deduplication complete: {len(amendments_df)} -> {len(filtered_df)} amendments "
                 f"({len(amendments_df) - len(filtered_df)} duplicates removed)"
             )
 
-            logger.info("=" * 80)
-            logger.info(
+            logging.info("=" * 80)
+            logging.info(
                 f"Successfully built similarity database with {len(filtered_df)} unique amendments"
             )
-            logger.info("=" * 80)
+            logging.info("=" * 80)
 
             return filtered_df
 
@@ -183,7 +184,7 @@ class SimilarityDatabaseBuilderService:
         except EmptyDatasetError:
             raise
         except Exception as e:
-            logger.error(
+            logging.error(
                 f"Unexpected error building similarity database: {e}", exc_info=True
             )
             raise SimilarityDBBuildError(
@@ -226,7 +227,7 @@ class SimilarityDatabaseBuilderService:
             for handler, file_configs in grouped_files.items():
                 handler_name = handler.__class__.__name__
                 file_count = len(file_configs)
-                logger.info(f"Loading {file_count} files using {handler_name}...")
+                logging.info(f"Loading {file_count} files using {handler_name}...")
 
                 # Load amendments using the handler
                 df = handler.load_amendments(file_configs)
@@ -236,13 +237,13 @@ class SimilarityDatabaseBuilderService:
                     df, acronym_mapping
                 )
 
-                logger.info(f"Loaded {len(df)} amendments using {handler_name}")
+                logging.info(f"Loaded {len(df)} amendments using {handler_name}")
                 dataframes.append(df)
 
             # Combine all DataFrames
             if not dataframes:
                 amendments_df = pd.DataFrame()
-                logger.info("No files to load")
+                logging.info("No files to load")
             elif len(dataframes) == 1:
                 amendments_df = dataframes[0]
             else:
@@ -252,22 +253,22 @@ class SimilarityDatabaseBuilderService:
                     amendments_df = AmendmentPreProcessor.concatenate_dataframes(
                         amendments_df, df
                     )
-                logger.info(f"Combined amendments from {len(dataframes)} file types")
+                logging.info(f"Combined amendments from {len(dataframes)} file types")
 
             if amendments_df.empty:
-                logger.warning("No amendments loaded from any source")
+                logging.warning("No amendments loaded from any source")
                 return amendments_df
 
-            logger.info(f"Total amendments loaded: {len(amendments_df)}")
+            logging.info(f"Total amendments loaded: {len(amendments_df)}")
 
             # Drop empty rows in specified columns
             amendments_df = AmendmentPreProcessor.drop_empty_rows_in_columns(
                 amendments_df, empty_columns_to_drop
             )
-            logger.info(f"After dropping empty rows: {len(amendments_df)} amendments")
+            logging.info(f"After dropping empty rows: {len(amendments_df)} amendments")
 
             # Apply universal preprocessing (remove gage sentences with unidecode)
-            logger.info(
+            logging.info(
                 "Applying universal preprocessing to Corps amdt and Exposé amdt..."
             )
             amendments_df = AmendmentPreProcessor.apply_universal_preprocessing(
@@ -277,7 +278,7 @@ class SimilarityDatabaseBuilderService:
             )
 
             # Handle empty Corps amdt by generating placeholder text
-            logger.info("Handling empty Corps amdt entries...")
+            logging.info("Handling empty Corps amdt entries...")
             for index, row in amendments_df.iterrows():
                 if pd.isna(row["Corps amdt"]) or row["Corps amdt"] in [None, ""]:
                     amendments_df.at[index, "Corps amdt"] = (
@@ -285,11 +286,11 @@ class SimilarityDatabaseBuilderService:
                         f"faciliter le traitement des amendements {index}"
                     )
 
-            logger.info("Preprocessing complete")
+            logging.info("Preprocessing complete")
             return amendments_df
 
         except Exception as e:
-            logger.error(
+            logging.error(
                 f"Error loading and preprocessing amendments: {e}", exc_info=True
             )
             raise

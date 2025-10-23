@@ -4,9 +4,10 @@ Utility functions for robust JSON handling with different UTF-8 encodings.
 
 import json
 import logging
+import logging.config
 from typing import Any, Union
 
-logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf")
 
 
 def load_json(content: Union[bytes, str], filename: str = "unknown") -> Any:
@@ -28,14 +29,14 @@ def load_json(content: Union[bytes, str], filename: str = "unknown") -> Any:
     Raises:
         ValueError: If content cannot be decoded or parsed as JSON
     """
-    logger.debug(f"[JSON_UTILS] Loading JSON content for file: {filename}")
+    logging.debug(f"[JSON_UTILS] Loading JSON content for file: {filename}")
 
     # If content is already a string, try to parse directly
     if isinstance(content, str):
         try:
             return json.loads(content)
         except json.JSONDecodeError as e:
-            logger.error(f"[JSON_UTILS] JSON parsing failed for {filename}: {str(e)}")
+            logging.error(f"[JSON_UTILS] JSON parsing failed for {filename}: {str(e)}")
             raise ValueError(f"Invalid JSON content: {str(e)}") from e
 
     # Handle bytes content with different encoding strategies
@@ -44,7 +45,7 @@ def load_json(content: Union[bytes, str], filename: str = "unknown") -> Any:
         # This is optimal for French content which often uses UTF-8 with BOM
         try:
             decoded_content = content.decode("utf-8-sig")
-            logger.debug(
+            logging.debug(
                 f"[JSON_UTILS] Successfully decoded {filename} using utf-8-sig"
             )
 
@@ -52,17 +53,17 @@ def load_json(content: Union[bytes, str], filename: str = "unknown") -> Any:
             # This can happen if the content was double-encoded or manually prefixed with BOM
             if decoded_content.startswith("\ufeff"):
                 decoded_content = decoded_content[1:]
-                logger.debug(
+                logging.debug(
                     f"[JSON_UTILS] Removed remaining BOM character from {filename}"
                 )
 
             return json.loads(decoded_content)
         except UnicodeDecodeError:
-            logger.debug(
+            logging.debug(
                 f"[JSON_UTILS] utf-8-sig decoding failed for {filename}, trying utf-8"
             )
         except json.JSONDecodeError as e:
-            logger.error(
+            logging.error(
                 f"[JSON_UTILS] JSON parsing failed for {filename} (utf-8-sig): {str(e)}"
             )
             raise ValueError(f"Invalid JSON content: {str(e)}") from e
@@ -70,19 +71,21 @@ def load_json(content: Union[bytes, str], filename: str = "unknown") -> Any:
         # Strategy 2: Fallback to regular utf-8
         try:
             decoded_content = content.decode("utf-8")
-            logger.debug(f"[JSON_UTILS] Successfully decoded {filename} using utf-8")
+            logging.debug(f"[JSON_UTILS] Successfully decoded {filename} using utf-8")
 
             # Remove BOM if present (in case it wasn't handled by utf-8-sig)
             if decoded_content.startswith("\ufeff"):
                 decoded_content = decoded_content[1:]
-                logger.debug(f"[JSON_UTILS] Removed BOM character from {filename}")
+                logging.debug(f"[JSON_UTILS] Removed BOM character from {filename}")
 
             return json.loads(decoded_content)
         except UnicodeDecodeError as e:
-            logger.error(f"[JSON_UTILS] UTF-8 decoding failed for {filename}: {str(e)}")
+            logging.error(
+                f"[JSON_UTILS] UTF-8 decoding failed for {filename}: {str(e)}"
+            )
             raise ValueError(f"Unable to decode file content as UTF-8: {str(e)}") from e
         except json.JSONDecodeError as e:
-            logger.error(
+            logging.error(
                 f"[JSON_UTILS] JSON parsing failed for {filename} (utf-8): {str(e)}"
             )
             raise ValueError(f"Invalid JSON content: {str(e)}") from e
@@ -105,29 +108,31 @@ def load_json_from_file(file_path: str) -> Any:
         ValueError: If file cannot be read or parsed as JSON
         FileNotFoundError: If file does not exist
     """
-    logger.debug(f"[JSON_UTILS] Loading JSON from file: {file_path}")
+    logging.debug(f"[JSON_UTILS] Loading JSON from file: {file_path}")
 
     try:
         # Try utf-8-sig first (optimal for French content with potential BOM)
         with open(file_path, "r", encoding="utf-8-sig") as f:
             content = f.read()
-            logger.debug(f"[JSON_UTILS] Successfully read {file_path} using utf-8-sig")
+            logging.debug(f"[JSON_UTILS] Successfully read {file_path} using utf-8-sig")
             return json.loads(content)
     except UnicodeDecodeError:
-        logger.debug(
+        logging.debug(
             f"[JSON_UTILS] utf-8-sig reading failed for {file_path}, trying utf-8"
         )
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
-                logger.debug(f"[JSON_UTILS] Successfully read {file_path} using utf-8")
+                logging.debug(f"[JSON_UTILS] Successfully read {file_path} using utf-8")
                 return json.loads(content)
         except UnicodeDecodeError as e:
-            logger.error(f"[JSON_UTILS] UTF-8 reading failed for {file_path}: {str(e)}")
+            logging.error(
+                f"[JSON_UTILS] UTF-8 reading failed for {file_path}: {str(e)}"
+            )
             raise ValueError(f"Unable to read file as UTF-8: {str(e)}") from e
     except json.JSONDecodeError as e:
-        logger.error(f"[JSON_UTILS] JSON parsing failed for {file_path}: {str(e)}")
+        logging.error(f"[JSON_UTILS] JSON parsing failed for {file_path}: {str(e)}")
         raise ValueError(f"Invalid JSON file: {str(e)}") from e
     except FileNotFoundError:
-        logger.error(f"[JSON_UTILS] File not found: {file_path}")
+        logging.error(f"[JSON_UTILS] File not found: {file_path}")
         raise

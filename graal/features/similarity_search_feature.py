@@ -20,7 +20,6 @@ from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.similarity_db_loader import get_similarity_db_loader
 
 logging.config.fileConfig("logging.conf")
-logger = logging.getLogger(__name__)
 
 
 class SimilaritySearchFeature(BaseFeature):
@@ -207,10 +206,10 @@ class SimilaritySearchFeature(BaseFeature):
                 "with the S3 path to a Parquet file (e.g., 'PLFSS/2024.parquet')."
             )
 
-        logger.info(f"Loading similarity database from S3: {database_file}")
+        logging.info(f"Loading similarity database from S3: {database_file}")
         # Use asyncio to run the async S3 loader
         # asyncio.run() creates a new event loop, which works in worker threads
         loader = get_similarity_db_loader()
         df = asyncio.run(loader.load_from_s3(database_file))
-        logger.info(f"Loaded Parquet database from S3, shape: {df.shape}")
+        logging.info(f"Loaded Parquet database from S3, shape: {df.shape}")
         return df

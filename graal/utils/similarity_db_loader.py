@@ -6,6 +6,7 @@ Only Parquet format is supported for cloud-native storage efficiency.
 """
 
 import logging
+import logging.config
 from pathlib import Path
 from typing import Dict
 
@@ -13,7 +14,7 @@ import pandas as pd
 
 from graal.utils.s3_service import get_s3_service
 
-logger = logging.getLogger(__name__)
+logging.config.fileConfig("logging.conf")
 
 
 class SimilarityDatabaseLoader:
@@ -39,16 +40,16 @@ class SimilarityDatabaseLoader:
         """
         # Check cache first
         if s3_path in self._cache:
-            logger.info(f"Loading similarity database from cache: {s3_path}")
+            logging.info(f"Loading similarity database from cache: {s3_path}")
             return self._cache[s3_path].copy()
 
         # Load from S3
-        logger.info(f"Loading similarity database from S3: {s3_path}")
+        logging.info(f"Loading similarity database from S3: {s3_path}")
         df = await self._s3_service.load_database_parquet(s3_path)
 
         # Cache the result
         self._cache[s3_path] = df
-        logger.info(
+        logging.info(
             f"Cached similarity database: {s3_path}, shape: {df.shape}, "
             f"total cached: {len(self._cache)}"
         )
@@ -72,9 +73,9 @@ class SimilarityDatabaseLoader:
         if not path.exists():
             raise FileNotFoundError(f"Local file not found: {file_path}")
 
-        logger.info(f"Loading similarity database from local file: {file_path}")
+        logging.info(f"Loading similarity database from local file: {file_path}")
         df = pd.read_parquet(path)
-        logger.info(f"Loaded local Parquet file, shape: {df.shape}")
+        logging.info(f"Loaded local Parquet file, shape: {df.shape}")
 
         return df
 
@@ -82,7 +83,7 @@ class SimilarityDatabaseLoader:
         """Clear the entire cache."""
         cache_size = len(self._cache)
         self._cache.clear()
-        logger.info(f"Cleared similarity database cache ({cache_size} entries)")
+        logging.info(f"Cleared similarity database cache ({cache_size} entries)")
 
     def add_to_cache(self, cache_key: str, df: pd.DataFrame) -> None:
         """Add a pre-loaded database to the cache.
@@ -92,7 +93,7 @@ class SimilarityDatabaseLoader:
             df: The DataFrame to cache
         """
         self._cache[cache_key] = df.copy()
-        logger.info(
+        logging.info(
             f"Added database to cache: {cache_key}, shape: {df.shape}, "
             f"total cached: {len(self._cache)}"
         )
@@ -108,7 +109,7 @@ class SimilarityDatabaseLoader:
         """
         if cache_key in self._cache:
             del self._cache[cache_key]
-            logger.info(f"Removed from cache: {cache_key}")
+            logging.info(f"Removed from cache: {cache_key}")
             return True
         return False
 

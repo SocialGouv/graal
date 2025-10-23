@@ -8,6 +8,7 @@ processing logic to specific file types.
 
 import json
 import logging
+import logging.config
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,8 @@ import pandas as pd
 
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.base_config import InputFileConfig
+
+logging.config.fileConfig("logging.conf")
 
 
 def extract_date_from_amendment_json(file_content: str) -> Optional[int]:
@@ -45,13 +48,13 @@ def extract_date_from_amendment_json(file_content: str) -> Optional[int]:
     try:
         data = json.loads(file_content)
     except json.JSONDecodeError as e:
-        logger.warning(f"Failed to parse JSON content: {e}")
+        logging.warning(f"Failed to parse JSON content: {e}")
         return None
 
     # Look for "amendements" array
     amendements = data.get("amendements")
     if not isinstance(amendements, list):
-        logger.warning("No 'amendements' array found in JSON")
+        logging.warning("No 'amendements' array found in JSON")
         return None
 
     # Iterate through amendments to find first non-empty date
@@ -77,15 +80,12 @@ def extract_date_from_amendment_json(file_content: str) -> Optional[int]:
             return timestamp
 
         except (ValueError, OSError) as e:
-            logger.warning(f"Failed to parse date '{date_str}': {e}")
+            logging.warning(f"Failed to parse date '{date_str}': {e}")
             continue
 
     # No valid date found
-    logger.info("No valid date_derniere_modif found in amendments")
+    logging.info("No valid date_derniere_modif found in amendments")
     return None
-
-
-logger = logging.getLogger(__name__)
 
 
 class AmendmentFileHandler(ABC):

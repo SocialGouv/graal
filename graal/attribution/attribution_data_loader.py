@@ -7,7 +7,6 @@ from graal.core.text_normalizers import TextNormalizerFactory
 from graal.custom_types import LegalDocumentType, PLFProgramName, UserName
 
 logging.config.fileConfig("logging.conf")
-logger = logging.getLogger(__name__)
 
 
 class AttributionDataLoader:
@@ -120,7 +119,7 @@ class AttributionDataLoader:
             user_info_df.duplicated(subset=["Prénom Nom"], keep=False)
         ]
         if not duplicated_names.empty:
-            logger.warning(
+            logging.warning(
                 f"Warning: Duplicated 'Prénom Nom' values found: {duplicated_names['Prénom Nom'].unique()}"
             )
 
@@ -159,7 +158,9 @@ class AttributionDataLoader:
     def load_subsidiary_table(excel_data: dict) -> pd.DataFrame:
         """Load subsidiary table for redactional amendment attribution from the "Table subsidiaire" sheet."""
         if "Table subsidiaire" not in excel_data:
-            logger.warning("Sheet 'Table subsidiaire' not found in configuration file.")
+            logging.warning(
+                "Sheet 'Table subsidiaire' not found in configuration file."
+            )
             return pd.DataFrame(columns=["Numéro article", "Affectation (nom)"])
 
         subsidiary_df = excel_data["Table subsidiaire"].copy()
@@ -171,5 +172,5 @@ class AttributionDataLoader:
         )
         subsidiary_df.fillna("", inplace=True)
 
-        logger.info(f"Loaded {len(subsidiary_df)} entries from 'Table subsidiaire'.")
+        logging.info(f"Loaded {len(subsidiary_df)} entries from 'Table subsidiaire'.")
         return subsidiary_df
