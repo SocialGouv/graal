@@ -48,3 +48,18 @@ For detailed S3 configuration and usage, see [storage-s3.md](storage-s3.md).
   - Only Parquet format on S3 is supported
   - Selected via UI dropdown when using web application
   - Must be present when similarity search feature is enabled
+
+**Summary Generation** (`summary_generation` key):
+- `enabled`: Enable/disable summary generation feature
+- `should_overwrite`: Whether to overwrite existing summaries
+- `strategy`: Summary generation strategy
+  - `"legacy"`: Use traditional prompt from Excel config file
+  - `"dspy"`: Use DSPy-optimized prompts from S3
+- `dspy`: DSPy-specific configuration (only used when strategy is "dspy")
+  - `office_name`: Office/team name for prompt organization
+  - `s3_prompt_bucket`: S3 bucket containing optimized prompts
+  - `s3_prompt_prefix`: Path prefix in S3 bucket
+  - `metrics`: Evaluation metric weights for optimization
+    - `semantic_weight`: Weight for semantic similarity (0-1)
+    - `length_weight`: Weight for length constraint (0-1)
+    - `verb_weight`: Weight for infinitive verb form detection (bonus)

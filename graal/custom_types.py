@@ -21,6 +21,8 @@ Seconds = int
 Timestamp = int
 TxtContent = str
 UserName = str
+OfficeName = str  # Name of an office/team for DSPy prompt management
+SummaryStrategy = Literal["dspy", "legacy"]  # Summary generation strategy
 
 
 class SimilarAmendment(TypedDict):
@@ -43,7 +45,7 @@ AttributionMatcherType = Literal[
 ]
 AttributionStrategy = Literal["aggregate", "early_exit"]
 LLMType = Literal[
-    "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama"
+    "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama", "scaleway"
 ]
 AttributionColumns = Literal["Exposé amdt", "Corps amdt", "Corps amdt original"]
 ProjectName = Literal["PLFSS", "PLF"]
