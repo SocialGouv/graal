@@ -1,3 +1,11 @@
+# [1.8.0](https://github.com/SocialGouv/graal/compare/v1.7.1...v1.8.0) (2025-10-23)
+
+
+### Features
+
+* Add summary generation feature to UI ([18d43be](https://github.com/SocialGouv/graal/commit/18d43be015d0f8ef9c28e1cea77a3fc1ef985096))
+* Summary generation backend for web app ([e8d346f](https://github.com/SocialGouv/graal/commit/e8d346f34372daa0598275acd4ffdfe7b4cdc531))
+
 ## [1.7.1](https://github.com/SocialGouv/graal/compare/v1.7.0...v1.7.1) (2025-10-22)
 
 
