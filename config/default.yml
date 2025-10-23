@@ -70,9 +70,10 @@ summary_generation:
     s3_prompt_prefix: "summary_prompts/"  # Prefix path in S3 bucket
     # Evaluation metric weights for optimization
     metrics:
-      semantic_weight: 0.6  # Weight for semantic similarity (0-1)
+      semantic_weight: 0.7  # Weight for semantic similarity (0-1)
       length_weight: 0.3    # Weight for length constraint (0-1)
-      verb_weight: 0.1      # Weight for infinitive verb form (bonus only)
+      verb_weight: 0.0      # Weight for infinitive verb form (bonus only)
+      embedding_model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"  # Model for semantic similarity
 
 # Enable default opinion for amendments
 default_opinion:

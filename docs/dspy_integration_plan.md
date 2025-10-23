@@ -86,18 +86,18 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 ## Phase 3: Evaluation Metrics
 
 ### 3.1 Metric Implementation
-- [ ] Create `metrics.py`
-- [ ] Implement `french_summary_metric()`:
-  - [ ] **Semantic quality**: Embedding-based similarity to reference
-  - [ ] **Length constraint**: 8-20 words (strict)
-  - [ ] **Verb form**: Infinitive verb detection (bonus)
-  - [ ] Combined score calculation
-- [ ] Choose embedding model for semantic similarity (e.g., `sentence-transformers`)
-- [ ] Add French verb form validator (optional, using spaCy or pattern matching)
-- [ ] Write comprehensive tests for metrics
+- [x] Create `metrics.py`
+- [x] Implement `french_summary_metric()`:
+  - [x] **Semantic quality**: Embedding-based similarity to reference
+  - [x] **Length constraint**: 8-20 words (strict)
+  - [x] **Verb form**: Infinitive verb detection (bonus)
+  - [x] Combined score calculation
+- [x] Choose embedding model for semantic similarity (e.g., `sentence-transformers`)
+- [x] Add French verb form validator (optional, using spaCy or pattern matching)
+- [x] Write comprehensive tests for metrics
 
 ### 3.2 Metric Configuration
-- [ ] Define metric weights in configuration:
+- [x] Define metric weights in configuration:
   ```yaml
   dspy:
     metrics:
@@ -105,7 +105,7 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
       length_weight: 0.3
       verb_weight: 0.0  # bonus only
   ```
-- [ ] Document metric calculation methodology
+- [x] Document metric calculation methodology
 
 ---
 
@@ -386,7 +386,8 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 - **Embedding Model**: TBD - choose during Phase 3
 
 ### Open Questions
-- [ ] Decide on embedding model for semantic similarity
+- [x] Decide on embedding model for semantic similarity
+  - **Decision**: Using `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` for French text support
 - [ ] Determine optimal training dataset size per model
 - [ ] Define re-optimization schedule
 - [ ] Choose S3 bucket name and region
