@@ -279,11 +279,15 @@ def test_get_rate_limiting_config():
     # Create a test configuration
     config = {
         "llm_clients": {
-            "scaleway": {"nb_instances": 2, "timeout": 60, "rate_limiting": 10},
-            "ollama": {"nb_instances": 1, "timeout": 30, "rate_limiting": 5},
-            "albert": {"nb_instances": 1, "rate_limiting": 20},
+            "scaleway": {
+                "nb_instances": 2,
+                "timeout": 60,
+                "rate_limit_per_minute": 10,
+            },
+            "ollama": {"nb_instances": 1, "timeout": 30, "rate_limit_per_minute": 5},
+            "albert": {"nb_instances": 1, "rate_limit_per_minute": 20},
             "fake": {"nb_instances": 1},
-            "vllm": {"nb_instances": 2, "rate_limiting": 15},
+            "vllm": {"nb_instances": 2, "rate_limit_per_minute": 15},
         }
     }
 

@@ -3,12 +3,12 @@ import logging.config
 
 import pandas as pd
 
+from graal.core.text_normalizers import TextNormalizerFactory
 from graal.custom_types import IntIndex, Prompt
 from graal.summary.summary_generation_load_balancer import (
     SummaryGenerationLoadBalancer,
 )
 from graal.summary.summary_prompt_builder import SummaryPromptBuilder
-from graal.core.text_normalizers import TextNormalizerFactory
 
 logging.config.fileConfig("logging.conf")
 

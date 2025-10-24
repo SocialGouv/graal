@@ -118,27 +118,6 @@ class VllmDSPyAdapter(GraalLMAdapter):
         logging.info(f"Initialized VLLM DSPy adapter with model {client.name}")
 
 
-class FakeDSPyAdapter(GraalLMAdapter):
-    """DSPy adapter for fake LLM client (testing purposes).
-
-    WARNING: This uses the original FakeLLMAPIClient which returns random
-    lorem ipsum. It's suitable for basic integration tests but NOT for
-    DSPy optimization testing. Use FakeDSPyLLMAdapter for optimization.
-    """
-
-    def __init__(self, client: LLMAPIClient):
-        """Initialize Fake adapter.
-
-        Args:
-            client: Fake LLM API client instance
-        """
-        super().__init__(client, model_type="text")
-        logging.warning(
-            f"Using {client.name} which returns random text. "
-            "For DSPy optimization, use FakeDSPyLLMClient instead."
-        )
-
-
 def create_dspy_adapter(client: LLMAPIClient) -> GraalLMAdapter:
     """Factory function to create the appropriate DSPy adapter for a client.
 
@@ -152,7 +131,6 @@ def create_dspy_adapter(client: LLMAPIClient) -> GraalLMAdapter:
         ValueError: If client type is not supported
 
     Note:
-        Use FakeDSPyLLMClient (type="fake_dspy") for DSPy optimization testing.
         FakeLLMAPIClient (type="fake") returns random text and will break optimization.
     """
     adapter_map = {
@@ -160,7 +138,6 @@ def create_dspy_adapter(client: LLMAPIClient) -> GraalLMAdapter:
         "scaleway": ScalewayDSPyAdapter,
         "ollama": OllamaDSPyAdapter,
         "vllm": VllmDSPyAdapter,
-        "fake": FakeDSPyAdapter,
         "openai": ScalewayDSPyAdapter,  # Scaleway uses OpenAI client
     }
 

@@ -5,12 +5,7 @@ Unit tests for DSPy LLM client adapters.
 import pytest
 
 from graal.summary.dspy_modules.adapters import (
-    AlbertDSPyAdapter,
-    FakeDSPyAdapter,
     GraalLMAdapter,
-    OllamaDSPyAdapter,
-    ScalewayDSPyAdapter,
-    VllmDSPyAdapter,
     create_dspy_adapter,
 )
 from graal.summary.llm_clients import FakeLLMAPIClient
@@ -48,23 +43,6 @@ def test_graal_lm_adapter_call_returns_list():
     assert isinstance(responses[0], str)
 
 
-def test_fake_dspy_adapter_initialization():
-    """Test that FakeDSPyAdapter can be initialized."""
-    client = FakeLLMAPIClient()
-    adapter = FakeDSPyAdapter(client)
-
-    assert adapter is not None
-    assert isinstance(adapter, GraalLMAdapter)
-
-
-def test_create_dspy_adapter_fake():
-    """Test factory function with fake client."""
-    client = FakeLLMAPIClient()
-    adapter = create_dspy_adapter(client)
-
-    assert isinstance(adapter, FakeDSPyAdapter)
-
-
 def test_create_dspy_adapter_unsupported_type():
     """Test factory function raises error for unsupported type."""
     # Create a mock client with unsupported type
@@ -73,12 +51,3 @@ def test_create_dspy_adapter_unsupported_type():
 
     with pytest.raises(ValueError, match="Unsupported client type"):
         create_dspy_adapter(client)
-
-
-def test_adapter_specific_classes_exist():
-    """Test that all adapter classes are defined."""
-    assert AlbertDSPyAdapter is not None
-    assert ScalewayDSPyAdapter is not None
-    assert OllamaDSPyAdapter is not None
-    assert VllmDSPyAdapter is not None
-    assert FakeDSPyAdapter is not None

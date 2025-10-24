@@ -113,7 +113,6 @@ def create_fake_client() -> LLMAPIClient:
     """Create a fake LLM API client.
 
     WARNING: This client returns random lorem ipsum text.
-    DO NOT use for DSPy optimization. Use create_fake_dspy_client() instead.
     """
     return FakeLLMAPIClient(name="fake")
 
@@ -222,7 +221,7 @@ def create_llm_api_clients(
             else:
                 raise ValueError(
                     f"Unsupported LLM client type: {client_type}. "
-                    f"Supported types are: 'scaleway', 'ollama', 'albert', 'fake', 'fake_dspy', 'vllm'."
+                    f"Supported types are: 'scaleway', 'ollama', 'albert', 'fake', 'vllm'."
                 )
 
     return llm_api_clients
@@ -238,7 +237,7 @@ def get_rate_limiting_config(config: Dict[str, Any]) -> Dict[LLMType, int]:
     Returns:
         A dictionary mapping client types to rate limits.
     """
-    rate_limiting: Dict[LLMType, int] = {}
+    rate_limit_per_minute: Dict[LLMType, int] = {}
 
     # Support both new and legacy config formats
     if "llm_clients" in config:
@@ -246,9 +245,9 @@ def get_rate_limiting_config(config: Dict[str, Any]) -> Dict[LLMType, int]:
         llm_clients_config = config["llm_clients"]
 
         for client_type, client_config in llm_clients_config.items():
-            if "rate_limiting" in client_config:
-                rate_limiting[cast(LLMType, client_type)] = client_config[
-                    "rate_limiting"
+            if "rate_limit_per_minute" in client_config:
+                rate_limit_per_minute[cast(LLMType, client_type)] = client_config[
+                    "rate_limit_per_minute"
                 ]
 
-    return rate_limiting
+    return rate_limit_per_minute

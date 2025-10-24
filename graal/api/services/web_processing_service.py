@@ -28,6 +28,16 @@ from graal.utils.json_utils import load_json
 
 logging.config.fileConfig("logging.conf")
 
+# Default rate limits for LLM clients (requests per minute)
+DEFAULT_RATE_LIMITS = {
+    "albert": 280,
+    "fake": 9999999,
+    "ollama": 500,
+    "openai": 500,
+    "scaleway": 500,
+    "vllm": 500,
+}
+
 
 class WebProcessingService:
     """Service for web-based processing of amendments."""
@@ -175,6 +185,9 @@ class WebProcessingService:
                     frontend_config.summary_generation.llm_type: {
                         "nb_instances": 8,  # Default to 8 instances
                         "timeout": 30,  # Default to 30 seconds
+                        "rate_limit_per_minute": DEFAULT_RATE_LIMITS.get(
+                            frontend_config.summary_generation.llm_type, 500
+                        ),
                     }
                 }
 

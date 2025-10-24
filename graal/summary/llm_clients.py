@@ -12,7 +12,7 @@ from pydantic_core import Url
 from graal.custom_types import (
     APIKey,
     LLMType,
-    TxtContent,
+    Prompt,
 )
 
 
@@ -45,7 +45,7 @@ class OllamaAPIClient(LLMAPIClient):
         self.password = password
         self.timeout = timeout
 
-    def generate_text(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: Prompt) -> str:
         logging.info(f"{self.name} is generating a summary")
         url = self.endpoint
 
@@ -87,7 +87,7 @@ class OpenAIAPIClient(LLMAPIClient):
         )
         self.timeout = timeout
 
-    def generate_text(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: Prompt) -> str:
         logging.info(f"{self.name} is generating a summary")
 
         data = {
@@ -120,7 +120,7 @@ class VllmAPIClient(LLMAPIClient):
         self.password = password
         self.timeout = timeout
 
-    def generate_text(self, prompt: TxtContent) -> str:
+    def generate_text(self, prompt: Prompt) -> str:
         url = self.vllm_endpoint
         headers = {"Content-Type": "application/json"}
         auth = (self.user, self.password)
@@ -145,7 +145,7 @@ class FakeLLMAPIClient(LLMAPIClient):
     ):
         super().__init__(type="fake", name=name)
 
-    def generate_text(self, _prompt: TxtContent) -> str:
+    def generate_text(self, _prompt: Prompt) -> str:
         # Generate a random summary
         summary = random.choice(  # nosec
             [
