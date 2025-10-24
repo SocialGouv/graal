@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/SocialGouv/graal/compare/v1.10.0...v1.10.1) (2025-10-24)
+
+
+### Bug Fixes
+
+* Make sure prompt is a string instead of some weird Series ([a57953b](https://github.com/SocialGouv/graal/commit/a57953b77ca70064525d1b64177249b6a5797bfe))
+
 # [1.10.0](https://github.com/SocialGouv/graal/compare/v1.9.0...v1.10.0) (2025-10-23)
 
 
