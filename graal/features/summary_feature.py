@@ -4,6 +4,8 @@ Summary generation feature implementation.
 This feature generates summaries for amendments.
 """
 
+import logging
+import logging.config
 import re
 from typing import Any, Set
 
@@ -12,6 +14,8 @@ import pandas as pd
 from graal.core.feature_interface import BaseFeature, FeatureInput, FeatureOutput
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.summary.summary_handler import SummaryHandler
+
+logging.config.fileConfig("logging.conf")
 
 
 class SummaryGenerationFeature(BaseFeature):
@@ -68,9 +72,16 @@ class SummaryGenerationFeature(BaseFeature):
         if not self.config_excel:
             raise ValueError("Summary feature requires config_excel parameter")
 
-        # Get the prompt configuration
+        # Get the prompt configuration - ensure it's a string, not a pandas object
         prompt_series = self.config_excel["Prompt Objet"]
-        config_prompt = prompt_series.iloc[0] if not prompt_series.empty else ""
+        if not prompt_series.empty:
+            # Extract the actual value from pandas - .values[0] gets the raw Python value
+            config_prompt = prompt_series.values[0]
+            # Ensure it's a string
+            if not isinstance(config_prompt, str):
+                config_prompt = str(config_prompt)
+        else:
+            config_prompt = ""
 
         # Create summary handler with our working copy
         summary_handler = SummaryHandler(
