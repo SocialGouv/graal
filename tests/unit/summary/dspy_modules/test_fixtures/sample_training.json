@@ -1,0 +1,48 @@
+[
+  {
+    "expose_amdt": "Cet amendement vise à modifier l'article L. 123-4 du code de la santé publique pour améliorer l'accès aux soins.",
+    "corps_amdt": "À l'article L. 123-4 du code de la santé publique, après le mot 'soins', sont insérés les mots 'de qualité'.",
+    "summary": "Modifier le code de la santé publique pour améliorer l'accès aux soins de qualité",
+    "metadata": {
+      "office": "office_A",
+      "quality_score": 0.95
+    }
+  },
+  {
+    "expose_amdt": "Amendement rédactionnel visant à corriger une erreur dans le texte de loi.",
+    "corps_amdt": "À l'article 5, le mot 'les' est remplacé par le mot 'des'.",
+    "summary": "Corriger une erreur rédactionnelle à l'article 5",
+    "metadata": {
+      "office": "office_B",
+      "quality_score": 0.88
+    }
+  },
+  {
+    "expose_amdt": "Cet amendement propose de créer un nouveau dispositif d'aide financière pour les étudiants en médecine.",
+    "corps_amdt": "Après l'article 12, il est inséré un article additionnel ainsi rédigé: 'Une aide financière est créée pour les étudiants en médecine.'",
+    "summary": "Créer une aide financière pour les étudiants en médecine",
+    "metadata": {
+      "office": "office_A",
+      "quality_score": 0.92,
+      "human_validated": true
+    }
+  },
+  {
+    "expose_amdt": "Le présent amendement vise à supprimer l'alinéa 3 de l'article 15 qui n'est plus adapté.",
+    "corps_amdt": "L'alinéa 3 de l'article 15 est supprimé.",
+    "summary": "Supprimer l'alinéa 3 de l'article 15",
+    "metadata": {
+      "office": "office_B",
+      "quality_score": 0.90
+    }
+  },
+  {
+    "expose_amdt": "Cet amendement a pour objet d'expérimenter un nouveau système de prise en charge dans trois départements pilotes.",
+    "corps_amdt": "Il est créé à titre expérimental dans trois départements un nouveau système de prise en charge pour une durée de deux ans.",
+    "summary": "Expérimenter un nouveau système de prise en charge dans trois départements",
+    "metadata": {
+      "office": "office_A",
+      "quality_score": 0.85
+    }
+  }
+]

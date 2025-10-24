@@ -1,0 +1,4 @@
+expose_amdt,corps_amdt,summary,office,quality_score
+"Cet amendement vise à modifier l'article L. 123-4 du code de la santé publique pour améliorer l'accès aux soins.","À l'article L. 123-4 du code de la santé publique, après le mot 'soins', sont insérés les mots 'de qualité'.","Modifier le code de la santé publique pour améliorer l'accès aux soins de qualité",office_A,0.95
+"Amendement rédactionnel visant à corriger une erreur dans le texte de loi.","À l'article 5, le mot 'les' est remplacé par le mot 'des'.","Corriger une erreur rédactionnelle à l'article 5",office_B,0.88
+"Cet amendement propose de créer un nouveau dispositif d'aide financière pour les étudiants en médecine.","Après l'article 12, il est inséré un article additionnel ainsi rédigé: 'Une aide financière est créée pour les étudiants en médecine.'","Créer une aide financière pour les étudiants en médecine",office_A,0.92

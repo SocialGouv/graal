@@ -74,6 +74,12 @@ summary_generation:
       length_weight: 0.3    # Weight for length constraint (0-1)
       verb_weight: 0.0      # Weight for infinitive verb form (bonus only)
       embedding_model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"  # Model for semantic similarity
+    # Training dataset configuration
+    training:
+      default_train_ratio: 0.8  # Default train/validation split ratio
+      min_summary_words: 8      # Minimum acceptable summary length in words
+      max_summary_words: 20     # Maximum acceptable summary length in words
+      dataset_s3_prefix: "dspy_datasets/"  # S3 prefix for storing training datasets
 
 # Enable default opinion for amendments
 default_opinion:

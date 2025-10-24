@@ -143,7 +143,7 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 ## Phase 5: Training Dataset Preparation
 
 ### 5.1 Dataset Schema
-- [ ] Define training data format:
+- [x] Define training data format:
   ```python
   {
     "expose_amdt": str,
@@ -156,19 +156,19 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
     }
   }
   ```
-- [ ] Create `graal/summary/dspy_modules/dataset.py`
-- [ ] Implement dataset loading utilities
-- [ ] Add train/validation split logic
+- [x] Create `graal/summary/dspy_modules/dataset.py`
+- [x] Implement dataset loading utilities
+- [x] Add train/validation split logic
 
 ### 5.2 Dataset Management
-- [ ] Create script `scripts/prepare_dspy_training_data.py`
-- [ ] Support multiple input formats:
-  - [ ] CSV/Excel exports
-  - [ ] JSON files
-  - [ ] Parquet files from S3
-- [ ] Implement data validation and cleaning
-- [ ] Add dataset statistics reporting
-- [ ] Store datasets in S3 for reproducibility
+- [x] Create script `scripts/prepare_dspy_training_data.py`
+- [x] Support multiple input formats:
+  - [x] CSV/Excel exports
+  - [x] JSON files
+  - [x] Parquet files from S3
+- [x] Implement data validation and cleaning
+- [x] Add dataset statistics reporting
+- [x] Store datasets in S3 for reproducibility
 
 ---
 
