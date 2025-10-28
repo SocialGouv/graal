@@ -1,3 +1,13 @@
+# [1.11.0](https://github.com/SocialGouv/graal/compare/v1.10.2...v1.11.0) (2025-10-28)
+
+
+### Features
+
+* Add evaluation metrics for DSPy ([a6eb3d9](https://github.com/SocialGouv/graal/commit/a6eb3d97a9a3c682929f13dc13fb9c7e1bf9012b))
+* Add prompt S3 storage infrastructure ([198054a](https://github.com/SocialGouv/graal/commit/198054a1264d2c3cb4b7f5e56add68321969ac27))
+* Add training set prep for DSPy ([73e4fb0](https://github.com/SocialGouv/graal/commit/73e4fb0616a83ae8e5837bf930fd6645d0de3c38))
+* MIPROv2 Optimizer Implementation ([0109688](https://github.com/SocialGouv/graal/commit/010968898fec22d298c351807de8df3d62f64517))
+
 ## [1.10.2](https://github.com/SocialGouv/graal/compare/v1.10.1...v1.10.2) (2025-10-28)
 
 
