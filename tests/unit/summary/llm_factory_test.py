@@ -35,7 +35,7 @@ def test_create_scaleway_client():
 
         # Verify the client
         assert isinstance(client, OpenAIAPIClient)
-        assert client.type == "openai"
+        assert client.type == "scaleway"
         assert client.name.startswith("scaleway_")
         assert client.model_name == "test-scaleway-model"
         assert client.timeout == 45
@@ -59,7 +59,7 @@ def test_create_albert_client():
 
         # Verify the client
         assert isinstance(client, OpenAIAPIClient)
-        assert client.type == "openai"
+        assert client.type == "albert"
         assert client.name.startswith("albert_")
         assert client.model_name == "test-albert-model"
         assert client.timeout == 45
@@ -82,7 +82,7 @@ def test_create_albert_client_default_url_and_model():
 
         # Verify the client
         assert isinstance(client, OpenAIAPIClient)
-        assert client.type == "openai"
+        assert client.type == "albert"
         assert client.name.startswith("albert_")
         assert client.model_name == "meta-llama/Meta-Llama-3.1-70B-Instruct"
         assert client.timeout == 30

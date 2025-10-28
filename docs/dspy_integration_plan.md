@@ -175,22 +175,23 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 ## Phase 6: MIPROv2 Optimizer Implementation
 
 ### 6.1 Optimizer Setup
-- [ ] Create `optimizers.py`
-- [ ] Implement `AmendmentSummaryOptimizer` class
-- [ ] Configure MIPROv2 with appropriate parameters:
-  - [ ] Number of candidates
-  - [ ] Number of iterations
-  - [ ] Batch size
-  - [ ] Temperature settings
-- [ ] Add progress tracking and logging
-- [ ] Implement checkpoint saving during optimization
+- [x] Create `optimizers.py`
+- [x] Implement `AmendmentSummaryOptimizer` class
+- [x] Configure MIPROv2 with appropriate parameters:
+  - [x] Number of candidates
+  - [x] Number of iterations
+  - [x] Batch size
+  - [x] Temperature settings
+- [x] Add progress tracking and logging
+- [x] Implement checkpoint saving during optimization
 
 ### 6.2 Model-Specific Optimization
-- [ ] Create optimization pipeline for each model type
-- [ ] Implement parallel optimization support (optional)
-- [ ] Add early stopping based on metric plateau
-- [ ] Save optimization history and statistics
-- [ ] Document optimal hyperparameters per model
+- [x] Create optimization pipeline for each model type
+- [x] Add rate limiting to avoid overwhelming the LLM API endpoint
+- [x] Implement parallel optimization support (optional)
+- [x] Add early stopping based on metric plateau
+- [x] Save optimization history and statistics
+- [x] Document optimal hyperparameters per model
 
 ---
 
