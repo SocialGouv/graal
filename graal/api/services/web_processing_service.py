@@ -30,7 +30,7 @@ logging.config.fileConfig("logging.conf")
 
 # Default rate limits for LLM clients (requests per minute)
 DEFAULT_RATE_LIMITS = {
-    "albert": 280,
+    "albert": 100,
     "fake": 9999999,
     "ollama": 500,
     "openai": 500,

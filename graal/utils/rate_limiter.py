@@ -43,7 +43,7 @@ class TokenBucketRateLimiter:
             capacity = rate_per_minute
         self.rate = rate_per_minute / 60.0  # Convert rate to tokens per second
         self.capacity = capacity
-        self.tokens = 0
+        self.tokens = 0.0  # Use float to track fractional tokens
         self.lock = threading.Lock()
         self.last_refill = time.perf_counter()
 
@@ -60,8 +60,8 @@ class TokenBucketRateLimiter:
     def _refill(self):
         now = time.perf_counter()
         elapsed = now - self.last_refill
-        # Add tokens based on the elapsed time
-        new_tokens = int(elapsed * self.rate)
+        # Add tokens based on the elapsed time - use float to avoid truncation
+        new_tokens = elapsed * self.rate
         if new_tokens > 0:
             self.tokens = min(self.capacity, self.tokens + new_tokens)
             self.last_refill = now
@@ -79,4 +79,4 @@ class TokenBucketRateLimiter:
         self.__dict__.update(state)
         # Recreate a new lock since it's not pickleable
         self.lock = threading.Lock()
-        self.tokens = 0
+        self.tokens = 0.0

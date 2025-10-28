@@ -78,8 +78,9 @@ class OpenAIAPIClient(LLMAPIClient):
         base_url: httpx.URL,
         timeout: int = 10,
         name: Optional[str] = None,
+        type: LLMType = "openai",
     ):
-        super().__init__(type="openai", name=name)
+        super().__init__(type=type, name=name)
         self.model_name = model_name
         self.client = OpenAI(
             base_url=base_url,

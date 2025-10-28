@@ -47,6 +47,7 @@ def create_scaleway_client(
         or os.getenv("SCALEWAY_MODEL_NAME", "meta-llama/Meta-Llama-3.3-70B-Instruct"),
         timeout=timeout,
         name="scaleway",
+        type="scaleway",
     )
 
 
@@ -77,6 +78,7 @@ def create_albert_client(
         or os.getenv("ETALAB_MODEL_NAME", "meta-llama/Meta-Llama-3.1-70B-Instruct"),
         timeout=timeout,
         name="albert",
+        type="albert",
     )
 
 
