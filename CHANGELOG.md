@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/SocialGouv/graal/compare/v1.11.0...v1.12.0) (2025-10-28)
+
+
+### Features
+
+* Add training & optimization scripts ([d3980ef](https://github.com/SocialGouv/graal/commit/d3980ef158a6ba355a9d642f97074cede862aa17))
+
 # [1.11.0](https://github.com/SocialGouv/graal/compare/v1.10.2...v1.11.0) (2025-10-28)
 
 
