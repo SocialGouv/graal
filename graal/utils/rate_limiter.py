@@ -3,7 +3,20 @@ import time
 from typing import Optional
 
 
-class RateLimiter:
+class FixedIntervalRateLimiter:
+    """
+    A thread-safe rate limiter that restricts the number of allowed calls per minute.
+
+    This implementation uses a simple fixed-interval technique, where each call is allowed only
+    after a minimum interval has passed since the previous allowed call.
+    The interval is calculated as 60 seconds divided by the desired calls per minute.
+    If a call is attempted before the interval has elapsed, the calling thread will sleep until it
+    is allowed.
+
+    Thread safety is ensured using a lock. The class is also made pickleable by excluding the lock
+    from serialization and recreating it upon deserialization.
+    """
+
     def __init__(self, calls_per_minute: float):
         self.interval = 60.0 / calls_per_minute
         self.lock = threading.Lock()
@@ -34,6 +47,17 @@ class RateLimiter:
 
 
 class TokenBucketRateLimiter:
+    """
+    TokenBucketRateLimiter implements a token bucket algorithm for rate limiting.
+
+    This class allows controlling the rate of actions (such as API calls) by maintaining a bucket of tokens.
+    Tokens are added to the bucket at a fixed rate (rate_per_minute), up to a maximum capacity.
+    Each action consumes a specified number of tokens; if insufficient tokens are available, the caller waits
+    until enough tokens are refilled.
+
+    Thread safety is ensured via a lock, and the class supports pickling by omitting the lock during serialization.
+    """
+
     def __init__(self, rate_per_minute: int, capacity: Optional[int] = None):
         """
         rate_per_minute: Tokens added per minute
