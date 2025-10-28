@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/SocialGouv/graal/compare/v1.10.1...v1.10.2) (2025-10-28)
+
+
+### Bug Fixes
+
+* Properly affect type to LLM client to get correct rate limiting config ([b2ca837](https://github.com/SocialGouv/graal/commit/b2ca8372a68ad613788776cdb80ca9575260407e))
+
 ## [1.10.1](https://github.com/SocialGouv/graal/compare/v1.10.0...v1.10.1) (2025-10-24)
 
 
