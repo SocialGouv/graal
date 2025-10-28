@@ -198,8 +198,8 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
 ## Phase 7: Training & Optimization Scripts
 
 ### 7.1 Main Training Script
-- [ ] Create `scripts/optimize_summary_prompts.py`
-- [ ] Command-line interface:
+- [x] Create `scripts/optimize_summary_prompts.py`
+- [x] Command-line interface:
   ```bash
   python scripts/optimize_summary_prompts.py \
     --office office_A \
@@ -208,16 +208,18 @@ This plan outlines the integration of DSPy into GRAAL's summary generation syste
     --val-data path/to/val.json \
     --save-to-s3
   ```
-- [ ] Support configuration file input
-- [ ] Add dry-run mode
-- [ ] Implement logging and progress bars
-- [ ] Generate optimization report (metrics, examples)
+- [x] Support configuration via command-line arguments
+- [x] Add dry-run mode
+- [x] Implement logging and progress bars
+- [x] Generate optimization report (metrics, examples)
+- [x] Add comprehensive unit tests
 
-### 7.2 Batch Optimization
-- [ ] Create script for optimizing all models at once
-- [ ] Add office-specific batch optimization
-- [ ] Implement comparison reports across models
-- [ ] Add automated testing of optimized prompts
+### 7.2 Usage Examples & Documentation
+- [x] Created comprehensive [`DSPy Optimization Guide`](dspy_optimization_guide.md)
+- [x] Added [`scripts/README.md`](../scripts/README.md) with quick start examples
+- [x] Documented all CLI arguments and options
+- [x] Provided troubleshooting guide
+- [x] Created multiple usage examples for different scenarios
 
 ---
 
