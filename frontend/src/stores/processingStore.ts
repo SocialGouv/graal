@@ -155,8 +155,8 @@ const initialState = {
         'Corps amdt': 0.4
       },
       fuzzyMatchSimilarityThresholds: {
-        'Exposé amdt': 0.3,
-        'Corps amdt': 0.8
+        'Exposé amdt': 0.4,
+        'Corps amdt': 0.9
       },
       similarityThresholdOverrides: {},
       columnsToCopy: {
