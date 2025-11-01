@@ -3,9 +3,11 @@ API request models.
 """
 
 import re
-from typing import ClassVar, Dict, Literal, Optional
+from typing import ClassVar, Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+from graal.custom_types import LLMType
 
 
 class AllotmentConfig(BaseModel):
@@ -166,7 +168,7 @@ class SummaryGenerationConfig(BaseModel):
         default=True,
         description="If true, overwrite existing values; if false, preserve existing values",
     )
-    llm_type: Optional[Literal["scaleway", "albert", "ollama", "vllm", "fake"]] = Field(
+    llm_type: Optional[LLMType] = Field(
         default=None,
         description="Type of LLM provider to use. Required when enabled.",
     )

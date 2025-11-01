@@ -82,6 +82,36 @@ def create_albert_client(
     )
 
 
+def create_mistral_client(
+    base_url: str | None = None,
+    api_key: str | None = None,
+    model_name: str | None = None,
+    timeout: int = 30,
+) -> LLMAPIClient:
+    """Create a Mistral API client.
+
+    Args:
+        base_url: Base URL for the Mistral API. If None, uses MISTRAL_BASE_URL env var or default.
+        api_key: API key for authentication. If None, uses MISTRAL_API_KEY env var.
+        model_name: Model name to use. If None, uses MISTRAL_MODEL_NAME env var or default.
+        timeout: Request timeout in seconds.
+
+    Returns:
+        A configured Mistral LLM API client.
+    """
+    return OpenAIAPIClient(
+        base_url=httpx.URL(
+            base_url or os.getenv("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
+        ),
+        api_key=api_key or os.environ["MISTRAL_API_KEY"],
+        model_name=model_name
+        or os.getenv("MISTRAL_MODEL_NAME", "mistral-large-latest"),
+        timeout=timeout,
+        name="mistral",
+        type="mistral",
+    )
+
+
 def create_ollama_client(
     endpoint: str | None = None,
     model_name: str | None = None,
@@ -220,10 +250,19 @@ def create_llm_api_clients(
                         timeout=timeout,
                     )
                 )
+            elif client_type == "mistral":
+                llm_api_clients.append(
+                    create_mistral_client(
+                        base_url=client_credentials.get("base_url"),
+                        api_key=client_credentials.get("api_key"),
+                        model_name=client_credentials.get("model_name"),
+                        timeout=timeout,
+                    )
+                )
             else:
                 raise ValueError(
                     f"Unsupported LLM client type: {client_type}. "
-                    f"Supported types are: 'scaleway', 'ollama', 'albert', 'fake', 'vllm'."
+                    f"Supported types are: 'scaleway', 'ollama', 'albert', 'fake', 'vllm', 'mistral'."
                 )
 
     return llm_api_clients

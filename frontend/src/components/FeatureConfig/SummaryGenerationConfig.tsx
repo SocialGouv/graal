@@ -6,7 +6,7 @@ import React, { useCallback } from 'react'
 
 export interface SummaryGenerationConfigProps {
   shouldOverwrite: boolean
-  llmType: 'scaleway' | 'albert' | 'ollama' | 'vllm' | 'fake' | null
+  llmType: 'scaleway' | 'albert' | 'ollama' | 'vllm' | 'fake' | 'mistral' | null
   llmCredentials: {
     base_url?: string
     api_key?: string
@@ -50,7 +50,8 @@ export const SummaryGenerationConfig: React.FC<
   )
 
   // Determine which credential fields to show based on LLM type
-  const showOpenAIFields = llmType === 'scaleway' || llmType === 'albert'
+  const showOpenAIFields =
+    llmType === 'scaleway' || llmType === 'albert' || llmType === 'mistral'
   const showOllamaFields = llmType === 'ollama' || llmType === 'vllm'
   const showCredentialFields = llmType && llmType !== 'fake'
 
@@ -92,6 +93,7 @@ export const SummaryGenerationConfig: React.FC<
           <option value="fake">Fake (pour les tests)</option>
           <option value="scaleway">Scaleway</option>
           <option value="albert">Albert (Etalab)</option>
+          <option value="mistral">Mistral</option>
           <option value="ollama">Ollama</option>
           <option value="vllm">vLLM</option>
         </Select>

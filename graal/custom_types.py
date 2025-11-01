@@ -45,7 +45,15 @@ AttributionMatcherType = Literal[
 ]
 AttributionStrategy = Literal["aggregate", "early_exit"]
 LLMType = Literal[
-    "ollama", "openai", "vllm", "llm_inference", "fake", "albert", "llama", "scaleway"
+    "ollama",
+    "openai",
+    "vllm",
+    "llm_inference",
+    "fake",
+    "albert",
+    "llama",
+    "scaleway",
+    "mistral",
 ]
 AttributionColumns = Literal["Exposé amdt", "Corps amdt", "Corps amdt original"]
 ProjectName = Literal["PLFSS", "PLF"]

@@ -57,7 +57,14 @@ export interface AttributionConfig {
 export interface SummaryGenerationConfig {
   enabled: boolean
   should_overwrite?: boolean
-  llm_type?: 'scaleway' | 'albert' | 'ollama' | 'vllm' | 'fake' | null
+  llm_type?:
+    | 'scaleway'
+    | 'albert'
+    | 'ollama'
+    | 'vllm'
+    | 'fake'
+    | 'mistral'
+    | null
   llm_credentials?: {
     base_url?: string
     api_key?: string
