@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/SocialGouv/graal/compare/v1.12.0...v1.13.0) (2025-11-01)
+
+
+### Features
+
+* Add Mistral client ([02dbe72](https://github.com/SocialGouv/graal/commit/02dbe72b4a484fe622cf13fe3aba7c0061221a2f))
+
 # [1.12.0](https://github.com/SocialGouv/graal/compare/v1.11.0...v1.12.0) (2025-10-28)
 
 
