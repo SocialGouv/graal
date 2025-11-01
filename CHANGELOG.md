@@ -1,3 +1,10 @@
+## [1.13.1](https://github.com/SocialGouv/graal/compare/v1.13.0...v1.13.1) (2025-11-01)
+
+
+### Bug Fixes
+
+* Stop filtering columns out for CSV export ([a3c2666](https://github.com/SocialGouv/graal/commit/a3c2666860d1be6ee9dababb132fd1fe427e6960))
+
 # [1.13.0](https://github.com/SocialGouv/graal/compare/v1.12.0...v1.13.0) (2025-11-01)
 
 
