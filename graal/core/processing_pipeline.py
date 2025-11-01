@@ -532,17 +532,14 @@ class ProcessingPipeline:
             excel_path = f"{output_file_prefix}.xlsx"
             csv_path = f"{output_file_prefix}.csv"
 
-            logging.debug(f"[PIPELINE] Saving Excel file: {excel_path}")
             result_df.to_excel(excel_path, columns=columns_to_use)
 
-            logging.debug(f"[PIPELINE] Saving CSV file: {csv_path}")
             csv_separator = config["output"].get("csv_separator", ";")
             result_df.to_csv(
                 csv_path,
                 sep=csv_separator,
                 encoding="utf-8-sig",
                 index=False,
-                columns=columns_to_use,
             )
 
             # Log file sizes
