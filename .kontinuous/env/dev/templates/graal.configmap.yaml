@@ -7,3 +7,4 @@ data:
   ETALAB_API_KEY: "xxxxxxxxxxxxxxxxxxx"
   ETALAB_BASE_URL: "https://albert.api.etalab.gouv.fr/v1"
   ETALAB_MODEL_NAME: "meta-llama/Meta-Llama-3.1-70B-Instruct"
+  S3_SIMILARITY_DB_FOLDER: "similarity_dbs"
