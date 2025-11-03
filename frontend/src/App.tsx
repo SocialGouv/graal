@@ -262,15 +262,6 @@ function AppContent() {
   const showResults = processingStatus === 'completed'
   const showProcessing = processingStatus !== 'idle'
 
-  // Step titles and configuration
-  const steps = [
-    { title: 'Sélection de la configuration', nextTitle: 'Configuration du traitement' },
-    { title: 'Configuration du traitement', nextTitle: 'Upload de fichier' },
-    { title: 'Upload de fichier et lancement', nextTitle: undefined }
-  ]
-
-  const currentStepConfig = steps[currentStep - 1]
-
   return (
     <>
       <Header
@@ -350,8 +341,7 @@ function AppContent() {
                     <Stepper
                       currentStep={currentStep}
                       stepCount={3}
-                      title={currentStepConfig.title}
-                      nextTitle={currentStepConfig.nextTitle}
+                      title={`Étape ${currentStep} sur 3`}
                     />
                   </div>
                 )}
