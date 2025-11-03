@@ -127,8 +127,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onStartPro
 
   return (
     <div className={fr.cx('fr-mb-4w')}>
-      <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>Fichier des amendements</h3>
-
       <button
         className={fr.cx('fr-upload-group')}
         tabIndex={disabled || isProcessing ? -1 : 0}

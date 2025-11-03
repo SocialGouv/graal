@@ -101,7 +101,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   const similaritySearchOriginProjectError = useMemo(
     () =>
       processingConfig.similaritySearch.enabled &&
-      processingConfig.similaritySearch.originProject
+        processingConfig.similaritySearch.originProject
         ? getOriginProjectError(processingConfig.similaritySearch.originProject)
         : null,
     [
@@ -331,10 +331,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
 
   return (
     <div>
-      <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>
-        Configuration du traitement
-      </h3>
-
       {/* Allotments Configuration Section */}
       <div className={fr.cx('fr-mt-4w')}>
         <FeatureConfigSection
