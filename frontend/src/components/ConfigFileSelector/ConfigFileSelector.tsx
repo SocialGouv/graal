@@ -44,6 +44,10 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
 
   return (
     <div className={fr.cx('fr-mb-4w')}>
+      <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>
+        Sélection de la configuration
+      </h3>
+
       <Combobox
         options={configFiles}
         value={currentValue}
