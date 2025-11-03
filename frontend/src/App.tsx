@@ -6,6 +6,7 @@ import {
   SegmentedControl,
   type SegmentedControlProps
 } from '@codegouvfr/react-dsfr/SegmentedControl'
+import { Stepper } from '@codegouvfr/react-dsfr/Stepper'
 import React, { useMemo, useState } from 'react'
 
 // Import components and providers
@@ -82,10 +83,12 @@ function AppContent() {
 
   const {
     jobId,
+    currentStep,
     processingStatus,
     processingConfig,
     uploadedFile,
     selectedConfigFile,
+    setCurrentStep,
     setUploadedFile,
     reset
   } = useProcessingStore()
@@ -259,6 +262,15 @@ function AppContent() {
   const showResults = processingStatus === 'completed'
   const showProcessing = processingStatus !== 'idle'
 
+  // Step titles and configuration
+  const steps = [
+    { title: 'Sélection de la configuration', nextTitle: 'Configuration du traitement' },
+    { title: 'Configuration du traitement', nextTitle: 'Upload de fichier' },
+    { title: 'Upload de fichier et lancement', nextTitle: undefined }
+  ]
+
+  const currentStepConfig = steps[currentStep - 1]
+
   return (
     <>
       <Header
@@ -332,34 +344,91 @@ function AppContent() {
               </div>
 
               <div className={fr.cx('fr-mt-4w')}>
+                {/* Stepper - only show when not processing and not showing results */}
+                {!showResults && !showProcessing && (
+                  <div className={fr.cx('fr-mb-6w')}>
+                    <Stepper
+                      currentStep={currentStep}
+                      stepCount={3}
+                      title={currentStepConfig.title}
+                      nextTitle={currentStepConfig.nextTitle}
+                    />
+                  </div>
+                )}
+
                 {/* Configuration and File Upload Section */}
                 {!showResults && (
                   <>
-                    <section className={fr.cx('fr-mb-6w')}>
-                      <h2 className={fr.cx('fr-h3')}>1. Configuration</h2>
-                      <ConfigFileSelector
-                        disabled={uploadFileMutation.isPending}
-                      />
-                    </section>
+                    {/* Step 1: Configuration */}
+                    {currentStep === 1 && (
+                      <section className={fr.cx('fr-mb-6w')}>
+                        <ConfigFileSelector
+                          disabled={uploadFileMutation.isPending}
+                        />
+                        <div className={fr.cx('fr-mt-4w')} style={{ textAlign: 'right' }}>
+                          <Button
+                            priority="primary"
+                            onClick={() => setCurrentStep(2)}
+                            disabled={!selectedConfigFile}
+                            iconId="fr-icon-arrow-right-line"
+                            iconPosition="right"
+                          >
+                            Continuer
+                          </Button>
+                        </div>
+                      </section>
+                    )}
 
-                    <section className={fr.cx('fr-mb-6w')}>
-                      <h2 className={fr.cx('fr-h3')}>
-                        2. Configuration du traitement
-                      </h2>
-                      <ProcessingConfig
-                        disabled={uploadFileMutation.isPending}
-                      />
-                    </section>
+                    {/* Step 2: Processing Configuration */}
+                    {currentStep === 2 && (
+                      <section className={fr.cx('fr-mb-6w')}>
+                        <ProcessingConfig
+                          disabled={uploadFileMutation.isPending}
+                        />
+                        <div className={fr.cx('fr-mt-4w')} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Button
+                            priority="secondary"
+                            onClick={() => setCurrentStep(1)}
+                            iconId="fr-icon-arrow-left-line"
+                            iconPosition="left"
+                          >
+                            Retour
+                          </Button>
+                          <Button
+                            priority="primary"
+                            onClick={() => setCurrentStep(3)}
+                            disabled={!isAnyFeatureEnabled(processingConfig)}
+                            iconId="fr-icon-arrow-right-line"
+                            iconPosition="right"
+                          >
+                            Continuer
+                          </Button>
+                        </div>
+                      </section>
+                    )}
 
-                    <section className={fr.cx('fr-mb-6w')}>
-                      <h2 className={fr.cx('fr-h3')}>3. Upload de fichier</h2>
-                      <FileUpload
-                        onFileSelect={handleFileSelect}
-                        onStartProcessing={handleStartProcessing}
-                        disabled={uploadFileMutation.isPending}
-                        isFormValid={!!isFormValid}
-                      />
-                    </section>
+                    {/* Step 3: File Upload */}
+                    {currentStep === 3 && (
+                      <section className={fr.cx('fr-mb-6w')}>
+                        <FileUpload
+                          onFileSelect={handleFileSelect}
+                          onStartProcessing={handleStartProcessing}
+                          disabled={uploadFileMutation.isPending}
+                          isFormValid={!!isFormValid}
+                        />
+                        <div className={fr.cx('fr-mt-4w')}>
+                          <Button
+                            priority="secondary"
+                            onClick={() => setCurrentStep(2)}
+                            disabled={uploadFileMutation.isPending}
+                            iconId="fr-icon-arrow-left-line"
+                            iconPosition="left"
+                          >
+                            Retour
+                          </Button>
+                        </div>
+                      </section>
+                    )}
                   </>
                 )}
 

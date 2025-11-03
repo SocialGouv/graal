@@ -77,6 +77,9 @@ export interface DatabaseBuilderState {
 }
 
 export interface ProcessingState {
+  // Stepper navigation
+  currentStep: number
+
   // File upload state
   uploadedFile: File | null
   uploadProgress: number
@@ -106,6 +109,7 @@ export interface ProcessingState {
   databaseBuilder: DatabaseBuilderState
 
   // Actions
+  setCurrentStep: (step: number) => void
   setUploadedFile: (file: File | null) => void
   setUploadProgress: (progress: number) => void
   setSelectedConfigFile: (filename: string | null) => void
@@ -135,6 +139,7 @@ export interface ProcessingState {
 }
 
 const initialState = {
+  currentStep: 1,
   uploadedFile: null,
   uploadProgress: 0,
   selectedConfigFile: null,
@@ -207,6 +212,12 @@ const initialState = {
 
 export const useProcessingStore = create<ProcessingState>((set) => ({
   ...initialState,
+
+  setCurrentStep: (step) =>
+    set((state) => ({
+      ...state,
+      currentStep: step
+    })),
 
   setUploadedFile: (file) =>
     set((state) => ({
