@@ -21,6 +21,10 @@
 - Mock external dependencies (LLM calls, file I/O)
 - Focus on business logic correctness
 - Use pytest fixtures for test data
+- Don't write tests for overly simple code paths where correctness is obvious from inspection
+  - Examples: singleton getter functions, trivial property accessors, simple delegators
+  - If the code is simple enough that reading it confirms correctness, skip the test
+  - Focus testing effort on complex logic where bugs are more likely
 
 ## Integration Tests
 - Test complete feature pipelines
