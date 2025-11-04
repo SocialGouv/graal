@@ -5,10 +5,10 @@ This service provides SHA256 hashing capabilities for identifying
 and deduplicating uploaded files in the input file pool.
 """
 
-import asyncio
 import hashlib
 import logging
 import logging.config
+import threading
 from pathlib import Path
 
 logging.config.fileConfig("logging.conf")
@@ -30,9 +30,6 @@ class FileHashService:
         Returns:
             str: Hexadecimal SHA256 hash of the file content (64 characters).
 
-        Raises:
-            Exception: If there's an error computing the hash.
-
         Example:
             >>> service = FileHashService()
             >>> content = b"example file content"
@@ -43,11 +40,7 @@ class FileHashService:
         try:
             logging.debug(f"Computing hash for {len(file_content)} bytes")
 
-            # Run hash computation in thread pool to avoid blocking event loop
-            def _compute_hash(content: bytes) -> str:
-                return hashlib.sha256(content).hexdigest()
-
-            file_hash = await asyncio.to_thread(_compute_hash, file_content)
+            file_hash = hashlib.sha256(file_content).hexdigest()
             logging.debug(f"Computed hash: {file_hash}")
             return file_hash
 
@@ -83,16 +76,18 @@ class FileHashService:
 
 # Global singleton instance
 _file_hash_service: FileHashService | None = None
+_lock = threading.Lock()
 
 
 def get_file_hash_service() -> FileHashService:
     """Get the global FileHashService singleton instance.
-
     Returns:
         FileHashService: The global file hash service instance.
     """
     global _file_hash_service
     if _file_hash_service is None:
-        _file_hash_service = FileHashService()
-        logging.info("Initialized FileHashService singleton")
+        with _lock:
+            if _file_hash_service is None:
+                _file_hash_service = FileHashService()
+                logging.info("Initialized FileHashService singleton")
     return _file_hash_service
