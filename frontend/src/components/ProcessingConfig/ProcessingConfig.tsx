@@ -2,7 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr'
 import { Accordion } from '@codegouvfr/react-dsfr/Accordion'
 import { Input } from '@codegouvfr/react-dsfr/Input'
 import { Select } from '@codegouvfr/react-dsfr/Select'
-import React, { useCallback, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { DEFAULT_FEATURE_FLAGS } from '../../config/featureFlags'
 import { useValidation } from '../../hooks/useValidation'
 import { useProcessingStore } from '../../stores/processingStore'
@@ -11,11 +11,11 @@ import {
   FeatureConfigSection,
   ProjectSelectionConfig,
   SimpleToggleConfig,
-  SummaryGenerationConfig,
-  type AttributionProjectOption,
-  type ColumnOption
+  SummaryGenerationConfig
 } from '../FeatureConfig'
 import DatabaseSelectorConfig from '../FeatureConfig/DatabaseSelectorConfig'
+import { COLUMN_OPTIONS, PROJECT_OPTIONS } from './constants/options'
+import { useProcessingConfigHandlers } from './hooks/useProcessingConfigHandlers'
 
 interface ProcessingConfigProps {
   disabled?: boolean
@@ -24,80 +24,37 @@ interface ProcessingConfigProps {
 export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   disabled = false
 }) => {
-  const { processingConfig, setProcessingConfig, processingStatus } =
-    useProcessingStore()
+  const { processingConfig, processingStatus } = useProcessingStore()
   const isProcessing =
     processingStatus !== 'idle' && processingStatus !== 'failed'
 
   // Use shared validation hook
   const { getOriginProjectError, getAllotmentsColumnError } = useValidation()
 
-  const handleSimilaritySearchEnabledChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          enabled: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
+  // Use custom handlers hook
+  const {
+    handleAllotmentsEnabledChange,
+    handleAllotmentsColumnChange,
+    handleAttributionEnabledChange,
+    handleAttributionProjectChange,
+    handleAttributionShouldOverwriteChange,
+    handleSimilaritySearchEnabledChange,
+    handleSimilaritySearchOriginProjectChange,
+    handleSimilaritySearchDatabaseFileChange,
+    handleSimilaritySearchShouldOverwriteChange,
+    handleColumnsToCopyChange,
+    handleSimilaritiesWithinLecturesEnabledChange,
+    handleSimilaritiesWithinLecturesColumnChange,
+    handleDefaultOpinionEnabledChange,
+    handleDefaultOpinionShouldOverwriteChange,
+    handleSummaryGenerationEnabledChange,
+    handleSummaryGenerationShouldOverwriteChange,
+    handleSummaryGenerationLlmTypeChange,
+    handleSummaryGenerationCredentialsChange,
+    handlePlaceholderAmdtBodyChange
+  } = useProcessingConfigHandlers()
 
-  const handleSimilaritySearchOriginProjectChange = useCallback(
-    (value: string) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          originProject: value
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleSimilaritySearchDatabaseFileChange = useCallback(
-    (value: string | null) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          databaseFile: value
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  // Allotments handlers
-  const handleAllotmentsEnabledChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        allotments: {
-          ...processingConfig.allotments,
-          enabled: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleAllotmentsColumnChange = useCallback(
-    (value: string) => {
-      setProcessingConfig({
-        ...processingConfig,
-        allotments: {
-          ...processingConfig.allotments,
-          column: value as 'Corps amdt' | 'Exposé amdt'
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
+  // Validation errors
   const similaritySearchOriginProjectError = useMemo(
     () =>
       processingConfig.similaritySearch.enabled &&
@@ -111,7 +68,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     ]
   )
 
-  // Allotments validation
   const allotmentsColumnError = useMemo(
     () =>
       getAllotmentsColumnError(
@@ -125,7 +81,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     ]
   )
 
-  // SimilaritiesWithinLectures validation
   const similaritiesWithinLecturesColumnError = useMemo(
     () =>
       getAllotmentsColumnError(
@@ -137,196 +92,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
       processingConfig.similaritiesWithinLectures.enabled,
       getAllotmentsColumnError
     ]
-  )
-
-  // Column options for dropdown
-  const columnOptions: ColumnOption[] = useMemo(
-    () => [
-      { label: 'Corps amdt', value: 'Corps amdt' },
-      { label: 'Exposé amdt', value: 'Exposé amdt' }
-    ],
-    []
-  )
-
-  // Project options for attribution
-  const projectOptions: AttributionProjectOption[] = useMemo(
-    () => [
-      { label: 'PLF (Projet de Loi de Finances)', value: 'PLF' },
-      {
-        label: 'PLFSS (Projet de Loi de Financement de la Sécurité Sociale)',
-        value: 'PLFSS'
-      }
-    ],
-    []
-  )
-
-  // Additional handlers for new features
-  const handleSimilaritiesWithinLecturesEnabledChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritiesWithinLectures: {
-          ...processingConfig.similaritiesWithinLectures,
-          enabled: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleAttributionEnabledChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        attribution: {
-          ...processingConfig.attribution,
-          enabled: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleAttributionProjectChange = useCallback(
-    (value: string) => {
-      setProcessingConfig({
-        ...processingConfig,
-        attribution: {
-          ...processingConfig.attribution,
-          project_name: value
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleSimilaritiesWithinLecturesColumnChange = useCallback(
-    (value: string) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritiesWithinLectures: {
-          ...processingConfig.similaritiesWithinLectures,
-          column: value as 'Corps amdt' | 'Exposé amdt'
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  // should_overwrite handlers for each feature
-  const handleSimilaritySearchShouldOverwriteChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          should_overwrite: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleAttributionShouldOverwriteChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        attribution: {
-          ...processingConfig.attribution,
-          should_overwrite: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleDefaultOpinionShouldOverwriteChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        defaultOpinion: {
-          ...processingConfig.defaultOpinion,
-          should_overwrite: checked
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleColumnsToCopyChange = useCallback(
-    (columnsToCopy: Record<string, any>) => {
-      setProcessingConfig({
-        ...processingConfig,
-        similaritySearch: {
-          ...processingConfig.similaritySearch,
-          columnsToCopy
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handlePlaceholderAmdtBodyChange = useCallback(
-    (checked: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        placeholder_amdt_body: checked
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  // Summary Generation handlers
-  const handleSummaryGenerationEnabledChange = useCallback(
-    (enabled: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        summaryGeneration: {
-          ...processingConfig.summaryGeneration,
-          enabled
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleSummaryGenerationShouldOverwriteChange = useCallback(
-    (shouldOverwrite: boolean) => {
-      setProcessingConfig({
-        ...processingConfig,
-        summaryGeneration: {
-          ...processingConfig.summaryGeneration,
-          should_overwrite: shouldOverwrite
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleSummaryGenerationLlmTypeChange = useCallback(
-    (llmType: string) => {
-      setProcessingConfig({
-        ...processingConfig,
-        summaryGeneration: {
-          ...processingConfig.summaryGeneration,
-          llm_type: llmType as any
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleSummaryGenerationCredentialsChange = useCallback(
-    (credentials: any) => {
-      setProcessingConfig({
-        ...processingConfig,
-        summaryGeneration: {
-          ...processingConfig.summaryGeneration,
-          llm_credentials: credentials
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
   )
 
   return (
@@ -357,7 +122,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                       disabled: disabled || isProcessing
                     }}
                   >
-                    {columnOptions.map((option) => (
+                    {COLUMN_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
@@ -377,7 +142,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               onEnabledChange={handleAttributionEnabledChange}
               disabled={disabled || isProcessing}
             >
-              {/* should_overwrite toggle for attribution */}
               <SimpleToggleConfig
                 label="Écraser les valeurs existantes"
                 description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
@@ -389,7 +153,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               <ProjectSelectionConfig
                 label="Type de projet"
                 hint="Sélectionnez le type de projet pour l'attribution"
-                projectOptions={projectOptions}
+                projectOptions={PROJECT_OPTIONS}
                 selectedProject={processingConfig.attribution.project_name}
                 onProjectChange={handleAttributionProjectChange}
                 disabled={disabled || isProcessing}
@@ -406,7 +170,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               onEnabledChange={handleSimilaritySearchEnabledChange}
               disabled={disabled || isProcessing}
             >
-              {/* should_overwrite toggle for similarity search */}
               <SimpleToggleConfig
                 label="Écraser les valeurs existantes"
                 description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
@@ -415,7 +178,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                 disabled={disabled || isProcessing}
               />
 
-              {/* Origin Project */}
               <div
                 className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
               >
@@ -439,7 +201,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                 </div>
               </div>
 
-              {/* Database Selector */}
               <div>
                 <DatabaseSelectorConfig
                   value={processingConfig.similaritySearch.databaseFile}
@@ -448,7 +209,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                 />
               </div>
 
-              {/* Columns to Copy */}
               <div>
                 <ColumnsToCopyConfig
                   columnsToCopy={processingConfig.similaritySearch.columnsToCopy}
@@ -492,7 +252,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                       disabled: disabled || isProcessing
                     }}
                   >
-                    {columnOptions.map((option) => (
+                    {COLUMN_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
@@ -509,18 +269,9 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               title="Avis par défaut"
               description="Configure l'avis par défaut pour les amendements"
               enabled={processingConfig.defaultOpinion.enabled}
-              onEnabledChange={(checked) =>
-                setProcessingConfig({
-                  ...processingConfig,
-                  defaultOpinion: {
-                    ...processingConfig.defaultOpinion,
-                    enabled: checked
-                  }
-                })
-              }
+              onEnabledChange={handleDefaultOpinionEnabledChange}
               disabled={disabled || isProcessing}
             >
-              {/* should_overwrite toggle for default opinion */}
               <SimpleToggleConfig
                 label="Écraser les valeurs existantes"
                 description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
