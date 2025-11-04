@@ -19,6 +19,25 @@ from graal.utils.text_utils import extract_plain_text_from_html, normalize_text
 
 class AmendmentPreProcessor:
     @staticmethod
+    def _remove_pii_columns(amendments_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Remove PII (Personally Identifiable Information) columns from amendments DataFrame.
+
+        Currently removes:
+        - auteur: Contains personal information about amendment authors
+
+        Args:
+            amendments_df: DataFrame containing amendment data
+
+        Returns:
+            DataFrame with PII columns removed
+        """
+        if "auteur" in amendments_df.columns:
+            amendments_df = amendments_df.drop(columns=["auteur"])
+            logging.info("Removed 'auteur' column to protect PII data")
+        return amendments_df
+
+    @staticmethod
     def load_amendments_json(
         input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
     ) -> pd.DataFrame:
@@ -57,6 +76,10 @@ class AmendmentPreProcessor:
         amendments_df = AmendmentPreProcessor.remap_columns_in_json_amendments(
             amendments_df
         )
+
+        # Remove PII data using the centralized method
+        amendments_df = AmendmentPreProcessor._remove_pii_columns(amendments_df)
+
         return amendments_df
 
     @staticmethod
@@ -83,6 +106,10 @@ class AmendmentPreProcessor:
 
         amendments_df = pd.concat(df_accumulator, ignore_index=True)
         amendments_df["amdt_idx"] = range(len(amendments_df))
+
+        # Remove PII data using the centralized method
+        amendments_df = AmendmentPreProcessor._remove_pii_columns(amendments_df)
+
         return amendments_df
 
     @staticmethod
