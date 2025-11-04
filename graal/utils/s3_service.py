@@ -9,6 +9,7 @@ import asyncio
 import logging
 import logging.config
 import os
+import threading
 from io import BytesIO
 from typing import Any
 
@@ -33,9 +34,12 @@ class S3Service:
         self._s3_client: Any = None
         self._aioboto3_session: Any = None
         self._s3_config: Config | None = None
+        self._endpoint_url: str | None = None
         self._bucket_name: str | None = None
         self._config_folder: str | None = None
         self._similarity_db_folder: str | None = None
+        self._input_pool_folder: str | None = None
+        self._manifest_folder: str | None = None
         self._initialize_s3()
 
     def _initialize_s3(self) -> None:
@@ -62,9 +66,17 @@ class S3Service:
             )
 
         try:
+            self._endpoint_url = os.getenv("S3_BUCKET_ENDPOINT")
             self._bucket_name = os.getenv("S3_BUCKET_NAME")
             self._config_folder = os.getenv("S3_CONFIG_FOLDER")
             self._similarity_db_folder = os.getenv("S3_SIMILARITY_DB_FOLDER")
+            # New environment variables with defaults
+            self._input_pool_folder = os.getenv(
+                "S3_INPUT_POOL_FOLDER", "input_files/pool"
+            )
+            self._manifest_folder = os.getenv(
+                "S3_MANIFEST_FOLDER", "input_files/manifests"
+            )
 
             # Configure timeouts and retries
             self._s3_config = Config(
@@ -79,7 +91,7 @@ class S3Service:
             # Initialize synchronous boto3 client
             self._s3_client = boto3.client(
                 "s3",
-                endpoint_url=os.getenv("S3_BUCKET_ENDPOINT"),
+                endpoint_url=self._endpoint_url,
                 aws_access_key_id=os.getenv("S3_BUCKET_ACCESS_KEY"),
                 aws_secret_access_key=os.getenv("S3_BUCKET_SECRET_KEY"),
                 region_name=os.getenv("S3_BUCKET_REGION", "gra"),
@@ -99,7 +111,9 @@ class S3Service:
             logging.info(
                 f"S3 enabled: Connected to bucket {self._bucket_name}, "
                 f"config_folder: {self._config_folder}, "
-                f"similarity_db_folder: {self._similarity_db_folder}"
+                f"similarity_db_folder: {self._similarity_db_folder}, "
+                f"input_pool_folder: {self._input_pool_folder}, "
+                f"manifest_folder: {self._manifest_folder}"
             )
 
         except (ClientError, NoCredentialsError) as e:
@@ -298,7 +312,7 @@ class S3Service:
 
             async with self._aioboto3_session.client(
                 "s3",
-                endpoint_url=os.getenv("S3_BUCKET_ENDPOINT"),
+                endpoint_url=self._endpoint_url,
                 config=self._s3_config,
             ) as s3_client:
                 response = await s3_client.list_objects_v2(
@@ -371,7 +385,7 @@ class S3Service:
 
             async with self._aioboto3_session.client(
                 "s3",
-                endpoint_url=os.getenv("S3_BUCKET_ENDPOINT"),
+                endpoint_url=self._endpoint_url,
                 config=self._s3_config,
             ) as s3_client:
                 response = await s3_client.get_object(
@@ -488,7 +502,7 @@ class S3Service:
 
             async with self._aioboto3_session.client(
                 "s3",
-                endpoint_url=os.getenv("S3_BUCKET_ENDPOINT"),
+                endpoint_url=self._endpoint_url,
                 config=self._s3_config,
             ) as s3_client:
                 await s3_client.put_object(
@@ -545,7 +559,7 @@ class S3Service:
 
             async with self._aioboto3_session.client(
                 "s3",
-                endpoint_url=os.getenv("S3_BUCKET_ENDPOINT"),
+                endpoint_url=self._endpoint_url,
                 config=self._s3_config,
             ) as s3_client:
                 response = await s3_client.head_object(
@@ -578,18 +592,534 @@ class S3Service:
             logging.error(error_msg)
             raise Exception(error_msg) from e
 
+    # ==================== Input File Pool Methods (Asynchronous) ====================
 
-# Global instance
-_s3_service = None
+    async def upload_to_input_pool(self, file_content: bytes, s3_key: str) -> None:
+        """Upload file to input file pool.
+
+        Args:
+            file_content: The file content as bytes to upload.
+            s3_key: The S3 key (filename with hash) for the file in the pool.
+
+        Raises:
+            Exception: If upload fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._input_pool_folder
+        ):
+            raise Exception("S3 session, bucket, or input pool folder not configured")
+
+        logging.info(f"Uploading file to input pool: {s3_key}")
+
+        # Construct full S3 key with pool folder prefix
+        full_s3_key = f"{self._input_pool_folder}/{s3_key}"
+        if self._input_pool_folder.endswith("/"):
+            full_s3_key = f"{self._input_pool_folder}{s3_key}"
+
+        try:
+            file_size = len(file_content)
+            logging.info(
+                f"Uploading to input pool: s3://{self._bucket_name}/{full_s3_key} ({file_size} bytes)"
+            )
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                await s3_client.put_object(
+                    Bucket=self._bucket_name,
+                    Key=full_s3_key,
+                    Body=file_content,
+                )
+
+            logging.info(
+                f"Successfully uploaded to input pool - key: {s3_key}, size: {file_size} bytes"
+            )
+
+        except Exception as e:
+            error_msg = f"Failed to upload file to input pool '{s3_key}': {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    async def download_from_input_pool(self, s3_key: str) -> bytes:
+        """Download file from input file pool.
+
+        Args:
+            s3_key: The S3 key (filename with hash) for the file in the pool.
+
+        Returns:
+            bytes: The file content as bytes.
+
+        Raises:
+            FileNotFoundError: If the file is not found in S3.
+            Exception: If download fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._input_pool_folder
+        ):
+            raise Exception("S3 session, bucket, or input pool folder not configured")
+
+        logging.info(f"Downloading file from input pool: {s3_key}")
+
+        # Construct full S3 key with pool folder prefix
+        full_s3_key = f"{self._input_pool_folder}/{s3_key}"
+        if self._input_pool_folder.endswith("/"):
+            full_s3_key = f"{self._input_pool_folder}{s3_key}"
+
+        try:
+            logging.info(
+                f"Downloading from input pool: s3://{self._bucket_name}/{full_s3_key}"
+            )
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                response = await s3_client.get_object(
+                    Bucket=self._bucket_name, Key=full_s3_key
+                )
+
+                # Read the streaming body
+                file_bytes = await response["Body"].read()
+                file_size = len(file_bytes)
+                logging.info(
+                    f"Successfully downloaded from input pool - key: {s3_key}, size: {file_size} bytes"
+                )
+
+                return file_bytes
+
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code == "NoSuchKey":
+                raise FileNotFoundError(
+                    f"File not found in input pool: {s3_key}"
+                ) from e
+            else:
+                raise Exception(f"Failed to download from input pool: {e}") from e
+        except Exception as e:
+            error_msg = f"Failed to download file from input pool '{s3_key}': {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    async def list_pool_files_by_hash_prefix(self, file_hash: str) -> list[str]:
+        """List all files in input pool matching a hash prefix.
+
+        This is useful for finding files when you only know the hash but not the extension.
+
+        Args:
+            file_hash: SHA256 hash of the file (without extension).
+
+        Returns:
+            list[str]: List of S3 keys (relative to pool folder) matching the hash prefix.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._input_pool_folder
+        ):
+            return []
+
+        # Construct prefix to search for files with this hash
+        prefix = f"{self._input_pool_folder}/{file_hash}"
+        if self._input_pool_folder.endswith("/"):
+            prefix = f"{self._input_pool_folder}{file_hash}"
+
+        try:
+            logging.debug(f"Listing files in input pool with hash prefix: {file_hash}")
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                response = await s3_client.list_objects_v2(
+                    Bucket=self._bucket_name, Prefix=prefix, MaxKeys=10
+                )
+
+                files = []
+                if "Contents" in response:
+                    for obj in response["Contents"]:
+                        # Extract the key relative to the pool folder
+                        full_key = obj["Key"]
+                        # Remove the pool folder prefix
+                        if full_key.startswith(f"{self._input_pool_folder}/"):
+                            relative_key = full_key[len(self._input_pool_folder) + 1 :]
+                        elif full_key.startswith(self._input_pool_folder):
+                            relative_key = full_key[len(self._input_pool_folder) :]
+                        else:
+                            relative_key = full_key
+                        files.append(relative_key)
+
+                logging.debug(
+                    f"Found {len(files)} files in input pool with hash {file_hash}"
+                )
+                return files
+
+        except Exception as e:
+            logging.error(f"Error listing files by hash prefix in pool: {e}")
+            return []
+
+    async def get_input_pool_metadata(self, s3_key: str) -> dict[str, Any]:
+        """Get metadata for file in input pool.
+
+        Args:
+            s3_key: The S3 key (filename with hash) for the file in the pool.
+
+        Returns:
+            dict: Metadata including size, last_modified, content_type, etc.
+
+        Raises:
+            FileNotFoundError: If file doesn't exist in pool.
+            Exception: If metadata retrieval fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._input_pool_folder
+        ):
+            raise Exception("S3 session, bucket, or input pool folder not configured")
+
+        logging.debug(f"Getting metadata for file in input pool: {s3_key}")
+
+        # Construct full S3 key with pool folder prefix
+        full_s3_key = f"{self._input_pool_folder}/{s3_key}"
+        if self._input_pool_folder.endswith("/"):
+            full_s3_key = f"{self._input_pool_folder}{s3_key}"
+
+        try:
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                response = await s3_client.head_object(
+                    Bucket=self._bucket_name, Key=full_s3_key
+                )
+
+                metadata = {
+                    "size": response.get("ContentLength", 0),
+                    "last_modified": response.get("LastModified"),
+                    "content_type": response.get("ContentType"),
+                    "etag": response.get("ETag", "").strip('"'),
+                }
+
+                logging.debug(f"Retrieved metadata for {s3_key}: {metadata}")
+                return metadata
+
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code == "404":
+                raise FileNotFoundError(f"File not found in pool: {s3_key}") from e
+            else:
+                raise Exception(f"Failed to get file metadata from pool: {e}") from e
+        except Exception as e:
+            error_msg = f"Unexpected error getting metadata from pool ({s3_key}): {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    async def file_exists_in_pool(self, s3_key: str) -> bool:
+        """Check if file exists in input pool.
+
+        Args:
+            s3_key: The S3 key (filename with hash) for the file in the pool.
+
+        Returns:
+            bool: True if the file exists, False otherwise.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._input_pool_folder
+        ):
+            return False
+
+        # Construct full S3 key with pool folder prefix
+        full_s3_key = f"{self._input_pool_folder}/{s3_key}"
+        if self._input_pool_folder.endswith("/"):
+            full_s3_key = f"{self._input_pool_folder}{s3_key}"
+
+        try:
+            logging.info(f"Checking if file exists in input pool: {s3_key}")
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                await s3_client.head_object(Bucket=self._bucket_name, Key=full_s3_key)
+
+            logging.info(f"File exists in input pool: {s3_key}")
+            return True
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                logging.info(f"File not found in input pool: {s3_key}")
+                return False
+            else:
+                logging.error(f"Error checking file existence in pool: {e}")
+                return False
+        except Exception as e:
+            logging.error(f"Unexpected error checking file existence in pool: {e}")
+            return False
+
+    # ==================== Manifest Methods (Asynchronous) ====================
+
+    async def upload_manifest(self, database_name: str, manifest_data: dict) -> None:
+        """Upload database manifest as JSON.
+
+        Args:
+            database_name: Name of the database.
+            manifest_data: Dictionary containing manifest data to upload.
+
+        Raises:
+            Exception: If upload fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._manifest_folder
+        ):
+            raise Exception("S3 session, bucket, or manifest folder not configured")
+
+        logging.info(f"Uploading manifest for database: {database_name}")
+
+        # Construct S3 key with manifest folder prefix and .json extension
+        s3_key = f"{self._manifest_folder}/{database_name}.json"
+        if self._manifest_folder.endswith("/"):
+            s3_key = f"{self._manifest_folder}{database_name}.json"
+
+        try:
+            import json
+
+            # Serialize manifest to JSON
+            manifest_json = json.dumps(manifest_data, indent=2, default=str)
+            manifest_bytes = manifest_json.encode("utf-8")
+            file_size = len(manifest_bytes)
+
+            logging.info(
+                f"Uploading manifest to S3: s3://{self._bucket_name}/{s3_key} ({file_size} bytes)"
+            )
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                await s3_client.put_object(
+                    Bucket=self._bucket_name,
+                    Key=s3_key,
+                    Body=manifest_bytes,
+                    ContentType="application/json",
+                )
+
+            logging.info(
+                f"Successfully uploaded manifest - database: {database_name}, size: {file_size} bytes"
+            )
+
+        except Exception as e:
+            error_msg = f"Failed to upload manifest for database '{database_name}': {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    async def download_manifest(self, database_name: str) -> dict:
+        """Download and parse database manifest.
+
+        Args:
+            database_name: Name of the database.
+
+        Returns:
+            dict: Parsed manifest data.
+
+        Raises:
+            FileNotFoundError: If the manifest is not found in S3.
+            Exception: If download or parsing fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._manifest_folder
+        ):
+            raise Exception("S3 session, bucket, or manifest folder not configured")
+
+        logging.info(f"Downloading manifest for database: {database_name}")
+
+        # Construct S3 key with manifest folder prefix and .json extension
+        s3_key = f"{self._manifest_folder}/{database_name}.json"
+        if self._manifest_folder.endswith("/"):
+            s3_key = f"{self._manifest_folder}{database_name}.json"
+
+        try:
+            logging.info(
+                f"Downloading manifest from S3: s3://{self._bucket_name}/{s3_key}"
+            )
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                response = await s3_client.get_object(
+                    Bucket=self._bucket_name, Key=s3_key
+                )
+
+                # Read the streaming body
+                manifest_bytes = await response["Body"].read()
+                file_size = len(manifest_bytes)
+                logging.info(
+                    f"Successfully downloaded manifest - database: {database_name}, size: {file_size} bytes"
+                )
+
+                # Parse JSON
+                import json
+
+                manifest_data = json.loads(manifest_bytes.decode("utf-8"))
+                logging.info(
+                    f"Successfully parsed manifest for database: {database_name}"
+                )
+
+                return manifest_data
+
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code == "NoSuchKey":
+                raise FileNotFoundError(
+                    f"Manifest not found for database: {database_name}"
+                ) from e
+            else:
+                raise Exception(f"Failed to download manifest from S3: {e}") from e
+        except json.JSONDecodeError as e:
+            error_msg = (
+                f"Failed to parse manifest JSON for database '{database_name}': {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Failed to download manifest for database '{database_name}': {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    async def manifest_exists(self, database_name: str) -> bool:
+        """Check if manifest exists for database.
+
+        Args:
+            database_name: Name of the database.
+
+        Returns:
+            bool: True if the manifest exists, False otherwise.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._manifest_folder
+        ):
+            return False
+
+        # Construct S3 key with manifest folder prefix and .json extension
+        s3_key = f"{self._manifest_folder}/{database_name}.json"
+        if self._manifest_folder.endswith("/"):
+            s3_key = f"{self._manifest_folder}{database_name}.json"
+
+        try:
+            logging.info(f"Checking if manifest exists for database: {database_name}")
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                await s3_client.head_object(Bucket=self._bucket_name, Key=s3_key)
+
+            logging.info(f"Manifest exists for database: {database_name}")
+            return True
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                logging.info(f"Manifest not found for database: {database_name}")
+                return False
+            else:
+                logging.error(f"Error checking manifest existence: {e}")
+                return False
+        except Exception as e:
+            logging.error(f"Unexpected error checking manifest existence: {e}")
+            return False
+
+    async def delete_manifest(self, database_name: str) -> None:
+        """Delete database manifest.
+
+        Args:
+            database_name: Name of the database.
+
+        Raises:
+            FileNotFoundError: If the manifest is not found in S3.
+            Exception: If deletion fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._manifest_folder
+        ):
+            raise Exception("S3 session, bucket, or manifest folder not configured")
+
+        logging.info(f"Deleting manifest for database: {database_name}")
+
+        # Construct S3 key with manifest folder prefix and .json extension
+        s3_key = f"{self._manifest_folder}/{database_name}.json"
+        if self._manifest_folder.endswith("/"):
+            s3_key = f"{self._manifest_folder}{database_name}.json"
+
+        try:
+            # First check if the manifest exists
+            exists = await self.manifest_exists(database_name)
+            if not exists:
+                raise FileNotFoundError(
+                    f"Manifest not found for database: {database_name}"
+                )
+
+            logging.info(
+                f"Deleting manifest from S3: s3://{self._bucket_name}/{s3_key}"
+            )
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                await s3_client.delete_object(Bucket=self._bucket_name, Key=s3_key)
+
+            logging.info(f"Successfully deleted manifest for database: {database_name}")
+
+        except FileNotFoundError:
+            # Re-raise FileNotFoundError as-is
+            raise
+        except Exception as e:
+            error_msg = f"Failed to delete manifest for database '{database_name}': {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+
+# Global singleton instance
+_s3_service: S3Service | None = None
+_lock = threading.Lock()
 
 
 def get_s3_service() -> S3Service:
-    """Get the global S3Service instance.
+    """Get the global S3Service singleton instance.
 
     Returns:
-        S3Service: The global service instance.
+        S3Service: The global S3 service instance.
     """
     global _s3_service
     if _s3_service is None:
-        _s3_service = S3Service()
+        with _lock:
+            if _s3_service is None:
+                _s3_service = S3Service()
+                logging.info("Initialized S3Service singleton")
     return _s3_service
