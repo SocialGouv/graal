@@ -1,0 +1,31 @@
+# Revu Configuration File
+
+# Coding guidelines for code reviews
+codingGuidelines:
+  - "Naming: Use semantically significant names for functions, classes, and parameters."
+  - "Comments: Add comments only for complex code; simple code should be self-explanatory if clean code principles are followed."
+  - "Documentation: Public functions must have concise docstrings explaining purpose and return values."
+  - "Fail fast: Prefer code that fails fast with clear error messages, rather than code that silently continues in an invalid state."
+  - "Logging: Do not comment on `logging.config.fileConfig('logging.conf')`, it is done on purpose."
+
+# PR validation settings - Configure when the bot should skip reviewing PRs
+validation:
+  # Maximum number of files that can be changed in a single PR
+  maxFilesChanged: 25
+
+  # Maximum total lines in the diff
+  maxDiffSize: 10000
+
+  # Maximum lines of changes in a single file
+  maxIndividualFileSize: 2000
+
+  # Skip PRs that only change documentation files
+  skipDocumentationOnly: true
+
+  # File extensions considered as documentation
+  documentationExtensions:
+    - ".md"
+    - ".txt"
+    - ".rst"
+    - ".adoc"
+    - ".tex"
