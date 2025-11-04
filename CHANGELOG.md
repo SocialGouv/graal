@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/SocialGouv/graal/compare/v1.15.0...v1.15.1) (2025-11-04)
+
+
+### Bug Fixes
+
+* Better thread safe FileHashService implementation ([6590c85](https://github.com/SocialGouv/graal/commit/6590c85527fe42f5172ce981e72a29ea41b0d4b4))
+
 # [1.15.0](https://github.com/SocialGouv/graal/compare/v1.14.0...v1.15.0) (2025-11-04)
 
 
