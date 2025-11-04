@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/SocialGouv/graal/compare/v1.14.0...v1.15.0) (2025-11-04)
+
+
+### Features
+
+* Add file hash service ([0f8a4ae](https://github.com/SocialGouv/graal/commit/0f8a4ae083036743872a9f0c638a2f66a9de9f9c))
+
 # [1.14.0](https://github.com/SocialGouv/graal/compare/v1.13.1...v1.14.0) (2025-11-04)
 
 
