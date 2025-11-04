@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/SocialGouv/graal/compare/v1.13.1...v1.14.0) (2025-11-04)
+
+
+### Features
+
+* Remove PII data from amendment DBs ([a290aeb](https://github.com/SocialGouv/graal/commit/a290aebae2c4b8271ddf5336b6b60957d9e0ddfc))
+
 ## [1.13.1](https://github.com/SocialGouv/graal/compare/v1.13.0...v1.13.1) (2025-11-01)
 
 
