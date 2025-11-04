@@ -199,6 +199,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     },
     [setProcessingConfig, processingConfig]
   )
+
   const handleSimilaritiesWithinLecturesColumnChange = useCallback(
     (value: string) => {
       setProcessingConfig({
@@ -213,7 +214,6 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   )
 
   // should_overwrite handlers for each feature
-
   const handleSimilaritySearchShouldOverwriteChange = useCallback(
     (checked: boolean) => {
       setProcessingConfig({
@@ -331,197 +331,206 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
 
   return (
     <div>
-      {/* Allotments Configuration Section */}
-      <div className={fr.cx('fr-mt-4w')}>
-        <FeatureConfigSection
-          title="Activer le regroupement d'amendements (allotissement)"
-          description="Groupe automatiquement les amendements similaires pour faciliter le traitement"
-          enabled={processingConfig.allotments.enabled}
-          onEnabledChange={handleAllotmentsEnabledChange}
-          disabled={disabled || isProcessing}
-        >
-          <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
-            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
-              <Select
-                label="Colonne à analyser"
-                hint="Choisissez la colonne utilisée pour comparer la similarité des amendements"
-                state={allotmentsColumnError ? 'error' : 'default'}
-                stateRelatedMessage={allotmentsColumnError || undefined}
-                nativeSelectProps={{
-                  value: processingConfig.allotments.column,
-                  onChange: (e) => handleAllotmentsColumnChange(e.target.value),
-                  disabled: disabled || isProcessing
-                }}
-              >
-                {columnOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
+      {/* Grid layout for main feature sections - 2 columns on desktop, 1 column on mobile */}
+      <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+        {/* Left Column */}
+        <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+          {/* Allotments Configuration Section */}
+          <div className={fr.cx('fr-mb-4w')}>
+            <FeatureConfigSection
+              title="Activer le regroupement d'amendements (allotissement)"
+              description="Groupe automatiquement les amendements similaires pour faciliter le traitement"
+              enabled={processingConfig.allotments.enabled}
+              onEnabledChange={handleAllotmentsEnabledChange}
+              disabled={disabled || isProcessing}
+            >
+              <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+                <div className={fr.cx('fr-col-12')}>
+                  <Select
+                    label="Colonne à analyser"
+                    hint="Choisissez la colonne utilisée pour comparer la similarité des amendements"
+                    state={allotmentsColumnError ? 'error' : 'default'}
+                    stateRelatedMessage={allotmentsColumnError || undefined}
+                    nativeSelectProps={{
+                      value: processingConfig.allotments.column,
+                      onChange: (e) => handleAllotmentsColumnChange(e.target.value),
+                      disabled: disabled || isProcessing
+                    }}
+                  >
+                    {columnOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+            </FeatureConfigSection>
           </div>
-        </FeatureConfigSection>
-      </div>
 
-      {/* Attribution Configuration Section */}
-      <div className={fr.cx('fr-mt-4w')}>
-        <FeatureConfigSection
-          title="Attribution automatique"
-          description="Assigne automatiquement les amendements aux réviseurs appropriés"
-          enabled={processingConfig.attribution.enabled}
-          onEnabledChange={handleAttributionEnabledChange}
-          disabled={disabled || isProcessing}
-        >
-          {/* should_overwrite toggle for attribution */}
-          <SimpleToggleConfig
-            label="Écraser les valeurs existantes"
-            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
-            checked={processingConfig.attribution.should_overwrite}
-            onChange={handleAttributionShouldOverwriteChange}
-            disabled={disabled || isProcessing}
-          />
-
-          <ProjectSelectionConfig
-            label="Type de projet"
-            hint="Sélectionnez le type de projet pour l'attribution"
-            projectOptions={projectOptions}
-            selectedProject={processingConfig.attribution.project_name}
-            onProjectChange={handleAttributionProjectChange}
-            disabled={disabled || isProcessing}
-          />
-        </FeatureConfigSection>
-      </div>
-
-      {/* Similarity Search Configuration Section */}
-      <div className={fr.cx('fr-mt-4w')}>
-        <FeatureConfigSection
-          title="Recherche de similarités historiques"
-          description="Trouve les amendements similaires dans les projets précédents"
-          enabled={processingConfig.similaritySearch.enabled}
-          onEnabledChange={handleSimilaritySearchEnabledChange}
-          disabled={disabled || isProcessing}
-        >
-          {/* should_overwrite toggle for similarity search */}
-          <SimpleToggleConfig
-            label="Écraser les valeurs existantes"
-            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
-            checked={processingConfig.similaritySearch.should_overwrite}
-            onChange={handleSimilaritySearchShouldOverwriteChange}
-            disabled={disabled || isProcessing}
-          />
-
-          {/* Origin Project */}
-          <div
-            className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
-          >
-            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
-              <Input
-                label="Nom du projet législatif"
-                hintText="Permet de faire aussi une recherche de similarité via le corps des amendements de lectures précédentes sur le même projet"
-                state={similaritySearchOriginProjectError ? 'error' : 'default'}
-                stateRelatedMessage={
-                  similaritySearchOriginProjectError || undefined
-                }
-                nativeInputProps={{
-                  placeholder: 'Ex: PLFSS 2025, PLF 2024...',
-                  value: processingConfig.similaritySearch.originProject || '',
-                  onChange: (e) =>
-                    handleSimilaritySearchOriginProjectChange(e.target.value),
-                  disabled: disabled || isProcessing,
-                  maxLength: 100
-                }}
+          {/* Attribution Configuration Section */}
+          <div className={fr.cx('fr-mb-4w')}>
+            <FeatureConfigSection
+              title="Attribution automatique"
+              description="Assigne automatiquement les amendements aux réviseurs appropriés"
+              enabled={processingConfig.attribution.enabled}
+              onEnabledChange={handleAttributionEnabledChange}
+              disabled={disabled || isProcessing}
+            >
+              {/* should_overwrite toggle for attribution */}
+              <SimpleToggleConfig
+                label="Écraser les valeurs existantes"
+                description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+                checked={processingConfig.attribution.should_overwrite}
+                onChange={handleAttributionShouldOverwriteChange}
+                disabled={disabled || isProcessing}
               />
-            </div>
+
+              <ProjectSelectionConfig
+                label="Type de projet"
+                hint="Sélectionnez le type de projet pour l'attribution"
+                projectOptions={projectOptions}
+                selectedProject={processingConfig.attribution.project_name}
+                onProjectChange={handleAttributionProjectChange}
+                disabled={disabled || isProcessing}
+              />
+            </FeatureConfigSection>
           </div>
 
-          {/* Database Selector */}
-          <div>
-            <DatabaseSelectorConfig
-              value={processingConfig.similaritySearch.databaseFile}
-              onChange={handleSimilaritySearchDatabaseFileChange}
+          {/* Similarity Search Configuration Section */}
+          <div className={fr.cx('fr-mb-4w')}>
+            <FeatureConfigSection
+              title="Recherche de similarités historiques"
+              description="Trouve les amendements similaires dans les projets précédents"
+              enabled={processingConfig.similaritySearch.enabled}
+              onEnabledChange={handleSimilaritySearchEnabledChange}
               disabled={disabled || isProcessing}
-            />
-          </div>
+            >
+              {/* should_overwrite toggle for similarity search */}
+              <SimpleToggleConfig
+                label="Écraser les valeurs existantes"
+                description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+                checked={processingConfig.similaritySearch.should_overwrite}
+                onChange={handleSimilaritySearchShouldOverwriteChange}
+                disabled={disabled || isProcessing}
+              />
 
-          {/* Columns to Copy */}
-          <div>
-            <ColumnsToCopyConfig
-              columnsToCopy={processingConfig.similaritySearch.columnsToCopy}
-              onChange={handleColumnsToCopyChange}
-              disabled={disabled || isProcessing}
-              featureFlags={DEFAULT_FEATURE_FLAGS}
-            />
-          </div>
-        </FeatureConfigSection>
-      </div>
-
-      {/* Similarities Within Lectures Configuration Section */}
-      <div className={fr.cx('fr-mt-4w')}>
-        <FeatureConfigSection
-          title="Recherche de similarités intra-lecture"
-          description="Trouve les amendements similaires au sein de la même session"
-          enabled={processingConfig.similaritiesWithinLectures.enabled}
-          onEnabledChange={handleSimilaritiesWithinLecturesEnabledChange}
-          disabled={disabled || isProcessing}
-        >
-          <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
-            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
-              <Select
-                label="Colonne à analyser"
-                hint="Colonne utilisée pour la comparaison des similarités intra-lecture"
-                state={
-                  similaritiesWithinLecturesColumnError ? 'error' : 'default'
-                }
-                stateRelatedMessage={
-                  similaritiesWithinLecturesColumnError || undefined
-                }
-                nativeSelectProps={{
-                  value: processingConfig.similaritiesWithinLectures.column,
-                  onChange: (e) =>
-                    handleSimilaritiesWithinLecturesColumnChange(
-                      e.target.value
-                    ),
-                  disabled: disabled || isProcessing
-                }}
+              {/* Origin Project */}
+              <div
+                className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
               >
-                {columnOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-        </FeatureConfigSection>
-      </div>
+                <div className={fr.cx('fr-col-12')}>
+                  <Input
+                    label="Nom du projet législatif"
+                    hintText="Permet de faire aussi une recherche de similarité via le corps des amendements de lectures précédentes sur le même projet"
+                    state={similaritySearchOriginProjectError ? 'error' : 'default'}
+                    stateRelatedMessage={
+                      similaritySearchOriginProjectError || undefined
+                    }
+                    nativeInputProps={{
+                      placeholder: 'Ex: PLFSS 2025, PLF 2024...',
+                      value: processingConfig.similaritySearch.originProject || '',
+                      onChange: (e) =>
+                        handleSimilaritySearchOriginProjectChange(e.target.value),
+                      disabled: disabled || isProcessing,
+                      maxLength: 100
+                    }}
+                  />
+                </div>
+              </div>
 
-      {/* Default Opinion Configuration Section */}
-      <div className={fr.cx('fr-mt-4w')}>
-        <FeatureConfigSection
-          title="Avis par défaut"
-          description="Configure l'avis par défaut pour les amendements"
-          enabled={processingConfig.defaultOpinion.enabled}
-          onEnabledChange={(checked) =>
-            setProcessingConfig({
-              ...processingConfig,
-              defaultOpinion: {
-                ...processingConfig.defaultOpinion,
-                enabled: checked
+              {/* Database Selector */}
+              <div>
+                <DatabaseSelectorConfig
+                  value={processingConfig.similaritySearch.databaseFile}
+                  onChange={handleSimilaritySearchDatabaseFileChange}
+                  disabled={disabled || isProcessing}
+                />
+              </div>
+
+              {/* Columns to Copy */}
+              <div>
+                <ColumnsToCopyConfig
+                  columnsToCopy={processingConfig.similaritySearch.columnsToCopy}
+                  onChange={handleColumnsToCopyChange}
+                  disabled={disabled || isProcessing}
+                  featureFlags={DEFAULT_FEATURE_FLAGS}
+                />
+              </div>
+            </FeatureConfigSection>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+          {/* Similarities Within Lectures Configuration Section */}
+          <div className={fr.cx('fr-mb-4w')}>
+            <FeatureConfigSection
+              title="Recherche de similarités intra-lecture"
+              description="Trouve les amendements similaires au sein de la même session"
+              enabled={processingConfig.similaritiesWithinLectures.enabled}
+              onEnabledChange={handleSimilaritiesWithinLecturesEnabledChange}
+              disabled={disabled || isProcessing}
+            >
+              <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+                <div className={fr.cx('fr-col-12')}>
+                  <Select
+                    label="Colonne à analyser"
+                    hint="Colonne utilisée pour la comparaison des similarités intra-lecture"
+                    state={
+                      similaritiesWithinLecturesColumnError ? 'error' : 'default'
+                    }
+                    stateRelatedMessage={
+                      similaritiesWithinLecturesColumnError || undefined
+                    }
+                    nativeSelectProps={{
+                      value: processingConfig.similaritiesWithinLectures.column,
+                      onChange: (e) =>
+                        handleSimilaritiesWithinLecturesColumnChange(
+                          e.target.value
+                        ),
+                      disabled: disabled || isProcessing
+                    }}
+                  >
+                    {columnOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+            </FeatureConfigSection>
+          </div>
+
+          {/* Default Opinion Configuration Section */}
+          <div className={fr.cx('fr-mb-4w')}>
+            <FeatureConfigSection
+              title="Avis par défaut"
+              description="Configure l'avis par défaut pour les amendements"
+              enabled={processingConfig.defaultOpinion.enabled}
+              onEnabledChange={(checked) =>
+                setProcessingConfig({
+                  ...processingConfig,
+                  defaultOpinion: {
+                    ...processingConfig.defaultOpinion,
+                    enabled: checked
+                  }
+                })
               }
-            })
-          }
-          disabled={disabled || isProcessing}
-        >
-          {/* should_overwrite toggle for default opinion */}
-          <SimpleToggleConfig
-            label="Écraser les valeurs existantes"
-            description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
-            checked={processingConfig.defaultOpinion.should_overwrite}
-            onChange={handleDefaultOpinionShouldOverwriteChange}
-            disabled={disabled || isProcessing}
-          />
-        </FeatureConfigSection>
+              disabled={disabled || isProcessing}
+            >
+              {/* should_overwrite toggle for default opinion */}
+              <SimpleToggleConfig
+                label="Écraser les valeurs existantes"
+                description="Si activé, remplace les valeurs déjà présentes; si désactivé, préserve les valeurs existantes"
+                checked={processingConfig.defaultOpinion.should_overwrite}
+                onChange={handleDefaultOpinionShouldOverwriteChange}
+                disabled={disabled || isProcessing}
+              />
+            </FeatureConfigSection>
+          </div>
+        </div>
       </div>
 
       {/* Summary Generation Configuration Section */}
