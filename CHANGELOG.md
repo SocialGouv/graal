@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/SocialGouv/graal/compare/v1.17.0...v1.18.0) (2025-11-05)
+
+
+### Features
+
+* Add new requests and response types for appending to an amdt DB ([b8dcafb](https://github.com/SocialGouv/graal/commit/b8dcafb86fadeb98fe5c1f214a939a501060dafb))
+
 # [1.17.0](https://github.com/SocialGouv/graal/compare/v1.16.0...v1.17.0) (2025-11-05)
 
 
