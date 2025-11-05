@@ -3,10 +3,12 @@
 import logging
 import logging.config
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from graal.api.services.job_registry import InMemoryJobRegistry
 from graal.utils.config.base_config import InputFileConfig
+from graal.utils.manifest_service import InputFileReference, get_manifest_service
 from graal.utils.s3_service import get_s3_service
 from graal.utils.similarity_db_builder_service import (
     get_similarity_db_builder,
@@ -27,6 +29,7 @@ class DatabaseBuilderService:
         self.job_registry = job_registry
         self.db_builder = get_similarity_db_builder()
         self.s3_service = get_s3_service()
+        self.manifest_service = get_manifest_service()
 
     async def start_database_build(
         self,
@@ -125,17 +128,60 @@ class DatabaseBuilderService:
 
             logging.info(f"[Job {job_id}] Database uploaded successfully")
 
-            # Cleanup uploaded files
+            # Create manifest
             self.job_registry.update_job(
-                job_id, percent=90, message="Cleaning up uploaded files..."
+                job_id, percent=85, message="Creating database manifest..."
+            )
+            logging.info(
+                f"[Job {job_id}] Creating manifest for database: {database_name}"
+            )
+
+            # Build input file references for manifest
+            input_file_refs = []
+            for file_ref in files_metadata:
+                # Extract file info from metadata
+                file_hash = file_ref["upload_id"]  # upload_id is the file hash
+                filename = file_ref["filename"]
+                s3_key = file_ref.get("s3_key", f"input_files/pool/{file_hash}")
+
+                # Create InputFileReference
+                input_file_refs.append(
+                    InputFileReference(
+                        s3_key=s3_key,
+                        file_hash=file_hash,
+                        user_provided_filename=filename,
+                        uploaded_at=datetime.now(timezone.utc),
+                        metadata={
+                            "default_processing_timestamp": file_ref[
+                                "default_processing_timestamp"
+                            ],
+                            "origin_project": file_ref["origin_project"],
+                        },
+                    )
+                )
+
+            # Create and save manifest
+            parquet_output = f"similarity_dbs/{database_name}.parquet"
+            await self.manifest_service.create_manifest(
+                database_name=database_name,
+                input_files=input_file_refs,
+                parquet_output=parquet_output,
+            )
+
+            logging.info(f"[Job {job_id}] Manifest created successfully")
+
+            # Cleanup uploaded files from temp directory
+            # Note: Files remain in S3 pool for reuse
+            self.job_registry.update_job(
+                job_id, percent=95, message="Cleaning up temporary files..."
             )
             for file_path in amendment_files.keys():
                 try:
                     file_path.unlink()
-                    logging.info(f"[Job {job_id}] Deleted uploaded file: {file_path}")
+                    logging.info(f"[Job {job_id}] Deleted temporary file: {file_path}")
                 except Exception as e:
                     logging.warning(
-                        f"[Job {job_id}] Failed to cleanup uploaded file {file_path}: {e}"
+                        f"[Job {job_id}] Failed to cleanup temporary file {file_path}: {e}"
                     )
 
             # Complete
