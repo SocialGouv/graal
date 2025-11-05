@@ -465,9 +465,30 @@ class DatabaseBuildRequest(BaseDatabaseOperationRequest):
 class AppendDatabaseRequest(BaseDatabaseOperationRequest):
     """Request to append files to an existing database."""
 
+    config_file: str = Field(
+        ..., description="Office configuration Excel file to use", min_length=1
+    )
     file_references: list[FileReferenceMetadata] = Field(
         ..., description="References to new files to append"
     )
+
+    @field_validator("config_file")
+    @classmethod
+    def validate_config_file(cls, v: str) -> str:
+        """Validate config_file field."""
+        if not v or not v.strip():
+            raise ValueError("config_file cannot be empty")
+
+        v = v.strip()
+
+        if not v.endswith(".xlsx"):
+            raise ValueError("config_file must be an Excel file (.xlsx)")
+
+        # Security: only safe characters allowed (including Unicode letters)
+        if not re.match(r"^[a-zA-Z0-9\u00C0-\u024F\s\-_\.()]+\.xlsx$", v):
+            raise ValueError("config_file contains invalid characters")
+
+        return v
 
     @field_validator("file_references")
     @classmethod
