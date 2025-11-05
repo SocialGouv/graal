@@ -104,3 +104,46 @@ class DatabaseListResponse(BaseModel):
 
     databases: list[DatabaseInfo] = Field(..., description="List of databases")
     total: int = Field(..., description="Total number of databases")
+
+
+class FileUploadResponse(BaseModel):
+    """Response model for file upload."""
+
+    upload_id: str = Field(..., description="Unique upload identifier")
+    filename: str = Field(..., description="Original filename")
+    file_hash: str = Field(..., description="SHA256 hash of file content")
+    s3_key: str = Field(..., description="S3 key where file is stored in pool")
+    already_existed: bool = Field(
+        ..., description="True if file already existed in pool (deduplicated)"
+    )
+    size: int = Field(..., description="File size in bytes")
+    metadata: dict[str, Any] = Field(..., description="Processing metadata")
+
+
+class FileReferenceInfo(BaseModel):
+    """Information about a file in a database manifest."""
+
+    upload_id: str = Field(
+        ..., description="Upload ID (derived from hash for UI compatibility)"
+    )
+    filename: str = Field(..., description="Original filename provided by user")
+    file_hash: str = Field(..., description="SHA256 hash of file content")
+    s3_key: str = Field(..., description="S3 key in pool")
+    uploaded_at: str = Field(
+        ..., description="ISO 8601 timestamp when file was uploaded"
+    )
+    metadata: dict[str, Any] = Field(..., description="Processing metadata")
+
+
+class DatabaseManifestResponse(BaseModel):
+    """Response model for database manifest."""
+
+    database_name: str = Field(..., description="Name of the database")
+    created_at: str = Field(
+        ..., description="ISO 8601 timestamp when database was created"
+    )
+    last_updated_at: str = Field(
+        ..., description="ISO 8601 timestamp when database was last updated"
+    )
+    files: list[FileReferenceInfo] = Field(..., description="List of files in database")
+    total_files: int = Field(..., description="Total number of files")
