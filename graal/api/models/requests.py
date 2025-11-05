@@ -3,7 +3,7 @@ API request models.
 """
 
 import re
-from typing import ClassVar, Dict, Optional
+from typing import Any, ClassVar, Dict, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -254,28 +254,22 @@ class ProcessingConfig(BaseModel):
             raise ValueError(f"{context} must be between 0.0 and 1.0")
 
     @classmethod
-    def _validate_clustering_thresholds(cls, thresholds: Dict[str, float]) -> None:
-        """Validate clustering similarity thresholds."""
-        for column, threshold in thresholds.items():
-            if column not in cls.VALID_COLUMNS:
-                raise ValueError(
-                    f"Invalid column '{column}' in clustering_similarity_thresholds. Must be one of: {cls.VALID_COLUMNS}"
-                )
-            cls._validate_threshold_range(
-                threshold, f"Clustering similarity threshold for '{column}'"
-            )
+    def _validate_threshold_dict(
+        cls, thresholds: Dict[str, float], dict_name: str, description: str
+    ) -> None:
+        """Validate a dictionary of similarity thresholds by column.
 
-    @classmethod
-    def _validate_fuzzy_match_thresholds(cls, thresholds: Dict[str, float]) -> None:
-        """Validate fuzzy match similarity thresholds."""
+        Args:
+            thresholds: Dictionary mapping column names to threshold values
+            dict_name: Name of the dictionary (for error messages)
+            description: Human-readable description of the threshold type
+        """
         for column, threshold in thresholds.items():
             if column not in cls.VALID_COLUMNS:
                 raise ValueError(
-                    f"Invalid column '{column}' in fuzzy_match_similarity_thresholds. Must be one of: {cls.VALID_COLUMNS}"
+                    f"Invalid column '{column}' in {dict_name}. Must be one of: {cls.VALID_COLUMNS}"
                 )
-            cls._validate_threshold_range(
-                threshold, f"Fuzzy match similarity threshold for '{column}'"
-            )
+            cls._validate_threshold_range(threshold, f"{description} for '{column}'")
 
     @classmethod
     def _validate_threshold_overrides(
@@ -308,9 +302,15 @@ class ProcessingConfig(BaseModel):
                 )
 
             params.origin_project = cls._validate_origin_project(params.origin_project)
-            cls._validate_clustering_thresholds(params.clustering_similarity_thresholds)
-            cls._validate_fuzzy_match_thresholds(
-                params.fuzzy_match_similarity_thresholds
+            cls._validate_threshold_dict(
+                params.clustering_similarity_thresholds,
+                "clustering_similarity_thresholds",
+                "Clustering similarity threshold",
+            )
+            cls._validate_threshold_dict(
+                params.fuzzy_match_similarity_thresholds,
+                "fuzzy_match_similarity_thresholds",
+                "Fuzzy match similarity threshold",
             )
             cls._validate_threshold_overrides(params.similarity_threshold_overrides)
 
@@ -401,18 +401,19 @@ class FileUploadReference(BaseModel):
     origin_project: str = Field(..., description="Origin project name")
 
 
-class DatabaseBuildRequest(BaseModel):
-    """Request to build a similarity database."""
+class FileReferenceMetadata(BaseModel):
+    """Metadata for a file reference (for append operations)."""
 
-    config_file: str = Field(
-        ..., description="Office configuration Excel file to use", min_length=1
-    )
-    database_name: str = Field(
-        ..., description="Name for the database (without extension)", min_length=1
-    )
-    file_references: list[FileUploadReference] = Field(
-        ..., description="References to uploaded files"
-    )
+    upload_id: str = Field(..., description="Upload ID from file upload")
+    filename: str = Field(..., description="Original filename")
+    file_hash: str = Field(..., description="SHA256 hash of file content")
+    s3_key: str = Field(..., description="S3 key where file is stored in pool")
+    metadata: dict[str, Any] = Field(..., description="Processing metadata")
+
+
+class BaseDatabaseOperationRequest(BaseModel):
+    """Base model for database operations with shared configuration fields."""
+
     drop_empty_columns: list[str] = Field(
         default=["Réponse"],
         description="Columns where empty rows should be dropped",
@@ -431,12 +432,47 @@ class DatabaseBuildRequest(BaseModel):
         description="Columns to group by during clustering",
     )
 
+    @staticmethod
+    def _validate_file_references_list(v: list[Any]) -> list[Any]:
+        """Validate that file_references has at least one file."""
+        if not v or len(v) < 1:
+            raise ValueError("At least one file must be provided")
+        return v
+
+
+class DatabaseBuildRequest(BaseDatabaseOperationRequest):
+    """Request to build a similarity database."""
+
+    config_file: str = Field(
+        ..., description="Office configuration Excel file to use", min_length=1
+    )
+    database_name: str = Field(
+        ..., description="Name for the database (without extension)", min_length=1
+    )
+    file_references: list[FileUploadReference] = Field(
+        ..., description="References to uploaded files"
+    )
+
     @field_validator("file_references")
     @classmethod
     def validate_file_references(
         cls, v: list[FileUploadReference]
     ) -> list[FileUploadReference]:
         """Validate that file_references has at least one file."""
-        if not v or len(v) < 1:
-            raise ValueError("At least one file must be provided")
-        return v
+        return cls._validate_file_references_list(v)
+
+
+class AppendDatabaseRequest(BaseDatabaseOperationRequest):
+    """Request to append files to an existing database."""
+
+    file_references: list[FileReferenceMetadata] = Field(
+        ..., description="References to new files to append"
+    )
+
+    @field_validator("file_references")
+    @classmethod
+    def validate_file_references(
+        cls, v: list[FileReferenceMetadata]
+    ) -> list[FileReferenceMetadata]:
+        """Validate that file_references has at least one file."""
+        return cls._validate_file_references_list(v)
