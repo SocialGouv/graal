@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/SocialGouv/graal/compare/v1.16.0...v1.17.0) (2025-11-05)
+
+
+### Features
+
+* Add ManifestService for handling file upload manifests ([86e4030](https://github.com/SocialGouv/graal/commit/86e40302494e897ac39214902af329d6ce07193b))
+
 # [1.16.0](https://github.com/SocialGouv/graal/compare/v1.15.1...v1.16.0) (2025-11-05)
 
 
