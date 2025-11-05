@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/SocialGouv/graal/compare/v1.15.1...v1.16.0) (2025-11-05)
+
+
+### Features
+
+* Add input file and manifest handling in S3Service ([668af63](https://github.com/SocialGouv/graal/commit/668af63313a6ccdb0a34f400e6318b5c4fe59c94))
+
 ## [1.15.1](https://github.com/SocialGouv/graal/compare/v1.15.0...v1.15.1) (2025-11-04)
 
 
