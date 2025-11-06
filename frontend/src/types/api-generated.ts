@@ -290,15 +290,16 @@ export interface paths {
      * Upload Amendment File
      * @description Upload an amendment file for database building.
      *
-     *     The file is stored temporarily and will be used when building the database.
-     *     Returns the upload ID that should be included in the build request.
+     *     The file is checked against the pool using hash-based deduplication.
+     *     If the file already exists, returns reference to existing file.
+     *     Otherwise uploads to pool and returns new file reference.
      *
      *     Args:
      *         file: The amendment file to upload
      *         metadata: JSON string with required default_processing_timestamp and origin_project
      *
      *     Returns:
-     *         dict: Upload information including upload_id, filename, size, and metadata
+     *         FileUploadResponse: Upload information including hash, s3_key, and deduplication status
      *
      *     Raises:
      *         HTTPException: 500 if upload fails
@@ -385,6 +386,65 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/databases/{database_name}/append': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Append To Database
+     * @description Append new files to an existing database by rebuilding with all files.
+     *
+     *     This endpoint loads the existing database manifest, combines the existing files
+     *     with the new file references, and triggers a full rebuild of the database.
+     *
+     *     Args:
+     *         database_name: Name of the database to append to
+     *         request: AppendDatabaseRequest with new files and build configuration
+     *
+     *     Returns:
+     *         ProcessingResponse: Job information for tracking append progress
+     */
+    post: operations['append_to_database_api_v1_databases__database_name__append_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/databases/{database_name}/manifest': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Database Manifest
+     * @description Retrieve the manifest for a database showing all input files.
+     *
+     *     Args:
+     *         database_name: Name of the database
+     *
+     *     Returns:
+     *         DatabaseManifestResponse: Manifest with list of files and metadata
+     *
+     *     Raises:
+     *         HTTPException: 404 if database/manifest not found, 500 for other errors
+     */
+    get: operations['get_database_manifest_api_v1_databases__database_name__manifest_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -424,6 +484,52 @@ export interface components {
       corps_amdt?: string | null
       /** Mission */
       mission?: string | null
+    }
+    /**
+     * AppendDatabaseRequest
+     * @description Request to append files to an existing database.
+     */
+    AppendDatabaseRequest: {
+      /**
+       * Drop Empty Columns
+       * @description Columns where empty rows should be dropped
+       * @default [
+       *       "Réponse"
+       *     ]
+       */
+      drop_empty_columns: string[]
+      /**
+       * Similarity Threshold
+       * @description Threshold for Levenshtein refinement
+       * @default 0.99
+       */
+      similarity_threshold: number
+      /**
+       * Eps
+       * @description Epsilon value for DBSCAN clustering
+       * @default 0.4
+       */
+      eps: number
+      /**
+       * Group By Columns
+       * @description Columns to group by during clustering
+       * @default [
+       *       "Lecture",
+       *       "origin_project",
+       *       "Num article"
+       *     ]
+       */
+      group_by_columns: string[]
+      /**
+       * Config File
+       * @description Office configuration Excel file to use
+       */
+      config_file: string
+      /**
+       * File References
+       * @description References to new files to append
+       */
+      file_references: components['schemas']['FileReferenceMetadata'][]
     }
     /** Body_process_amendments_api_v1_process_post */
     Body_process_amendments_api_v1_process_post: {
@@ -467,21 +573,6 @@ export interface components {
      */
     DatabaseBuildRequest: {
       /**
-       * Config File
-       * @description Office configuration Excel file to use
-       */
-      config_file: string
-      /**
-       * Database Name
-       * @description Name for the database (without extension)
-       */
-      database_name: string
-      /**
-       * File References
-       * @description References to uploaded files
-       */
-      file_references: components['schemas']['FileUploadReference'][]
-      /**
        * Drop Empty Columns
        * @description Columns where empty rows should be dropped
        * @default [
@@ -511,6 +602,21 @@ export interface components {
        *     ]
        */
       group_by_columns: string[]
+      /**
+       * Config File
+       * @description Office configuration Excel file to use
+       */
+      config_file: string
+      /**
+       * Database Name
+       * @description Name for the database (without extension)
+       */
+      database_name: string
+      /**
+       * File References
+       * @description References to uploaded files
+       */
+      file_references: components['schemas']['FileUploadReference'][]
     }
     /**
      * DatabaseInfo
@@ -551,6 +657,104 @@ export interface components {
       total: number
     }
     /**
+     * DatabaseManifestResponse
+     * @description Response model for database manifest.
+     */
+    DatabaseManifestResponse: {
+      /**
+       * Database Name
+       * @description Name of the database
+       */
+      database_name: string
+      /**
+       * Created At
+       * @description ISO 8601 timestamp when database was created
+       */
+      created_at: string
+      /**
+       * Last Updated At
+       * @description ISO 8601 timestamp when database was last updated
+       */
+      last_updated_at: string
+      /**
+       * Files
+       * @description List of files in database
+       */
+      files: components['schemas']['FileReferenceInfo'][]
+      /**
+       * Total Files
+       * @description Total number of files
+       */
+      total_files: number
+    }
+    /**
+     * FileReferenceInfo
+     * @description Information about a file in a database manifest.
+     */
+    FileReferenceInfo: {
+      /**
+       * Upload Id
+       * @description Upload ID (derived from hash for UI compatibility)
+       */
+      upload_id: string
+      /**
+       * Filename
+       * @description Original filename provided by user
+       */
+      filename: string
+      /**
+       * File Hash
+       * @description SHA256 hash of file content
+       */
+      file_hash: string
+      /**
+       * S3 Key
+       * @description S3 key in pool
+       */
+      s3_key: string
+      /**
+       * Uploaded At
+       * @description ISO 8601 timestamp when file was uploaded
+       */
+      uploaded_at: string
+      /**
+       * Metadata
+       * @description Processing metadata
+       */
+      metadata: Record<string, never>
+    }
+    /**
+     * FileReferenceMetadata
+     * @description Metadata for a file reference (for append operations).
+     */
+    FileReferenceMetadata: {
+      /**
+       * Upload Id
+       * @description Upload ID from file upload
+       */
+      upload_id: string
+      /**
+       * Filename
+       * @description Original filename
+       */
+      filename: string
+      /**
+       * File Hash
+       * @description SHA256 hash of file content
+       */
+      file_hash: string
+      /**
+       * S3 Key
+       * @description S3 key where file is stored in pool
+       */
+      s3_key: string
+      /**
+       * Metadata
+       * @description Processing metadata
+       */
+      metadata: Record<string, never>
+    }
+    /**
      * FileUploadReference
      * @description Reference to an uploaded file.
      */
@@ -566,6 +770,16 @@ export interface components {
        */
       filename: string
       /**
+       * File Hash
+       * @description SHA256 hash of file content
+       */
+      file_hash: string
+      /**
+       * S3 Key
+       * @description S3 key where file is stored in pool
+       */
+      s3_key: string
+      /**
        * Default Processing Timestamp
        * @description Unix timestamp for processing
        */
@@ -575,6 +789,47 @@ export interface components {
        * @description Origin project name
        */
       origin_project: string
+    }
+    /**
+     * FileUploadResponse
+     * @description Response model for file upload.
+     */
+    FileUploadResponse: {
+      /**
+       * Upload Id
+       * @description Unique upload identifier
+       */
+      upload_id: string
+      /**
+       * Filename
+       * @description Original filename
+       */
+      filename: string
+      /**
+       * File Hash
+       * @description SHA256 hash of file content
+       */
+      file_hash: string
+      /**
+       * S3 Key
+       * @description S3 key where file is stored in pool
+       */
+      s3_key: string
+      /**
+       * Already Existed
+       * @description True if file already existed in pool (deduplicated)
+       */
+      already_existed: boolean
+      /**
+       * Size
+       * @description File size in bytes
+       */
+      size: number
+      /**
+       * Metadata
+       * @description Processing metadata
+       */
+      metadata: Record<string, never>
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -925,7 +1180,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': Record<string, never>
+          'application/json': components['schemas']['FileUploadResponse']
         }
       }
       /** @description Validation Error */
@@ -990,6 +1245,72 @@ export interface operations {
         }
         content: {
           'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  append_to_database_api_v1_databases__database_name__append_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        database_name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AppendDatabaseRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProcessingResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_database_manifest_api_v1_databases__database_name__manifest_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        database_name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatabaseManifestResponse']
         }
       }
       /** @description Validation Error */

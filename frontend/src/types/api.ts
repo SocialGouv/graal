@@ -115,6 +115,9 @@ export interface ApiError {
 export interface UploadFileResponse {
   upload_id: string
   filename: string
+  file_hash: string
+  s3_key: string
+  already_existed: boolean
   size: number
   metadata: {
     default_processing_timestamp: number
@@ -125,6 +128,8 @@ export interface UploadFileResponse {
 export interface FileReference {
   upload_id: string
   filename: string
+  file_hash: string
+  s3_key: string
   default_processing_timestamp: number
   origin_project: string
 }
@@ -152,4 +157,55 @@ export interface DatabaseListResponse {
 
 export interface DeleteFileResponse {
   message: string
+}
+
+export interface DatabaseManifest {
+  database_name: string
+  created_at: string
+  last_updated_at: string
+  files: FileReferenceWithMetadata[]
+  total_files: number
+}
+
+export interface FileReferenceWithMetadata {
+  upload_id: string
+  filename: string
+  file_hash: string
+  s3_key: string
+  uploaded_at: string
+  metadata: {
+    default_processing_timestamp: number
+    origin_project: string
+  }
+}
+
+export interface FileUploadResponse {
+  upload_id: string
+  filename: string
+  file_hash: string
+  s3_key: string
+  already_existed: boolean
+  size: number
+  metadata: {
+    default_processing_timestamp: number
+    origin_project: string
+  }
+}
+
+export interface AppendDatabaseRequest {
+  config_file: string
+  file_references: Array<{
+    upload_id: string
+    filename: string
+    file_hash: string
+    s3_key: string
+    metadata: {
+      default_processing_timestamp: number
+      origin_project: string
+    }
+  }>
+  drop_empty_columns?: string[]
+  similarity_threshold?: number
+  eps?: number
+  group_by_columns?: string[]
 }

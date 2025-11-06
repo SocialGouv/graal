@@ -59,6 +59,8 @@ export interface ProcessingConfig {
 export interface UploadedFileInfo {
   uploadId: string
   filename: string
+  fileHash: string
+  s3Key: string
   size: number
   timestamp: number
   originProject: string
