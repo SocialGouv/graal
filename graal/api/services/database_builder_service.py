@@ -140,9 +140,11 @@ class DatabaseBuilderService:
             input_file_refs = []
             for file_ref in files_metadata:
                 # Extract file info from metadata
-                file_hash = file_ref["upload_id"]  # upload_id is the file hash
+                file_hash = file_ref[
+                    "file_hash"
+                ]  # Use actual file_hash from upload response
                 filename = file_ref["filename"]
-                s3_key = file_ref.get("s3_key", f"input_files/pool/{file_hash}")
+                s3_key = file_ref["s3_key"]  # Use actual s3_key from upload response
 
                 # Create InputFileReference
                 input_file_refs.append(

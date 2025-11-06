@@ -9,7 +9,11 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile
 
-from graal.api.models.requests import AppendDatabaseRequest, DatabaseBuildRequest
+from graal.api.models.requests import (
+    AppendDatabaseRequest,
+    DatabaseBuildRequest,
+    FileUploadReference,
+)
 from graal.api.models.responses import (
     DatabaseInfo,
     DatabaseListResponse,
@@ -53,11 +57,33 @@ def _convert_file_ref_to_metadata(file_ref: FileReferenceInfo) -> dict[str, Any]
     return {
         "upload_id": file_ref.file_hash,
         "filename": file_ref.filename,
+        "file_hash": file_ref.file_hash,  # Add file_hash for manifest creation
         "s3_key": file_ref.s3_key,
         "default_processing_timestamp": file_ref.metadata.get(
             "default_processing_timestamp"
         ),
         "origin_project": file_ref.metadata.get("origin_project"),
+    }
+
+
+def _convert_upload_ref_to_metadata(
+    file_ref: FileUploadReference,
+) -> dict[str, Any]:
+    """Convert a FileUploadReference to metadata dictionary format.
+
+    Args:
+        file_ref: File upload reference to convert
+
+    Returns:
+        Dictionary with file metadata
+    """
+    return {
+        "upload_id": file_ref.upload_id,
+        "filename": file_ref.filename,
+        "file_hash": file_ref.file_hash,
+        "s3_key": file_ref.s3_key,
+        "default_processing_timestamp": file_ref.metadata.default_processing_timestamp,
+        "origin_project": file_ref.metadata.origin_project,
     }
 
 
@@ -304,7 +330,7 @@ async def build_database(request: DatabaseBuildRequest):
 
         try:
             files_metadata = [
-                _convert_file_ref_to_metadata(ref) for ref in request.file_references
+                _convert_upload_ref_to_metadata(ref) for ref in request.file_references
             ]
             logging.info(f"[API] Converted file references to dicts: {files_metadata}")
         except Exception as e:
@@ -424,7 +450,7 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
 
         # Convert new file references to metadata format
         new_files_metadata = [
-            _convert_file_ref_to_metadata(file_ref)
+            _convert_upload_ref_to_metadata(file_ref)
             for file_ref in request.file_references
         ]
 
@@ -433,6 +459,7 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
             {
                 "upload_id": existing_file.file_hash,
                 "filename": existing_file.user_provided_filename,
+                "file_hash": existing_file.file_hash,
                 "s3_key": existing_file.s3_key,
                 "default_processing_timestamp": existing_file.metadata.get(
                     "default_processing_timestamp"

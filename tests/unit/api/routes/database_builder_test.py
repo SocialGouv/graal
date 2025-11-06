@@ -38,6 +38,7 @@ class TestConvertFileRefToMetadata:
         assert result == {
             "upload_id": "abc123def456",
             "filename": "test_amendments.json",
+            "file_hash": "abc123def456",  # pragma: allowlist secret
             "s3_key": "pool/abc/123/test_amendments.json",
             "default_processing_timestamp": 1704067200,
             "origin_project": "PLFSS 2024",
@@ -62,6 +63,7 @@ class TestConvertFileRefToMetadata:
         assert result == {
             "upload_id": "def789ghi012",
             "filename": "incomplete.json",
+            "file_hash": "def789ghi012",
             "s3_key": "pool/def/789/incomplete.json",
             "default_processing_timestamp": None,
             "origin_project": None,
@@ -89,6 +91,7 @@ class TestConvertFileRefToMetadata:
         assert result["origin_project"] == "Test Project"
         assert result["default_processing_timestamp"] is None
         assert result["upload_id"] == "ghi345jkl678"
+        assert result["file_hash"] == "ghi345jkl678"
 
 
 class TestDownloadFileToTemp:

@@ -390,25 +390,23 @@ class ProcessingRequest(BaseModel):
         return v
 
 
-class FileUploadReference(BaseModel):
-    """Reference to an uploaded file."""
+class FileUploadMetadata(BaseModel):
+    """Metadata for file upload operations."""
 
-    upload_id: str = Field(..., description="Upload ID from file upload")
-    filename: str = Field(..., description="Original filename")
     default_processing_timestamp: int = Field(
         ..., description="Unix timestamp for processing"
     )
     origin_project: str = Field(..., description="Origin project name")
 
 
-class FileReferenceMetadata(BaseModel):
-    """Metadata for a file reference (for append operations)."""
+class FileUploadReference(BaseModel):
+    """Reference to an uploaded file."""
 
     upload_id: str = Field(..., description="Upload ID from file upload")
     filename: str = Field(..., description="Original filename")
     file_hash: str = Field(..., description="SHA256 hash of file content")
     s3_key: str = Field(..., description="S3 key where file is stored in pool")
-    metadata: dict[str, Any] = Field(..., description="Processing metadata")
+    metadata: FileUploadMetadata = Field(..., description="File processing metadata")
 
 
 class BaseDatabaseOperationRequest(BaseModel):
@@ -468,7 +466,7 @@ class AppendDatabaseRequest(BaseDatabaseOperationRequest):
     config_file: str = Field(
         ..., description="Office configuration Excel file to use", min_length=1
     )
-    file_references: list[FileReferenceMetadata] = Field(
+    file_references: list[FileUploadReference] = Field(
         ..., description="References to new files to append"
     )
 
@@ -493,7 +491,7 @@ class AppendDatabaseRequest(BaseDatabaseOperationRequest):
     @field_validator("file_references")
     @classmethod
     def validate_file_references(
-        cls, v: list[FileReferenceMetadata]
-    ) -> list[FileReferenceMetadata]:
+        cls, v: list[FileUploadReference]
+    ) -> list[FileUploadReference]:
         """Validate that file_references has at least one file."""
         return cls._validate_file_references_list(v)
