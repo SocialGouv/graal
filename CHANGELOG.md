@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/SocialGouv/graal/compare/v1.19.1...v1.20.0) (2025-11-06)
+
+
+### Features
+
+* Add UI for appending to an amdt DB ([0cabff9](https://github.com/SocialGouv/graal/commit/0cabff9cd07706f56537650fa51ca535a96ae05a))
+
 ## [1.19.1](https://github.com/SocialGouv/graal/compare/v1.19.0...v1.19.1) (2025-11-06)
 
 
