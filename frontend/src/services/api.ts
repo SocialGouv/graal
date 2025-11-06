@@ -1,9 +1,11 @@
 import axios, { type AxiosInstance, type AxiosProgressEvent } from 'axios'
 import type {
   ApiError,
+  AppendDatabaseRequest,
   BuildDatabaseRequest,
   ConfigFilesResponse,
   DatabaseListResponse,
+  DatabaseManifest,
   DeleteFileResponse,
   JobStatusResponse,
   PreviewResponse,
@@ -504,6 +506,76 @@ class ApiService {
       return response.data
     } catch (error) {
       console.error(`[API_CLIENT] Failed to delete file: ${uploadId}`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Get database manifest with file references
+   */
+  async getDatabaseManifest(databaseName: string): Promise<DatabaseManifest> {
+    console.log(`[API_CLIENT] Fetching manifest for database: ${databaseName}`)
+
+    try {
+      const response = await this.client.get<DatabaseManifest>(
+        `/databases/${databaseName}/manifest`
+      )
+
+      console.log(`[API_CLIENT] Manifest retrieved for: ${databaseName}`, {
+        totalFiles: response.data.total_files,
+        createdAt: response.data.created_at
+      })
+
+      return response.data
+    } catch (error) {
+      console.error(
+        `[API_CLIENT] Failed to get manifest for: ${databaseName}`,
+        error
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Append files to existing database and rebuild
+   */
+  async appendToDatabase(
+    databaseName: string,
+    request: AppendDatabaseRequest
+  ): Promise<ProcessJobResponse> {
+    console.log(`[API_CLIENT] Appending to database: ${databaseName}`, {
+      fileCount: request.file_references.length,
+      configFile: request.config_file
+    })
+
+    const startTime = Date.now()
+
+    try {
+      const response = await this.client.post<ProcessJobResponse>(
+        `/databases/${databaseName}/append`,
+        request,
+        {
+          timeout: 5 * 60 * 1000 // 5 minutes
+        }
+      )
+
+      const appendTime = Date.now() - startTime
+      console.log(`[API_CLIENT] Database append started for: ${databaseName}`, {
+        jobId: response.data.job_id,
+        status: response.data.status,
+        appendTime: `${appendTime}ms`
+      })
+
+      return response.data
+    } catch (error) {
+      const appendTime = Date.now() - startTime
+      console.error(
+        `[API_CLIENT] Database append failed for: ${databaseName}`,
+        {
+          appendTime: `${appendTime}ms`,
+          error
+        }
+      )
       throw error
     }
   }
