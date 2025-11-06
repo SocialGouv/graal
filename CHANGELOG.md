@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/SocialGouv/graal/compare/v1.18.0...v1.19.0) (2025-11-06)
+
+
+### Features
+
+* Add append to database + manifest handling in DatabaseBuilder ([fc28707](https://github.com/SocialGouv/graal/commit/fc287079ce790c99b8a901a2be04642681a40258))
+
 # [1.18.0](https://github.com/SocialGouv/graal/compare/v1.17.0...v1.18.0) (2025-11-05)
 
 
