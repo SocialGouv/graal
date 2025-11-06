@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/SocialGouv/graal/compare/v1.19.0...v1.19.1) (2025-11-06)
+
+
+### Bug Fixes
+
+* Some inconsistencies in amdt DB handling ([8841e90](https://github.com/SocialGouv/graal/commit/8841e9014705415647db54101633e5362f9abba5))
+
 # [1.19.0](https://github.com/SocialGouv/graal/compare/v1.18.0...v1.19.0) (2025-11-06)
 
 
