@@ -383,6 +383,9 @@ async def build_database(request: DatabaseBuildRequest):
 async def delete_uploaded_file(upload_id: str):
     """Delete an uploaded file that's no longer needed.
 
+    This endpoint is idempotent - if the file doesn't exist, it returns success
+    since the desired state (file not existing) is already achieved.
+
     Args:
         upload_id: The upload ID of the file to delete
 
@@ -390,20 +393,25 @@ async def delete_uploaded_file(upload_id: str):
         dict: Success message
 
     Raises:
-        HTTPException: 404 if upload not found, 500 if deletion fails
+        HTTPException: 500 if deletion fails
     """
     try:
         temp_upload_dir = _ensure_temp_upload_dir()
 
         # Find file with this upload_id
+        files_deleted = 0
         for file_path in temp_upload_dir.glob(f"{upload_id}_*"):
             file_path.unlink()
             logging.info(f"[API] Deleted uploaded file: {file_path}")
-            return {"message": "File deleted successfully"}
+            files_deleted += 1
 
-        raise HTTPException(status_code=404, detail="Upload not found")
-    except HTTPException:
-        raise
+        if files_deleted > 0:
+            return {"message": "File deleted successfully"}
+        else:
+            # File doesn't exist - return success (idempotent deletion)
+            logging.info(f"[API] File already deleted or not found: {upload_id}")
+            return {"message": "File already deleted or not found"}
+
     except Exception as e:
         logging.error(f"[API] Error deleting uploaded file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to delete file") from e

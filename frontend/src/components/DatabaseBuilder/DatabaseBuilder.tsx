@@ -69,6 +69,7 @@ export const DatabaseBuilder: React.FC = () => {
     setDatabaseName,
     addUploadedFile,
     removeUploadedFile,
+    clearUploadedFiles,
     setJobId
   } = useProcessingStore()
 
@@ -183,6 +184,8 @@ export const DatabaseBuilder: React.FC = () => {
     onSuccess: (data) => {
       setJobId(data.job_id)
       setBuildError(null)
+      // Clear uploaded files after successful build
+      clearUploadedFiles()
       // Refetch database list after build completes (with delay)
       setTimeout(() => {
         void refetchDatabases()
@@ -229,6 +232,8 @@ export const DatabaseBuilder: React.FC = () => {
     onSuccess: (data) => {
       setJobId(data.job_id)
       setBuildError(null)
+      // Clear uploaded files after successful append
+      clearUploadedFiles()
       // Refetch database list after append completes (with delay)
       setTimeout(() => {
         void refetchDatabases()

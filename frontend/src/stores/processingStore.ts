@@ -130,6 +130,7 @@ export interface ProcessingState {
   updateFileUploadProgress: (uploadId: string, progress: number) => void
   setBuildProgress: (progress: number) => void
   setIsBuilding: (isBuilding: boolean) => void
+  clearUploadedFiles: () => void
   resetDatabaseBuilder: () => void
 }
 
@@ -319,6 +320,14 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
   setIsBuilding: (isBuilding) =>
     set((state) => ({
       databaseBuilder: { ...state.databaseBuilder, isBuilding }
+    })),
+
+  clearUploadedFiles: () =>
+    set((state) => ({
+      databaseBuilder: {
+        ...state.databaseBuilder,
+        uploadedFiles: []
+      }
     })),
 
   resetDatabaseBuilder: () =>

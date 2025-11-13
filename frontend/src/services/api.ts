@@ -504,7 +504,13 @@ class ApiService {
       console.log(`[API_CLIENT] File deleted successfully: ${uploadId}`)
 
       return response.data
-    } catch (error) {
+    } catch (error: any) {
+      // 404 means file already deleted - treat as success since desired state is achieved
+      if (error?.response?.status === 404) {
+        console.log(`[API_CLIENT] File already deleted: ${uploadId}`)
+        return { message: 'File already deleted' }
+      }
+
       console.error(`[API_CLIENT] Failed to delete file: ${uploadId}`, error)
       throw error
     }
