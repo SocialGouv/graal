@@ -211,3 +211,10 @@ export interface AppendDatabaseRequest {
   eps?: number
   group_by_columns?: string[]
 }
+
+// Authentication types
+export interface UserResponse {
+  user_id: string
+  email: string | null
+  is_admin: boolean
+}

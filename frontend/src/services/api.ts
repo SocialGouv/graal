@@ -12,7 +12,8 @@ import type {
   ProcessingRequest,
   ProcessJobResponse,
   SimilarityDatabasesListResponse,
-  UploadFileResponse
+  UploadFileResponse,
+  UserResponse
 } from '../types/api'
 
 class ApiService {
@@ -583,6 +584,37 @@ class ApiService {
         }
       )
       throw error
+    }
+  }
+
+  /**
+   * Get current user information
+   */
+  async getCurrentUser(): Promise<UserResponse> {
+    console.log('[API_CLIENT] Fetching current user information')
+
+    try {
+      const response = await this.client.get<UserResponse>('/auth/me')
+
+      console.log('[API_CLIENT] Current user retrieved', {
+        userId: response.data.user_id,
+        isAdmin: response.data.is_admin
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to get current user', error)
+
+      // Transform to ApiError for consistent error handling
+      if (error && typeof error === 'object' && 'status_code' in error) {
+        throw error
+      }
+
+      const apiError: ApiError = {
+        detail: 'Failed to retrieve user information',
+        status_code: 500
+      }
+      throw apiError
     }
   }
 }
