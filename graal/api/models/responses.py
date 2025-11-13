@@ -147,3 +147,15 @@ class DatabaseManifestResponse(BaseModel):
     )
     files: list[FileReferenceInfo] = Field(..., description="List of files in database")
     total_files: int = Field(..., description="Total number of files")
+
+
+class UserResponse(BaseModel):
+    """Response model for user information.
+
+    This response includes the is_admin field, making it the single source
+    for both user information and admin status checks.
+    """
+
+    user_id: str = Field(..., description="Unique user identifier")
+    email: Optional[str] = Field(None, description="User email address")
+    is_admin: bool = Field(..., description="Whether user has admin privileges")
