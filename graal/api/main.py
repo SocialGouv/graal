@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from graal.api.routes import database_builder
+from graal.api.routes import authorization, database_builder
 from graal.api.routes.health import router as health_router
 from graal.api.routes.processing import router as processing_router
 from graal.api.services.database_builder_service import DatabaseBuilderService
@@ -66,6 +66,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(processing_router, prefix="/api/v1")
 app.include_router(database_builder.router, prefix="/api/v1")
+app.include_router(authorization.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
