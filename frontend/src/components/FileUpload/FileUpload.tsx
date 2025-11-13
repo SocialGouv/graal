@@ -2,7 +2,7 @@ import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Card } from '@codegouvfr/react-dsfr/Card';
+import { Tile } from '@codegouvfr/react-dsfr/Tile';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
 import styles from './FileUpload.module.css';
@@ -225,54 +225,52 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         </button>
       ) : (
         <>
-          <Card
+          <Tile
             title={uploadedFile.name}
             titleAs="h3"
             desc={
-              <ul className={fr.cx('fr-badges-group')}>
-                <li>
-                  <Badge severity="success" small>
-                    {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
-                  </Badge>
-                </li>
+              <div className={fr.cx('fr-text--sm')} style={{ color: 'var(--text-mention-grey)' }}>
+                <span className={fr.cx('fr-icon-database-line', 'fr-icon--sm', 'fr-mr-1v')} aria-hidden="true" />
+                {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
                 {fileStats && fileStats.lines > 0 && (
-                  <li>
-                    <Badge severity="info" small>
-                      {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
-                    </Badge>
-                  </li>
+                  <>
+                    <span className={fr.cx('fr-mx-2v')}>•</span>
+                    <span className="fr-icon-file-list-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
+                    {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
+                  </>
                 )}
-              </ul>
+              </div>
             }
-            footer={
-              <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
-                <li>
-                  <Button
-                    priority="secondary"
-                    size="small"
-                    onClick={handleClick}
-                    disabled={disabled || isProcessing}
-                    iconId="fr-icon-refresh-line"
-                  >
-                    Changer
-                  </Button>
-                </li>
-                <li>
-                  <Button
-                    priority="secondary"
-                    size="small"
-                    onClick={handleRemoveFile}
-                    disabled={disabled || isProcessing}
-                    iconId="fr-icon-delete-line"
-                  >
-                    Supprimer
-                  </Button>
-                </li>
-              </ul>
-            }
-            border
-            enlargeLink={false}
+            imageUrl={undefined}
+            orientation="horizontal"
           />
+
+          <div className={fr.cx('fr-mt-2w')}>
+            <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
+              <li>
+                <Button
+                  priority="secondary"
+                  size="small"
+                  onClick={handleClick}
+                  disabled={disabled || isProcessing}
+                  iconId="fr-icon-refresh-line"
+                >
+                  Changer
+                </Button>
+              </li>
+              <li>
+                <Button
+                  priority="secondary"
+                  size="small"
+                  onClick={handleRemoveFile}
+                  disabled={disabled || isProcessing}
+                  iconId="fr-icon-delete-line"
+                >
+                  Supprimer
+                </Button>
+              </li>
+            </ul>
+          </div>
 
           <div ref={uploadRef} className={styles.hiddenUpload}>
             <Upload
@@ -305,7 +303,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         </div>
       )}
 
-      {/* Processing Button */}
       {uploadedFile && (
         <div className={fr.cx('fr-mt-3w')} style={{ textAlign: 'center' }}>
           <Button
