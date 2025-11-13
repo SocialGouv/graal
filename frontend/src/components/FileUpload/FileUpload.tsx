@@ -229,30 +229,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             title={uploadedFile.name}
             titleAs="h3"
             desc={
-              <>
-                <div className={fr.cx('fr-mt-1w')}>
-                  <p className={fr.cx('fr-badge', 'fr-badge--success', 'fr-badge--no-icon')}>
-                    <span className={fr.cx('fr-icon-checkbox-circle-fill', 'fr-mr-1v')} aria-hidden="true" />
-                    Fichier chargé avec succès
-                  </p>
-                </div>
-                <div className={fr.cx('fr-mt-2w')}>
-                  <ul className={fr.cx('fr-badges-group')}>
-                    <li>
-                      <Badge severity="success" small>
-                        {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
-                      </Badge>
-                    </li>
-                    {fileStats && fileStats.lines > 0 && (
-                      <li>
-                        <Badge severity="info" small>
-                          {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
-                        </Badge>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              </>
+              <ul className={fr.cx('fr-badges-group')}>
+                <li>
+                  <Badge severity="success" small>
+                    {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
+                  </Badge>
+                </li>
+                {fileStats && fileStats.lines > 0 && (
+                  <li>
+                    <Badge severity="info" small>
+                      {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
+                    </Badge>
+                  </li>
+                )}
+              </ul>
             }
             footer={
               <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
