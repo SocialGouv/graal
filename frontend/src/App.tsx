@@ -2,10 +2,14 @@ import { fr } from '@codegouvfr/react-dsfr'
 import { Button } from '@codegouvfr/react-dsfr/Button'
 import { Footer } from '@codegouvfr/react-dsfr/Footer'
 import { Header } from '@codegouvfr/react-dsfr/Header'
-import { SegmentedControl } from '@codegouvfr/react-dsfr/SegmentedControl'
+import {
+  SegmentedControl,
+  type SegmentedControlProps
+} from '@codegouvfr/react-dsfr/SegmentedControl'
 import React, { useMemo, useState } from 'react'
 
 // Import components and providers
+import { Admin } from './components/Admin'
 import { ConfigFileSelector } from './components/ConfigFileSelector'
 import { DatabaseBuilder } from './components/DatabaseBuilder'
 import DownloadButton from './components/DownloadButton/DownloadButton'
@@ -23,6 +27,7 @@ import {
   useResultsPreview,
   useUploadFile
 } from './hooks/useApi'
+import { useAuth } from './hooks/useAuth'
 import { useValidation } from './hooks/useValidation'
 import { useProcessingStore } from './stores/processingStore'
 
@@ -37,9 +42,43 @@ const Container = ({
 )
 
 function AppContent() {
-  const [activeView, setActiveView] = useState<'processing' | 'database'>(
-    'processing'
-  )
+  const { isAdmin, isLoading, error } = useAuth()
+
+  const [activeView, setActiveView] = useState<
+    'processing' | 'database' | 'admin'
+  >('processing')
+
+  // Build segments array based on admin status
+  const viewSegments = useMemo(() => {
+    const baseSegments = [
+      {
+        label: 'Amendment Processing',
+        nativeInputProps: {
+          checked: activeView === 'processing',
+          onChange: () => setActiveView('processing')
+        }
+      },
+      {
+        label: 'Database Builder',
+        nativeInputProps: {
+          checked: activeView === 'database',
+          onChange: () => setActiveView('database')
+        }
+      }
+    ]
+
+    if (isAdmin) {
+      baseSegments.push({
+        label: 'Admin',
+        nativeInputProps: {
+          checked: activeView === 'admin',
+          onChange: () => setActiveView('admin')
+        }
+      })
+    }
+
+    return baseSegments as unknown as SegmentedControlProps['segments']
+  }, [activeView, isAdmin])
 
   const {
     jobId,
@@ -188,6 +227,35 @@ function AppContent() {
     reset()
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Container>
+        <div className={fr.cx('fr-py-6w')}>
+          <p>Chargement...</p>
+        </div>
+      </Container>
+    )
+  }
+
+  // Show error state (optional - depends on requirements)
+  if (error) {
+    console.warn('Auth error:', error)
+    // Show non-blocking notification
+    return (
+      <Container>
+        <div className={fr.cx('fr-py-6w')}>
+          <div className={fr.cx('fr-alert', 'fr-alert--warning')}>
+            <p>
+              Impossible de vérifier les permissions administrateur. Vous pouvez
+              continuer avec les fonctionnalités de base.
+            </p>
+          </div>
+        </div>
+      </Container>
+    )
+  }
+
   const showResults = processingStatus === 'completed'
   const showProcessing = processingStatus !== 'idle'
 
@@ -216,24 +284,12 @@ function AppContent() {
             <SegmentedControl
               legend="Select view"
               hideLegend
-              segments={[
-                {
-                  label: 'Amendment Processing',
-                  nativeInputProps: {
-                    checked: activeView === 'processing',
-                    onChange: () => setActiveView('processing')
-                  }
-                },
-                {
-                  label: 'Database Builder',
-                  nativeInputProps: {
-                    checked: activeView === 'database',
-                    onChange: () => setActiveView('database')
-                  }
-                }
-              ]}
+              segments={viewSegments}
             />
           </div>
+
+          {/* Admin View */}
+          {activeView === 'admin' && isAdmin && <Admin />}
 
           {/* Database Builder View */}
           {activeView === 'database' && <DatabaseBuilder />}

@@ -371,6 +371,9 @@ export interface paths {
      * Delete Uploaded File
      * @description Delete an uploaded file that's no longer needed.
      *
+     *     This endpoint is idempotent - if the file doesn't exist, it returns success
+     *     since the desired state (file not existing) is already achieved.
+     *
      *     Args:
      *         upload_id: The upload ID of the file to delete
      *
@@ -378,7 +381,7 @@ export interface paths {
      *         dict: Success message
      *
      *     Raises:
-     *         HTTPException: 404 if upload not found, 500 if deletion fails
+     *         HTTPException: 500 if deletion fails
      */
     delete: operations['delete_uploaded_file_api_v1_databases_uploads__upload_id__delete']
     options?: never
@@ -437,6 +440,38 @@ export interface paths {
      *         HTTPException: 404 if database/manifest not found, 500 for other errors
      */
     get: operations['get_database_manifest_api_v1_databases__database_name__manifest_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/me': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Current User
+     * @description Get current authenticated user information, including admin status.
+     *
+     *     This endpoint serves dual purposes:
+     *     1. Retrieve user information (user_id, email)
+     *     2. Check admin privileges via the is_admin field
+     *
+     *     Frontend should use this single endpoint for all authentication checks.
+     *
+     *     Returns:
+     *         UserResponse with user details including admin status
+     *
+     *     Raises:
+     *         HTTPException: 500 if failed to retrieve user information
+     */
+    get: operations['get_current_user_api_v1_auth_me_get']
     put?: never
     post?: never
     delete?: never
@@ -883,6 +918,30 @@ export interface components {
        */
       total: number
     }
+    /**
+     * UserResponse
+     * @description Response model for user information.
+     *
+     *     This response includes the is_admin field, making it the single source
+     *     for both user information and admin status checks.
+     */
+    UserResponse: {
+      /**
+       * User Id
+       * @description Unique user identifier
+       */
+      user_id: string
+      /**
+       * Email
+       * @description User email address
+       */
+      email?: string | null
+      /**
+       * Is Admin
+       * @description Whether user has admin privileges
+       */
+      is_admin: boolean
+    }
     /** ValidationError */
     ValidationError: {
       /** Location */
@@ -1297,6 +1356,26 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_current_user_api_v1_auth_me_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserResponse']
         }
       }
     }
