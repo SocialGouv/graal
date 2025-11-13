@@ -71,6 +71,46 @@ def test_extract_direct_column_html_table_as_df(matcher, direct_column_credit_ta
     assert df["-"].dtype == "int"
 
 
+def test_extract_direct_column_html_table_with_french_formatted_numbers(matcher):
+    """Test extracting DataFrame from HTML table with French-formatted numbers (spaces)."""
+    # This reproduces the exact error: '170 000 000' should be parsed as 170000000
+    french_number_table = """
+    <table>
+        <tr>
+            <th>Programmes</th>
+            <th>+</th>
+            <th>-</th>
+        </tr>
+        <tr>
+            <td>Programme 123 Sante Publique</td>
+            <td>170 000 000</td>
+            <td>50 000</td>
+        </tr>
+        <tr>
+            <td>Programme 456 Education Nationale</td>
+            <td>1 234 567</td>
+            <td>0</td>
+        </tr>
+    </table>
+    """
+    soup = BeautifulSoup(french_number_table, "html.parser")
+    table = soup.find("table")
+
+    df = matcher._extract_direct_column_html_table_as_df(table)
+
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["Programmes", "+", "-"]
+    assert len(df) == 2
+    # Verify the French-formatted numbers are correctly parsed
+    assert df["+"].iloc[0] == 170000000
+    assert df["-"].iloc[0] == 50000
+    assert df["+"].iloc[1] == 1234567
+    assert df["-"].iloc[1] == 0
+    # Verify data types
+    assert df["+"].dtype == "int"
+    assert df["-"].dtype == "int"
+
+
 def test_extract_direct_column_html_table_as_df_no_table(matcher):
     """Test handling HTML content with no table."""
     df = matcher._extract_direct_column_html_table_as_df(None)

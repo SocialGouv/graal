@@ -93,10 +93,17 @@ class CreditTableMatcher(BaseMatcher):
             table_rows.append(cols)
 
         credit_table_df = pd.DataFrame(table_rows, columns=header)
-        credit_table_df["+"] = credit_table_df["+"].fillna(0)
-        credit_table_df["-"] = credit_table_df["-"].fillna(0)
-        credit_table_df["+"] = credit_table_df["+"].astype(int)
-        credit_table_df["-"] = credit_table_df["-"].astype(int)
+        # Handle French-formatted numbers (e.g., '170 000 000') by removing spaces
+        # and other non-digit characters before conversion, then convert to int
+        for col in ["+", "-"]:
+            credit_table_df[col] = (
+                pd.to_numeric(
+                    credit_table_df[col].astype(str).str.replace(r"\D", "", regex=True),
+                    errors="coerce",
+                )
+                .fillna(0)
+                .astype(int)
+            )
         return credit_table_df
 
     def _extract_text_from_cell(self, cell) -> str:
