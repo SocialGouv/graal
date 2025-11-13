@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/SocialGouv/graal/compare/v1.22.0...v1.23.0) (2025-11-13)
+
+
+### Features
+
+* Add auth in the backend ([77ecb55](https://github.com/SocialGouv/graal/commit/77ecb55f05a59caa3818fa81a709e0e7057791cb))
+
 # [1.22.0](https://github.com/SocialGouv/graal/compare/v1.21.0...v1.22.0) (2025-11-13)
 
 
