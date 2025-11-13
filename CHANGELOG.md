@@ -1,3 +1,16 @@
+# [1.21.0](https://github.com/SocialGouv/graal/compare/v1.20.0...v1.21.0) (2025-11-13)
+
+
+### Bug Fixes
+
+* Credit table matcher couldn't handle some weirdly formatted numbers ([171e894](https://github.com/SocialGouv/graal/commit/171e894311669f6fdf56696bec0bcb9747a3dc92))
+* Metadata in api requests was badly formed ([51b1316](https://github.com/SocialGouv/graal/commit/51b13161ababd4fc9e35af2edb01c78940f584f0))
+
+
+### Features
+
+* Clear uploaded files after db building ([b3a23a3](https://github.com/SocialGouv/graal/commit/b3a23a3f721676051295612f2c0038815cd6462f))
+
 # [1.20.0](https://github.com/SocialGouv/graal/compare/v1.19.1...v1.20.0) (2025-11-06)
 
 
