@@ -68,6 +68,10 @@ export S3_BUCKET_REGION="gra"
 export S3_CONFIG_FOLDER="config_graal"
 export S3_SIMILARITY_DB_FOLDER="similarity_dbs" # Folder in which to store similarity DBs as parquet files
 
+# Input file pool and manifests (optional, defaults shown)
+export S3_INPUT_POOL_FOLDER="input_files/pool"      # Storage for uploaded input files
+export S3_MANIFEST_FOLDER="input_files/manifests"   # Storage for database manifests
+
 # If your work with Albert API
 export ETALAB_API_KEY=<albert_api_token>
 export ETALAB_BASE_URL="https://albert.api.etalab.gouv.fr/v1"

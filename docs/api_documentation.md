@@ -435,3 +435,236 @@
 | file_source.type           | string  | No       | Type of file source ("s3", "local", etc.)              |
 | file_source.path           | string  | No       | Path to the file                                       |
 | file_source.format         | string  | No       | Format of the file ("json", "excel", etc.)             |
+
+## Database Builder Endpoints
+
+### 7. Upload File to Pool
+
+**Endpoint:** `/databases/upload-file`
+
+**Method:** POST
+
+**Description:** Uploads a file to the shared pool with hash-based deduplication. Files are stored in S3 with their content hash as the filename, ensuring identical files are only stored once. Returns metadata including whether the file already existed in the pool.
+
+**Request Body:**
+
+Form-data with file upload:
+- `file`: The file to upload (multipart/form-data)
+
+**Response:**
+
+```json
+{
+  "upload_id": "unique-id",
+  "filename": "lecture-2024-01.json",
+  "file_hash": "<abc123def456>",
+  "s3_key": "input_files/pool/abc123def456.json",
+  "already_existed": false
+}
+```
+
+**Response Fields:**
+
+| Field           | Type    | Description                                                   |
+| --------------- | ------- | ------------------------------------------------------------- |
+| upload_id       | string  | Unique identifier for this upload reference                   |
+| filename        | string  | Original filename provided by user                            |
+| file_hash       | string  | SHA-256 hash of the file content                              |
+| s3_key          | string  | S3 key where the file is stored in the pool                   |
+| already_existed | boolean | Whether this file already existed in the pool (deduplication) |
+
+### 8. Build Database
+
+**Endpoint:** `/databases/build`
+
+**Method:** POST
+
+**Description:** Builds a new similarity database from uploaded files. Creates a manifest tracking all files included in the database. Files remain in the S3 pool for reuse in other databases or appending operations.
+
+**Request Body:**
+
+```json
+{
+  "database_name": "PLFSS_2024",
+  "file_references": [
+    {
+      "upload_id": "unique-id-1",
+      "filename": "lecture-2024-01.json",
+      "file_hash": "<abc123def456>",
+      "metadata": {
+        "default_processing_timestamp": 1704067200,
+        "origin_project": "PLFSS 2024"
+      }
+    },
+    {
+      "upload_id": "unique-id-2",
+      "filename": "lecture-2024-02.json",
+      "file_hash": "<def789ghi012>",
+      "metadata": {
+        "default_processing_timestamp": 1704153600,
+        "origin_project": "PLFSS 2024"
+      }
+    }
+  ],
+  "drop_empty_columns": ["Réponse"],
+  "similarity_threshold": 0.99,
+  "eps": 0.4,
+  "group_by_columns": ["Lecture", "origin_project", "Num article"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "status": "processing",
+  "job_id": "job-abc123",
+  "message": "Database build started"
+}
+```
+
+**Configuration Parameters:**
+
+| Parameter                   | Type   | Required | Description                                         |
+| --------------------------- | ------ | -------- | --------------------------------------------------- |
+| database_name               | string | Yes      | Name of the database to create                      |
+| file_references             | array  | Yes      | Array of file references to include in the database |
+| file_references[].upload_id | string | Yes      | Upload ID from the upload-file endpoint             |
+| file_references[].filename  | string | Yes      | Original filename                                   |
+| file_references[].file_hash | string | Yes      | File hash from the upload-file endpoint             |
+| file_references[].metadata  | object | Yes      | Metadata for the file                               |
+| drop_empty_columns          | array  | No       | Columns to drop if they are empty                   |
+| similarity_threshold        | float  | No       | Threshold for similarity detection (default: 0.99)  |
+| eps                         | float  | No       | DBSCAN clustering epsilon parameter (default: 0.4)  |
+| group_by_columns            | array  | No       | Columns to group by before similarity detection     |
+
+**Note:** Files remain in the S3 pool after building the database, allowing them to be reused in other databases or for appending operations.
+
+### 9. Append Files to Database
+
+**Endpoint:** `/databases/{database_name}/append`
+
+**Method:** POST
+
+**Description:** Appends additional files to an existing database and rebuilds it with all files (original + new). The database manifest is updated to track all included files.
+
+**Path Parameters:**
+
+| Parameter     | Type   | Required | Description                   |
+| ------------- | ------ | -------- | ----------------------------- |
+| database_name | string | Yes      | Name of the existing database |
+
+**Request Body:**
+
+```json
+{
+  "file_references": [
+    {
+      "upload_id": "unique-id-3",
+      "filename": "lecture-2024-03.json",
+      "file_hash": "ghi345jkl678",
+      "metadata": {
+        "default_processing_timestamp": 1704240000,
+        "origin_project": "PLFSS 2024"
+      }
+    }
+  ],
+  "drop_empty_columns": ["Réponse"],
+  "similarity_threshold": 0.99,
+  "eps": 0.4,
+  "group_by_columns": ["Lecture", "origin_project", "Num article"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "status": "processing",
+  "job_id": "job-def456",
+  "message": "Database append started"
+}
+```
+
+**Configuration Parameters:**
+
+| Parameter                   | Type   | Required | Description                                            |
+| --------------------------- | ------ | -------- | ------------------------------------------------------ |
+| file_references             | array  | Yes      | Array of new file references to append to the database |
+| file_references[].upload_id | string | Yes      | Upload ID from the upload-file endpoint                |
+| file_references[].filename  | string | Yes      | Original filename                                      |
+| file_references[].file_hash | string | Yes      | File hash from the upload-file endpoint                |
+| file_references[].metadata  | object | Yes      | Metadata for the file                                  |
+| drop_empty_columns          | array  | No       | Columns to drop if they are empty                      |
+| similarity_threshold        | float  | No       | Threshold for similarity detection (default: 0.99)     |
+| eps                         | float  | No       | DBSCAN clustering epsilon parameter (default: 0.4)     |
+| group_by_columns            | array  | No       | Columns to group by before similarity detection        |
+
+**Process:**
+1. Loads the existing database manifest
+2. Adds new file references to the manifest
+3. Rebuilds the database from ALL files (original + new) in the S3 pool
+4. Uploads the new Parquet database file
+5. Saves the updated manifest
+
+### 10. Get Database Manifest
+
+**Endpoint:** `/databases/{database_name}/manifest`
+
+**Method:** GET
+
+**Description:** Retrieves the manifest for a database, showing all files included in it along with their metadata.
+
+**Path Parameters:**
+
+| Parameter     | Type   | Required | Description          |
+| ------------- | ------ | -------- | -------------------- |
+| database_name | string | Yes      | Name of the database |
+
+**Response:**
+
+```json
+{
+  "database_name": "PLFSS_2024",
+  "created_at": "2024-01-15T10:30:00Z",
+  "last_updated_at": "2024-02-20T15:45:00Z",
+  "files": [
+    {
+      "upload_id": "unique-id-1",
+      "filename": "lecture-2024-01.json",
+      "file_hash": "<abc123def456>",
+      "uploaded_at": "2024-01-15T10:30:00Z",
+      "metadata": {
+        "default_processing_timestamp": 1704067200,
+        "origin_project": "PLFSS 2024"
+      }
+    },
+    {
+      "upload_id": "unique-id-2",
+      "filename": "lecture-2024-02.json",
+      "file_hash": "<def789ghi012>",
+      "uploaded_at": "2024-01-15T11:00:00Z",
+      "metadata": {
+        "default_processing_timestamp": 1704153600,
+        "origin_project": "PLFSS 2024"
+      }
+    }
+  ],
+  "total_files": 2
+}
+```
+
+**Response Fields:**
+
+| Field               | Type    | Description                                              |
+| ------------------- | ------- | -------------------------------------------------------- |
+| database_name       | string  | Name of the database                                     |
+| created_at          | string  | ISO 8601 timestamp when the database was first created   |
+| last_updated_at     | string  | ISO 8601 timestamp when the database was last updated    |
+| files               | array   | Array of file references included in the database        |
+| files[].upload_id   | string  | Upload ID of the file                                    |
+| files[].filename    | string  | Original filename                                        |
+| files[].file_hash   | string  | SHA-256 hash of the file content                         |
+| files[].uploaded_at | string  | ISO 8601 timestamp when the file was uploaded            |
+| files[].metadata    | object  | File metadata including processing timestamp and project |
+| total_files         | integer | Total number of files in the database                    |

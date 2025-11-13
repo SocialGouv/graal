@@ -529,7 +529,7 @@ export interface components {
        * File References
        * @description References to new files to append
        */
-      file_references: components['schemas']['FileReferenceMetadata'][]
+      file_references: components['schemas']['FileUploadReference'][]
     }
     /** Body_process_amendments_api_v1_process_post */
     Body_process_amendments_api_v1_process_post: {
@@ -724,35 +724,20 @@ export interface components {
       metadata: Record<string, never>
     }
     /**
-     * FileReferenceMetadata
-     * @description Metadata for a file reference (for append operations).
+     * FileUploadMetadata
+     * @description Metadata for file upload operations.
      */
-    FileReferenceMetadata: {
+    FileUploadMetadata: {
       /**
-       * Upload Id
-       * @description Upload ID from file upload
+       * Default Processing Timestamp
+       * @description Unix timestamp for processing
        */
-      upload_id: string
+      default_processing_timestamp: number
       /**
-       * Filename
-       * @description Original filename
+       * Origin Project
+       * @description Origin project name
        */
-      filename: string
-      /**
-       * File Hash
-       * @description SHA256 hash of file content
-       */
-      file_hash: string
-      /**
-       * S3 Key
-       * @description S3 key where file is stored in pool
-       */
-      s3_key: string
-      /**
-       * Metadata
-       * @description Processing metadata
-       */
-      metadata: Record<string, never>
+      origin_project: string
     }
     /**
      * FileUploadReference
@@ -779,16 +764,8 @@ export interface components {
        * @description S3 key where file is stored in pool
        */
       s3_key: string
-      /**
-       * Default Processing Timestamp
-       * @description Unix timestamp for processing
-       */
-      default_processing_timestamp: number
-      /**
-       * Origin Project
-       * @description Origin project name
-       */
-      origin_project: string
+      /** @description File processing metadata */
+      metadata: components['schemas']['FileUploadMetadata']
     }
     /**
      * FileUploadResponse
