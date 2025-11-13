@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/SocialGouv/graal/compare/v1.23.0...v1.24.0) (2025-11-13)
+
+
+### Features
+
+* Make UI use auth routes ([592a2a4](https://github.com/SocialGouv/graal/commit/592a2a456e05d10af1a60ed30e12f12883169b8b))
+
 # [1.23.0](https://github.com/SocialGouv/graal/compare/v1.22.0...v1.23.0) (2025-11-13)
 
 
