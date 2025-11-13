@@ -2,6 +2,7 @@ import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { Card } from '@codegouvfr/react-dsfr/Card';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
 import styles from './FileUpload.module.css';
@@ -223,58 +224,65 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           </div>
         </button>
       ) : (
-        <div className={styles.fileConfirmationCard}>
-          <div className={styles.fileInfo}>
-            <div className={styles.iconContainer}>
-              <span
-                className={`${fr.cx('fr-icon-file-text-line')} ${styles.fileIcon}`}
-                aria-hidden="true"
-              />
-            </div>
-
-            <div className={styles.fileDetails}>
-              <h3 className={styles.fileName}>{uploadedFile.name}</h3>
-              <div className={fr.cx('fr-mt-1w')}>
-                <ul className={fr.cx('fr-badges-group')}>
-                  <li>
-                    <Badge severity="success" noIcon small>
-                      {formatFileSize(uploadedFile.size)}
-                    </Badge>
-                  </li>
-                  {fileStats && fileStats.lines > 0 && (
+        <>
+          <Card
+            title={uploadedFile.name}
+            titleAs="h3"
+            desc={
+              <>
+                <div className={fr.cx('fr-mt-1w')}>
+                  <p className={fr.cx('fr-badge', 'fr-badge--success', 'fr-badge--no-icon')}>
+                    <span className={fr.cx('fr-icon-checkbox-circle-fill', 'fr-mr-1v')} aria-hidden="true" />
+                    Fichier chargé avec succès
+                  </p>
+                </div>
+                <div className={fr.cx('fr-mt-2w')}>
+                  <ul className={fr.cx('fr-badges-group')}>
                     <li>
-                      <Badge severity="info" noIcon small>
-                        {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
+                      <Badge severity="success" small>
+                        {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
                       </Badge>
                     </li>
-                  )}
-                </ul>
-              </div>
-            </div>
-
-            <div className={styles.fileActions}>
-              <Button
-                priority="secondary"
-                size="small"
-                onClick={handleClick}
-                disabled={disabled || isProcessing}
-                iconId="fr-icon-refresh-line"
-                iconPosition="left"
-              >
-                Changer
-              </Button>
-              <Button
-                priority="secondary"
-                size="small"
-                onClick={handleRemoveFile}
-                disabled={disabled || isProcessing}
-                iconId="fr-icon-delete-line"
-                iconPosition="left"
-              >
-                Supprimer
-              </Button>
-            </div>
-          </div>
+                    {fileStats && fileStats.lines > 0 && (
+                      <li>
+                        <Badge severity="info" small>
+                          {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
+                        </Badge>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </>
+            }
+            footer={
+              <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
+                <li>
+                  <Button
+                    priority="secondary"
+                    size="small"
+                    onClick={handleClick}
+                    disabled={disabled || isProcessing}
+                    iconId="fr-icon-refresh-line"
+                  >
+                    Changer
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    priority="secondary"
+                    size="small"
+                    onClick={handleRemoveFile}
+                    disabled={disabled || isProcessing}
+                    iconId="fr-icon-delete-line"
+                  >
+                    Supprimer
+                  </Button>
+                </li>
+              </ul>
+            }
+            border
+            enlargeLink={false}
+          />
 
           <div ref={uploadRef} className={styles.hiddenUpload}>
             <Upload
@@ -286,7 +294,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               multiple={false}
             />
           </div>
-        </div>
+        </>
       )}
 
       {validationError && (
