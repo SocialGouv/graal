@@ -1,9 +1,10 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
-import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
+import styles from './FileUpload.module.css';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -14,10 +15,17 @@ interface FileUploadProps {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
-export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onStartProcessing, disabled = false, isFormValid }) => {
+export const FileUpload: React.FC<FileUploadProps> = ({
+  onFileSelect,
+  onStartProcessing,
+  disabled = false,
+  isFormValid
+}) => {
   const { uploadedFile, error, processingStatus } = useProcessingStore();
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fileStats, setFileStats] = useState<{ lines: number; size: string } | null>(null);
+  const [jsonPreview, setJsonPreview] = useState<string | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
   const isProcessing = processingStatus !== 'idle' && processingStatus !== 'failed';
 
@@ -35,20 +43,70 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onStartPro
     return null;
   }, []);
 
-  const handleFileChange = useCallback((files: File[]) => {
-    if (files.length === 0) return;
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
-    const file = files[0];
-    const fileValidationError = validateFile(file);
+  const analyzeFile = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const lines = Array.isArray(json) ? json.length : Object.keys(json).length;
 
-    if (fileValidationError) {
-      setValidationError(fileValidationError);
-      return;
+      // Generate preview of first entry
+      let preview = '';
+      if (Array.isArray(json) && json.length > 0) {
+        preview = JSON.stringify(json[0], null, 2);
+      } else if (typeof json === 'object' && json !== null) {
+        const keys = Object.keys(json);
+        if (keys.length > 0) {
+          preview = JSON.stringify({ [keys[0]]: json[keys[0]] }, null, 2);
+        }
+      }
+
+      // Limit preview to 6 lines
+      const previewLines = preview.split('\n').slice(0, 6);
+      if (preview.split('\n').length > 6) {
+        previewLines.push('  ...');
+      }
+
+      setFileStats({
+        lines,
+        size: formatFileSize(file.size)
+      });
+      setJsonPreview(previewLines.join('\n'));
+    } catch (e) {
+      // If parsing fails, just set basic stats
+      setFileStats({
+        lines: 0,
+        size: formatFileSize(file.size)
+      });
+      setJsonPreview(null);
     }
+  }, []);
 
-    setValidationError(null);
-    onFileSelect(file);
-  }, [onFileSelect, validateFile]);
+  const handleFileChange = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) return;
+
+      const file = files[0];
+      const fileValidationError = validateFile(file);
+
+      if (fileValidationError) {
+        setValidationError(fileValidationError);
+        return;
+      }
+
+      setValidationError(null);
+      onFileSelect(file);
+      analyzeFile(file);
+    },
+    [onFileSelect, validateFile, analyzeFile]
+  );
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -69,34 +127,45 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onStartPro
     setDragActive(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
 
-    if (disabled) return;
+      if (disabled) return;
 
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files);
-      handleFileChange(files);
-    }
-  }, [disabled, handleFileChange]);
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        handleFileChange(files);
+      }
+    },
+    [disabled, handleFileChange]
+  );
 
   const handleClick = useCallback(() => {
     if (disabled || isProcessing) return;
-    // Trigger the file input click
     const fileInput = uploadRef.current?.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
     }
   }, [disabled, isProcessing]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleClick();
-    }
-  }, [handleClick]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleClick();
+      }
+    },
+    [handleClick]
+  );
+
+  const handleRemoveFile = useCallback(() => {
+    onFileSelect(null as any);
+    setFileStats(null);
+    setJsonPreview(null);
+  }, [onFileSelect]);
 
   // Add event listener to the file input for browser file selection
   useEffect(() => {
@@ -117,117 +186,156 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onStartPro
     }
   }, [handleFileChange]);
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  const dropZoneClasses = [
+    styles.dropZone,
+    dragActive && styles.dragActive,
+    (disabled || isProcessing) && styles.disabled
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={fr.cx('fr-mb-4w')}>
-      <button
-        className={fr.cx('fr-upload-group')}
-        tabIndex={disabled || isProcessing ? -1 : 0}
-        aria-label="Zone de dépôt pour fichier JSON. Cliquez pour sélectionner un fichier ou glissez-déposez un fichier ici."
-        aria-describedby="upload-hint"
-        onDragEnter={handleDragIn}
-        onDragLeave={handleDragOut}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onKeyDown={handleKeyDown}
-        onClick={handleClick}
-        style={{
-          position: 'relative',
-          minHeight: '200px',
-          width: '100%',
-          border: dragActive ? '2px solid #000091' : '2px dashed #929292',
-          borderRadius: '4px',
-          backgroundColor: dragActive ? 'rgba(0, 0, 145, 0.05)' : '#f6f6f6',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: disabled || isProcessing ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s ease-in-out',
-          outline: 'none',
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.boxShadow = '0 0 0 2px #000091';
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-      >
-        <div className={fr.cx('fr-mb-2w')} style={{ textAlign: 'center' }}>
-          <div className={fr.cx('fr-mb-1w')}>
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              style={{ color: dragActive ? '#000091' : '#666666' }}
+      {!uploadedFile ? (
+        <button
+          className={dropZoneClasses}
+          tabIndex={disabled || isProcessing ? -1 : 0}
+          aria-label="Zone de dépôt pour fichier JSON. Cliquez pour sélectionner un fichier ou glissez-déposez un fichier ici."
+          aria-describedby="upload-hint"
+          onDragEnter={handleDragIn}
+          onDragLeave={handleDragOut}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onKeyDown={handleKeyDown}
+          onClick={handleClick}
+        >
+          <div className={styles.dropZoneContent}>
+            <div className={styles.iconContainer}>
+              <span
+                className={`${fr.cx('fr-icon-upload-line')} ${styles.uploadIcon}`}
+                aria-hidden="true"
+              />
+            </div>
+            <p className={`${fr.cx('fr-text--lg', 'fr-text--bold')} ${styles.mainText}`}>
+              {dragActive
+                ? 'Déposez votre fichier JSON ici'
+                : 'Glissez-déposez votre fichier JSON ici'}
+            </p>
+            <p className={`${fr.cx('fr-text--sm')} ${styles.secondaryText}`}>
+              ou cliquez pour sélectionner un fichier
+            </p>
+            <p
+              id="upload-hint"
+              className={`${fr.cx('fr-text--xs')} ${styles.hintText}`}
             >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14,2 14,8 20,8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10,9 9,9 8,9" />
-            </svg>
+              Taille maximale : 50MB. Seuls les fichiers JSON sont acceptés.
+            </p>
           </div>
-          <p className={fr.cx('fr-text--lg', 'fr-text--bold', 'fr-mb-1v')}>
-            {dragActive ? 'Déposez votre fichier JSON ici' : 'Glissez-déposez votre fichier JSON ici'}
-          </p>
-          <p className={fr.cx('fr-text--sm')} style={{ color: '#666666' }}>
-            ou cliquez pour sélectionner un fichier
-          </p>
-        </div>
 
-        <div ref={uploadRef} style={{ opacity: 0, position: 'absolute', pointerEvents: 'none' }}>
-          <Upload
-            label="Fichier JSON des amendements"
-            hint="Taille maximale : 50MB. Seuls les fichiers JSON sont acceptés."
-            state={validationError || error ? 'error' : 'default'}
-            stateRelatedMessage={validationError || error || undefined}
-            disabled={disabled || isProcessing}
-            multiple={false}
-          />
-        </div>
+          <div ref={uploadRef} className={styles.hiddenUpload}>
+            <Upload
+              label="Fichier JSON des amendements"
+              hint="Taille maximale : 50MB. Seuls les fichiers JSON sont acceptés."
+              state={validationError || error ? 'error' : 'default'}
+              stateRelatedMessage={validationError || error || undefined}
+              disabled={disabled || isProcessing}
+              multiple={false}
+            />
+          </div>
+        </button>
+      ) : (
+        <div className={styles.fileConfirmationCard}>
+          <div className={styles.fileInfo}>
+            <div className={styles.iconContainer}>
+              <span
+                className={`${fr.cx('fr-icon-file-text-line')} ${styles.fileIcon}`}
+                aria-hidden="true"
+              />
+            </div>
 
-        <div id="upload-hint" className={fr.cx('fr-text--xs', 'fr-mt-2w')} style={{ color: '#666666' }}>
-          Taille maximale : 50MB. Seuls les fichiers JSON sont acceptés.
-        </div>
-      </button>
-
-      {uploadedFile && (
-        <div className={fr.cx('fr-mt-2w')}>
-          <Alert
-            severity="success"
-            title="Fichier sélectionné"
-            description={
-              <div>
-                <strong>{uploadedFile.name}</strong>
-                <br />
-                Taille : {formatFileSize(uploadedFile.size)}
-                <br />
-                Type : {uploadedFile.type || 'application/json'}
+            <div className={styles.fileDetails}>
+              <h3 className={styles.fileName}>{uploadedFile.name}</h3>
+              <div className={fr.cx('fr-mt-1w')}>
+                <ul className={fr.cx('fr-badges-group')}>
+                  <li>
+                    <Badge severity="success" noIcon small>
+                      {formatFileSize(uploadedFile.size)}
+                    </Badge>
+                  </li>
+                  {fileStats && fileStats.lines > 0 && (
+                    <li>
+                      <Badge severity="info" noIcon small>
+                        {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
+                      </Badge>
+                    </li>
+                  )}
+                </ul>
               </div>
-            }
-          />
+            </div>
+
+            <div className={styles.fileActions}>
+              <Button
+                priority="secondary"
+                size="small"
+                onClick={handleClick}
+                disabled={disabled || isProcessing}
+                iconId="fr-icon-refresh-line"
+                iconPosition="left"
+              >
+                Changer
+              </Button>
+              <Button
+                priority="secondary"
+                size="small"
+                onClick={handleRemoveFile}
+                disabled={disabled || isProcessing}
+                iconId="fr-icon-delete-line"
+                iconPosition="left"
+              >
+                Supprimer
+              </Button>
+            </div>
+          </div>
+
+          {jsonPreview && (
+            <div className={styles.previewContainer}>
+              <p className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.previewTitle}`}>
+                Aperçu du contenu
+              </p>
+              <pre className={styles.jsonPreview}>
+                <code>{jsonPreview}</code>
+              </pre>
+            </div>
+          )}
+
+          <div ref={uploadRef} className={styles.hiddenUpload}>
+            <Upload
+              label="Fichier JSON des amendements"
+              hint="Taille maximale : 50MB. Seuls les fichiers JSON sont acceptés."
+              state={validationError || error ? 'error' : 'default'}
+              stateRelatedMessage={validationError || error || undefined}
+              disabled={disabled || isProcessing}
+              multiple={false}
+            />
+          </div>
         </div>
       )}
 
       {validationError && (
         <div className={fr.cx('fr-mt-2w')}>
-          <Alert
-            severity="error"
-            title="Erreur"
-            description={validationError}
-          />
+          <div className={fr.cx('fr-alert', 'fr-alert--error', 'fr-alert--sm')}>
+            <p className={fr.cx('fr-alert__title')}>Erreur</p>
+            <p>{validationError}</p>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className={fr.cx('fr-mt-2w')}>
+          <div className={fr.cx('fr-alert', 'fr-alert--error', 'fr-alert--sm')}>
+            <p className={fr.cx('fr-alert__title')}>Erreur</p>
+            <p>{error}</p>
+          </div>
         </div>
       )}
 
@@ -245,7 +353,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onStartPro
             Commencer le traitement
           </Button>
           {!isFormValid && (
-            <p className={fr.cx('fr-text--sm', 'fr-mt-1w')} style={{ color: '#666666' }}>
+            <p className={fr.cx('fr-text--sm', 'fr-mt-1w', 'fr-hint-text')}>
               Veuillez remplir tous les champs obligatoires pour continuer
             </p>
           )}
