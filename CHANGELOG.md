@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/SocialGouv/graal/compare/v1.21.0...v1.22.0) (2025-11-13)
+
+
+### Features
+
+* Add admin pannel component ([40e6fd3](https://github.com/SocialGouv/graal/commit/40e6fd349fc88f56e20cb708548fa59239fdfc0b))
+
 # [1.21.0](https://github.com/SocialGouv/graal/compare/v1.20.0...v1.21.0) (2025-11-13)
 
 
