@@ -1,8 +1,8 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
-import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Tile } from '@codegouvfr/react-dsfr/Tile';
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import { Card } from '@codegouvfr/react-dsfr/Card';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
 import styles from './FileUpload.module.css';
@@ -225,11 +225,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         </button>
       ) : (
         <>
-          <Tile
+          <Card
+            border={false}
+            horizontal
             title={uploadedFile.name}
-            titleAs="h3"
             desc={
-              <div className={fr.cx('fr-text--sm')} style={{ color: 'var(--text-mention-grey)' }}>
+              <>
                 <span className={fr.cx('fr-icon-database-line', 'fr-icon--sm', 'fr-mr-1v')} aria-hidden="true" />
                 {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
                 {fileStats && fileStats.lines > 0 && (
@@ -239,38 +240,35 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                     {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
                   </>
                 )}
-              </div>
+              </>
             }
-            imageUrl={undefined}
-            orientation="horizontal"
+            endDetail={
+              <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
+                <li>
+                  <Button
+                    priority="secondary"
+                    size="small"
+                    onClick={handleClick}
+                    disabled={disabled || isProcessing}
+                    iconId="fr-icon-refresh-line"
+                  >
+                    Changer
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    priority="secondary"
+                    size="small"
+                    onClick={handleRemoveFile}
+                    disabled={disabled || isProcessing}
+                    iconId="fr-icon-delete-line"
+                  >
+                    Supprimer
+                  </Button>
+                </li>
+              </ul>
+            }
           />
-
-          <div className={fr.cx('fr-mt-2w')}>
-            <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
-              <li>
-                <Button
-                  priority="secondary"
-                  size="small"
-                  onClick={handleClick}
-                  disabled={disabled || isProcessing}
-                  iconId="fr-icon-refresh-line"
-                >
-                  Changer
-                </Button>
-              </li>
-              <li>
-                <Button
-                  priority="secondary"
-                  size="small"
-                  onClick={handleRemoveFile}
-                  disabled={disabled || isProcessing}
-                  iconId="fr-icon-delete-line"
-                >
-                  Supprimer
-                </Button>
-              </li>
-            </ul>
-          </div>
 
           <div ref={uploadRef} className={styles.hiddenUpload}>
             <Upload
@@ -286,21 +284,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       )}
 
       {validationError && (
-        <div className={fr.cx('fr-mt-2w')}>
-          <div className={fr.cx('fr-alert', 'fr-alert--error', 'fr-alert--sm')}>
-            <p className={fr.cx('fr-alert__title')}>Erreur</p>
-            <p>{validationError}</p>
-          </div>
-        </div>
+        <Alert
+          severity="error"
+          title="Erreur"
+          description={validationError}
+          small
+          className={fr.cx('fr-mt-2w')}
+        />
       )}
 
       {error && (
-        <div className={fr.cx('fr-mt-2w')}>
-          <div className={fr.cx('fr-alert', 'fr-alert--error', 'fr-alert--sm')}>
-            <p className={fr.cx('fr-alert__title')}>Erreur</p>
-            <p>{error}</p>
-          </div>
-        </div>
+        <Alert
+          severity="error"
+          title="Erreur"
+          description={error}
+          small
+          className={fr.cx('fr-mt-2w')}
+        />
       )}
 
       {uploadedFile && (
