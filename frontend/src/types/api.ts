@@ -130,8 +130,10 @@ export interface FileReference {
   filename: string
   file_hash: string
   s3_key: string
-  default_processing_timestamp: number
-  origin_project: string
+  metadata: {
+    default_processing_timestamp: number
+    origin_project: string
+  }
 }
 
 export interface BuildDatabaseRequest {

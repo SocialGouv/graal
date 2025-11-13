@@ -433,8 +433,10 @@ export const DatabaseBuilder: React.FC = () => {
         filename: file.filename,
         file_hash: file.fileHash,
         s3_key: file.s3Key,
-        default_processing_timestamp: file.timestamp,
-        origin_project: file.originProject
+        metadata: {
+          default_processing_timestamp: file.timestamp,
+          origin_project: file.originProject
+        }
       }))
     }
 
