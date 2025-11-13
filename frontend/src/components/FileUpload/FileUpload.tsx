@@ -25,7 +25,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fileStats, setFileStats] = useState<{ lines: number; size: string } | null>(null);
-  const [jsonPreview, setJsonPreview] = useState<string | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
   const isProcessing = processingStatus !== 'idle' && processingStatus !== 'failed';
 
@@ -57,35 +56,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       const json = JSON.parse(text);
       const lines = Array.isArray(json) ? json.length : Object.keys(json).length;
 
-      // Generate preview of first entry
-      let preview = '';
-      if (Array.isArray(json) && json.length > 0) {
-        preview = JSON.stringify(json[0], null, 2);
-      } else if (typeof json === 'object' && json !== null) {
-        const keys = Object.keys(json);
-        if (keys.length > 0) {
-          preview = JSON.stringify({ [keys[0]]: json[keys[0]] }, null, 2);
-        }
-      }
-
-      // Limit preview to 6 lines
-      const previewLines = preview.split('\n').slice(0, 6);
-      if (preview.split('\n').length > 6) {
-        previewLines.push('  ...');
-      }
-
       setFileStats({
         lines,
         size: formatFileSize(file.size)
       });
-      setJsonPreview(previewLines.join('\n'));
     } catch (e) {
       // If parsing fails, just set basic stats
       setFileStats({
         lines: 0,
         size: formatFileSize(file.size)
       });
-      setJsonPreview(null);
     }
   }, []);
 
@@ -164,7 +144,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const handleRemoveFile = useCallback(() => {
     onFileSelect(null as any);
     setFileStats(null);
-    setJsonPreview(null);
   }, [onFileSelect]);
 
   // Add event listener to the file input for browser file selection
@@ -296,17 +275,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               </Button>
             </div>
           </div>
-
-          {jsonPreview && (
-            <div className={styles.previewContainer}>
-              <p className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.previewTitle}`}>
-                Aperçu du contenu
-              </p>
-              <pre className={styles.jsonPreview}>
-                <code>{jsonPreview}</code>
-              </pre>
-            </div>
-          )}
 
           <div ref={uploadRef} className={styles.hiddenUpload}>
             <Upload
