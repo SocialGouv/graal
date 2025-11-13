@@ -42,3 +42,6 @@ api:
           key: bucket_region
     - name: USE_S3_CONFIG
       value: "true"
+
+pg:
+  ~chart: pg
