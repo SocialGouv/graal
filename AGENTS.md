@@ -12,19 +12,20 @@ Rule files contain essential project-specific requirements, patterns, and constr
 
 ## Available Rule Files
 
-| File | Domain | Purpose |
-|------|--------|---------|
-| [`architecture-features.md`](.rules/architecture-features.md) | Architecture & Features | Feature system, pipeline patterns, async patterns |
-| [`backend-fastapi.md`](.rules/backend-fastapi.md) | FastAPI Backend | API structure, routes, error handling |
-| [`backend-python.md`](.rules/backend-python.md) | Python Standards | Code style, type hints, naming conventions |
-| [`frontend-react.md`](.rules/frontend-react.md) | React Frontend | Component patterns, state management, hooks |
-| [`frontend-dsfr.md`](.rules/frontend-dsfr.md) | DSFR Design System | French gov design system usage |
-| [`data-processing.md`](.rules/data-processing.md) | Data Processing | DataFrame operations, data validation |
-| [`testing-standards.md`](.rules/testing-standards.md) | Testing | Test structure, fixtures, coverage |
-| [`configuration.md`](.rules/configuration.md) | Configuration | Config files, environment variables |
-| [`storage-s3.md`](.rules/storage-s3.md) | Storage & S3 | S3 operations, Parquet files, config/database storage |
-| [`llm-integration.md`](.rules/llm-integration.md) | LLM Integration | Prompt engineering, LLM client usage |
-| [`performance.md`](.rules/performance.md) | Performance | Async operations, optimization patterns |
+| File                                                                        | Domain                         | Purpose                                                    |
+| --------------------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------- |
+| [`architecture-features.md`](.rules/architecture-features.md)               | Architecture & Features        | Feature system, pipeline patterns, async patterns          |
+| [`authentication-authorization.md`](.rules/authentication-authorization.md) | Authentication & Authorization | Auth system architecture, admin features, user permissions |
+| [`backend-fastapi.md`](.rules/backend-fastapi.md)                           | FastAPI Backend                | API structure, routes, error handling                      |
+| [`backend-python.md`](.rules/backend-python.md)                             | Python Standards               | Code style, type hints, naming conventions                 |
+| [`frontend-react.md`](.rules/frontend-react.md)                             | React Frontend                 | Component patterns, state management, hooks                |
+| [`frontend-dsfr.md`](.rules/frontend-dsfr.md)                               | DSFR Design System             | French gov design system usage                             |
+| [`data-processing.md`](.rules/data-processing.md)                           | Data Processing                | DataFrame operations, data validation                      |
+| [`testing-standards.md`](.rules/testing-standards.md)                       | Testing                        | Test structure, fixtures, coverage                         |
+| [`configuration.md`](.rules/configuration.md)                               | Configuration                  | Config files, environment variables                        |
+| [`storage-s3.md`](.rules/storage-s3.md)                                     | Storage & S3                   | S3 operations, Parquet files, config/database storage      |
+| [`llm-integration.md`](.rules/llm-integration.md)                           | LLM Integration                | Prompt engineering, LLM client usage                       |
+| [`performance.md`](.rules/performance.md)                                   | Performance                    | Async operations, optimization patterns                    |
 
 ---
 
@@ -37,6 +38,7 @@ Rule files contain essential project-specific requirements, patterns, and constr
 
 **SHOULD READ:**
 - `.rules/architecture-features.md` (if implementing features)
+- `.rules/authentication-authorization.md` (if admin-only endpoints)
 - `.rules/storage-s3.md` (if S3 operations needed)
 - `.rules/performance.md` (if async/performance critical)
 
@@ -46,6 +48,7 @@ Rule files contain essential project-specific requirements, patterns, and constr
 - `.rules/frontend-dsfr.md`
 
 **SHOULD READ:**
+- `.rules/authentication-authorization.md` (if admin-only features)
 - `.rules/performance.md` (if performance critical)
 
 ### Feature Implementation
@@ -97,6 +100,15 @@ Rule files contain essential project-specific requirements, patterns, and constr
 **MUST READ:**
 - `.rules/performance.md`
 - `.rules/backend-python.md`
+
+### Authentication & Authorization
+**MUST READ:**
+- `.rules/authentication-authorization.md`
+- `.rules/backend-python.md`
+
+**SHOULD READ:**
+- `.rules/backend-fastapi.md` (for backend endpoints)
+- `.rules/frontend-react.md` (for frontend components)
 
 ---
 
