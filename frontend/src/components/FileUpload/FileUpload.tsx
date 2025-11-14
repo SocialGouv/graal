@@ -19,9 +19,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
-  onStartProcessing,
-  disabled = false,
-  isFormValid
+  disabled = false
 }) => {
   const { uploadedFile, error, processingStatus } = useProcessingStore();
   const [dragActive, setDragActive] = useState(false);
@@ -305,25 +303,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         />
       )}
 
-      {uploadedFile && (
-        <div className={`${fr.cx('fr-mt-3w')} fr-text--center`}>
-          <Button
-            priority="primary"
-            size="large"
-            onClick={onStartProcessing}
-            disabled={!isFormValid || disabled || isProcessing}
-            iconId="fr-icon-play-fill"
-            iconPosition="left"
-          >
-            Commencer le traitement
-          </Button>
-          {!isFormValid && (
-            <p className={fr.cx('fr-text--sm', 'fr-mt-1w', 'fr-hint-text')}>
-              Veuillez remplir tous les champs obligatoires pour continuer
-            </p>
-          )}
-        </div>
-      )}
     </div>
   );
 };
