@@ -306,16 +306,30 @@ export const ProcessingPage = () => {
                                     disabled={uploadFileMutation.isPending}
                                     isFormValid={!!isFormValid}
                                 />
-                                <div className={fr.cx('fr-mt-4w')}>
-                                    <Button
-                                        priority="secondary"
-                                        onClick={() => setCurrentStep(2)}
-                                        disabled={uploadFileMutation.isPending}
-                                        iconId="fr-icon-arrow-left-line"
-                                        iconPosition="left"
-                                    >
-                                        Retour
-                                    </Button>
+                                <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mt-4w')}>
+                                    <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+                                        <Button
+                                            priority="secondary"
+                                            onClick={() => setCurrentStep(2)}
+                                            disabled={uploadFileMutation.isPending}
+                                            iconId="fr-icon-arrow-left-line"
+                                            iconPosition="left"
+                                        >
+                                            Retour
+                                        </Button>
+                                    </div>
+                                    <div className={fr.cx('fr-col-12', 'fr-col-md-6')} style={{ textAlign: 'right' }}>
+                                        <Button
+                                            priority="primary"
+                                            size="large"
+                                            onClick={handleStartProcessing}
+                                            disabled={!isFormValid || uploadFileMutation.isPending}
+                                            iconId="fr-icon-play-fill"
+                                            iconPosition="left"
+                                        >
+                                            Commencer le traitement
+                                        </Button>
+                                    </div>
                                 </div>
                             </section>
                         )}
