@@ -307,6 +307,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               }
               onLlmTypeChange={handleSummaryGenerationLlmTypeChange}
               onCredentialsChange={handleSummaryGenerationCredentialsChange}
+              enabled={processingConfig.summaryGeneration.enabled}
               disabled={disabled || isProcessing}
             />
           </FeatureConfigSection>

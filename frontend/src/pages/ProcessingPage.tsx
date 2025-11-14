@@ -64,7 +64,9 @@ export const ProcessingPage = () => {
                     processingConfig.similaritySearch.originProject
                 ) &&
                     processingConfig.similaritySearch.databaseFile !== null &&
-                    processingConfig.similaritySearch.databaseFile !== '')),
+                    processingConfig.similaritySearch.databaseFile !== '')) &&
+            (!processingConfig.summaryGeneration.enabled ||
+                !!processingConfig.summaryGeneration.llm_type),
         [
             uploadedFile,
             selectedConfigFile,

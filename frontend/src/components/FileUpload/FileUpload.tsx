@@ -293,15 +293,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         />
       )}
 
-      {error && (
-        <Alert
-          severity="error"
-          title="Erreur"
-          description={error}
-          small
-          className={fr.cx('fr-mt-2w')}
-        />
-      )}
 
     </div>
   );
