@@ -3,6 +3,7 @@ import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Card } from '@codegouvfr/react-dsfr/Card';
+import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { fr } from '@codegouvfr/react-dsfr';
 import { useProcessingStore } from '../../stores/processingStore';
 import styles from './FileUpload.module.css';
@@ -55,7 +56,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     try {
       const text = await file.text();
       const json = JSON.parse(text);
-      const lines = Array.isArray(json) ? json.length : Object.keys(json).length;
+      const lines = Array.isArray((json as any)?.amendements) ? (json as any).amendements.length : 0;
 
       setFileStats({
         lines,
@@ -226,21 +227,22 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       ) : (
         <>
           <Card
-            border={false}
+            border={true}
             horizontal
             title={uploadedFile.name}
             desc={
-              <>
-                <span className={fr.cx('fr-icon-database-line', 'fr-icon--sm', 'fr-mr-1v')} aria-hidden="true" />
-                {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
+              <div className={fr.cx('fr-badges-group', 'fr-badges-group--sm')}>
+                <Badge small>
+                  <span className={fr.cx('fr-icon-database-line', 'fr-icon--sm', 'fr-mr-1v')} aria-hidden="true" />
+                  {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
+                </Badge>
                 {fileStats && fileStats.lines > 0 && (
-                  <>
-                    <span className={fr.cx('fr-mx-2v')}>•</span>
-                    <span className="fr-icon-file-list-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
-                    {fileStats.lines} entrée{fileStats.lines > 1 ? 's' : ''}
-                  </>
+                  <Badge small>
+                    <span className="fr-icon-file-text-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
+                    {fileStats.lines} amendement{fileStats.lines > 1 ? 's' : ''}
+                  </Badge>
                 )}
-              </>
+              </div>
             }
             endDetail={
               <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
@@ -304,7 +306,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       )}
 
       {uploadedFile && (
-        <div className={fr.cx('fr-mt-3w')} style={{ textAlign: 'center' }}>
+        <div className={`${fr.cx('fr-mt-3w')} fr-text--center`}>
           <Button
             priority="primary"
             size="large"
