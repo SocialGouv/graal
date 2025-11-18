@@ -174,7 +174,8 @@ export const ProcessingPage = () => {
     }
 
     const showResults = processingStatus === 'completed'
-    const showProcessing = processingStatus !== 'idle'
+    const showProcessing =
+        processingStatus !== 'idle' && processingStatus !== 'completed'
     const hasError = processingStatus === 'failed' || processingStatus === 'timeout'
 
     // Step titles and configuration
