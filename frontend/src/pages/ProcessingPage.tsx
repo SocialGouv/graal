@@ -64,9 +64,7 @@ export const ProcessingPage = () => {
                     processingConfig.similaritySearch.originProject
                 ) &&
                     processingConfig.similaritySearch.databaseFile !== null &&
-                    processingConfig.similaritySearch.databaseFile !== '')) &&
-            (!processingConfig.summaryGeneration.enabled ||
-                !!processingConfig.summaryGeneration.llm_type),
+                    processingConfig.similaritySearch.databaseFile !== '')),
         [
             uploadedFile,
             selectedConfigFile,
@@ -175,6 +173,7 @@ export const ProcessingPage = () => {
 
     const showResults = processingStatus === 'completed'
     const showProcessing = processingStatus !== 'idle'
+    const hasError = processingStatus === 'failed' || processingStatus === 'timeout'
 
     // Step titles and configuration
     const steps = [
@@ -183,10 +182,87 @@ export const ProcessingPage = () => {
             nextTitle: 'Configuration du traitement'
         },
         { title: 'Configuration du traitement', nextTitle: 'Upload et lancement' },
-        { title: 'Upload et lancement', nextTitle: undefined }
+        { title: 'Upload et lancement', nextTitle: 'Traitement' },
+        { title: 'Traitement', nextTitle: undefined }
     ]
 
     const currentStepConfig = steps[currentStep - 1]
+
+    const renderProcessingSummary = () => {
+        const allot = processingConfig.allotments;
+        const swl = processingConfig.similaritiesWithinLectures;
+        const ss = processingConfig.similaritySearch;
+        const attr = processingConfig.attribution;
+        const defOp = processingConfig.defaultOpinion;
+        const sum = processingConfig.summaryGeneration;
+
+        const originProject =
+            (ss?.originProject as any)?.name ??
+            (typeof ss?.originProject === 'string' ? ss.originProject : ss?.originProject ? 'défini' : '');
+
+        return (
+            <section className={fr.cx('fr-mb-4w')} aria-labelledby="processing-summary-title">
+                <h2 id="processing-summary-title" className={fr.cx('fr-h5', 'fr-mb-1w')}>
+                    Résumé du traitement
+                </h2>
+                <div className={fr.cx('fr-text--sm')}>
+                    <ul className={fr.cx('fr-list', 'fr-mb-0')}>
+                        {selectedConfigFile && (
+                            <li>
+                                <strong>Fichier de configuration :</strong> {selectedConfigFile}
+                            </li>
+                        )}
+                        {uploadedFile && (
+                            <li>
+                                <strong>Fichier source :</strong> {uploadedFile.name}
+                            </li>
+                        )}
+                        <li>
+                            <strong>Fonctionnalités activées :</strong>
+                            <ul className={fr.cx('fr-list', 'fr-mt-1w')}>
+                                {allot?.enabled && (
+                                    <li>
+                                        Allotissement
+                                        {allot?.column ? ` — colonne: ${allot.column}` : ''}
+                                        {typeof allot?.similarity_threshold === 'number'
+                                            ? `, seuil: ${allot.similarity_threshold}`
+                                            : ''}
+                                    </li>
+                                )}
+                                {swl?.enabled && (
+                                    <li>
+                                        Similarités intra-séance
+                                        {swl?.column ? ` — colonne: ${swl.column}` : ''}
+                                        {typeof swl?.similarity_threshold === 'number'
+                                            ? `, seuil: ${swl.similarity_threshold}`
+                                            : ''}
+                                    </li>
+                                )}
+                                {ss?.enabled && (
+                                    <li>
+                                        Recherche de similarités
+                                        {ss?.databaseFile ? ` — base: ${ss.databaseFile}` : ''}
+                                        {originProject ? `, origine: ${originProject}` : ''}
+                                    </li>
+                                )}
+                                {attr?.enabled && <li>Attribution</li>}
+                                {defOp?.enabled && <li>Opinion par défaut</li>}
+                                {sum?.enabled && (
+                                    <li>Génération de résumés — LLM: {sum.llm_type || 'Non défini'}</li>
+                                )}
+                                {!allot?.enabled &&
+                                    !swl?.enabled &&
+                                    !ss?.enabled &&
+                                    !attr?.enabled &&
+                                    !defOp?.enabled &&
+                                    !sum?.enabled && <li>Aucune</li>}
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        );
+    }
 
     return (
         <div className={fr.cx('fr-container', 'fr-py-6w')}>
@@ -234,20 +310,20 @@ export const ProcessingPage = () => {
                     </div>
                 )}
 
-                {/* Stepper - only show when not processing and not showing results */}
-                {!showResults && !showProcessing && (
+                {/* Stepper - show when not showing results (also during processing) */}
+                {!showResults && (
                     <div className={fr.cx('fr-mb-6w')}>
                         <Stepper
-                            currentStep={currentStep}
-                            stepCount={3}
-                            title={currentStepConfig.title}
-                            nextTitle={currentStepConfig.nextTitle}
+                            currentStep={showProcessing ? 4 : currentStep}
+                            stepCount={4}
+                            title={showProcessing ? 'Traitement' : currentStepConfig.title}
+                            nextTitle={showProcessing ? undefined : currentStepConfig.nextTitle}
                         />
                     </div>
                 )}
 
                 {/* Configuration and File Upload Section */}
-                {!showResults && (
+                {!showResults && !showProcessing && (
                     <>
                         {/* Step 1: Configuration */}
                         {currentStep === 1 && (
@@ -339,11 +415,30 @@ export const ProcessingPage = () => {
                 )}
 
                 {/* Processing Status Section */}
-                {showProcessing && <ProcessingStatus />}
+                {showProcessing && (
+                    <>
+                        {renderProcessingSummary()}
+                        <ProcessingStatus />
+                        {hasError && (
+                            <div className={fr.cx('fr-mt-2w')} style={{ textAlign: 'right' }}>
+                                <Button
+                                    priority="secondary"
+                                    size="small"
+                                    onClick={() => setCurrentStep(2)}
+                                    iconId="fr-icon-arrow-left-line"
+                                    iconPosition="left"
+                                >
+                                    Retour à la configuration
+                                </Button>
+                            </div>
+                        )}
+                    </>
+                )}
 
                 {/* Results Section */}
                 {showResults && (
                     <>
+                        {renderProcessingSummary()}
                         <DownloadButton
                             onDownloadCsv={handleDownloadCsv}
                             onDownloadExcel={handleDownloadExcel}

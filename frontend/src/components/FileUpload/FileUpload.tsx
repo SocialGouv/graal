@@ -228,45 +228,46 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             border={true}
             horizontal
             title={uploadedFile.name}
-            desc={
-              <div className={fr.cx('fr-badges-group', 'fr-badges-group--sm')}>
-                <Badge small>
-                  <span className={fr.cx('fr-icon-database-line', 'fr-icon--sm', 'fr-mr-1v')} aria-hidden="true" />
-                  {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
-                </Badge>
-                {fileStats && fileStats.lines > 0 && (
+            start={
+              <ul className={fr.cx('fr-badges-group', 'fr-badges-group--sm')}>
+                <li>
                   <Badge small>
-                    <span className="fr-icon-file-text-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
-                    {fileStats.lines} amendement{fileStats.lines > 1 ? 's' : ''}
+                    <span className={fr.cx('fr-icon-database-line', 'fr-icon--sm', 'fr-mr-1v')} aria-hidden="true" />
+                    {fileStats ? fileStats.size : formatFileSize(uploadedFile.size)}
                   </Badge>
+                </li>
+                {fileStats && fileStats.lines > 0 && (
+                  <li>
+                    <Badge small>
+                      <span className="fr-icon-file-text-line fr-icon--sm fr-mr-1v" aria-hidden="true" />
+                      {fileStats.lines} amendement{fileStats.lines > 1 ? 's' : ''}
+                    </Badge>
+                  </li>
                 )}
-              </div>
+              </ul>
             }
             endDetail={
-              <ul className={fr.cx('fr-btns-group', 'fr-btns-group--inline-sm')}>
-                <li>
-                  <Button
-                    priority="secondary"
-                    size="small"
-                    onClick={handleClick}
-                    disabled={disabled || isProcessing}
-                    iconId="fr-icon-refresh-line"
-                  >
-                    Changer
-                  </Button>
-                </li>
-                <li>
-                  <Button
-                    priority="secondary"
-                    size="small"
-                    onClick={handleRemoveFile}
-                    disabled={disabled || isProcessing}
-                    iconId="fr-icon-delete-line"
-                  >
-                    Supprimer
-                  </Button>
-                </li>
-              </ul>
+              <>
+                <Button
+                  className={fr.cx('fr-mr-1w')}
+                  priority="secondary"
+                  size="small"
+                  onClick={handleClick}
+                  disabled={disabled || isProcessing}
+                  iconId="fr-icon-refresh-line"
+                >
+                  Changer
+                </Button>
+                <Button
+                  priority="secondary"
+                  size="small"
+                  onClick={handleRemoveFile}
+                  disabled={disabled || isProcessing}
+                  iconId="fr-icon-delete-line"
+                >
+                  Supprimer
+                </Button>
+              </>
             }
           />
 

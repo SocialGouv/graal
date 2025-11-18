@@ -88,6 +88,7 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({ className })
   const isProcessing = ['uploading', 'queued', 'running'].includes(processingStatus);
   const isCompleted = processingStatus === 'completed';
   const hasError = processingStatus === 'failed' || processingStatus === 'timeout' || !!error;
+  const percent = typeof progressPercent === 'number' ? progressPercent : 0;
 
   if (processingStatus === 'idle') {
     return null;
@@ -101,12 +102,12 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({ className })
             <h3 className={fr.cx('fr-h6', 'fr-mb-0')}>Statut du traitement</h3>
           </div>
           <div className={fr.cx('fr-col')}>
-            {getStatusBadge()}
+            {!hasError && getStatusBadge()}
           </div>
         </div>
       </div>
 
-      {isProcessing && (
+      {(isProcessing || hasError) && (
         <div className={fr.cx('fr-mb-3w')}>
           <div className={fr.cx('fr-mb-1w')}>
             <label className={fr.cx('fr-text--sm', 'fr-text--bold')}>Progression</label>
@@ -122,16 +123,18 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({ className })
           >
             <div
               style={{
-                width: `${progressPercent}%`,
+                width: `${percent}%`,
                 height: '100%',
                 backgroundColor: '#000091',
                 transition: 'width 0.3s ease'
               }}
             />
           </div>
-          <p className={fr.cx('fr-text--sm', 'fr-mt-1w', 'fr-mb-0')}>
-            {progressPercent}% - {getStatusMessage()}
-          </p>
+          {!hasError && (
+            <p className={fr.cx('fr-text--sm', 'fr-mt-1w', 'fr-mb-0')}>
+              {percent}% - {getStatusMessage()}
+            </p>
+          )}
         </div>
       )}
 
