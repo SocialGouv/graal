@@ -64,7 +64,9 @@ export const ProcessingPage = () => {
                     processingConfig.similaritySearch.originProject
                 ) &&
                     processingConfig.similaritySearch.databaseFile !== null &&
-                    processingConfig.similaritySearch.databaseFile !== '')),
+                    processingConfig.similaritySearch.databaseFile !== '')) &&
+            (!processingConfig.summaryGeneration.enabled ||
+                !!processingConfig.summaryGeneration.llm_type),
         [
             uploadedFile,
             selectedConfigFile,
@@ -365,7 +367,11 @@ export const ProcessingPage = () => {
                                     <Button
                                         priority="primary"
                                         onClick={() => setCurrentStep(3)}
-                                        disabled={!isAnyFeatureEnabled(processingConfig)}
+                                        disabled={
+                                            !isAnyFeatureEnabled(processingConfig) ||
+                                            (processingConfig.summaryGeneration.enabled &&
+                                                !processingConfig.summaryGeneration.llm_type)
+                                        }
                                         iconId="fr-icon-arrow-right-line"
                                         iconPosition="right"
                                     >
