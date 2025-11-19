@@ -42,3 +42,19 @@ api:
           key: bucket_region
     - name: USE_S3_CONFIG
       value: "true"
+
+    - name: S3_BUCKET_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_endpoint
+    - name: S3_BUCKET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_access_key
+    - name: S3_BUCKET_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: graal-dev-app-access-key
+          key: bucket_secret_key
