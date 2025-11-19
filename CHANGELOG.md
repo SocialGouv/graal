@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/SocialGouv/graal/compare/v1.24.0...v1.25.0) (2025-11-19)
+
+
+### Features
+
+* add DSFR Stepper navigation for improved UX ([#180](https://github.com/SocialGouv/graal/issues/180)) ([df8f570](https://github.com/SocialGouv/graal/commit/df8f570a6fdae02eaedbdbf75ed4260b9d9fb8b0))
+
 # [1.24.0](https://github.com/SocialGouv/graal/compare/v1.23.0...v1.24.0) (2025-11-13)
 
 
