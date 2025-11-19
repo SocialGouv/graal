@@ -13,6 +13,7 @@ install:
 	poetry run pre-commit install --allow-missing-config -f
 	poetry run detect-secrets scan > .secrets.baseline
 	poetry run python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
+	cd frontend && yarn install && cd -
 
 similarity-db-all:
 	poetry run python graal/utils/build_similarity_db.py
