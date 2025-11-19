@@ -50,3 +50,32 @@ api:
           key: bucket_region
     - name: USE_S3_CONFIG
       value: "true"
+
+pg:
+  ~chart: pg
+  cnpg-cluster:
+    resources:
+      requests:
+        memory: 1Gi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    recovery:
+      enabled: true
+      ~tpl~database: "{{ .Values.global.pgDatabase }}"
+      ~tpl~owner: "{{ .Values.global.pgUser }}"
+      secretName: "pg-db"
+      barmanObjectStore:
+        ~tpl~destinationPath: "s3://graal-prod-backups/graal"
+        s3Credentials:
+          accessKeyId:
+            ~tpl~name: "graal-prod-backups-access-key"
+            key: bucket_access_key
+          secretAccessKey:
+            ~tpl~name: "graal-prod-backups-access-key"
+            key: bucket_secret_key
+          region:
+            ~tpl~name: "graal-prod-backups-access-key"
+            key: bucket_region
+  backup:
+    name: prod-ovh # backup on a new folder
