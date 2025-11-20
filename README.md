@@ -38,6 +38,38 @@ eval $(poetry env activate)
 make install
 ```
 
+### Database Setup (PostgreSQL)
+
+This project uses PostgreSQL for storing users, processing history, and configurations.
+
+**Quick Start:**
+```bash
+# 1. Copy environment template
+cp .env.example .env
+
+# 2. Start PostgreSQL and pgAdmin with Docker
+docker-compose up -d
+
+# 3. Run database migrations
+poetry run alembic upgrade head
+
+# 4. (Optional) Seed test data
+poetry run python scripts/init_db.py
+```
+
+**Access pgAdmin:** http://localhost:5050
+- Email: `admin@graal.com`
+- Password: `admin`
+
+**Database Connection:**
+- Host: `localhost`
+- Port: `5432`
+- Database: `graal_dev`
+- User: `graal_user`
+- Password: `graal_local_pass`
+
+📖 **Full documentation:** [Database Setup Guide](docs/database_setup.md)
+
 ### Prepare amendments Data
 
 Extracts amendments from Signale in JSON format and place them in your data folder.
