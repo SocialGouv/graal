@@ -1,0 +1,15 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "GRAAL Local Database",
+            "Group": "Development",
+            "Host": "postgres",
+            "Port": 5432,
+            "MaintenanceDB": "graal_dev",
+            "Username": "graal_user",
+            "Password": "graal_local_pass",
+            "SSLMode": "prefer",
+            "Comment": "Local development database for GRAAL project"
+        }
+    }
+}
