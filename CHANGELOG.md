@@ -1,3 +1,12 @@
+# [1.26.0](https://github.com/SocialGouv/graal/compare/v1.25.0...v1.26.0) (2025-11-20)
+
+
+### Features
+
+* Add alembic and example env vars ([d6d7d00](https://github.com/SocialGouv/graal/commit/d6d7d00e7d81490d0ff8d639ac7818c876def5bf))
+* Add DB models and seeding scripts ([4f4fe5d](https://github.com/SocialGouv/graal/commit/4f4fe5d108850731cc1acd809f8c610ed8f9288b))
+* Add docker for local postgre setup ([264acd3](https://github.com/SocialGouv/graal/commit/264acd3d3442a0a7ad481dd2f14944fba61f221c))
+
 # [1.25.0](https://github.com/SocialGouv/graal/compare/v1.24.0...v1.25.0) (2025-11-19)
 
 
