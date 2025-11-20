@@ -6,6 +6,7 @@
     ],
     "packageManager": "yarn@4.10.3",
     "devDependencies": {
+        "baseline-browser-mapping": "^2.8.30",
         "typescript": "^5.0.0"
     },
     "scripts": {
