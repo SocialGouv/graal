@@ -39,7 +39,7 @@ export const ProcessingPage = () => {
   const downloadExcelResultsMutation = useDownloadExcelResults()
 
   // Validation hook
-  const { isOriginProjectValid, isAnyFeatureEnabled } = useValidation()
+  const { isAnyFeatureEnabled } = useValidation()
 
   // Job status polling - only when we have a jobId and processing
   useJobStatus(
@@ -187,13 +187,14 @@ export const ProcessingPage = () => {
     const defOp = processingConfig.defaultOpinion
     const sum = processingConfig.summaryGeneration
 
+    type OriginProject = { name?: string } | string | null | undefined
+    const origin = ss?.originProject as OriginProject
     const originProject =
-      (ss?.originProject as any)?.name ??
-      (typeof ss?.originProject === 'string'
-        ? ss.originProject
-        : ss?.originProject
-          ? 'défini'
-          : '')
+      typeof origin === 'string'
+        ? origin
+        : origin && typeof origin === 'object' && 'name' in origin
+          ? (origin.name ?? 'défini')
+          : ''
 
     return (
       <section
