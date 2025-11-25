@@ -27,6 +27,8 @@ export interface ComboboxProps {
   emptyMessage?: string
   /** Additional CSS class for wrapper */
   className?: string
+  /** Whether input should auto-focus on mount */
+  autoFocus?: boolean
 }
 
 export const Combobox: React.FC<ComboboxProps> = ({
@@ -41,7 +43,8 @@ export const Combobox: React.FC<ComboboxProps> = ({
   isLoading = false,
   placeholder,
   emptyMessage = 'Aucun résultat trouvé',
-  className
+  className,
+  autoFocus = false
 }) => {
   const [inputValue, setInputValue] = useState<string>(value || '')
   const [showDropdown, setShowDropdown] = useState<boolean>(false)
@@ -172,7 +175,8 @@ export const Combobox: React.FC<ComboboxProps> = ({
               type: 'text',
               role: 'combobox',
               'aria-expanded': showDropdown,
-              'aria-autocomplete': 'list'
+              'aria-autocomplete': 'list',
+              autoFocus
             }}
           />
           {inputValue && !disabled && !isLoading && (
