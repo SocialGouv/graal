@@ -186,7 +186,7 @@ const initialState = {
     summaryGeneration: {
       enabled: true,
       should_overwrite: true,
-      llm_type: null,
+      llm_type: 'fake',
       llm_credentials: {}
     },
     // Processing options at top level

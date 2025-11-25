@@ -1,7 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr'
 import { Button } from '@codegouvfr/react-dsfr/Button'
 import { Stepper } from '@codegouvfr/react-dsfr/Stepper'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigFileSelector } from '../components/ConfigFileSelector'
 import DownloadButton from '../components/DownloadButton/DownloadButton'
@@ -178,6 +178,8 @@ export const ProcessingPage = () => {
         processingStatus !== 'idle' && processingStatus !== 'completed'
     const hasError = processingStatus === 'failed' || processingStatus === 'timeout'
 
+    const processingSummaryRef = useRef<HTMLHeadingElement | null>(null)
+
     // Step titles and configuration
     const steps = [
         {
@@ -190,6 +192,12 @@ export const ProcessingPage = () => {
     ]
 
     const currentStepConfig = steps[currentStep - 1]
+
+    useEffect(() => {
+        if (showProcessing && processingSummaryRef.current) {
+            processingSummaryRef.current.focus()
+        }
+    }, [showProcessing])
 
     const renderProcessingSummary = () => {
         const allot = processingConfig.allotments;
@@ -205,7 +213,12 @@ export const ProcessingPage = () => {
 
         return (
             <section className={fr.cx('fr-mb-4w')} aria-labelledby="processing-summary-title">
-                <h2 id="processing-summary-title" className={fr.cx('fr-h5', 'fr-mb-1w')}>
+                <h2
+                    id="processing-summary-title"
+                    ref={processingSummaryRef}
+                    tabIndex={-1}
+                    className={fr.cx('fr-h5', 'fr-mb-1w')}
+                >
                     Résumé du traitement
                 </h2>
                 <div className={fr.cx('fr-text--sm')}>
@@ -331,7 +344,10 @@ export const ProcessingPage = () => {
                         {/* Step 1: Configuration */}
                         {currentStep === 1 && (
                             <section className={fr.cx('fr-mb-6w')}>
-                                <ConfigFileSelector disabled={uploadFileMutation.isPending} />
+                                <ConfigFileSelector
+                                    disabled={uploadFileMutation.isPending}
+                                    autoFocus
+                                />
                                 <div
                                     className={fr.cx('fr-mt-4w')}
                                     style={{ textAlign: 'right' }}
@@ -390,6 +406,7 @@ export const ProcessingPage = () => {
                                     onStartProcessing={handleStartProcessing}
                                     disabled={uploadFileMutation.isPending}
                                     isFormValid={!!isFormValid}
+                                    autoFocus
                                 />
                                 <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mt-4w')}>
                                     <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>

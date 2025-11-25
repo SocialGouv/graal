@@ -13,19 +13,24 @@ interface FileUploadProps {
   onStartProcessing: () => void;
   disabled?: boolean;
   isFormValid: boolean;
+  autoFocus?: boolean;
 }
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
-  disabled = false
+  onStartProcessing,
+  disabled = false,
+  isFormValid,
+  autoFocus = false
 }) => {
   const { uploadedFile, error, processingStatus } = useProcessingStore();
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fileStats, setFileStats] = useState<{ lines: number; size: string } | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
+  const dropZoneRef = useRef<HTMLButtonElement | null>(null);
   const isProcessing = processingStatus !== 'idle' && processingStatus !== 'failed';
 
   const validateFile = useCallback((file: File): string | null => {
@@ -165,6 +170,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     }
   }, [handleFileChange]);
 
+  useEffect(() => {
+    if (autoFocus && !disabled && !isProcessing && !uploadedFile && dropZoneRef.current) {
+      dropZoneRef.current.focus();
+    }
+  }, [autoFocus, disabled, isProcessing, uploadedFile]);
+
   const dropZoneClasses = [
     styles.dropZone,
     dragActive && styles.dragActive,
@@ -177,6 +188,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     <div className={fr.cx('fr-mb-4w')}>
       {!uploadedFile ? (
         <button
+          ref={dropZoneRef}
           className={dropZoneClasses}
           tabIndex={disabled || isProcessing ? -1 : 0}
           aria-label="Zone de dépôt pour fichier JSON. Cliquez pour sélectionner un fichier ou glissez-déposez un fichier ici."

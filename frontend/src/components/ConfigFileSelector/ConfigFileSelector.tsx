@@ -10,12 +10,14 @@ interface ConfigFileSelectorProps {
   disabled?: boolean
   onChange?: (filename: string | null) => void
   value?: string | null
+  autoFocus?: boolean
 }
 
 export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
   disabled = false,
   onChange,
-  value
+  value,
+  autoFocus = false
 }) => {
   const { selectedConfigFile, setSelectedConfigFile } = useProcessingStore()
 
@@ -56,6 +58,7 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
         isLoading={isLoading}
         placeholder={placeholder}
         emptyMessage="Aucun fichier trouvé"
+        autoFocus={autoFocus}
       />
 
       {error && (
