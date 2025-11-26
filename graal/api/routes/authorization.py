@@ -7,20 +7,22 @@ and admin status checks. The is_admin field in the response indicates admin priv
 
 import logging
 import logging.config
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Cookie, HTTPException, Request
 
 from graal.api.models.responses import UserResponse
 from graal.api.services.authorization_service import get_authorization_service
 
 logging.config.fileConfig("logging.conf")
-logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["authorization"])
 
 
 @router.get("/auth/me", response_model=UserResponse)
-async def get_current_user():
+async def get_current_user(
+    request: Request, session: Optional[str] = Cookie(default=None)
+):
     """
     Get current authenticated user information, including admin status.
 
@@ -36,22 +38,19 @@ async def get_current_user():
     Raises:
         HTTPException: 500 if failed to retrieve user information
     """
-    logger.info("[API] Getting current user information")
+    logging.info("[API] Getting current user information")
 
     try:
         auth_service = get_authorization_service()
-        user = await auth_service.get_current_user()
-        logger.info(
+        user = await auth_service.get_current_user(request, session)
+        logging.info(
             f"[API] User {user.user_id} retrieved with admin status: {user.is_admin}"
         )
-        return UserResponse(
-            user_id=user.user_id, email=user.email, is_admin=user.is_admin
-        )
-    except ValueError as e:
-        logger.error(f"[API] User not found: {e}")
-        raise HTTPException(status_code=404, detail="User not found") from e
+        return user
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"[API] Unexpected error retrieving user: {e}")
+        logging.error(f"[API] Unexpected error retrieving user: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to retrieve user information"
         ) from e
