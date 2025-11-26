@@ -74,7 +74,6 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-logger = logging.getLogger(__name__)
 
 
 def print_header(text: str, width: int = 80) -> None:
@@ -229,7 +228,7 @@ def save_report_to_file(report: dict[str, Any], output_path: Path) -> None:
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
 
-    logger.info(f"Saved optimization report to {output_path}")
+    logging.info(f"Saved optimization report to {output_path}")
 
 
 async def load_training_data(
@@ -248,20 +247,20 @@ async def load_training_data(
 
     # Load training data
     if train_path.startswith("s3://"):
-        logger.info(f"Loading training data from S3: {train_path}")
+        logging.info(f"Loading training data from S3: {train_path}")
         train_examples = await load_dataset_from_s3(train_path.replace("s3://", ""))
     else:
-        logger.info(f"Loading training data from file: {train_path}")
+        logging.info(f"Loading training data from file: {train_path}")
         train_examples = load_dataset(train_path)
 
     print(f"✓ Loaded {len(train_examples)} training examples")
 
     # Load validation data
     if val_path.startswith("s3://"):
-        logger.info(f"Loading validation data from S3: {val_path}")
+        logging.info(f"Loading validation data from S3: {val_path}")
         val_examples = await load_dataset_from_s3(val_path.replace("s3://", ""))
     else:
-        logger.info(f"Loading validation data from file: {val_path}")
+        logging.info(f"Loading validation data from file: {val_path}")
         val_examples = load_dataset(val_path)
 
     print(f"✓ Loaded {len(val_examples)} validation examples")
@@ -306,7 +305,7 @@ def create_llm_client(model: str) -> LLMAPIClient:
 
     try:
         client = factory()
-        logger.info(f"✓ Created {model} client: {client.name}")
+        logging.info(f"✓ Created {model} client: {client.name}")
         return client
     except KeyError as e:
         raise ValueError(
@@ -372,7 +371,7 @@ async def run_optimization(  # noqa: C901
         # Create DSPy adapter
         print_section("Creating DSPy Adapter")
         dspy_adapter = create_dspy_adapter(llm_client)
-        logger.info(f"✓ Created DSPy adapter for {model}")
+        logging.info(f"✓ Created DSPy adapter for {model}")
 
         # Create optimizer
         print_section("Initializing Optimizer")
@@ -390,7 +389,7 @@ async def run_optimization(  # noqa: C901
             length_weight=length_weight,
             verb_weight=verb_weight,
         )
-        logger.info("✓ Optimizer initialized")
+        logging.info("✓ Optimizer initialized")
 
         # Run optimization
         print_header("Running MIPROv2 Optimization")
@@ -436,7 +435,7 @@ async def run_optimization(  # noqa: C901
         return 0
 
     except Exception as e:
-        logger.error(f"Optimization failed: {e}", exc_info=True)
+        logging.error(f"Optimization failed: {e}", exc_info=True)
         print(f"\n❌ ERROR: {e}\n")
         return 1
 
@@ -601,25 +600,25 @@ Examples:
     # Configure logging level
     if args.verbose:
         logging.getLogger("graal").setLevel(logging.DEBUG)
-        logger.setLevel(logging.DEBUG)
+        logging.setLevel(logging.DEBUG)
 
     # Validate arguments
     if args.num_candidates < 1:
-        logger.error("num-candidates must be >= 1")
+        logging.error("num-candidates must be >= 1")
         return 1
 
     if args.num_iterations < 1:
-        logger.error("num-iterations must be >= 1")
+        logging.error("num-iterations must be >= 1")
         return 1
 
     if args.batch_size < 1:
-        logger.error("batch-size must be >= 1")
+        logging.error("batch-size must be >= 1")
         return 1
 
     # Validate metric weights
     total_weight = args.semantic_weight + args.length_weight + args.verb_weight
     if total_weight <= 0:
-        logger.error("Sum of metric weights must be > 0")
+        logging.error("Sum of metric weights must be > 0")
         return 1
 
     # Run optimization

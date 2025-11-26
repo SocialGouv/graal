@@ -16,8 +16,6 @@ import pandas as pd
 
 from graal.utils.s3_service import get_s3_service
 
-logger = logging.getLogger(__name__)
-
 
 @dataclass
 class AmendmentSummaryExample:
@@ -106,7 +104,7 @@ def load_dataset(
 
     file_format = file_format.lower()
 
-    logger.info(f"Loading dataset from {path} (format: {file_format})")
+    logging.info(f"Loading dataset from {path} (format: {file_format})")
 
     if file_format == "json":
         return _load_from_json(file_path)
@@ -136,9 +134,9 @@ def _load_from_json(path: Path) -> list[AmendmentSummaryExample]:
         try:
             examples.append(AmendmentSummaryExample.from_dict(item))
         except (KeyError, TypeError) as e:
-            logger.warning(f"Skipping invalid item at index {idx}: {e}")
+            logging.warning(f"Skipping invalid item at index {idx}: {e}")
 
-    logger.info(f"Loaded {len(examples)} examples from JSON")
+    logging.info(f"Loaded {len(examples)} examples from JSON")
     return examples
 
 
@@ -189,7 +187,7 @@ def _dataframe_to_examples(df: pd.DataFrame) -> list[AmendmentSummaryExample]:
             )
         )
 
-    logger.info(f"Loaded {len(examples)} examples from DataFrame")
+    logging.info(f"Loaded {len(examples)} examples from DataFrame")
     return examples
 
 
@@ -278,7 +276,7 @@ def split_dataset(
     train_examples = examples_copy[:split_idx]
     val_examples = examples_copy[split_idx:]
 
-    logger.info(
+    logging.info(
         f"Split dataset: {len(train_examples)} training, {len(val_examples)} validation"
     )
 
@@ -375,7 +373,7 @@ def validate_dataset(  # noqa: C901
         else:
             corps_hashes[corps_hash] = idx
 
-    logger.info(f"Validation found {len(issues)} issues")
+    logging.info(f"Validation found {len(issues)} issues")
     return issues
 
 
@@ -418,7 +416,7 @@ def clean_dataset(
                 or not example.summary
                 or not example.summary.strip()
             ):
-                logger.debug(f"Removing example {idx}: empty required field")
+                logging.debug(f"Removing example {idx}: empty required field")
                 removed_count += 1
                 continue
 
@@ -435,7 +433,7 @@ def clean_dataset(
 
         # Truncate overly long texts
         if len(cleaned_expose) > max_expose_length:
-            logger.warning(
+            logging.warning(
                 f"Example {idx}: truncating expose_amdt from "
                 f"{len(cleaned_expose)} to {max_expose_length} chars"
             )
@@ -443,7 +441,7 @@ def clean_dataset(
             truncated_count += 1
 
         if len(cleaned_corps) > max_corps_length:
-            logger.warning(
+            logging.warning(
                 f"Example {idx}: truncating corps_amdt from "
                 f"{len(cleaned_corps)} to {max_corps_length} chars"
             )
@@ -459,7 +457,7 @@ def clean_dataset(
             )
         )
 
-    logger.info(
+    logging.info(
         f"Cleaned dataset: {len(cleaned_examples)} examples kept, "
         f"{removed_count} removed, {truncated_count} truncated"
     )
@@ -564,7 +562,7 @@ async def save_dataset_to_s3(
     s3_service = get_s3_service()
     await s3_service.upload_database_parquet(df, s3_path)
 
-    logger.info(f"Saved {len(examples)} examples to S3: {s3_path}")
+    logging.info(f"Saved {len(examples)} examples to S3: {s3_path}")
     return s3_path
 
 
@@ -587,5 +585,5 @@ async def load_dataset_from_s3(s3_path: str) -> list[AmendmentSummaryExample]:
     # Convert to examples
     examples = from_dataframe(df)
 
-    logger.info(f"Loaded {len(examples)} examples from S3: {s3_path}")
+    logging.info(f"Loaded {len(examples)} examples from S3: {s3_path}")
     return examples

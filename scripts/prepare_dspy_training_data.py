@@ -59,7 +59,6 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-logger = logging.getLogger(__name__)
 
 
 def print_statistics(stats: dict, prefix: str = "Dataset") -> None:
@@ -113,7 +112,7 @@ def save_examples_to_file(
     else:
         raise ValueError(f"Unsupported output format: {format}")
 
-    logger.info(f"Saved {len(examples)} examples to {output_path}")
+    logging.info(f"Saved {len(examples)} examples to {output_path}")
 
 
 async def main() -> int:  # noqa: C901
@@ -239,7 +238,7 @@ Examples:
     # Configure logging level
     if args.verbose:
         logging.getLogger("graal").setLevel(logging.DEBUG)
-        logger.setLevel(logging.DEBUG)
+        logging.setLevel(logging.DEBUG)
 
     try:
         # Load dataset
@@ -376,13 +375,13 @@ Examples:
         return 0
 
     except FileNotFoundError as e:
-        logger.error(f"File not found: {e}")
+        logging.error(f"File not found: {e}")
         return 1
     except ValueError as e:
-        logger.error(f"Invalid input: {e}")
+        logging.error(f"Invalid input: {e}")
         return 1
     except Exception as e:
-        logger.error(f"Error: {e}", exc_info=args.verbose)
+        logging.error(f"Error: {e}", exc_info=args.verbose)
         return 1
 
 
