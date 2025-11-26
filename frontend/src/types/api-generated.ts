@@ -480,6 +480,208 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/auth/login': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Login
+     * @description Initiate ProConnect OAuth login flow.
+     *
+     *     This endpoint generates an authorization URL with state and PKCE parameters,
+     *     stores them for validation, and redirects the user to ProConnect.
+     *
+     *     Returns:
+     *         RedirectResponse to ProConnect authorization endpoint
+     *
+     *     Raises:
+     *         HTTPException: 500 if OAuth initialization fails
+     */
+    get: operations['login_api_v1_auth_login_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/callback': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Callback
+     * @description Handle ProConnect OAuth callback.
+     *
+     *     This endpoint:
+     *     1. Validates the state parameter (CSRF protection)
+     *     2. Exchanges authorization code for tokens
+     *     3. Retrieves user claims from ProConnect
+     *     4. Creates or updates user in database
+     *     5. Creates session token
+     *     6. Sets HTTP-only secure cookie
+     *     7. Redirects to frontend
+     *
+     *     Args:
+     *         code: Authorization code from ProConnect
+     *         state: State parameter for CSRF validation
+     *
+     *     Returns:
+     *         RedirectResponse to frontend with session cookie
+     *
+     *     Raises:
+     *         HTTPException: 400 if invalid state or code
+     *         HTTPException: 500 if authentication fails
+     */
+    get: operations['callback_api_v1_auth_callback_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Logout
+     * @description Logout current user by clearing session cookie.
+     *
+     *     Args:
+     *         response: FastAPI response object
+     *         session: Session cookie value (optional)
+     *
+     *     Returns:
+     *         Success message
+     */
+    post: operations['logout_api_v1_auth_logout_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/users/me': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get My Profile
+     * @description Get current user's profile.
+     *
+     *     This endpoint returns the full profile of the authenticated user,
+     *     including their admin status.
+     *
+     *     Args:
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         UserResponse with user profile
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     */
+    get: operations['get_my_profile_api_v1_users_me_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/users': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Users
+     * @description List all users (admin only).
+     *
+     *     This endpoint returns a paginated list of all users in the system.
+     *     Only accessible by administrators.
+     *
+     *     Args:
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *         page: Page number (1-indexed)
+     *         page_size: Number of users per page (max 100)
+     *
+     *     Returns:
+     *         UserListResponse with paginated user list
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not admin
+     */
+    get: operations['list_users_api_v1_admin_users_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/users/{user_id}/admin': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Toggle Admin Status
+     * @description Toggle admin status for a user (admin only).
+     *
+     *     This endpoint allows administrators to grant or revoke admin privileges
+     *     for other users. Administrators cannot remove their own admin status.
+     *
+     *     Args:
+     *         user_id: UUID of the user to modify
+     *         toggle_request: Request body with new admin status
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         UserResponse with updated user information
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not admin or trying to modify own status
+     *         HTTPException: 404 if user not found
+     */
+    patch: operations['toggle_admin_status_api_v1_admin_users__user_id__admin_patch']
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -917,6 +1119,43 @@ export interface components {
        * @description Total number of available database files
        */
       total: number
+    }
+    /**
+     * ToggleAdminRequest
+     * @description Request model for toggling admin status.
+     */
+    ToggleAdminRequest: {
+      /**
+       * Is Admin
+       * @description New admin status
+       */
+      is_admin: boolean
+    }
+    /**
+     * UserListResponse
+     * @description Response model for paginated user list.
+     */
+    UserListResponse: {
+      /**
+       * Users
+       * @description List of users
+       */
+      users: components['schemas']['UserResponse'][]
+      /**
+       * Total
+       * @description Total number of users
+       */
+      total: number
+      /**
+       * Page
+       * @description Current page number
+       */
+      page: number
+      /**
+       * Page Size
+       * @description Number of users per page
+       */
+      page_size: number
     }
     /**
      * UserResponse
@@ -1365,7 +1604,9 @@ export interface operations {
       query?: never
       header?: never
       path?: never
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -1376,6 +1617,202 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['UserResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  login_api_v1_auth_login_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+    }
+  }
+  callback_api_v1_auth_callback_get: {
+    parameters: {
+      query: {
+        code: string
+        state: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  logout_api_v1_auth_logout_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_my_profile_api_v1_users_me_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_users_api_v1_admin_users_get: {
+    parameters: {
+      query?: {
+        /** @description Page number */
+        page?: number
+        /** @description Users per page */
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  toggle_admin_status_api_v1_admin_users__user_id__admin_patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ToggleAdminRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }
