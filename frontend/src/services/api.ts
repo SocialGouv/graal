@@ -20,15 +20,17 @@ class ApiService {
   private readonly client: AxiosInstance
 
   constructor() {
-    // Use VITE_API_URL from environment or fallback to localhost for development
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+    // Use VITE_API_URL from environment or empty string for development
+    // Empty string uses relative URLs which go through Vite proxy, enabling same-origin cookies
+    const apiBaseUrl = import.meta.env.VITE_API_URL || ''
 
     this.client = axios.create({
-      baseURL: `${apiBaseUrl}/api/v1`,
+      baseURL: apiBaseUrl ? `${apiBaseUrl}/api/v1` : '/api/v1',
       timeout: 60000, // 60 seconds for regular requests
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      withCredentials: true // Required for session cookies
     })
 
     // Request interceptor for logging

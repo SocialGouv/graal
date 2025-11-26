@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect } from 'react'
 import apiService from '../services/api'
-import { useAuthStore } from '../stores/authStore'
 import { UserResponse } from '../types/api'
 
 export interface UseAuthReturn {
@@ -17,12 +15,19 @@ export interface UseAuthReturn {
  * Uses React Query to fetch user data and updates the auth store
  */
 export const useAuth = (): UseAuthReturn => {
-  const { user, error, setUser, setError } = useAuthStore()
-
   const query = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async (): Promise<UserResponse> => {
-      return apiService.getCurrentUser()
+    queryFn: async (): Promise<UserResponse | null> => {
+      try {
+        return await apiService.getCurrentUser()
+      } catch (error: any) {
+        // 401 means not authenticated - return null instead of throwing
+        if (error?.status_code === 401) {
+          return null
+        }
+        // Other errors should be thrown
+        throw error
+      }
     },
     retry: (failureCount, error: any) => {
       // Don't retry on 401/403 (auth failures)
@@ -38,19 +43,12 @@ export const useAuth = (): UseAuthReturn => {
     refetchOnWindowFocus: false
   })
 
-  // Update auth store when query state changes
-  useEffect(() => {
-    if (query.isLoading) return
-    if (query.data) {
-      setUser(query.data)
-    } else if (query.error) {
-      const errorMessage =
-        (query.error as any).detail ||
-        'Erreur lors de la récupération des informations utilisateur'
-      setError(errorMessage)
-      setUser(null)
-    }
-  }, [query.isLoading, query.data, query.error, setUser, setError])
+  // React Query is the source of truth - no need for Zustand sync
+  const user = query.data ?? null
+  const error = query.error
+    ? (query.error as any).detail ||
+      'Erreur lors de la récupération des informations utilisateur'
+    : null
 
   return {
     user,
