@@ -16,10 +16,14 @@ import logging.config
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from fastapi import Cookie, HTTPException, Request
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 from graal.api.models.responses import UserResponse
+from graal.database.models import User
 
 logging.config.fileConfig("logging.conf")
-logger = logging.getLogger(__name__)
 
 
 class AuthorizationProvider(ABC):
@@ -31,11 +35,11 @@ class AuthorizationProvider(ABC):
     """
 
     @abstractmethod
-    async def get_user(self, user_id: str) -> Optional[UserResponse]:
-        """Retrieve user information by user ID.
+    async def get_user(self, proconnect_sub: str) -> Optional[UserResponse]:
+        """Retrieve user information by ProConnect subject identifier.
 
         Args:
-            user_id: Unique identifier for the user
+            proconnect_sub: ProConnect subject identifier (unique user ID)
 
         Returns:
             UserResponse object if found, None otherwise
@@ -55,32 +59,86 @@ class HardcodedAuthorizationProvider(AuthorizationProvider):
         - All TODO markers below indicate code that needs database queries
     """
 
-    async def get_user(self, user_id: str) -> Optional[UserResponse]:
+    async def get_user(self, proconnect_sub: str) -> Optional[UserResponse]:
         """Return hardcoded admin user.
 
         TODO: DATABASE MIGRATION
         Replace with actual database query:
             async with db_session() as session:
                 user_record = await session.execute(
-                    select(UserModel).where(UserModel.user_id == user_id)
+                    select(UserModel).where(UserModel.proconnect_sub == proconnect_sub)
                 )
                 return user_record.scalar_one_or_none()
 
         Args:
-            user_id: User identifier (currently ignored)
+            proconnect_sub: ProConnect subject identifier (currently ignored)
 
         Returns:
             Hardcoded admin UserResponse
         """
-        logger.debug(
-            f"[HardcodedAuthProvider] Returning hardcoded admin user for ID: {user_id}"
+        logging.debug(
+            f"[HardcodedAuthProvider] Returning hardcoded admin user for sub: {proconnect_sub}"
         )
-        # TODO: Replace with database query
         return UserResponse(
             user_id="hardcoded-admin",
             email="admin@graal.gouv.fr",
             is_admin=True,
         )
+
+
+class DatabaseAuthorizationProvider(AuthorizationProvider):
+    """Database-backed authorization provider.
+
+    This provider queries the User table to retrieve user information
+    based on their ProConnect subject identifier. It replaces the
+    HardcodedAuthorizationProvider for production use.
+
+    Attributes:
+        _session_factory: Async session factory for database queries
+    """
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
+        """Initialize database authorization provider.
+
+        Args:
+            session_factory: SQLAlchemy async session factory
+        """
+        self._session_factory = session_factory
+        logging.info("[DatabaseAuthProvider] Initialized with database session factory")
+
+    async def get_user(self, proconnect_sub: str) -> Optional[UserResponse]:
+        """Retrieve user from database by ProConnect subject identifier.
+
+        Args:
+            proconnect_sub: ProConnect subject identifier
+
+        Returns:
+            UserResponse if user found, None otherwise
+        """
+        logging.debug(
+            f"[DatabaseAuthProvider] Querying user by proconnect_sub={proconnect_sub[:8]}..."
+        )
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(User).where(User.proconnect_sub == proconnect_sub)
+            )
+            user = result.scalar_one_or_none()
+
+            if not user:
+                logging.debug(
+                    f"[DatabaseAuthProvider] User not found for sub={proconnect_sub[:8]}..."
+                )
+                return None
+
+            logging.info(
+                f"[DatabaseAuthProvider] User {user.id} found (admin={user.is_admin})"
+            )
+            return UserResponse(
+                user_id=str(user.id),
+                email=user.email,
+                is_admin=user.is_admin,
+            )
 
 
 class AuthorizationService:
@@ -104,78 +162,122 @@ class AuthorizationService:
             provider: Authorization provider implementation
         """
         self._provider = provider
-        logger.info(
+        logging.info(
             f"[AuthorizationService] Initialized with provider: {provider.__class__.__name__}"
         )
 
-    async def get_current_user(self) -> UserResponse:
-        """Get current authenticated user information.
+    async def get_current_user(
+        self, request: Request, session: Optional[str] = Cookie(default=None)
+    ) -> UserResponse:
+        """Get current authenticated user information from session cookie.
 
-        TODO: DATABASE MIGRATION
-        Replace hardcoded user_id extraction with actual session/JWT logic:
-            - Extract user_id from request session
-            - Or decode from JWT token
-            - Or use FastAPI dependency injection with security scheme
+        This method extracts the session token from the HTTP-only cookie,
+        validates it, and retrieves the user from the database.
+
+        Args:
+            request: FastAPI request object
+            session: Session cookie value (automatically injected by FastAPI)
 
         Returns:
             Current authenticated UserResponse
 
         Raises:
-            ValueError: If user not found
+            HTTPException: 401 if not authenticated or session invalid
         """
-        # TODO: DATABASE MIGRATION - Get actual user_id from session/JWT
-        user_id = "hardcoded-admin"
-        logger.debug(f"[AuthorizationService] Getting current user: {user_id}")
+        # Import session service here to avoid circular imports
+        from graal.api.services.session_service import get_session_service
 
-        user = await self._provider.get_user(user_id)
+        # Check if session cookie exists
+        if not session:
+            logging.debug("[AuthorizationService] No session cookie provided")
+            raise HTTPException(
+                status_code=401,
+                detail="Not authenticated",
+            )
+
+        # Validate session token and get proconnect_sub
+        session_service = get_session_service()
+        proconnect_sub = session_service.validate_session_token(session)
+
+        if not proconnect_sub:
+            logging.warning("[AuthorizationService] Invalid or expired session token")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or expired session",
+            )
+
+        logging.debug(
+            f"[AuthorizationService] Session valid for proconnect_sub={proconnect_sub[:8]}..."
+        )
+
+        # Get user from provider (database)
+        user = await self._provider.get_user(proconnect_sub)
         if not user:
-            logger.error(f"[AuthorizationService] User not found: {user_id}")
-            raise ValueError(f"User not found: {user_id}")
+            logging.error(
+                f"[AuthorizationService] User not found for sub={proconnect_sub[:8]}..."
+            )
+            raise HTTPException(
+                status_code=401,
+                detail="User not found",
+            )
 
-        logger.info(
+        logging.info(
             f"[AuthorizationService] Retrieved user {user.user_id} (admin={user.is_admin})"
         )
         return user
 
-    async def check_admin(self) -> bool:
+    async def check_admin(
+        self, request: Request, session: Optional[str] = Cookie(default=None)
+    ) -> bool:
         """Check if current user has admin privileges.
+
+        Args:
+            request: FastAPI request object
+            session: Session cookie value
 
         Returns:
             True if current user is admin, False otherwise
         """
-        user = await self.get_current_user()
-        logger.debug(
-            f"[AuthorizationService] Admin check for {user.user_id}: {user.is_admin}"
-        )
-        return user.is_admin
+        try:
+            user = await self.get_current_user(request, session)
+            logging.debug(
+                f"[AuthorizationService] Admin check for {user.user_id}: {user.is_admin}"
+            )
+            return user.is_admin
+        except HTTPException:
+            return False
 
-    async def require_admin(self) -> UserResponse:
+    async def require_admin(
+        self, request: Request, session: Optional[str] = Cookie(default=None)
+    ) -> UserResponse:
         """Require admin access, raise exception if not authorized.
 
         This method should be used in API endpoints that require admin access.
         It will raise an HTTP 403 Forbidden error if the user is not an admin.
 
+        Args:
+            request: FastAPI request object
+            session: Session cookie value
+
         Returns:
             Current UserResponse if admin
 
         Raises:
-            HTTPException: 403 Forbidden if user is not admin
+            HTTPException: 401 if not authenticated
+            HTTPException: 403 if not admin
         """
-        user = await self.get_current_user()
+        user = await self.get_current_user(request, session)
 
         if not user.is_admin:
-            logger.warning(
+            logging.warning(
                 f"[AuthorizationService] Access denied for non-admin user: {user.user_id}"
             )
-            # Import here to avoid circular imports
-            from fastapi import HTTPException
-
             raise HTTPException(
                 status_code=403,
                 detail="Admin access required",
             )
 
-        logger.info(
+        logging.info(
             f"[AuthorizationService] Admin access granted for user: {user.user_id}"
         )
         return user
@@ -185,24 +287,36 @@ class AuthorizationService:
 _authorization_service: Optional[AuthorizationService] = None
 
 
-def get_authorization_service() -> AuthorizationService:
+def get_authorization_service(use_database: bool = True) -> AuthorizationService:
     """Get global authorization service instance (Singleton pattern).
 
     This function follows the project's service pattern for singleton instances.
-    The service is initialized once with the HardcodedAuthorizationProvider
-    and reused across all requests.
+    The service can be initialized with either DatabaseAuthorizationProvider
+    (production) or HardcodedAuthorizationProvider (testing/development).
 
-    Migration Note:
-        When moving to database authentication, change the provider initialization:
-        provider = DatabaseAuthorizationProvider(db_session_factory)
+    Args:
+        use_database: If True, use DatabaseAuthorizationProvider.
+                     If False, use HardcodedAuthorizationProvider.
+                     Default is True for production use.
 
     Returns:
         Global authorization service instance
     """
     global _authorization_service
     if _authorization_service is None:
-        logger.info("[AuthorizationService] Initializing singleton instance")
-        # TODO: DATABASE MIGRATION - Replace with DatabaseAuthorizationProvider
-        provider = HardcodedAuthorizationProvider()
+        logging.info("[AuthorizationService] Initializing singleton instance")
+
+        if use_database:
+            # Production: Use database-backed authorization
+            from graal.database.base import get_async_session_maker
+
+            session_factory = get_async_session_maker()
+            provider = DatabaseAuthorizationProvider(session_factory)
+            logging.info("[AuthorizationService] Using DatabaseAuthorizationProvider")
+        else:
+            # Development/Testing: Use hardcoded authorization
+            provider = HardcodedAuthorizationProvider()
+            logging.info("[AuthorizationService] Using HardcodedAuthorizationProvider")
+
         _authorization_service = AuthorizationService(provider)
     return _authorization_service
