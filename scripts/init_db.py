@@ -279,7 +279,7 @@ async def create_seed_manifests(session: AsyncSession, users: dict[str, User]) -
         size_bytes=15728640,  # ~15 MB
         row_count=1245,
         last_modified=datetime.now(timezone.utc) - timedelta(days=7),
-        metadata={
+        db_metadata={
             "project": "PLFSS",
             "year": 2024,
             "description": "Projet de Loi de Financement de la Sécurité Sociale 2024",
@@ -299,7 +299,7 @@ async def create_seed_manifests(session: AsyncSession, users: dict[str, User]) -
         size_bytes=12582912,  # ~12 MB
         row_count=978,
         last_modified=datetime.now(timezone.utc) - timedelta(days=365),
-        metadata={
+        db_metadata={
             "project": "PLFSS",
             "year": 2023,
             "description": "Projet de Loi de Financement de la Sécurité Sociale 2023",
@@ -319,7 +319,7 @@ async def create_seed_manifests(session: AsyncSession, users: dict[str, User]) -
         size_bytes=5242880,  # ~5 MB
         row_count=342,
         last_modified=datetime.now(timezone.utc) - timedelta(days=730),
-        metadata={
+        db_metadata={
             "project": "TEST",
             "year": 2022,
             "description": "Archived test database",

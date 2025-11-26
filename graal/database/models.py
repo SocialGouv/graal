@@ -361,7 +361,7 @@ class SimilarityDBManifest(Base):
         DateTime(timezone=True), nullable=False, comment="S3 file last modified time"
     )
 
-    metadata: Mapped[dict[str, Any] | None] = mapped_column(
+    db_metadata: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB, nullable=True, comment="Additional metadata (project, year, etc.)"
     )
 

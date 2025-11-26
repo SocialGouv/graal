@@ -142,7 +142,7 @@ class SimilarityDBManifestBase(BaseModel):
     s3_file_path: str = Field(..., description="Full S3 file path")
     size_bytes: int = Field(..., ge=0, description="File size in bytes")
     row_count: int | None = Field(None, ge=0, description="Number of rows")
-    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
+    db_metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
 
 
 class SimilarityDBManifestCreate(SimilarityDBManifestBase):
@@ -158,7 +158,7 @@ class SimilarityDBManifestUpdate(BaseModel):
     size_bytes: int | None = Field(None, ge=0)
     row_count: int | None = Field(None, ge=0)
     last_modified: datetime | None = None
-    metadata: dict[str, Any] | None = None
+    db_metadata: dict[str, Any] | None = None
     is_active: bool | None = None
 
 
