@@ -1,3 +1,10 @@
+## [1.26.1](https://github.com/SocialGouv/graal/compare/v1.26.0...v1.26.1) (2025-11-27)
+
+
+### Bug Fixes
+
+* continue after upload ([1135339](https://github.com/SocialGouv/graal/commit/1135339029c12c54cf756c95733f0de65199880f))
+
 # [1.26.0](https://github.com/SocialGouv/graal/compare/v1.25.0...v1.26.0) (2025-11-20)
 
 
