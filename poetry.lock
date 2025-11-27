@@ -743,19 +743,6 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
-name = "cloudpickle"
-version = "3.1.1"
-description = "Pickler class to extend the standard pickle.Pickler functionality"
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "python_version == \"3.11\" or python_version >= \"3.12\""
-files = [
-    {file = "cloudpickle-3.1.1-py3-none-any.whl", hash = "sha256:c8c5a44295039331ee9dad40ba100a9c7297b6f988e50e87ccdf3765a668350e"},
-    {file = "cloudpickle-3.1.1.tar.gz", hash = "sha256:b216fa8ae4019d5482a8ac3c95d8f6346115d8835911fd4aefd1a445e4242c64"},
-]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -2225,24 +2212,6 @@ extra-proxy = ["azure-identity (>=1.15.0,<2.0.0)", "azure-keyvault-secrets (>=4.
 proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "cryptography (>=42.0.5,<43.0.0)", "fastapi (>=0.111.0,<0.112.0)", "fastapi-sso (>=0.10.0,<0.11.0)", "gunicorn (>=22.0.0,<23.0.0)", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.9,<0.0.10)", "pyyaml (>=6.0.1,<7.0.0)", "rq", "uvicorn (>=0.22.0,<0.23.0)"]
 
 [[package]]
-name = "llamaapi"
-version = "0.1.36"
-description = "Llama API python SDK"
-optional = false
-python-versions = ">=3.9,<4.0"
-groups = ["main"]
-markers = "python_version == \"3.11\" or python_version >= \"3.12\""
-files = [
-    {file = "llamaapi-0.1.36-py3-none-any.whl", hash = "sha256:ec22534acf5f2d6adf7cff953e7c8d0621d0dfded94ea9377913648c41d3b7e9"},
-    {file = "llamaapi-0.1.36.tar.gz", hash = "sha256:e001f43d84a1906cb8136a787d31798b5201b37ab73cef464bcb53e61e688749"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8.5,<4.0.0"
-nest-asyncio = ">=1.5.6,<2.0.0"
-requests = ">=2.27.1,<3.0.0"
-
-[[package]]
 name = "magicattr"
 version = "0.1.6"
 description = "A getattr and setattr that works on nested objects, lists, dicts, and any combination thereof without resorting to eval"
@@ -2545,7 +2514,7 @@ version = "1.6.0"
 description = "Patch asyncio to allow nested event loops"
 optional = false
 python-versions = ">=3.5"
-groups = ["main", "dev"]
+groups = ["dev"]
 markers = "python_version == \"3.11\" or python_version >= \"3.12\""
 files = [
     {file = "nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c"},
@@ -6119,4 +6088,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "23f8951cf0f53d33eefbf5eb61137ec25b029cceec66fb637cef885d4c496c2a"
+content-hash = "13d88fce7f2da299f22950252623f9e1389cf34f83a47e60c3a68e6fc4d3b624"
