@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Multi-stage build pour optimiser la taille finale
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 # Variables d'environnement pour optimiser pip
 ENV PIP_NO_CACHE_DIR=1 \
@@ -34,7 +34,7 @@ RUN poetry lock --no-update && \
     rm -rf "$POETRY_CACHE_DIR"
 
 # Stage final - image de runtime
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 # Variables d'environnement
 ENV PYTHONDONTWRITEBYTECODE=1 \
