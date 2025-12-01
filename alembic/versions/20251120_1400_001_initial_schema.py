@@ -185,120 +185,6 @@ def upgrade() -> None:
         EXECUTE FUNCTION update_updated_at_column();
     """)
 
-    # Create processing_jobs table
-    op.create_table(
-        "processing_jobs",
-        sa.Column(
-            "id",
-            postgresql.UUID(as_uuid=True),
-            nullable=False,
-            comment="Job identifier",
-        ),
-        sa.Column(
-            "user_id",
-            postgresql.UUID(as_uuid=True),
-            nullable=False,
-            comment="Job owner user ID",
-        ),
-        sa.Column(
-            "status",
-            sa.String(length=50),
-            nullable=False,
-            comment="Job status: queued, running, completed, failed, timeout",
-        ),
-        sa.Column(
-            "percent",
-            sa.Integer(),
-            nullable=False,
-            server_default="0",
-            comment="Progress percentage (0-100)",
-        ),
-        sa.Column("message", sa.Text(), nullable=True, comment="Status message"),
-        sa.Column(
-            "input_file_s3_path",
-            sa.String(length=512),
-            nullable=False,
-            comment="Input file location in S3",
-        ),
-        sa.Column(
-            "output_file_s3_path",
-            sa.String(length=512),
-            nullable=True,
-            comment="Output file location in S3",
-        ),
-        sa.Column(
-            "config_file_used",
-            sa.String(length=512),
-            nullable=False,
-            comment="Config file path used for this job",
-        ),
-        sa.Column(
-            "feature_config",
-            postgresql.JSONB(astext_type=sa.Text()),
-            nullable=False,
-            comment="Snapshot of feature configuration at runtime",
-        ),
-        sa.Column(
-            "error_details",
-            postgresql.JSONB(astext_type=sa.Text()),
-            nullable=True,
-            comment="Error information if job failed",
-        ),
-        sa.Column(
-            "started_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=False,
-            comment="Job start time",
-        ),
-        sa.Column(
-            "updated_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=False,
-            comment="Last update time",
-        ),
-        sa.Column(
-            "completed_at",
-            sa.DateTime(timezone=True),
-            nullable=True,
-            comment="Job completion time",
-        ),
-        sa.Column(
-            "timeout_minutes",
-            sa.Integer(),
-            nullable=False,
-            server_default="60",
-            comment="Timeout limit in minutes",
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"],
-            ["users.id"],
-            name="fk_processing_jobs_user_id_users",
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("id", name="pk_processing_jobs"),
-    )
-    op.create_index("ix_processing_jobs_user_id", "processing_jobs", ["user_id"])
-    op.create_index("ix_processing_jobs_status", "processing_jobs", ["status"])
-    op.create_index("ix_processing_jobs_started_at", "processing_jobs", ["started_at"])
-    op.create_index(
-        "ix_processing_jobs_user_status", "processing_jobs", ["user_id", "status"]
-    )
-    op.create_index(
-        "ix_processing_jobs_started_desc",
-        "processing_jobs",
-        [sa.text("started_at DESC")],
-    )
-
-    # Create trigger for updated_at on processing_jobs
-    op.execute("""
-        CREATE TRIGGER update_processing_jobs_updated_at
-        BEFORE UPDATE ON processing_jobs
-        FOR EACH ROW
-        EXECUTE FUNCTION update_updated_at_column();
-    """)
-
     # Create similarity_db_manifests table
     op.create_table(
         "similarity_db_manifests",
@@ -348,10 +234,10 @@ def upgrade() -> None:
             comment="S3 file last modified time",
         ),
         sa.Column(
-            "metadata",
+            "db_metadata",
             postgresql.JSONB(astext_type=sa.Text()),
             nullable=True,
-            comment="Additional metadata (project, year, etc.)",
+            comment="Additional db_metadata (project, year, etc.)",
         ),
         sa.Column(
             "is_active",
@@ -399,17 +285,6 @@ def downgrade() -> None:
         "ix_similarity_db_manifests_is_active", table_name="similarity_db_manifests"
     )
     op.drop_table("similarity_db_manifests")
-
-    # Drop processing_jobs
-    op.execute(
-        "DROP TRIGGER IF EXISTS update_processing_jobs_updated_at ON processing_jobs;"
-    )
-    op.drop_index("ix_processing_jobs_started_desc", table_name="processing_jobs")
-    op.drop_index("ix_processing_jobs_user_status", table_name="processing_jobs")
-    op.drop_index("ix_processing_jobs_started_at", table_name="processing_jobs")
-    op.drop_index("ix_processing_jobs_status", table_name="processing_jobs")
-    op.drop_index("ix_processing_jobs_user_id", table_name="processing_jobs")
-    op.drop_table("processing_jobs")
 
     # Drop user_configurations
     op.execute(
