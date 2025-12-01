@@ -47,6 +47,7 @@ psycopg2-binary = ">=2.9.9"
 # OAuth for future ProConnect integration
 authlib = ">=1.3.0"
 itsdangerous = ">=2.1.0"
+pydantic = {extras = ["email"], version = "^2.12.5"}
 
 [tool.poetry.group.dev.dependencies]
 virtualenv = "20.35.3"
