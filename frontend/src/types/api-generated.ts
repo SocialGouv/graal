@@ -52,32 +52,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/v1/similarity-databases': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Similarity Databases
-     * @description List available similarity database files from S3.
-     *
-     *     Returns:
-     *         SimilarityDatabasesResponse with list of available database files
-     *
-     *     Raises:
-     *         HTTPException: 503 if S3 is not available, 500 for other errors
-     */
-    get: operations['list_similarity_databases_api_v1_similarity_databases_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/v1/process': {
     parameters: {
       query?: never
@@ -260,7 +234,7 @@ export interface paths {
     }
     /**
      * List Databases
-     * @description List all available similarity databases from S3.
+     * @description List all available similarity databases from PostgreSQL manifests.
      *
      *     Returns:
      *         DatabaseListResponse: List of available databases with metadata
@@ -326,12 +300,14 @@ export interface paths {
      *
      *     Args:
      *         request: DatabaseBuildRequest with build configuration
+     *         http_request: FastAPI request object
+     *         session: Session cookie value
      *
      *     Returns:
      *         ProcessingResponse: Job information for tracking build progress
      *
      *     Raises:
-     *         HTTPException: 400 for validation errors, 500 for build errors
+     *         HTTPException: 401 if not authenticated, 400 for validation errors, 500 for build errors
      *
      *     Example request:
      *         {
@@ -408,6 +384,8 @@ export interface paths {
      *     Args:
      *         database_name: Name of the database to append to
      *         request: AppendDatabaseRequest with new files and build configuration
+     *         http_request: FastAPI request object
+     *         session: Session cookie value
      *
      *     Returns:
      *         ProcessingResponse: Job information for tracking append progress
@@ -680,6 +658,354 @@ export interface paths {
      *         HTTPException: 404 if user not found
      */
     patch: operations['toggle_admin_status_api_v1_admin_users__user_id__admin_patch']
+    trace?: never
+  }
+  '/api/v1/users/me/configurations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List User Configurations
+     * @description List all configurations for the current user.
+     *
+     *     Returns configurations ordered by creation date (newest first).
+     *
+     *     Args:
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         List of UserConfigurationRead schemas
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     */
+    get: operations['list_user_configurations_api_v1_users_me_configurations_get']
+    put?: never
+    /**
+     * Create User Configuration
+     * @description Create a new configuration for the current user.
+     *
+     *     Validates that the S3 config file exists before creating.
+     *     If is_default is True, unsets all other default configurations.
+     *
+     *     Args:
+     *         config: Configuration data to create
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         Created UserConfigurationRead schema
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 400 if S3 file validation fails
+     */
+    post: operations['create_user_configuration_api_v1_users_me_configurations_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/users/me/configurations/default': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get Default Configuration
+     * @description Get the user's default configuration.
+     *
+     *     Args:
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         UserConfigurationRead schema of default configuration
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 404 if no default configuration set
+     */
+    get: operations['get_default_configuration_api_v1_users_me_configurations_default_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/users/me/configurations/{config_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get User Configuration
+     * @description Get a specific configuration by ID.
+     *
+     *     Verifies that the configuration belongs to the current user.
+     *
+     *     Args:
+     *         config_id: Configuration UUID
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         UserConfigurationRead schema
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 404 if not found or doesn't belong to user
+     */
+    get: operations['get_user_configuration_api_v1_users_me_configurations__config_id__get']
+    put?: never
+    post?: never
+    /**
+     * Delete User Configuration
+     * @description Delete a configuration.
+     *
+     *     Verifies ownership before deleting.
+     *
+     *     Args:
+     *         config_id: Configuration UUID to delete
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         204 No Content on success
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 404 if not found or doesn't belong to user
+     */
+    delete: operations['delete_user_configuration_api_v1_users_me_configurations__config_id__delete']
+    options?: never
+    head?: never
+    /**
+     * Update User Configuration
+     * @description Update a configuration.
+     *
+     *     Verifies ownership before updating. If is_default is set to True,
+     *     unsets all other default configurations. Validates S3 path if changed.
+     *
+     *     Args:
+     *         config_id: Configuration UUID to update
+     *         updates: Fields to update
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         Updated UserConfigurationRead schema
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 404 if not found or doesn't belong to user
+     *         HTTPException: 400 if S3 validation fails
+     */
+    patch: operations['update_user_configuration_api_v1_users_me_configurations__config_id__patch']
+    trace?: never
+  }
+  '/api/v1/users/me/configurations/{config_id}/set-default': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Set Default Configuration
+     * @description Set a configuration as the user's default.
+     *
+     *     Unsets all other default configurations before setting this one as default.
+     *
+     *     Args:
+     *         config_id: Configuration UUID to set as default
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         Updated UserConfigurationRead schema
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 404 if not found or doesn't belong to user
+     */
+    post: operations['set_default_configuration_api_v1_users_me_configurations__config_id__set_default_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/similarity-databases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Similarity Databases
+     * @description List all active similarity database manifests.
+     *
+     *     Available to all authenticated users.
+     *
+     *     Args:
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         List of SimilarityDBManifestRead schemas
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     */
+    get: operations['list_similarity_databases_api_v1_similarity_databases_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/similarity-databases/sync': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Sync Manifests From S3
+     * @description Sync similarity database manifests from S3 (admin only).
+     *
+     *     Scans S3 for similarity database files and creates or updates
+     *     manifests accordingly. This is typically run once to populate
+     *     the database from existing S3 files.
+     *
+     *     Args:
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         List of synced SimilarityDBManifestRead schemas
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not admin
+     */
+    post: operations['sync_manifests_from_s3_api_v1_admin_similarity_databases_sync_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/similarity-databases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Create Manifest
+     * @description Manually create a similarity database manifest (admin only).
+     *
+     *     Validates that the S3 file exists before creating the manifest.
+     *
+     *     Args:
+     *         manifest: Manifest data to create
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         Created SimilarityDBManifestRead schema
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not admin
+     *         HTTPException: 400 if S3 file validation fails
+     */
+    post: operations['create_manifest_api_v1_admin_similarity_databases_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/similarity-databases/{manifest_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Manifest
+     * @description Deactivate a similarity database manifest (admin only, soft delete).
+     *
+     *     Sets the manifest's is_active flag to False. The manifest and its
+     *     metadata remain in the database but won't appear in active listings.
+     *
+     *     Args:
+     *         manifest_id: Manifest UUID to deactivate
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         204 No Content on success
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not admin
+     *         HTTPException: 404 if manifest not found
+     */
+    delete: operations['delete_manifest_api_v1_admin_similarity_databases__manifest_id__delete']
+    options?: never
+    head?: never
+    /**
+     * Update Manifest
+     * @description Update a similarity database manifest (admin only).
+     *
+     *     Allows updating manifest metadata such as name, size, row count,
+     *     and custom metadata.
+     *
+     *     Args:
+     *         manifest_id: Manifest UUID to update
+     *         updates: Fields to update
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         Updated SimilarityDBManifestRead schema
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not admin
+     *         HTTPException: 404 if manifest not found
+     */
+    patch: operations['update_manifest_api_v1_admin_similarity_databases__manifest_id__patch']
     trace?: never
   }
 }
@@ -958,7 +1284,9 @@ export interface components {
        * Metadata
        * @description Processing metadata
        */
-      metadata: Record<string, never>
+      metadata: {
+        [key: string]: unknown
+      }
     }
     /**
      * FileUploadMetadata
@@ -1043,7 +1371,9 @@ export interface components {
        * Metadata
        * @description Processing metadata
        */
-      metadata: Record<string, never>
+      metadata: {
+        [key: string]: unknown
+      }
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -1105,20 +1435,146 @@ export interface components {
       updated_at: string
     }
     /**
-     * SimilarityDatabasesResponse
-     * @description Response model for available similarity database files.
+     * SimilarityDBManifestCreate
+     * @description Schema for creating a new similarity database manifest.
      */
-    SimilarityDatabasesResponse: {
+    SimilarityDBManifestCreate: {
       /**
-       * Databases
-       * @description List of available similarity database file paths (relative to similarity folder)
+       * Name
+       * @description Database name
        */
-      databases: string[]
+      name: string
       /**
-       * Total
-       * @description Total number of available database files
+       * S3 Folder Path
+       * @description S3 folder path
        */
-      total: number
+      s3_folder_path: string
+      /**
+       * S3 File Path
+       * @description Full S3 file path
+       */
+      s3_file_path: string
+      /**
+       * Size Bytes
+       * @description File size in bytes
+       */
+      size_bytes: number
+      /**
+       * Row Count
+       * @description Number of rows
+       */
+      row_count?: number | null
+      /**
+       * Db Metadata
+       * @description Additional metadata
+       */
+      db_metadata?: {
+        [key: string]: unknown
+      } | null
+      /**
+       * Input Files
+       * @description List of input files (replaces S3 manifest system)
+       */
+      input_files?: {
+        [key: string]: unknown
+      } | null
+      /**
+       * Last Modified
+       * Format: date-time
+       * @description S3 file last modified time
+       */
+      last_modified: string
+    }
+    /**
+     * SimilarityDBManifestRead
+     * @description Schema for reading similarity database manifest data.
+     */
+    SimilarityDBManifestRead: {
+      /**
+       * Name
+       * @description Database name
+       */
+      name: string
+      /**
+       * S3 Folder Path
+       * @description S3 folder path
+       */
+      s3_folder_path: string
+      /**
+       * S3 File Path
+       * @description Full S3 file path
+       */
+      s3_file_path: string
+      /**
+       * Size Bytes
+       * @description File size in bytes
+       */
+      size_bytes: number
+      /**
+       * Row Count
+       * @description Number of rows
+       */
+      row_count?: number | null
+      /**
+       * Db Metadata
+       * @description Additional metadata
+       */
+      db_metadata?: {
+        [key: string]: unknown
+      } | null
+      /**
+       * Input Files
+       * @description List of input files (replaces S3 manifest system)
+       */
+      input_files?: {
+        [key: string]: unknown
+      } | null
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Created By User Id
+       * Format: uuid
+       */
+      created_by_user_id: string
+      /**
+       * Last Modified
+       * Format: date-time
+       */
+      last_modified: string
+      /** Is Active */
+      is_active: boolean
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+    }
+    /**
+     * SimilarityDBManifestUpdate
+     * @description Schema for updating a similarity database manifest.
+     */
+    SimilarityDBManifestUpdate: {
+      /** Name */
+      name?: string | null
+      /** Size Bytes */
+      size_bytes?: number | null
+      /** Row Count */
+      row_count?: number | null
+      /** Last Modified */
+      last_modified?: string | null
+      /** Db Metadata */
+      db_metadata?: {
+        [key: string]: unknown
+      } | null
+      /** Input Files */
+      input_files?: {
+        [key: string]: unknown
+      } | null
+      /** Is Active */
+      is_active?: boolean | null
     }
     /**
      * ToggleAdminRequest
@@ -1130,6 +1586,100 @@ export interface components {
        * @description New admin status
        */
       is_admin: boolean
+    }
+    /**
+     * UserConfigurationCreate
+     * @description Schema for creating a new configuration.
+     */
+    UserConfigurationCreate: {
+      /**
+       * Name
+       * @description Configuration name
+       */
+      name: string
+      /**
+       * S3 Config File Path
+       * @description S3 path to config file
+       */
+      s3_config_file_path: string
+      /**
+       * Feature Settings
+       * @description Feature settings
+       */
+      feature_settings: {
+        [key: string]: unknown
+      }
+      /**
+       * Is Default
+       * @description Is default configuration
+       * @default false
+       */
+      is_default: boolean
+    }
+    /**
+     * UserConfigurationRead
+     * @description Schema for reading configuration data.
+     */
+    UserConfigurationRead: {
+      /**
+       * Name
+       * @description Configuration name
+       */
+      name: string
+      /**
+       * S3 Config File Path
+       * @description S3 path to config file
+       */
+      s3_config_file_path: string
+      /**
+       * Feature Settings
+       * @description Feature settings
+       */
+      feature_settings: {
+        [key: string]: unknown
+      }
+      /**
+       * Is Default
+       * @description Is default configuration
+       * @default false
+       */
+      is_default: boolean
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string
+    }
+    /**
+     * UserConfigurationUpdate
+     * @description Schema for updating a configuration.
+     */
+    UserConfigurationUpdate: {
+      /** Name */
+      name?: string | null
+      /** S3 Config File Path */
+      s3_config_file_path?: string | null
+      /** Feature Settings */
+      feature_settings?: {
+        [key: string]: unknown
+      } | null
+      /** Is Default */
+      is_default?: boolean | null
     }
     /**
      * UserListResponse
@@ -1235,26 +1785,6 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ConfigFilesResponse']
-        }
-      }
-    }
-  }
-  list_similarity_databases_api_v1_similarity_databases_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SimilarityDatabasesResponse']
         }
       }
     }
@@ -1474,7 +2004,9 @@ export interface operations {
       query?: never
       header?: never
       path?: never
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody: {
       content: {
@@ -1540,7 +2072,9 @@ export interface operations {
       path: {
         database_name: string
       }
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody: {
       content: {
@@ -1804,6 +2338,402 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['UserResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_user_configurations_api_v1_users_me_configurations_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserConfigurationRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_user_configuration_api_v1_users_me_configurations_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserConfigurationCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserConfigurationRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_default_configuration_api_v1_users_me_configurations_default_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserConfigurationRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_user_configuration_api_v1_users_me_configurations__config_id__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserConfigurationRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_user_configuration_api_v1_users_me_configurations__config_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  update_user_configuration_api_v1_users_me_configurations__config_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserConfigurationUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserConfigurationRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  set_default_configuration_api_v1_users_me_configurations__config_id__set_default_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserConfigurationRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_similarity_databases_api_v1_similarity_databases_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SimilarityDBManifestRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  sync_manifests_from_s3_api_v1_admin_similarity_databases_sync_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SimilarityDBManifestRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_manifest_api_v1_admin_similarity_databases_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SimilarityDBManifestCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SimilarityDBManifestRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_manifest_api_v1_admin_similarity_databases__manifest_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        manifest_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  update_manifest_api_v1_admin_similarity_databases__manifest_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        manifest_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SimilarityDBManifestUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SimilarityDBManifestRead']
         }
       }
       /** @description Validation Error */

@@ -17,7 +17,7 @@ export const DatabaseSelectorConfig: React.FC<DatabaseSelectorConfigProps> = ({
 }) => {
   // Fetch available databases using React Query
   const {
-    data: databases = [],
+    data: manifests = [],
     isLoading,
     isError,
     error
@@ -27,6 +27,12 @@ export const DatabaseSelectorConfig: React.FC<DatabaseSelectorConfigProps> = ({
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     retry: 2
   })
+
+  // Extract database names from manifests with defensive check
+  // Ensures manifests is always treated as an array to prevent crashes
+  const databases = Array.isArray(manifests)
+    ? manifests.map((manifest) => manifest.name)
+    : []
 
   // Get error message
   const errorMessage = isError

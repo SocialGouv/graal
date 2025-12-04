@@ -4,6 +4,7 @@ import { Stepper } from '@codegouvfr/react-dsfr/Stepper'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigFileSelector } from '../components/ConfigFileSelector'
+import { ConfigurationManager } from '../components/ConfigurationManager/ConfigurationManager'
 import DownloadButton from '../components/DownloadButton/DownloadButton'
 import FileUpload from '../components/FileUpload/FileUpload'
 import ProcessingConfig from '../components/ProcessingConfig/ProcessingConfig'
@@ -17,7 +18,10 @@ import {
   useUploadFile
 } from '../hooks/useApi'
 import { useValidation } from '../hooks/useValidation'
-import { useProcessingStore } from '../stores/processingStore'
+import {
+  useProcessingStore,
+  type ProcessingConfig as ProcessingConfigType
+} from '../stores/processingStore'
 
 export const ProcessingPage = () => {
   const navigate = useNavigate()
@@ -30,6 +34,8 @@ export const ProcessingPage = () => {
     selectedConfigFile,
     setCurrentStep,
     setUploadedFile,
+    setProcessingConfig,
+    setSelectedConfigFile,
     reset
   } = useProcessingStore()
 
@@ -158,6 +164,14 @@ export const ProcessingPage = () => {
   const handleReset = () => {
     reset()
     navigate('/')
+  }
+
+  const handleConfigurationLoad = (
+    config: ProcessingConfigType,
+    configFile: string
+  ) => {
+    setProcessingConfig(config)
+    setSelectedConfigFile(configFile)
   }
 
   const showResults = processingStatus === 'completed'
@@ -351,6 +365,11 @@ export const ProcessingPage = () => {
             {/* Step 2: Processing Configuration */}
             {currentStep === 2 && (
               <section className={fr.cx('fr-mb-6w')}>
+                <ConfigurationManager
+                  currentConfig={processingConfig}
+                  selectedConfigFile={selectedConfigFile}
+                  onConfigurationLoad={handleConfigurationLoad}
+                />
                 <ProcessingConfig disabled={uploadFileMutation.isPending} />
                 <div
                   className={fr.cx('fr-mt-4w')}

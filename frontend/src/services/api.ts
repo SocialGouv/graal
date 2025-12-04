@@ -11,8 +11,13 @@ import type {
   PreviewResponse,
   ProcessingRequest,
   ProcessJobResponse,
-  SimilarityDatabasesListResponse,
+  SimilarityDBManifestCreate,
+  SimilarityDBManifestRead,
+  SimilarityDBManifestUpdate,
   UploadFileResponse,
+  UserConfigurationCreate,
+  UserConfigurationRead,
+  UserConfigurationUpdate,
   UserResponse
 } from '../types/api'
 
@@ -121,24 +126,129 @@ class ApiService {
   }
 
   /**
-   * List available similarity database files from S3
+   * List available similarity database manifests
    */
-  async listSimilarityDatabases(): Promise<string[]> {
+  async listSimilarityDatabases(): Promise<SimilarityDBManifestRead[]> {
     console.log('[API_CLIENT] Fetching available similarity databases')
 
     try {
-      const response = await this.client.get<SimilarityDatabasesListResponse>(
+      const response = await this.client.get<SimilarityDBManifestRead[]>(
         '/similarity-databases'
       )
 
       console.log('[API_CLIENT] Similarity databases retrieved', {
-        total: response.data.total,
-        databases: response.data.databases
+        count: response.data.length
       })
 
-      return response.data.databases
+      return response.data
     } catch (error) {
       console.error('[API_CLIENT] Failed to fetch similarity databases', error)
+      throw error
+    }
+  }
+
+  /**
+   * Sync similarity database manifests from S3 (admin only)
+   */
+  async syncSimilarityDatabaseManifests(): Promise<SimilarityDBManifestRead[]> {
+    console.log('[API_CLIENT] Syncing similarity database manifests from S3')
+
+    try {
+      const response = await this.client.post<SimilarityDBManifestRead[]>(
+        '/admin/similarity-databases/sync'
+      )
+
+      console.log('[API_CLIENT] Similarity databases synced', {
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to sync similarity databases', error)
+      throw error
+    }
+  }
+
+  /**
+   * Create a similarity database manifest (admin only)
+   */
+  async createSimilarityDatabaseManifest(
+    data: SimilarityDBManifestCreate
+  ): Promise<SimilarityDBManifestRead> {
+    console.log('[API_CLIENT] Creating similarity database manifest', {
+      name: data.name
+    })
+
+    try {
+      const response = await this.client.post<SimilarityDBManifestRead>(
+        '/admin/similarity-databases',
+        data
+      )
+
+      console.log('[API_CLIENT] Similarity database manifest created', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error(
+        '[API_CLIENT] Failed to create similarity database manifest',
+        error
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Update a similarity database manifest (admin only)
+   */
+  async updateSimilarityDatabaseManifest(
+    id: string,
+    data: SimilarityDBManifestUpdate
+  ): Promise<SimilarityDBManifestRead> {
+    console.log('[API_CLIENT] Updating similarity database manifest', { id })
+
+    try {
+      const response = await this.client.patch<SimilarityDBManifestRead>(
+        `/admin/similarity-databases/${id}`,
+        data
+      )
+
+      console.log('[API_CLIENT] Similarity database manifest updated', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error(
+        '[API_CLIENT] Failed to update similarity database manifest',
+        error
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Deactivate a similarity database manifest (admin only, soft delete)
+   */
+  async deactivateSimilarityDatabaseManifest(id: string): Promise<void> {
+    console.log('[API_CLIENT] Deactivating similarity database manifest', {
+      id
+    })
+
+    try {
+      await this.client.delete(`/admin/similarity-databases/${id}`)
+
+      console.log('[API_CLIENT] Similarity database manifest deactivated', {
+        id
+      })
+    } catch (error) {
+      console.error(
+        '[API_CLIENT] Failed to deactivate similarity database manifest',
+        error
+      )
       throw error
     }
   }
@@ -617,6 +727,145 @@ class ApiService {
         status_code: 500
       }
       throw apiError
+    }
+  }
+
+  /**
+   * Get all configurations for the current user
+   */
+  async getUserConfigurations(): Promise<UserConfigurationRead[]> {
+    console.log('[API_CLIENT] Fetching user configurations')
+
+    try {
+      const response = await this.client.get<UserConfigurationRead[]>(
+        '/users/me/configurations'
+      )
+
+      console.log('[API_CLIENT] User configurations retrieved', {
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to get user configurations', error)
+      throw error
+    }
+  }
+
+  /**
+   * Create a new user configuration
+   */
+  async createUserConfiguration(
+    data: UserConfigurationCreate
+  ): Promise<UserConfigurationRead> {
+    console.log('[API_CLIENT] Creating user configuration', {
+      name: data.name
+    })
+
+    try {
+      const response = await this.client.post<UserConfigurationRead>(
+        '/users/me/configurations',
+        data
+      )
+
+      console.log('[API_CLIENT] User configuration created', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to create user configuration', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get the user's default configuration
+   */
+  async getDefaultConfiguration(): Promise<UserConfigurationRead> {
+    console.log('[API_CLIENT] Fetching default configuration')
+
+    try {
+      const response = await this.client.get<UserConfigurationRead>(
+        '/users/me/configurations/default'
+      )
+
+      console.log('[API_CLIENT] Default configuration retrieved', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to get default configuration', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update a user configuration
+   */
+  async updateUserConfiguration(
+    id: string,
+    data: UserConfigurationUpdate
+  ): Promise<UserConfigurationRead> {
+    console.log('[API_CLIENT] Updating user configuration', { id })
+
+    try {
+      const response = await this.client.patch<UserConfigurationRead>(
+        `/users/me/configurations/${id}`,
+        data
+      )
+
+      console.log('[API_CLIENT] User configuration updated', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to update user configuration', error)
+      throw error
+    }
+  }
+
+  /**
+   * Set a configuration as the user's default
+   */
+  async setDefaultConfiguration(id: string): Promise<UserConfigurationRead> {
+    console.log('[API_CLIENT] Setting default configuration', { id })
+
+    try {
+      const response = await this.client.post<UserConfigurationRead>(
+        `/users/me/configurations/${id}/set-default`
+      )
+
+      console.log('[API_CLIENT] Default configuration set', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to set default configuration', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete a user configuration
+   */
+  async deleteUserConfiguration(id: string): Promise<void> {
+    console.log('[API_CLIENT] Deleting user configuration', { id })
+
+    try {
+      await this.client.delete(`/users/me/configurations/${id}`)
+
+      console.log('[API_CLIENT] User configuration deleted', { id })
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to delete user configuration', error)
+      throw error
     }
   }
 }

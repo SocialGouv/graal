@@ -212,9 +212,65 @@ export interface AppendDatabaseRequest {
   group_by_columns?: string[]
 }
 
+// Similarity Database Manifest types
+export interface SimilarityDBManifestRead {
+  id: string
+  name: string
+  s3_key: string
+  size_bytes: number
+  row_count: number | null
+  db_metadata: Record<string, any> | null
+  created_by_user_id: string
+  last_modified: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface SimilarityDBManifestCreate {
+  name: string
+  s3_key: string
+  size_bytes: number
+  row_count?: number | null
+  db_metadata?: Record<string, any> | null
+  last_modified: string
+}
+
+export interface SimilarityDBManifestUpdate {
+  name?: string
+  size_bytes?: number
+  row_count?: number | null
+  last_modified?: string
+  db_metadata?: Record<string, any> | null
+  is_active?: boolean
+}
+
 // Authentication types
 export interface UserResponse {
   user_id: string
   email: string | null
   is_admin: boolean
+}
+
+// User Configuration types
+export interface UserConfigurationBase {
+  name: string
+  s3_config_file_path: string
+  feature_settings: Record<string, any>
+  is_default: boolean
+}
+
+export type UserConfigurationCreate = UserConfigurationBase
+
+export interface UserConfigurationUpdate {
+  name?: string
+  s3_config_file_path?: string
+  feature_settings?: Record<string, any>
+  is_default?: boolean
+}
+
+export interface UserConfigurationRead extends UserConfigurationBase {
+  id: string
+  user_id: string
+  created_at: string
+  updated_at: string
 }
