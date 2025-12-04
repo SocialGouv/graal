@@ -205,7 +205,6 @@ class DatabaseBuilderService:
                     "eps": eps,
                     "group_by_columns": group_by_columns,
                     "config_file": config_file,
-                    "source_files": [f["filename"] for f in files_metadata],
                 },
                 input_files={
                     "files": input_files_data

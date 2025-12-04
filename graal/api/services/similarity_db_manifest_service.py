@@ -204,6 +204,7 @@ class SimilarityDBManifestService:
                 row_count=manifest_data.row_count,
                 last_modified=manifest_data.last_modified,
                 db_metadata=manifest_data.db_metadata,
+                input_files=manifest_data.input_files,
                 is_active=True,
             )
 
@@ -344,6 +345,8 @@ class SimilarityDBManifestService:
                 manifest.last_modified = updates.last_modified
             if updates.db_metadata is not None:
                 manifest.db_metadata = updates.db_metadata
+            if updates.input_files is not None:
+                manifest.input_files = updates.input_files
             if updates.is_active is not None:
                 manifest.is_active = updates.is_active
 

@@ -628,12 +628,14 @@ async def get_database_manifest(database_name: str):
         # Extract input files from the manifest's input_files JSONB field
         files = []
         if manifest.input_files and "files" in manifest.input_files:
+            # New format: Full file details in input_files
+            logging.info(
+                f"[API] Loading {len(manifest.input_files['files'])} files from input_files field"
+            )
             for file_data in manifest.input_files["files"]:
                 files.append(
                     FileReferenceInfo(
-                        upload_id=file_data[
-                            "file_hash"
-                        ],  # Use hash as upload_id for UI compatibility
+                        upload_id=file_data["file_hash"],
                         filename=file_data["filename"],
                         file_hash=file_data["file_hash"],
                         s3_key=file_data["s3_key"],
@@ -641,6 +643,11 @@ async def get_database_manifest(database_name: str):
                         metadata=file_data.get("metadata", {}),
                     )
                 )
+        else:
+            logging.warning(
+                "[API] No input files found in manifest. "
+                "This database was created with old code and must be rebuilt to see files."
+            )
 
         logging.info(
             f"[API] Retrieved manifest for {database_name} with {len(files)} files"
