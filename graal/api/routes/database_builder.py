@@ -432,8 +432,104 @@ async def delete_uploaded_file(upload_id: str):
         raise HTTPException(status_code=500, detail="Failed to delete file") from e
 
 
+def _find_manifest_by_name(all_manifests: list, database_name: str):
+    """Find manifest by database name.
+
+    Args:
+        all_manifests: List of all active manifests
+        database_name: Name of the database to find
+
+    Returns:
+        The matching manifest or None
+
+    Raises:
+        HTTPException: If manifest not found
+    """
+    for manifest in all_manifests:
+        if manifest.name == database_name:
+            return manifest
+
+    raise HTTPException(
+        status_code=404,
+        detail=f"Database '{database_name}' not found. Create it first using the build endpoint.",
+    )
+
+
+def _extract_existing_files_metadata(manifest) -> list[dict]:
+    """Extract existing files metadata from manifest.
+
+    Args:
+        manifest: Database manifest containing input_files
+
+    Returns:
+        List of existing files metadata dictionaries
+    """
+    existing_files_metadata = []
+    if manifest.input_files and "files" in manifest.input_files:
+        for file_data in manifest.input_files["files"]:
+            existing_files_metadata.append(
+                {
+                    "upload_id": file_data["file_hash"],
+                    "filename": file_data["filename"],
+                    "file_hash": file_data["file_hash"],
+                    "s3_key": file_data["s3_key"],
+                    "uploaded_at": file_data["uploaded_at"],
+                    "default_processing_timestamp": file_data.get("metadata", {}).get(
+                        "default_processing_timestamp"
+                    ),
+                    "origin_project": file_data.get("metadata", {}).get(
+                        "origin_project"
+                    ),
+                }
+            )
+    return existing_files_metadata
+
+
+def _check_for_duplicates(existing_files: list[dict], new_files: list[dict]) -> None:
+    """Check for duplicate files and raise error if found.
+
+    Args:
+        existing_files: List of existing file metadata
+        new_files: List of new file metadata
+
+    Raises:
+        HTTPException: If duplicate files found
+    """
+    existing_hashes = {f["upload_id"] for f in existing_files}
+    new_hashes = {f["upload_id"] for f in new_files}
+    duplicate_hashes = existing_hashes & new_hashes
+
+    if duplicate_hashes:
+        duplicate_files = [
+            f["filename"] for f in new_files if f["upload_id"] in duplicate_hashes
+        ]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot append: files already exist in database: {', '.join(duplicate_files)}",
+        )
+
+
+async def _download_all_files(
+    s3_service, files_metadata: list[dict], temp_dir: Path
+) -> None:
+    """Download all files from S3 to temp directory.
+
+    Args:
+        s3_service: S3 service instance
+        files_metadata: List of file metadata to download
+        temp_dir: Temporary directory path
+    """
+    for file_metadata in files_metadata:
+        await _download_file_to_temp(s3_service, file_metadata, temp_dir)
+
+
 @router.post("/{database_name}/append", response_model=ProcessingResponse)
-async def append_to_database(database_name: str, request: AppendDatabaseRequest):  # noqa: C901
+async def append_to_database(
+    database_name: str,
+    request: AppendDatabaseRequest,
+    http_request: Request,
+    session: Optional[str] = Cookie(default=None),
+):
     """Append new files to an existing database by rebuilding with all files.
 
     This endpoint loads the existing database manifest, combines the existing files
@@ -442,6 +538,8 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
     Args:
         database_name: Name of the database to append to
         request: AppendDatabaseRequest with new files and build configuration
+        http_request: FastAPI request object
+        session: Session cookie value
 
     Returns:
         ProcessingResponse: Job information for tracking append progress
@@ -454,24 +552,17 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
             status_code=400,
             detail="Cannot append: no files provided. Include at least one file in file_references.",
         )
+
     try:
-        # Get PostgreSQL manifest service
+        # Get current user for manifest creation
+        auth_service = get_authorization_service()
+        current_user = await auth_service.get_current_user(http_request, session)
+        user_id = UUID(current_user.user_id)
+
+        # Get PostgreSQL manifest service and find manifest
         pg_manifest_service = get_similarity_db_manifest_service()
-
-        # Get all active manifests and find the one matching database_name
         all_manifests = await pg_manifest_service.list_active_manifests()
-
-        manifest = None
-        for m in all_manifests:
-            if m.name == database_name:
-                manifest = m
-                break
-
-        if not manifest:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Database '{database_name}' not found. Create it first using the build endpoint.",
-            )
+        manifest = _find_manifest_by_name(all_manifests, database_name)
 
         logging.info(f"[API] Loaded PostgreSQL manifest for {database_name}")
 
@@ -481,52 +572,17 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
             for file_ref in request.file_references
         ]
 
-        # Combine with existing files (extract from PostgreSQL manifest's input_files JSONB)
-        # IMPORTANT: Preserve uploaded_at timestamp from existing manifest
-        existing_files_metadata = []
-        if manifest.input_files and "files" in manifest.input_files:
-            for file_data in manifest.input_files["files"]:
-                existing_files_metadata.append(
-                    {
-                        "upload_id": file_data["file_hash"],
-                        "filename": file_data["filename"],
-                        "file_hash": file_data["file_hash"],
-                        "s3_key": file_data["s3_key"],
-                        "uploaded_at": file_data[
-                            "uploaded_at"
-                        ],  # Preserve original upload time
-                        "default_processing_timestamp": file_data.get(
-                            "metadata", {}
-                        ).get("default_processing_timestamp"),
-                        "origin_project": file_data.get("metadata", {}).get(
-                            "origin_project"
-                        ),
-                    }
-                )
-
+        # Extract existing files metadata from manifest
+        existing_files_metadata = _extract_existing_files_metadata(manifest)
         logging.info(
             f"[API] Found {len(existing_files_metadata)} existing files in manifest"
         )
 
         # Check for duplicate files before combining
-        existing_hashes = {f["upload_id"] for f in existing_files_metadata}
-        new_hashes = {f["upload_id"] for f in new_files_metadata}
-        duplicate_hashes = existing_hashes & new_hashes
-
-        if duplicate_hashes:
-            duplicate_files = [
-                f["filename"]
-                for f in new_files_metadata
-                if f["upload_id"] in duplicate_hashes
-            ]
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cannot append: files already exist in database: {', '.join(duplicate_files)}",
-            )
+        _check_for_duplicates(existing_files_metadata, new_files_metadata)
 
         # Combine all files
         all_files_metadata = existing_files_metadata + new_files_metadata
-
         logging.info(
             f"[API] Appending {len(new_files_metadata)} new files to {len(existing_files_metadata)} existing files"
         )
@@ -534,15 +590,11 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
         # Download files from S3 pool to temp directory for building
         temp_dir = _ensure_temp_upload_dir()
         s3_service = get_s3_service()
-
-        for file_metadata in all_files_metadata:
-            await _download_file_to_temp(s3_service, file_metadata, temp_dir)
+        await _download_all_files(s3_service, all_files_metadata, temp_dir)
 
         # Create job for rebuild
         job_id = create_job_id()
         builder_service = get_database_builder_service()
-
-        # Create job entry in registry
         builder_service.job_registry.create_job(
             job_id=job_id, input_file_path=f"database_append_{database_name}"
         )
@@ -552,7 +604,6 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
         )
 
         # Start background task for rebuild with provided config file
-        # This allows rebuilding the database with a newly provided config file
         task = asyncio.create_task(
             builder_service.start_database_build(
                 job_id=job_id,
@@ -563,6 +614,7 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
                 similarity_threshold=request.similarity_threshold,
                 eps=request.eps,
                 group_by_columns=request.group_by_columns,
+                user_id=user_id,
             )
         )
 

@@ -65,38 +65,7 @@ class DatabaseBuilderService:
             logging.info(f"[Job {job_id}] Starting database build: {database_name}")
 
             # Load amendment files from temporary upload directory
-            temp_upload_dir = Path("tmp/db_builder_uploads")
-            self.job_registry.update_job(
-                job_id,
-                percent=10,
-                message="Loading uploaded amendment files...",
-            )
-            amendment_files: dict[Path, InputFileConfig] = {}
-
-            for idx, file_ref in enumerate(files_metadata):
-                upload_id = file_ref["upload_id"]
-                filename = file_ref["filename"]
-                progress = 10 + int((idx / len(files_metadata)) * 30)  # 10-40%
-                self.job_registry.update_job(
-                    job_id, percent=progress, message=f"Loading {filename}..."
-                )
-                logging.info(
-                    f"[Job {job_id}] Processing file {idx + 1}/{len(files_metadata)}: {filename}"
-                )
-
-                # Find uploaded file
-                file_path = temp_upload_dir / f"{upload_id}_{filename}"
-
-                if not file_path.exists():
-                    raise FileNotFoundError(f"Uploaded file not found: {filename}")
-
-                config: InputFileConfig = {
-                    "default_processing_timestamp": file_ref[
-                        "default_processing_timestamp"
-                    ],
-                    "origin_project": file_ref["origin_project"],
-                }
-                amendment_files[file_path] = config
+            amendment_files = await self._load_amendment_files(job_id, files_metadata)
 
             # Build database
             self.job_registry.update_job(
@@ -133,104 +102,22 @@ class DatabaseBuilderService:
 
             logging.info(f"[Job {job_id}] Database uploaded successfully")
 
-            # Create PostgreSQL similarity database manifest with input files
-            self.job_registry.update_job(
-                job_id, percent=85, message="Creating database manifest..."
-            )
-            logging.info(
-                f"[Job {job_id}] Creating PostgreSQL database manifest for: {database_name}"
-            )
-
-            # Convert files_metadata to input_files format for PostgreSQL
-            input_files_data = []
-            for file_meta in files_metadata:
-                # Preserve uploaded_at if it exists (for append operations with existing files)
-                # Otherwise use current timestamp (for newly uploaded files)
-                if "uploaded_at" in file_meta and file_meta["uploaded_at"]:
-                    uploaded_at_str = file_meta["uploaded_at"]
-                else:
-                    uploaded_at_str = datetime.now(timezone.utc).isoformat()
-
-                file_data = {
-                    "file_hash": file_meta["file_hash"],
-                    "filename": file_meta["filename"],
-                    "s3_key": file_meta["s3_key"],
-                    "uploaded_at": uploaded_at_str,
-                    "metadata": {
-                        "default_processing_timestamp": file_meta[
-                            "default_processing_timestamp"
-                        ],
-                        "origin_project": file_meta["origin_project"],
-                    },
-                }
-                input_files_data.append(file_data)
-
-            # Get metadata from S3 to populate manifest
-            try:
-                s3_metadata = await self.s3_service.get_database_metadata(database_name)
-            except Exception as e:
-                logging.warning(
-                    f"[Job {job_id}] Could not get S3 metadata, using defaults: {e}"
-                )
-                s3_metadata = {
-                    "size": 0,
-                    "last_modified": datetime.now(timezone.utc),
-                }
-
-            # Construct S3 paths
-            s3_folder = self.s3_service._similarity_db_folder
-            if s3_folder and not s3_folder.endswith("/"):
-                s3_folder += "/"
-            s3_file_path = f"{s3_folder}{database_name}.parquet"
-
-            # Extract project names for metadata
-            projects = list(
-                {f.get("origin_project", "unknown") for f in files_metadata}
-            )
-
-            # Create manifest data
-            manifest_data = SimilarityDBManifestCreate(
-                name=database_name,
-                s3_folder_path=s3_folder or "",
-                s3_file_path=s3_file_path,
-                size_bytes=s3_metadata.get("size", 0),
-                row_count=len(df),
-                last_modified=s3_metadata.get(
-                    "last_modified", datetime.now(timezone.utc)
-                ),
-                db_metadata={
-                    "projects": projects,
-                    "drop_empty_columns": drop_empty_columns,
-                    "similarity_threshold": similarity_threshold,
-                    "eps": eps,
-                    "group_by_columns": group_by_columns,
-                    "config_file": config_file,
-                },
-                input_files={
-                    "files": input_files_data
-                },  # Store input files in PostgreSQL
-            )
-
-            # Create manifest in database
-            await self.manifest_service.create_manifest(manifest_data, user_id)
-
-            logging.info(
-                f"[Job {job_id}] Similarity database manifest created successfully"
+            # Create or update PostgreSQL similarity database manifest
+            await self._create_or_update_manifest(
+                job_id=job_id,
+                database_name=database_name,
+                files_metadata=files_metadata,
+                df=df,
+                drop_empty_columns=drop_empty_columns,
+                similarity_threshold=similarity_threshold,
+                eps=eps,
+                group_by_columns=group_by_columns,
+                config_file=config_file,
+                user_id=user_id,
             )
 
             # Cleanup uploaded files from temp directory
-            # Note: Files remain in S3 pool for reuse
-            self.job_registry.update_job(
-                job_id, percent=95, message="Cleaning up temporary files..."
-            )
-            for file_path in amendment_files.keys():
-                try:
-                    file_path.unlink()
-                    logging.info(f"[Job {job_id}] Deleted temporary file: {file_path}")
-                except Exception as e:
-                    logging.warning(
-                        f"[Job {job_id}] Failed to cleanup temporary file {file_path}: {e}"
-                    )
+            await self._cleanup_temp_files(job_id, amendment_files)
 
             # Complete
             self.job_registry.update_job(
@@ -247,6 +134,298 @@ class DatabaseBuilderService:
                 job_id, status="failed", error=str(e), message=f"Build failed: {str(e)}"
             )
             raise
+
+    async def _load_amendment_files(
+        self, job_id: str, files_metadata: list[dict]
+    ) -> dict[Path, InputFileConfig]:
+        """Load amendment files from temporary upload directory.
+
+        Args:
+            job_id: Unique job identifier
+            files_metadata: List of file metadata dictionaries
+
+        Returns:
+            Dictionary mapping file paths to their configurations
+
+        Raises:
+            FileNotFoundError: If an uploaded file is not found
+        """
+        temp_upload_dir = Path("tmp/db_builder_uploads")
+        self.job_registry.update_job(
+            job_id,
+            percent=10,
+            message="Loading uploaded amendment files...",
+        )
+        amendment_files: dict[Path, InputFileConfig] = {}
+
+        for idx, file_ref in enumerate(files_metadata):
+            upload_id = file_ref["upload_id"]
+            filename = file_ref["filename"]
+            progress = 10 + int((idx / len(files_metadata)) * 30)  # 10-40%
+            self.job_registry.update_job(
+                job_id, percent=progress, message=f"Loading {filename}..."
+            )
+            logging.info(
+                f"[Job {job_id}] Processing file {idx + 1}/{len(files_metadata)}: {filename}"
+            )
+
+            # Find uploaded file
+            file_path = temp_upload_dir / f"{upload_id}_{filename}"
+
+            if not file_path.exists():
+                raise FileNotFoundError(f"Uploaded file not found: {filename}")
+
+            config: InputFileConfig = {
+                "default_processing_timestamp": file_ref[
+                    "default_processing_timestamp"
+                ],
+                "origin_project": file_ref["origin_project"],
+            }
+            amendment_files[file_path] = config
+
+        return amendment_files
+
+    async def _create_or_update_manifest(
+        self,
+        job_id: str,
+        database_name: str,
+        files_metadata: list[dict],
+        df,
+        drop_empty_columns: list[str],
+        similarity_threshold: float,
+        eps: float,
+        group_by_columns: list[str],
+        config_file: str,
+        user_id: uuid.UUID,
+    ) -> None:
+        """Create or update PostgreSQL similarity database manifest.
+
+        Args:
+            job_id: Unique job identifier
+            database_name: Name for the database
+            files_metadata: List of file metadata dictionaries
+            df: Built DataFrame
+            drop_empty_columns: Columns where empty rows should be dropped
+            similarity_threshold: Threshold for Levenshtein refinement
+            eps: Epsilon value for DBSCAN clustering
+            group_by_columns: Columns to group by during clustering
+            config_file: Office configuration Excel file used
+            user_id: User ID who initiated the build
+        """
+        self.job_registry.update_job(
+            job_id, percent=85, message="Updating database manifest..."
+        )
+        logging.info(
+            f"[Job {job_id}] Creating/updating PostgreSQL database manifest for: {database_name}"
+        )
+
+        # Prepare input files data
+        input_files_data = self._prepare_input_files_data(files_metadata)
+
+        # Get S3 metadata
+        s3_metadata = await self._get_s3_metadata(job_id, database_name)
+
+        # Construct S3 paths
+        s3_folder = self.s3_service._similarity_db_folder
+        if s3_folder and not s3_folder.endswith("/"):
+            s3_folder += "/"
+        s3_file_path = f"{s3_folder}{database_name}.parquet"
+
+        # Extract project names for metadata
+        projects = list({f.get("origin_project", "unknown") for f in files_metadata})
+
+        # Build metadata dictionary
+        db_metadata = {
+            "projects": projects,
+            "drop_empty_columns": drop_empty_columns,
+            "similarity_threshold": similarity_threshold,
+            "eps": eps,
+            "group_by_columns": group_by_columns,
+            "config_file": config_file,
+        }
+
+        # Check if manifest already exists (for append operations)
+        existing_manifest = await self.manifest_service.get_manifest_by_s3_path(
+            s3_file_path
+        )
+
+        if existing_manifest:
+            await self._update_existing_manifest(
+                job_id,
+                existing_manifest,
+                s3_metadata,
+                len(df),
+                db_metadata,
+                input_files_data,
+            )
+        else:
+            await self._create_new_manifest(
+                job_id,
+                database_name,
+                s3_folder,
+                s3_file_path,
+                s3_metadata,
+                len(df),
+                db_metadata,
+                input_files_data,
+                user_id,
+            )
+
+    def _prepare_input_files_data(self, files_metadata: list[dict]) -> list[dict]:
+        """Prepare input files data for PostgreSQL storage.
+
+        Args:
+            files_metadata: List of file metadata dictionaries
+
+        Returns:
+            List of formatted file data dictionaries
+        """
+        input_files_data = []
+        for file_meta in files_metadata:
+            # Preserve uploaded_at if it exists (for append operations)
+            # Otherwise use current timestamp (for newly uploaded files)
+            uploaded_at_str = (
+                file_meta["uploaded_at"]
+                if "uploaded_at" in file_meta and file_meta["uploaded_at"]
+                else datetime.now(timezone.utc).isoformat()
+            )
+
+            file_data = {
+                "file_hash": file_meta["file_hash"],
+                "filename": file_meta["filename"],
+                "s3_key": file_meta["s3_key"],
+                "uploaded_at": uploaded_at_str,
+                "metadata": {
+                    "default_processing_timestamp": file_meta[
+                        "default_processing_timestamp"
+                    ],
+                    "origin_project": file_meta["origin_project"],
+                },
+            }
+            input_files_data.append(file_data)
+
+        return input_files_data
+
+    async def _get_s3_metadata(self, job_id: str, database_name: str) -> dict[str, any]:
+        """Get metadata from S3 for the database.
+
+        Args:
+            job_id: Unique job identifier
+            database_name: Name of the database
+
+        Returns:
+            Dictionary containing S3 metadata (size, last_modified)
+        """
+        try:
+            return await self.s3_service.get_database_metadata(database_name)
+        except Exception as e:
+            logging.warning(
+                f"[Job {job_id}] Could not get S3 metadata, using defaults: {e}"
+            )
+            return {
+                "size": 0,
+                "last_modified": datetime.now(timezone.utc),
+            }
+
+    async def _update_existing_manifest(
+        self,
+        job_id: str,
+        existing_manifest,
+        s3_metadata: dict,
+        row_count: int,
+        db_metadata: dict,
+        input_files_data: list[dict],
+    ) -> None:
+        """Update an existing manifest.
+
+        Args:
+            job_id: Unique job identifier
+            existing_manifest: Existing manifest object
+            s3_metadata: S3 metadata dictionary
+            row_count: Number of rows in the database
+            db_metadata: Database metadata dictionary
+            input_files_data: List of input file data dictionaries
+        """
+        logging.info(
+            f"[Job {job_id}] Updating existing manifest {existing_manifest.id}"
+        )
+        from graal.database.schemas import SimilarityDBManifestUpdate
+
+        update_data = SimilarityDBManifestUpdate(
+            size_bytes=s3_metadata.get("size", 0),
+            row_count=row_count,
+            last_modified=s3_metadata.get("last_modified", datetime.now(timezone.utc)),
+            db_metadata=db_metadata,
+            input_files={"files": input_files_data},
+            is_active=True,
+        )
+        await self.manifest_service.update_manifest(existing_manifest.id, update_data)
+        logging.info(
+            f"[Job {job_id}] Similarity database manifest updated successfully"
+        )
+
+    async def _create_new_manifest(
+        self,
+        job_id: str,
+        database_name: str,
+        s3_folder: str,
+        s3_file_path: str,
+        s3_metadata: dict,
+        row_count: int,
+        db_metadata: dict,
+        input_files_data: list[dict],
+        user_id: uuid.UUID,
+    ) -> None:
+        """Create a new manifest.
+
+        Args:
+            job_id: Unique job identifier
+            database_name: Name for the database
+            s3_folder: S3 folder path
+            s3_file_path: S3 file path
+            s3_metadata: S3 metadata dictionary
+            row_count: Number of rows in the database
+            db_metadata: Database metadata dictionary
+            input_files_data: List of input file data dictionaries
+            user_id: User ID who initiated the build
+        """
+        logging.info(f"[Job {job_id}] Creating new manifest")
+        manifest_data = SimilarityDBManifestCreate(
+            name=database_name,
+            s3_folder_path=s3_folder or "",
+            s3_file_path=s3_file_path,
+            size_bytes=s3_metadata.get("size", 0),
+            row_count=row_count,
+            last_modified=s3_metadata.get("last_modified", datetime.now(timezone.utc)),
+            db_metadata=db_metadata,
+            input_files={"files": input_files_data},
+        )
+
+        await self.manifest_service.create_manifest(manifest_data, user_id)
+        logging.info(
+            f"[Job {job_id}] Similarity database manifest created successfully"
+        )
+
+    async def _cleanup_temp_files(
+        self, job_id: str, amendment_files: dict[Path, InputFileConfig]
+    ) -> None:
+        """Cleanup temporary uploaded files.
+
+        Args:
+            job_id: Unique job identifier
+            amendment_files: Dictionary of file paths to clean up
+        """
+        self.job_registry.update_job(
+            job_id, percent=95, message="Cleaning up temporary files..."
+        )
+        for file_path in amendment_files.keys():
+            try:
+                file_path.unlink()
+                logging.info(f"[Job {job_id}] Deleted temporary file: {file_path}")
+            except Exception as e:
+                logging.warning(
+                    f"[Job {job_id}] Failed to cleanup temporary file {file_path}: {e}"
+                )
 
 
 def create_job_id() -> str:
