@@ -104,12 +104,6 @@ class User(Base):
         comment="Last update timestamp",
     )
 
-    last_login: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        comment="Last successful login timestamp",
-    )
-
     # Relationships
     configurations: Mapped[list["UserConfiguration"]] = relationship(
         "UserConfiguration", back_populates="user", cascade="all, delete-orphan"

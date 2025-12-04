@@ -51,7 +51,6 @@ async def create_seed_users(session: AsyncSession) -> dict[str, User]:
             "email": "admin@graal.com",
             "email_verified": True,
         },
-        last_login=datetime.now(timezone.utc),
     )
     session.add(admin_user)
 
@@ -67,7 +66,6 @@ async def create_seed_users(session: AsyncSession) -> dict[str, User]:
             "email": "user@graal.local",
             "email_verified": True,
         },
-        last_login=datetime.now(timezone.utc) - timedelta(hours=2),
     )
     session.add(regular_user)
 

@@ -275,7 +275,6 @@ async def _create_or_update_user(
         user.email = email
         user.email_verified = email_verified
         user.proconnect_claims = proconnect_claims
-        user.last_login = User.utc_now() if hasattr(User, "utc_now") else None
     else:
         # Create new user (not admin by default)
         logging.info(

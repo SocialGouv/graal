@@ -34,7 +34,6 @@ class UserUpdate(BaseModel):
     email_verified: bool | None = None
     is_admin: bool | None = None
     proconnect_claims: dict[str, Any] | None = None
-    last_login: datetime | None = None
 
 
 class UserRead(UserBase):
@@ -48,7 +47,6 @@ class UserRead(UserBase):
     is_admin: bool
     created_at: datetime
     updated_at: datetime
-    last_login: datetime | None
 
 
 class UserConfigurationBase(BaseModel):

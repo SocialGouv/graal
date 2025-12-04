@@ -89,12 +89,6 @@ def upgrade() -> None:
             nullable=False,
             comment="Last update timestamp",
         ),
-        sa.Column(
-            "last_login",
-            sa.DateTime(timezone=True),
-            nullable=True,
-            comment="Last successful login timestamp",
-        ),
         sa.PrimaryKeyConstraint("id", name="pk_users"),
         sa.UniqueConstraint("proconnect_sub", name="uq_users_proconnect_sub"),
         sa.UniqueConstraint("email", name="uq_users_email"),
