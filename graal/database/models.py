@@ -359,6 +359,13 @@ class SimilarityDBManifest(Base):
         JSONB, nullable=True, comment="Additional metadata (project, year, etc.)"
     )
 
+    # Input files tracking (replaces S3 manifest system)
+    input_files: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="List of input files used to build this database (file_hash, filename, s3_key, uploaded_at, metadata)",
+    )
+
     # Status
     is_active: Mapped[bool] = mapped_column(
         Boolean,

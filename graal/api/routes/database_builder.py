@@ -33,7 +33,6 @@ from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
 from graal.utils.file_hash_service import get_file_hash_service
-from graal.utils.manifest_service import get_manifest_service
 from graal.utils.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
@@ -434,7 +433,7 @@ async def delete_uploaded_file(upload_id: str):
 
 
 @router.post("/{database_name}/append", response_model=ProcessingResponse)
-async def append_to_database(database_name: str, request: AppendDatabaseRequest):
+async def append_to_database(database_name: str, request: AppendDatabaseRequest):  # noqa: C901
     """Append new files to an existing database by rebuilding with all files.
 
     This endpoint loads the existing database manifest, combines the existing files
@@ -456,21 +455,25 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
             detail="Cannot append: no files provided. Include at least one file in file_references.",
         )
     try:
-        manifest_service = get_manifest_service()
+        # Get PostgreSQL manifest service
+        pg_manifest_service = get_similarity_db_manifest_service()
 
-        # Check if database manifest exists
-        manifest_exists = await manifest_service.manifest_exists(database_name)
-        if not manifest_exists:
+        # Get all active manifests and find the one matching database_name
+        all_manifests = await pg_manifest_service.list_active_manifests()
+
+        manifest = None
+        for m in all_manifests:
+            if m.name == database_name:
+                manifest = m
+                break
+
+        if not manifest:
             raise HTTPException(
                 status_code=404,
                 detail=f"Database '{database_name}' not found. Create it first using the build endpoint.",
             )
 
-        # Load existing manifest
-        manifest = await manifest_service.load_manifest(database_name)
-        logging.info(
-            f"[API] Loaded manifest for {database_name} with {len(manifest.input_files)} existing files"
-        )
+        logging.info(f"[API] Loaded PostgreSQL manifest for {database_name}")
 
         # Convert new file references to metadata format
         new_files_metadata = [
@@ -478,20 +481,32 @@ async def append_to_database(database_name: str, request: AppendDatabaseRequest)
             for file_ref in request.file_references
         ]
 
-        # Combine with existing files (convert existing manifest files to same format)
-        existing_files_metadata = [
-            {
-                "upload_id": existing_file.file_hash,
-                "filename": existing_file.user_provided_filename,
-                "file_hash": existing_file.file_hash,
-                "s3_key": existing_file.s3_key,
-                "default_processing_timestamp": existing_file.metadata.get(
-                    "default_processing_timestamp"
-                ),
-                "origin_project": existing_file.metadata.get("origin_project"),
-            }
-            for existing_file in manifest.input_files
-        ]
+        # Combine with existing files (extract from PostgreSQL manifest's input_files JSONB)
+        # IMPORTANT: Preserve uploaded_at timestamp from existing manifest
+        existing_files_metadata = []
+        if manifest.input_files and "files" in manifest.input_files:
+            for file_data in manifest.input_files["files"]:
+                existing_files_metadata.append(
+                    {
+                        "upload_id": file_data["file_hash"],
+                        "filename": file_data["filename"],
+                        "file_hash": file_data["file_hash"],
+                        "s3_key": file_data["s3_key"],
+                        "uploaded_at": file_data[
+                            "uploaded_at"
+                        ],  # Preserve original upload time
+                        "default_processing_timestamp": file_data.get(
+                            "metadata", {}
+                        ).get("default_processing_timestamp"),
+                        "origin_project": file_data.get("metadata", {}).get(
+                            "origin_project"
+                        ),
+                    }
+                )
+
+        logging.info(
+            f"[API] Found {len(existing_files_metadata)} existing files in manifest"
+        )
 
         # Check for duplicate files before combining
         existing_hashes = {f["upload_id"] for f in existing_files_metadata}
@@ -590,33 +605,51 @@ async def get_database_manifest(database_name: str):
     logging.info(f"[API] Retrieving manifest for database: {database_name}")
 
     try:
-        manifest_service = get_manifest_service()
+        # Get PostgreSQL manifest service
+        pg_manifest_service = get_similarity_db_manifest_service()
 
-        # Load manifest
-        manifest = await manifest_service.load_manifest(database_name)
+        # Get all active manifests and find the one matching database_name
+        logging.info(f"[API] Loading PostgreSQL manifest for: {database_name}")
+        all_manifests = await pg_manifest_service.list_active_manifests()
 
-        # Transform to frontend-friendly format
+        manifest = None
+        for m in all_manifests:
+            if m.name == database_name:
+                manifest = m
+                break
+
+        if not manifest:
+            raise FileNotFoundError(f"No manifest found for database: {database_name}")
+
+        logging.info(
+            f"[API] Successfully loaded PostgreSQL manifest for: {database_name}"
+        )
+
+        # Extract input files from the manifest's input_files JSONB field
         files = []
-        for file_ref in manifest.input_files:
-            files.append(
-                FileReferenceInfo(
-                    upload_id=file_ref.file_hash,  # Use hash as upload_id for UI compatibility
-                    filename=file_ref.user_provided_filename,
-                    file_hash=file_ref.file_hash,
-                    s3_key=file_ref.s3_key,
-                    uploaded_at=file_ref.uploaded_at.isoformat(),
-                    metadata=file_ref.metadata,
+        if manifest.input_files and "files" in manifest.input_files:
+            for file_data in manifest.input_files["files"]:
+                files.append(
+                    FileReferenceInfo(
+                        upload_id=file_data[
+                            "file_hash"
+                        ],  # Use hash as upload_id for UI compatibility
+                        filename=file_data["filename"],
+                        file_hash=file_data["file_hash"],
+                        s3_key=file_data["s3_key"],
+                        uploaded_at=file_data["uploaded_at"],
+                        metadata=file_data.get("metadata", {}),
+                    )
                 )
-            )
 
         logging.info(
             f"[API] Retrieved manifest for {database_name} with {len(files)} files"
         )
 
         return DatabaseManifestResponse(
-            database_name=manifest.database_name,
+            database_name=manifest.name,
             created_at=manifest.created_at.isoformat(),
-            last_updated_at=manifest.last_updated_at.isoformat(),
+            last_updated_at=manifest.last_modified.isoformat(),
             files=files,
             total_files=len(files),
         )
@@ -625,7 +658,7 @@ async def get_database_manifest(database_name: str):
         logging.warning(f"[API] Manifest not found for database: {database_name}")
         raise HTTPException(
             status_code=404,
-            detail=f"Manifest not found for database '{database_name}'. The database may have been created before the manifest system was implemented.",
+            detail=f"Manifest not found for database '{database_name}'.",
         ) from e
     except Exception as e:
         logging.error(

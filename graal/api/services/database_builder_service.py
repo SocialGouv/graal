@@ -133,13 +133,37 @@ class DatabaseBuilderService:
 
             logging.info(f"[Job {job_id}] Database uploaded successfully")
 
-            # Create similarity database manifest
+            # Create PostgreSQL similarity database manifest with input files
             self.job_registry.update_job(
                 job_id, percent=85, message="Creating database manifest..."
             )
             logging.info(
-                f"[Job {job_id}] Creating similarity database manifest for: {database_name}"
+                f"[Job {job_id}] Creating PostgreSQL database manifest for: {database_name}"
             )
+
+            # Convert files_metadata to input_files format for PostgreSQL
+            input_files_data = []
+            for file_meta in files_metadata:
+                # Preserve uploaded_at if it exists (for append operations with existing files)
+                # Otherwise use current timestamp (for newly uploaded files)
+                if "uploaded_at" in file_meta and file_meta["uploaded_at"]:
+                    uploaded_at_str = file_meta["uploaded_at"]
+                else:
+                    uploaded_at_str = datetime.now(timezone.utc).isoformat()
+
+                file_data = {
+                    "file_hash": file_meta["file_hash"],
+                    "filename": file_meta["filename"],
+                    "s3_key": file_meta["s3_key"],
+                    "uploaded_at": uploaded_at_str,
+                    "metadata": {
+                        "default_processing_timestamp": file_meta[
+                            "default_processing_timestamp"
+                        ],
+                        "origin_project": file_meta["origin_project"],
+                    },
+                }
+                input_files_data.append(file_data)
 
             # Get metadata from S3 to populate manifest
             try:
@@ -183,6 +207,9 @@ class DatabaseBuilderService:
                     "config_file": config_file,
                     "source_files": [f["filename"] for f in files_metadata],
                 },
+                input_files={
+                    "files": input_files_data
+                },  # Store input files in PostgreSQL
             )
 
             # Create manifest in database

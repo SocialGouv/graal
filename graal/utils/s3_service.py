@@ -39,7 +39,6 @@ class S3Service:
         self._config_folder: str | None = None
         self._similarity_db_folder: str | None = None
         self._input_pool_folder: str | None = None
-        self._manifest_folder: str | None = None
         self._initialize_s3()
 
     def _initialize_s3(self) -> None:
@@ -73,9 +72,6 @@ class S3Service:
             # New environment variables with defaults
             self._input_pool_folder = os.getenv(
                 "S3_INPUT_POOL_FOLDER", "input_files/pool"
-            )
-            self._manifest_folder = os.getenv(
-                "S3_MANIFEST_FOLDER", "input_files/manifests"
             )
 
             # Configure timeouts and retries
@@ -112,8 +108,7 @@ class S3Service:
                 f"S3 enabled: Connected to bucket {self._bucket_name}, "
                 f"config_folder: {self._config_folder}, "
                 f"similarity_db_folder: {self._similarity_db_folder}, "
-                f"input_pool_folder: {self._input_pool_folder}, "
-                f"manifest_folder: {self._manifest_folder}"
+                f"input_pool_folder: {self._input_pool_folder}"
             )
 
         except (ClientError, NoCredentialsError) as e:

@@ -141,6 +141,10 @@ class SimilarityDBManifestBase(BaseModel):
     size_bytes: int = Field(..., ge=0, description="File size in bytes")
     row_count: int | None = Field(None, ge=0, description="Number of rows")
     db_metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
+    input_files: dict[str, Any] | None = Field(
+        None,
+        description="List of input files (replaces S3 manifest system)",
+    )
 
 
 class SimilarityDBManifestCreate(SimilarityDBManifestBase):
@@ -157,6 +161,7 @@ class SimilarityDBManifestUpdate(BaseModel):
     row_count: int | None = Field(None, ge=0)
     last_modified: datetime | None = None
     db_metadata: dict[str, Any] | None = None
+    input_files: dict[str, Any] | None = None
     is_active: bool | None = None
 
 
