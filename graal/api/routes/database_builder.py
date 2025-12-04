@@ -5,9 +5,10 @@ import json
 import logging
 import logging.config
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Cookie, Form, HTTPException, Request, UploadFile
 
 from graal.api.models.requests import (
     AppendDatabaseRequest,
@@ -23,9 +24,13 @@ from graal.api.models.responses import (
     JobStatus,
     ProcessingResponse,
 )
+from graal.api.services.authorization_service import get_authorization_service
 from graal.api.services.database_builder_service import (
     DatabaseBuilderService,
     create_job_id,
+)
+from graal.api.services.similarity_db_manifest_service import (
+    get_similarity_db_manifest_service,
 )
 from graal.utils.file_hash_service import get_file_hash_service
 from graal.utils.manifest_service import get_manifest_service
@@ -151,7 +156,7 @@ async def _download_file_to_temp(
 
 @router.get("", response_model=DatabaseListResponse)
 async def list_databases():
-    """List all available similarity databases from S3.
+    """List all available similarity databases from PostgreSQL manifests.
 
     Returns:
         DatabaseListResponse: List of available databases with metadata
@@ -159,28 +164,25 @@ async def list_databases():
     Raises:
         HTTPException: 500 if listing fails
     """
-    logging.info("[API] Listing available similarity databases")
+    logging.info("[API] Listing available similarity databases from manifests")
 
     try:
-        s3_service = get_s3_service()
-        database_names = await s3_service.list_database_files()
+        manifest_service = get_similarity_db_manifest_service()
+        manifests = await manifest_service.list_active_manifests()
 
-        # Get metadata for each database
-        databases = []
-        for name in database_names:
-            try:
-                metadata = await s3_service.get_database_metadata(name)
-                databases.append(
-                    DatabaseInfo(
-                        name=name,
-                        size_bytes=metadata["size"],
-                        last_modified=metadata["last_modified"],
-                    )
-                )
-            except Exception as e:
-                logging.warning(f"Failed to get metadata for database {name}: {e}")
+        # Convert manifests to DatabaseInfo format
+        databases = [
+            DatabaseInfo(
+                name=manifest.name,
+                size_bytes=manifest.size_bytes,
+                last_modified=manifest.last_modified,
+            )
+            for manifest in manifests
+        ]
 
-        logging.info(f"[API] Found {len(databases)} similarity databases")
+        logging.info(
+            f"[API] Found {len(databases)} similarity databases from manifests"
+        )
         return DatabaseListResponse(databases=databases, total=len(databases))
 
     except Exception as e:
@@ -276,17 +278,23 @@ async def upload_amendment_file(
 
 
 @router.post("/build", response_model=ProcessingResponse)
-async def build_database(request: DatabaseBuildRequest):
+async def build_database(
+    request: DatabaseBuildRequest,
+    http_request: Request,
+    session: Optional[str] = Cookie(default=None),
+):
     """Start building a similarity database in the background.
 
     Args:
         request: DatabaseBuildRequest with build configuration
+        http_request: FastAPI request object
+        session: Session cookie value
 
     Returns:
         ProcessingResponse: Job information for tracking build progress
 
     Raises:
-        HTTPException: 400 for validation errors, 500 for build errors
+        HTTPException: 401 if not authenticated, 400 for validation errors, 500 for build errors
 
     Example request:
         {
@@ -308,6 +316,11 @@ async def build_database(request: DatabaseBuildRequest):
     logging.info(f"[API] Received database build request: {request.database_name}")
 
     try:
+        # Get current user for manifest creation
+        auth_service = get_authorization_service()
+        current_user = await auth_service.get_current_user(http_request, session)
+        user_id = UUID(current_user.user_id)
+
         # Create job
         job_id = create_job_id()
         builder_service = get_database_builder_service()
@@ -350,6 +363,7 @@ async def build_database(request: DatabaseBuildRequest):
                     similarity_threshold=request.similarity_threshold,
                     eps=request.eps,
                     group_by_columns=request.group_by_columns,
+                    user_id=user_id,
                 )
             )
             logging.info(f"[API] Background task created successfully: {task}")
@@ -369,6 +383,8 @@ async def build_database(request: DatabaseBuildRequest):
             job_id=job_id, status=JobStatus.queued, message="Database build job started"
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(
             f"[API] Error starting database build for {request.database_name}: {e}",

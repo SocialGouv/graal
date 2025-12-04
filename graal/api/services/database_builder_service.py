@@ -7,8 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from graal.api.services.job_registry import InMemoryJobRegistry
+from graal.api.services.similarity_db_manifest_service import (
+    get_similarity_db_manifest_service,
+)
+from graal.database.schemas import SimilarityDBManifestCreate
 from graal.utils.config.base_config import InputFileConfig
-from graal.utils.manifest_service import InputFileReference, get_manifest_service
 from graal.utils.s3_service import get_s3_service
 from graal.utils.similarity_db_builder_service import (
     get_similarity_db_builder,
@@ -29,7 +32,7 @@ class DatabaseBuilderService:
         self.job_registry = job_registry
         self.db_builder = get_similarity_db_builder()
         self.s3_service = get_s3_service()
-        self.manifest_service = get_manifest_service()
+        self.manifest_service = get_similarity_db_manifest_service()
 
     async def start_database_build(
         self,
@@ -41,6 +44,7 @@ class DatabaseBuilderService:
         similarity_threshold: float,
         eps: float,
         group_by_columns: list[str],
+        user_id: uuid.UUID,
     ) -> None:
         """Build database in background and upload to S3.
 
@@ -53,6 +57,7 @@ class DatabaseBuilderService:
             similarity_threshold: Threshold for Levenshtein refinement
             eps: Epsilon value for DBSCAN clustering
             group_by_columns: Columns to group by during clustering
+            user_id: User ID who initiated the build
         """
         try:
             # Update job status to running
@@ -128,49 +133,64 @@ class DatabaseBuilderService:
 
             logging.info(f"[Job {job_id}] Database uploaded successfully")
 
-            # Create manifest
+            # Create similarity database manifest
             self.job_registry.update_job(
                 job_id, percent=85, message="Creating database manifest..."
             )
             logging.info(
-                f"[Job {job_id}] Creating manifest for database: {database_name}"
+                f"[Job {job_id}] Creating similarity database manifest for: {database_name}"
             )
 
-            # Build input file references for manifest
-            input_file_refs = []
-            for file_ref in files_metadata:
-                # Extract file info from metadata
-                file_hash = file_ref[
-                    "file_hash"
-                ]  # Use actual file_hash from upload response
-                filename = file_ref["filename"]
-                s3_key = file_ref["s3_key"]  # Use actual s3_key from upload response
-
-                # Create InputFileReference
-                input_file_refs.append(
-                    InputFileReference(
-                        s3_key=s3_key,
-                        file_hash=file_hash,
-                        user_provided_filename=filename,
-                        uploaded_at=datetime.now(timezone.utc),
-                        metadata={
-                            "default_processing_timestamp": file_ref[
-                                "default_processing_timestamp"
-                            ],
-                            "origin_project": file_ref["origin_project"],
-                        },
-                    )
+            # Get metadata from S3 to populate manifest
+            try:
+                s3_metadata = await self.s3_service.get_database_metadata(database_name)
+            except Exception as e:
+                logging.warning(
+                    f"[Job {job_id}] Could not get S3 metadata, using defaults: {e}"
                 )
+                s3_metadata = {
+                    "size": 0,
+                    "last_modified": datetime.now(timezone.utc),
+                }
 
-            # Create and save manifest
-            parquet_output = f"similarity_dbs/{database_name}.parquet"
-            await self.manifest_service.create_manifest(
-                database_name=database_name,
-                input_files=input_file_refs,
-                parquet_output=parquet_output,
+            # Construct S3 paths
+            s3_folder = self.s3_service._similarity_db_folder
+            if s3_folder and not s3_folder.endswith("/"):
+                s3_folder += "/"
+            s3_file_path = f"{s3_folder}{database_name}.parquet"
+
+            # Extract project names for metadata
+            projects = list(
+                {f.get("origin_project", "unknown") for f in files_metadata}
             )
 
-            logging.info(f"[Job {job_id}] Manifest created successfully")
+            # Create manifest data
+            manifest_data = SimilarityDBManifestCreate(
+                name=database_name,
+                s3_folder_path=s3_folder or "",
+                s3_file_path=s3_file_path,
+                size_bytes=s3_metadata.get("size", 0),
+                row_count=len(df),
+                last_modified=s3_metadata.get(
+                    "last_modified", datetime.now(timezone.utc)
+                ),
+                db_metadata={
+                    "projects": projects,
+                    "drop_empty_columns": drop_empty_columns,
+                    "similarity_threshold": similarity_threshold,
+                    "eps": eps,
+                    "group_by_columns": group_by_columns,
+                    "config_file": config_file,
+                    "source_files": [f["filename"] for f in files_metadata],
+                },
+            )
+
+            # Create manifest in database
+            await self.manifest_service.create_manifest(manifest_data, user_id)
+
+            logging.info(
+                f"[Job {job_id}] Similarity database manifest created successfully"
+            )
 
             # Cleanup uploaded files from temp directory
             # Note: Files remain in S3 pool for reuse

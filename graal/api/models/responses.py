@@ -74,15 +74,6 @@ class ConfigFilesResponse(BaseModel):
     total: int = Field(description="Total number of available files")
 
 
-class SimilarityDatabasesResponse(BaseModel):
-    """Response model for available similarity database files."""
-
-    databases: List[str] = Field(
-        description="List of available similarity database file paths (relative to similarity folder)"
-    )
-    total: int = Field(description="Total number of available database files")
-
-
 class ErrorResponse(BaseModel):
     """Response model for API errors."""
 
