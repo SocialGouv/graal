@@ -77,15 +77,6 @@ class UserConfigurationService:
             f"[UserConfigurationService] Creating configuration '{config.name}' for user {user_id}"
         )
 
-        # Validate S3 path exists
-        if not self._s3_service.validate_config_file_exists(config.s3_config_file_path):
-            logging.error(
-                f"[UserConfigurationService] S3 config file not found: {config.s3_config_file_path}"
-            )
-            raise ValueError(
-                f"Configuration file not found in S3: {config.s3_config_file_path}"
-            )
-
         async with self._session_factory() as session:
             # If this should be default, unset other defaults first
             if config.is_default:
@@ -95,7 +86,6 @@ class UserConfigurationService:
             new_config = UserConfiguration(
                 user_id=user_id,
                 name=config.name,
-                s3_config_file_path=config.s3_config_file_path,
                 feature_settings=config.feature_settings,
                 is_default=config.is_default,
             )
@@ -236,20 +226,6 @@ class UserConfigurationService:
             f"[UserConfigurationService] Updating configuration {config_id} for user {user_id}"
         )
 
-        # Validate S3 path if it's being changed
-        if (
-            updates.s3_config_file_path is not None
-            and not self._s3_service.validate_config_file_exists(
-                updates.s3_config_file_path
-            )
-        ):
-            logging.error(
-                f"[UserConfigurationService] S3 config file not found: {updates.s3_config_file_path}"
-            )
-            raise ValueError(
-                f"Configuration file not found in S3: {updates.s3_config_file_path}"
-            )
-
         async with self._session_factory() as session:
             # Get configuration and verify ownership
             result = await session.execute(
@@ -273,8 +249,6 @@ class UserConfigurationService:
             # Update fields
             if updates.name is not None:
                 config.name = updates.name
-            if updates.s3_config_file_path is not None:
-                config.s3_config_file_path = updates.s3_config_file_path
             if updates.feature_settings is not None:
                 config.feature_settings = updates.feature_settings
             if updates.is_default is not None:

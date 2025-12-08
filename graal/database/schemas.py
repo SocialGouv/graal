@@ -53,7 +53,6 @@ class UserConfigurationBase(BaseModel):
     """Base configuration schema."""
 
     name: str = Field(..., description="Configuration name", max_length=255)
-    s3_config_file_path: str = Field(..., description="S3 path to config file")
     feature_settings: dict[str, Any] = Field(..., description="Feature settings")
     is_default: bool = Field(default=False, description="Is default configuration")
 
@@ -68,7 +67,6 @@ class UserConfigurationUpdate(BaseModel):
     """Schema for updating a configuration."""
 
     name: str | None = None
-    s3_config_file_path: str | None = None
     feature_settings: dict[str, Any] | None = None
     is_default: bool | None = None
 

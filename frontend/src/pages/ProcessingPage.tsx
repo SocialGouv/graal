@@ -35,7 +35,6 @@ export const ProcessingPage = () => {
     setCurrentStep,
     setUploadedFile,
     setProcessingConfig,
-    setSelectedConfigFile,
     reset
   } = useProcessingStore()
 
@@ -166,12 +165,8 @@ export const ProcessingPage = () => {
     navigate('/')
   }
 
-  const handleConfigurationLoad = (
-    config: ProcessingConfigType,
-    configFile: string
-  ) => {
+  const handleConfigurationLoad = (config: ProcessingConfigType) => {
     setProcessingConfig(config)
-    setSelectedConfigFile(configFile)
   }
 
   const showResults = processingStatus === 'completed'
@@ -367,7 +362,6 @@ export const ProcessingPage = () => {
               <section className={fr.cx('fr-mb-6w')}>
                 <ConfigurationManager
                   currentConfig={processingConfig}
-                  selectedConfigFile={selectedConfigFile}
                   onConfigurationLoad={handleConfigurationLoad}
                 />
                 <ProcessingConfig disabled={uploadFileMutation.isPending} />

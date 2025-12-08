@@ -93,7 +93,6 @@ async def create_seed_configurations(
         id=uuid.uuid4(),
         user_id=users["admin"].id,
         name="PLFSS 2024 Configuration",
-        s3_config_file_path="config_graal/PLFSS_2024.xlsx",
         feature_settings={
             "summary_generation": {
                 "enabled": True,
@@ -115,7 +114,6 @@ async def create_seed_configurations(
         id=uuid.uuid4(),
         user_id=users["admin"].id,
         name="Quick Processing (No Summaries)",
-        s3_config_file_path="config_graal/PLFSS_2024.xlsx",
         feature_settings={
             "summary_generation": {"enabled": False},
             "similarity_search": {
@@ -134,7 +132,6 @@ async def create_seed_configurations(
         id=uuid.uuid4(),
         user_id=users["user"].id,
         name="My Default Config",
-        s3_config_file_path="config_graal/PLFSS_2023.xlsx",
         feature_settings={
             "summary_generation": {"enabled": True, "strategy": "legacy"},
             "similarity_search": {

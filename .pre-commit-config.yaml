@@ -31,4 +31,4 @@ repos:
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
-        exclude: 'package.lock.json|pgadmin-servers.json|README.md|docs/database_setup.md|.kontinuous/|tests/*'
+        exclude: 'package.lock.json|pgadmin-servers.json|README.md|docs/database_setup.md|.kontinuous/|tests/*|alembic/versions'

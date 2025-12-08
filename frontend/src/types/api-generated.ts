@@ -1844,11 +1844,6 @@ export interface components {
        */
       name: string
       /**
-       * S3 Config File Path
-       * @description S3 path to config file
-       */
-      s3_config_file_path: string
-      /**
        * Feature Settings
        * @description Feature settings
        */
@@ -1872,11 +1867,6 @@ export interface components {
        * @description Configuration name
        */
       name: string
-      /**
-       * S3 Config File Path
-       * @description S3 path to config file
-       */
-      s3_config_file_path: string
       /**
        * Feature Settings
        * @description Feature settings
@@ -1918,8 +1908,6 @@ export interface components {
     UserConfigurationUpdate: {
       /** Name */
       name?: string | null
-      /** S3 Config File Path */
-      s3_config_file_path?: string | null
       /** Feature Settings */
       feature_settings?: {
         [key: string]: unknown

@@ -274,7 +274,6 @@ export interface UserResponse {
 // User Configuration types
 export interface UserConfigurationBase {
   name: string
-  s3_config_file_path: string
   feature_settings: Record<string, any>
   is_default: boolean
 }
@@ -283,7 +282,6 @@ export type UserConfigurationCreate = UserConfigurationBase
 
 export interface UserConfigurationUpdate {
   name?: string
-  s3_config_file_path?: string
   feature_settings?: Record<string, any>
   is_default?: boolean
 }

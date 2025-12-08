@@ -12,13 +12,11 @@ import type { UserConfigurationRead } from '../../types/api'
 
 interface ConfigurationManagerProps {
   currentConfig: ProcessingConfig
-  selectedConfigFile: string | null
-  onConfigurationLoad: (config: ProcessingConfig, configFile: string) => void
+  onConfigurationLoad: (config: ProcessingConfig) => void
 }
 
 export const ConfigurationManager = ({
   currentConfig,
-  selectedConfigFile,
   onConfigurationLoad
 }: ConfigurationManagerProps) => {
   const queryClient = useQueryClient()
@@ -52,10 +50,10 @@ export const ConfigurationManager = ({
 
   // Auto-load default configuration on mount
   useEffect(() => {
-    if (defaultConfig && !loadedConfigId && selectedConfigFile) {
+    if (defaultConfig && !loadedConfigId) {
       handleLoadConfiguration(defaultConfig)
     }
-  }, [defaultConfig, loadedConfigId, selectedConfigFile])
+  }, [defaultConfig, loadedConfigId])
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -96,7 +94,6 @@ export const ConfigurationManager = ({
   const createMutation = useMutation({
     mutationFn: (data: {
       name: string
-      s3_config_file_path: string
       feature_settings: Record<string, any>
       is_default: boolean
     }) => apiService.createUserConfiguration(data),
@@ -168,11 +165,8 @@ export const ConfigurationManager = ({
 
   const handleLoadConfiguration = (config: UserConfigurationRead) => {
     try {
-      // Load feature settings into the form
-      onConfigurationLoad(
-        config.feature_settings as ProcessingConfig,
-        config.s3_config_file_path
-      )
+      // Load feature settings into the form (without overwriting excel config)
+      onConfigurationLoad(config.feature_settings as ProcessingConfig)
       setLoadedConfigId(config.id)
       setSelectedConfigId(config.id)
       setSuccessMessage(`Configuration "${config.name}" chargée`)
@@ -188,14 +182,8 @@ export const ConfigurationManager = ({
         return
       }
 
-      if (!selectedConfigFile) {
-        setErrorMessage('Aucun fichier de configuration sélectionné')
-        return
-      }
-
       createMutation.mutate({
         name: newConfigName.trim(),
-        s3_config_file_path: selectedConfigFile,
         feature_settings: currentConfig as Record<string, any>,
         is_default: false
       })
@@ -228,7 +216,7 @@ export const ConfigurationManager = ({
       ? `Êtes-vous sûr de vouloir supprimer la configuration "${config.name}" ?`
       : 'Êtes-vous sûr de vouloir supprimer cette configuration ?'
 
-    if (globalThisconfirm(confirmMessage)) {
+    if (globalThis.confirm(confirmMessage)) {
       deleteMutation.mutate(selectedConfigId)
     }
   }

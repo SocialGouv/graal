@@ -153,10 +153,6 @@ class UserConfiguration(Base):
         String(255), nullable=False, comment="Configuration name"
     )
 
-    s3_config_file_path: Mapped[str] = mapped_column(
-        String(512), nullable=False, comment="Path to config file in S3"
-    )
-
     feature_settings: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, comment="Feature toggles and parameters"
     )
