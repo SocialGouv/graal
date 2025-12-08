@@ -1008,6 +1008,183 @@ export interface paths {
     patch: operations['update_manifest_api_v1_admin_similarity_databases__manifest_id__patch']
     trace?: never
   }
+  '/api/v1/admin/s3/config-files': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Config Files
+     * @description List all configuration files from S3.
+     *
+     *     Admin-only endpoint to view all available config files.
+     *
+     *     Returns:
+     *         S3FileListResponse with list of config files and metadata
+     *
+     *     Raises:
+     *         HTTPException: 403 if not admin, 500 if S3 operation fails
+     */
+    get: operations['list_config_files_api_v1_admin_s3_config_files_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/s3/config-files/{filename}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Config File
+     * @description Delete a configuration file from S3.
+     *
+     *     Admin-only endpoint to delete config files.
+     *
+     *     Args:
+     *         filename: Name of the config file to delete
+     *
+     *     Returns:
+     *         S3DeleteResponse with deletion status
+     *
+     *     Raises:
+     *         HTTPException: 403 if not admin, 404 if file not found, 500 if deletion fails
+     */
+    delete: operations['delete_config_file_api_v1_admin_s3_config_files__filename__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/s3/databases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Database Files
+     * @description List all similarity database files from S3.
+     *
+     *     Admin-only endpoint to view all available similarity databases.
+     *
+     *     Returns:
+     *         S3FileListResponse with list of database files and metadata
+     *
+     *     Raises:
+     *         HTTPException: 403 if not admin, 500 if S3 operation fails
+     */
+    get: operations['list_database_files_api_v1_admin_s3_databases_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/s3/databases/{database_name}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Database File
+     * @description Delete a similarity database file from S3.
+     *
+     *     Admin-only endpoint to delete database files.
+     *
+     *     Args:
+     *         database_name: Name of the database to delete (without .parquet extension)
+     *
+     *     Returns:
+     *         S3DeleteResponse with deletion status
+     *
+     *     Raises:
+     *         HTTPException: 403 if not admin, 404 if database not found, 500 if deletion fails
+     */
+    delete: operations['delete_database_file_api_v1_admin_s3_databases__database_name__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/s3/input-pool': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Input Pool Files
+     * @description List all files in the input pool from S3.
+     *
+     *     Admin-only endpoint to view all uploaded files in the input pool.
+     *
+     *     Returns:
+     *         S3FileListResponse with list of input pool files and metadata
+     *
+     *     Raises:
+     *         HTTPException: 403 if not admin, 500 if S3 operation fails
+     */
+    get: operations['list_input_pool_files_api_v1_admin_s3_input_pool_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/s3/input-pool/{s3_key}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Input Pool File
+     * @description Delete a file from the input pool in S3.
+     *
+     *     Admin-only endpoint to delete files from the input pool.
+     *
+     *     Args:
+     *         s3_key: S3 key (path) of the file to delete
+     *
+     *     Returns:
+     *         S3DeleteResponse with deletion status
+     *
+     *     Raises:
+     *         HTTPException: 403 if not admin, 404 if file not found, 500 if deletion fails
+     */
+    delete: operations['delete_input_pool_file_api_v1_admin_s3_input_pool__s3_key__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1433,6 +1610,75 @@ export interface components {
        * Format: date-time
        */
       updated_at: string
+    }
+    /**
+     * S3DeleteResponse
+     * @description Response model for S3 file deletion.
+     */
+    S3DeleteResponse: {
+      /**
+       * Success
+       * @description Whether deletion was successful
+       */
+      success: boolean
+      /**
+       * Message
+       * @description Success or error message
+       */
+      message: string
+      /**
+       * Deleted File
+       * @description Name of deleted file
+       */
+      deleted_file: string
+    }
+    /**
+     * S3FileListResponse
+     * @description Response model for listing S3 files.
+     */
+    S3FileListResponse: {
+      /**
+       * Files
+       * @description List of files with metadata
+       */
+      files: components['schemas']['S3FileMetadata'][]
+      /**
+       * Total Count
+       * @description Total number of files
+       */
+      total_count: number
+      /**
+       * Folder
+       * @description Folder name (config, database, input_pool)
+       */
+      folder: string
+    }
+    /**
+     * S3FileMetadata
+     * @description Model for S3 file metadata.
+     */
+    S3FileMetadata: {
+      /**
+       * Key
+       * @description File name or S3 key
+       */
+      key: string
+      /**
+       * Size
+       * @description File size in bytes
+       */
+      size: number
+      /**
+       * Last Modified
+       * Format: date-time
+       * @description Last modification timestamp
+       */
+      last_modified: string
+      /**
+       * File Type
+       * @description Type of file (config, database, input_file)
+       */
+      file_type: string
     }
     /**
      * SimilarityDBManifestCreate
@@ -2734,6 +2980,201 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SimilarityDBManifestRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_config_files_api_v1_admin_s3_config_files_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['S3FileListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_config_file_api_v1_admin_s3_config_files__filename__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Configuration file name */
+        filename: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['S3DeleteResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_database_files_api_v1_admin_s3_databases_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['S3FileListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_database_file_api_v1_admin_s3_databases__database_name__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Database name (without .parquet extension) */
+        database_name: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['S3DeleteResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_input_pool_files_api_v1_admin_s3_input_pool_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['S3FileListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_input_pool_file_api_v1_admin_s3_input_pool__s3_key__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description S3 key of the file to delete */
+        s3_key: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['S3DeleteResponse']
         }
       }
       /** @description Validation Error */

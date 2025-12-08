@@ -244,6 +244,26 @@ export interface SimilarityDBManifestUpdate {
   is_active?: boolean
 }
 
+// S3 File Management types
+export interface S3FileMetadata {
+  key: string
+  size: number
+  last_modified: string
+  file_type: string
+}
+
+export interface S3FileListResponse {
+  files: S3FileMetadata[]
+  total_count: number
+  folder: string
+}
+
+export interface S3DeleteResponse {
+  success: boolean
+  message: string
+  deleted_file: string
+}
+
 // Authentication types
 export interface UserResponse {
   user_id: string

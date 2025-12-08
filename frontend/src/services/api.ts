@@ -11,6 +11,8 @@ import type {
   PreviewResponse,
   ProcessingRequest,
   ProcessJobResponse,
+  S3DeleteResponse,
+  S3FileListResponse,
   SimilarityDBManifestCreate,
   SimilarityDBManifestRead,
   SimilarityDBManifestUpdate,
@@ -865,6 +867,132 @@ class ApiService {
       console.log('[API_CLIENT] User configuration deleted', { id })
     } catch (error) {
       console.error('[API_CLIENT] Failed to delete user configuration', error)
+      throw error
+    }
+  }
+
+  /**
+   * List all config files from S3 with metadata (admin only)
+   */
+  async listS3ConfigFiles(): Promise<S3FileListResponse> {
+    console.log('[API_CLIENT] Fetching S3 config files with metadata')
+
+    try {
+      const response = await this.client.get<S3FileListResponse>(
+        '/admin/s3/config-files'
+      )
+
+      console.log('[API_CLIENT] S3 config files retrieved', {
+        total: response.data.total_count
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch S3 config files', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete a config file from S3 (admin only)
+   */
+  async deleteS3ConfigFile(filename: string): Promise<S3DeleteResponse> {
+    console.log('[API_CLIENT] Deleting S3 config file', { filename })
+
+    try {
+      const response = await this.client.delete<S3DeleteResponse>(
+        `/admin/s3/config-files/${encodeURIComponent(filename)}`
+      )
+
+      console.log('[API_CLIENT] S3 config file deleted', { filename })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to delete S3 config file', error)
+      throw error
+    }
+  }
+
+  /**
+   * List all database files from S3 with metadata (admin only)
+   */
+  async listS3DatabaseFiles(): Promise<S3FileListResponse> {
+    console.log('[API_CLIENT] Fetching S3 database files with metadata')
+
+    try {
+      const response = await this.client.get<S3FileListResponse>(
+        '/admin/s3/databases'
+      )
+
+      console.log('[API_CLIENT] S3 database files retrieved', {
+        total: response.data.total_count
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch S3 database files', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete a database file from S3 (admin only)
+   */
+  async deleteS3DatabaseFile(databaseName: string): Promise<S3DeleteResponse> {
+    console.log('[API_CLIENT] Deleting S3 database file', { databaseName })
+
+    try {
+      const response = await this.client.delete<S3DeleteResponse>(
+        `/admin/s3/databases/${encodeURIComponent(databaseName)}`
+      )
+
+      console.log('[API_CLIENT] S3 database file deleted', { databaseName })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to delete S3 database file', error)
+      throw error
+    }
+  }
+
+  /**
+   * List all input pool files from S3 with metadata (admin only)
+   */
+  async listS3InputPoolFiles(): Promise<S3FileListResponse> {
+    console.log('[API_CLIENT] Fetching S3 input pool files with metadata')
+
+    try {
+      const response = await this.client.get<S3FileListResponse>(
+        '/admin/s3/input-pool'
+      )
+
+      console.log('[API_CLIENT] S3 input pool files retrieved', {
+        total: response.data.total_count
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch S3 input pool files', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete a file from input pool in S3 (admin only)
+   */
+  async deleteS3InputPoolFile(s3Key: string): Promise<S3DeleteResponse> {
+    console.log('[API_CLIENT] Deleting S3 input pool file', { s3Key })
+
+    try {
+      const response = await this.client.delete<S3DeleteResponse>(
+        `/admin/s3/input-pool/${encodeURIComponent(s3Key)}`
+      )
+
+      console.log('[API_CLIENT] S3 input pool file deleted', { s3Key })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to delete S3 input pool file', error)
       throw error
     }
   }
