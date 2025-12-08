@@ -150,3 +150,30 @@ class UserResponse(BaseModel):
     user_id: str = Field(..., description="Unique user identifier")
     email: Optional[str] = Field(None, description="User email address")
     is_admin: bool = Field(..., description="Whether user has admin privileges")
+
+
+class S3FileMetadata(BaseModel):
+    """Model for S3 file metadata."""
+
+    key: str = Field(..., description="File name or S3 key")
+    size: int = Field(..., description="File size in bytes")
+    last_modified: datetime = Field(..., description="Last modification timestamp")
+    file_type: str = Field(
+        ..., description="Type of file (config, database, input_file)"
+    )
+
+
+class S3FileListResponse(BaseModel):
+    """Response model for listing S3 files."""
+
+    files: list[S3FileMetadata] = Field(..., description="List of files with metadata")
+    total_count: int = Field(..., description="Total number of files")
+    folder: str = Field(..., description="Folder name (config, database, input_pool)")
+
+
+class S3DeleteResponse(BaseModel):
+    """Response model for S3 file deletion."""
+
+    success: bool = Field(..., description="Whether deletion was successful")
+    message: str = Field(..., description="Success or error message")
+    deleted_file: str = Field(..., description="Name of deleted file")

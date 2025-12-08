@@ -39,6 +39,7 @@ class S3Service:
         self._config_folder: str | None = None
         self._similarity_db_folder: str | None = None
         self._input_pool_folder: str | None = None
+        self._manifest_folder: str | None = None
         self._initialize_s3()
 
     def _initialize_s3(self) -> None:
@@ -72,6 +73,9 @@ class S3Service:
             # New environment variables with defaults
             self._input_pool_folder = os.getenv(
                 "S3_INPUT_POOL_FOLDER", "input_files/pool"
+            )
+            self._manifest_folder = os.getenv(
+                "S3_MANIFEST_FOLDER", "input_files/manifests"
             )
 
             # Configure timeouts and retries
@@ -272,6 +276,110 @@ class S3Service:
             raise
         except Exception as e:
             error_msg = f"Failed to load configuration file '{filename}' from S3: {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    def list_config_files_with_metadata(self) -> list[dict[str, Any]]:
+        """List all configuration files with detailed metadata.
+
+        Returns:
+            list[dict[str, Any]]: List of dicts with {key, size, last_modified, file_type}
+
+        Raises:
+            Exception: If S3 is not available or listing fails.
+        """
+        if not self._s3_client or not self._bucket_name or not self._config_folder:
+            raise Exception("S3 client, bucket, or config folder not configured")
+
+        try:
+            logging.info(
+                f"Listing configuration files with metadata from S3: {self._config_folder}/"
+            )
+
+            # Ensure config_folder ends with / for proper prefix matching
+            prefix = self._config_folder
+            if not prefix.endswith("/"):
+                prefix += "/"
+
+            response = self._s3_client.list_objects_v2(
+                Bucket=self._bucket_name, Prefix=prefix
+            )
+
+            files = []
+            if "Contents" in response:
+                for obj in response["Contents"]:
+                    s3_key = obj["Key"]
+                    # Extract filename from key and filter for .xlsx files
+                    filename = s3_key.split("/")[-1]
+                    if filename and filename.endswith(".xlsx"):
+                        files.append(
+                            {
+                                "key": filename,
+                                "size": obj.get("Size", 0),
+                                "last_modified": obj.get("LastModified"),
+                                "file_type": "config",
+                            }
+                        )
+
+            logging.info(f"Found {len(files)} configuration files with metadata in S3")
+            return sorted(files, key=lambda x: x["key"])
+
+        except ClientError as e:
+            error_msg = f"Failed to list configuration files with metadata from S3: {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Unexpected error listing configuration files with metadata: {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    def delete_config_file(self, filename: str) -> None:
+        """Delete a configuration file from S3.
+
+        Args:
+            filename: Name of the configuration file to delete.
+
+        Raises:
+            FileNotFoundError: If the file is not found in S3.
+            Exception: If deletion fails.
+        """
+        if not self._s3_client or not self._bucket_name or not self._config_folder:
+            raise Exception("S3 client, bucket, or config folder not configured")
+
+        try:
+            # Construct S3 key
+            s3_key = f"{self._config_folder}/{filename}"
+            if self._config_folder.endswith("/"):
+                s3_key = f"{self._config_folder}{filename}"
+
+            logging.info(
+                f"Deleting configuration file from S3: s3://{self._bucket_name}/{s3_key}"
+            )
+
+            # First check if file exists
+            if not self.validate_config_file_exists(filename):
+                raise FileNotFoundError(
+                    f"Configuration file not found in S3: {filename}"
+                )
+
+            # Delete the file
+            self._s3_client.delete_object(Bucket=self._bucket_name, Key=s3_key)
+
+            logging.info(f"Successfully deleted configuration file: {filename}")
+
+        except FileNotFoundError:
+            # Re-raise FileNotFoundError as-is
+            raise
+        except ClientError as e:
+            error_msg = f"Failed to delete configuration file '{filename}' from S3: {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Unexpected error deleting configuration file '{filename}': {e}"
+            )
             logging.error(error_msg)
             raise Exception(error_msg) from e
 
@@ -587,6 +695,151 @@ class S3Service:
             logging.error(error_msg)
             raise Exception(error_msg) from e
 
+    async def list_database_files_with_metadata(self) -> list[dict[str, Any]]:
+        """List similarity database files with detailed metadata.
+
+        Returns:
+            list[dict[str, Any]]: List of dicts with {key, size, last_modified, file_type}
+
+        Raises:
+            Exception: If S3 is not available or listing fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._similarity_db_folder
+        ):
+            raise Exception(
+                "S3 session, bucket, or similarity DB folder not configured"
+            )
+
+        try:
+            logging.info(
+                f"Listing similarity database files with metadata from S3: {self._similarity_db_folder}/"
+            )
+
+            # Ensure similarity_db_folder ends with / for proper prefix matching
+            prefix = self._similarity_db_folder
+            if not prefix.endswith("/"):
+                prefix += "/"
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                response = await s3_client.list_objects_v2(
+                    Bucket=self._bucket_name, Prefix=prefix
+                )
+
+                files = []
+                if "Contents" in response:
+                    for obj in response["Contents"]:
+                        s3_key = obj["Key"]
+                        # Extract filename from key and filter for .parquet files
+                        filename = s3_key.split("/")[-1]
+                        if filename and filename.endswith(".parquet"):
+                            # Remove .parquet extension for display
+                            database_name = filename[:-8]
+                            files.append(
+                                {
+                                    "key": database_name,
+                                    "size": obj.get("Size", 0),
+                                    "last_modified": obj.get("LastModified"),
+                                    "file_type": "database",
+                                }
+                            )
+
+                logging.info(
+                    f"Found {len(files)} similarity database files with metadata in S3"
+                )
+                return sorted(files, key=lambda x: x["key"])
+
+        except ClientError as e:
+            error_msg = (
+                f"Failed to list similarity database files with metadata from S3: {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Unexpected error listing similarity database files with metadata: {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    async def delete_database_file(self, database_name: str) -> None:
+        """Delete a similarity database file from S3.
+
+        Args:
+            database_name: Name of database (without .parquet extension)
+
+        Raises:
+            FileNotFoundError: If the file is not found in S3.
+            Exception: If deletion fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._similarity_db_folder
+        ):
+            raise Exception(
+                "S3 session, bucket, or similarity DB folder not configured"
+            )
+
+        try:
+            # Strip .parquet extension if already present to avoid double extension
+            database_name_clean = (
+                database_name.rstrip(".parquet")
+                if database_name.endswith(".parquet")
+                else database_name
+            )
+
+            # Construct S3 key with .parquet extension
+            s3_key = f"{self._similarity_db_folder}/{database_name_clean}.parquet"
+            if self._similarity_db_folder.endswith("/"):
+                s3_key = f"{self._similarity_db_folder}{database_name_clean}.parquet"
+
+            logging.info(
+                f"Deleting similarity database from S3: s3://{self._bucket_name}/{s3_key}"
+            )
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                # First check if file exists
+                try:
+                    await s3_client.head_object(Bucket=self._bucket_name, Key=s3_key)
+                except ClientError as e:
+                    if e.response["Error"]["Code"] == "404":
+                        raise FileNotFoundError(
+                            f"Similarity database not found in S3: {database_name}"
+                        ) from e
+                    raise
+
+                # Delete the file
+                await s3_client.delete_object(Bucket=self._bucket_name, Key=s3_key)
+
+            logging.info(f"Successfully deleted similarity database: {database_name}")
+
+        except FileNotFoundError:
+            # Re-raise FileNotFoundError as-is
+            raise
+        except ClientError as e:
+            error_msg = (
+                f"Failed to delete similarity database '{database_name}' from S3: {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Unexpected error deleting similarity database '{database_name}': {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
     # ==================== Input File Pool Methods (Asynchronous) ====================
 
     async def upload_to_input_pool(self, file_content: bytes, s3_key: str) -> None:
@@ -862,6 +1115,139 @@ class S3Service:
         except Exception as e:
             logging.error(f"Unexpected error checking file existence in pool: {e}")
             return False
+
+    async def list_input_pool_files_with_metadata(self) -> list[dict[str, Any]]:
+        """List all files in input pool with detailed metadata.
+
+        Returns:
+            list[dict[str, Any]]: List of dicts with {key, size, last_modified, file_type}
+
+        Raises:
+            Exception: If S3 is not available or listing fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._input_pool_folder
+        ):
+            raise Exception("S3 session, bucket, or input pool folder not configured")
+
+        try:
+            logging.info(
+                f"Listing input pool files with metadata from S3: {self._input_pool_folder}/"
+            )
+
+            # Ensure input_pool_folder ends with / for proper prefix matching
+            prefix = self._input_pool_folder
+            if not prefix.endswith("/"):
+                prefix += "/"
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                response = await s3_client.list_objects_v2(
+                    Bucket=self._bucket_name, Prefix=prefix
+                )
+
+                files = []
+                if "Contents" in response:
+                    for obj in response["Contents"]:
+                        full_key = obj["Key"]
+                        # Extract relative key (remove pool folder prefix)
+                        if full_key.startswith(f"{self._input_pool_folder}/"):
+                            relative_key = full_key[len(self._input_pool_folder) + 1 :]
+                        elif full_key.startswith(self._input_pool_folder):
+                            relative_key = full_key[len(self._input_pool_folder) :]
+                        else:
+                            relative_key = full_key
+
+                        # Skip empty keys (folders)
+                        if relative_key:
+                            files.append(
+                                {
+                                    "key": relative_key,
+                                    "size": obj.get("Size", 0),
+                                    "last_modified": obj.get("LastModified"),
+                                    "file_type": "input_file",
+                                }
+                            )
+
+                logging.info(f"Found {len(files)} input pool files with metadata in S3")
+                return sorted(files, key=lambda x: x["key"])
+
+        except ClientError as e:
+            error_msg = f"Failed to list input pool files with metadata from S3: {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = f"Unexpected error listing input pool files with metadata: {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+
+    async def delete_input_pool_file(self, s3_key: str) -> None:
+        """Delete a file from input pool.
+
+        Args:
+            s3_key: The S3 key (relative to pool folder) of the file to delete.
+
+        Raises:
+            FileNotFoundError: If the file is not found in S3.
+            Exception: If deletion fails.
+        """
+        if (
+            not self._aioboto3_session
+            or not self._bucket_name
+            or not self._input_pool_folder
+        ):
+            raise Exception("S3 session, bucket, or input pool folder not configured")
+
+        try:
+            # Construct full S3 key with pool folder prefix
+            full_s3_key = f"{self._input_pool_folder}/{s3_key}"
+            if self._input_pool_folder.endswith("/"):
+                full_s3_key = f"{self._input_pool_folder}{s3_key}"
+
+            logging.info(
+                f"Deleting file from input pool: s3://{self._bucket_name}/{full_s3_key}"
+            )
+
+            async with self._aioboto3_session.client(
+                "s3",
+                endpoint_url=self._endpoint_url,
+                config=self._s3_config,
+            ) as s3_client:
+                # First check if file exists
+                try:
+                    await s3_client.head_object(
+                        Bucket=self._bucket_name, Key=full_s3_key
+                    )
+                except ClientError as e:
+                    if e.response["Error"]["Code"] == "404":
+                        raise FileNotFoundError(
+                            f"File not found in input pool: {s3_key}"
+                        ) from e
+                    raise
+
+                # Delete the file
+                await s3_client.delete_object(Bucket=self._bucket_name, Key=full_s3_key)
+
+            logging.info(f"Successfully deleted file from input pool: {s3_key}")
+
+        except FileNotFoundError:
+            # Re-raise FileNotFoundError as-is
+            raise
+        except ClientError as e:
+            error_msg = f"Failed to delete file from input pool '{s3_key}': {e}"
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Unexpected error deleting file from input pool '{s3_key}': {e}"
+            )
+            logging.error(error_msg)
+            raise Exception(error_msg) from e
 
     # ==================== Manifest Methods (Asynchronous) ====================
 

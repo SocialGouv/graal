@@ -64,6 +64,9 @@ concurrency = ["thread", "multiprocessing"]
 
 [tool.coverage.report]
 include_namespace_packages = true
+omit = [
+    "graal/api/routes/*"
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
