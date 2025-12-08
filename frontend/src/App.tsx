@@ -3,6 +3,7 @@ import { Header } from '@codegouvfr/react-dsfr/Header'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 // Import pages
+import { AdminPage } from './pages/AdminPage'
 import { DatabasePage } from './pages/DatabasePage'
 import { Home } from './pages/Home'
 import { ProcessingPage } from './pages/ProcessingPage'
@@ -32,6 +33,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/processing" element={<ProcessingPage />} />
           <Route path="/database" element={<DatabasePage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
 
         <Footer

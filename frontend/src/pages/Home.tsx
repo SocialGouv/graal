@@ -10,7 +10,7 @@ import { useAuth } from '../hooks/useAuth'
 
 export const Home = () => {
   const navigate = useNavigate()
-  const { user, isLoading, error } = useAuth()
+  const { user, isAdmin, isLoading, error } = useAuth()
 
   if (isLoading) {
     return (
@@ -103,7 +103,7 @@ export const Home = () => {
 
           <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
             {/* Carte 1 : Traitement des amendements */}
-            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+            <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
               <Card
                 title="Traitement des amendements"
                 desc="Traitez et analysez automatiquement les amendements législatifs avec des fonctionnalités d'allotissement, d'attribution, de recherche de similarités et de génération de résumés."
@@ -139,9 +139,9 @@ export const Home = () => {
             </div>
 
             {/* Carte 2 : Database Builder */}
-            <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
+            <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
               <Card
-                title="Database Builder"
+                title="Constructeur de bases de données"
                 desc="Construisez et gérez vos bases de données de similarités pour améliorer les résultats de recherche et optimiser le traitement des amendements."
                 start={
                   <ul className={fr.cx('fr-badges-group')}>
@@ -163,11 +163,44 @@ export const Home = () => {
                     iconPosition="right"
                     onClick={() => navigate('/database')}
                   >
-                    Ouvrir le Database Builder
+                    Ouvrir le constructeur de bases de données
                   </Button>
                 }
               />
             </div>
+
+            {/* Carte 3 : Admin (only for admins) */}
+            {isAdmin && (
+              <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
+                <Card
+                  title="Administration"
+                  desc="Gérez les fichiers S3 (configurations, bases de données, fichiers d'entrée). Accès réservé aux administrateurs."
+                  start={
+                    <ul className={fr.cx('fr-badges-group')}>
+                      <li>
+                        <Badge severity="success" small>
+                          Admin
+                        </Badge>
+                      </li>
+                      <li>
+                        <Badge severity="info" small>
+                          Gestion S3
+                        </Badge>
+                      </li>
+                    </ul>
+                  }
+                  footer={
+                    <Button
+                      iconId="fr-icon-settings-5-line"
+                      iconPosition="right"
+                      onClick={() => navigate('/admin')}
+                    >
+                      Accéder à l'administration
+                    </Button>
+                  }
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
