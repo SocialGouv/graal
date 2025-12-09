@@ -16,17 +16,7 @@ const Container = ({
 
 export const Admin = () => {
   const navigate = useNavigate()
-  const { user, isAdmin, isLoading, error } = useAuth()
-
-  if (isLoading) {
-    return (
-      <Container>
-        <div className={fr.cx('fr-py-6w')}>
-          <p>Chargement...</p>
-        </div>
-      </Container>
-    )
-  }
+  const { user, isAdmin, error } = useAuth()
 
   if (error) {
     return (
@@ -38,14 +28,15 @@ export const Admin = () => {
     )
   }
 
+  // Defense-in-depth: Secondary authorization check
   if (!isAdmin) {
     return (
       <Container>
         <div className={fr.cx('fr-py-6w')}>
           <Alert
-            severity="warning"
+            severity="error"
             title="Accès refusé"
-            description="Vous n'avez pas les permissions nécessaires pour accéder à cette page."
+            description="Vous n'avez pas les droits nécessaires pour accéder à cette page."
           />
         </div>
       </Container>

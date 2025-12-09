@@ -3,6 +3,7 @@ import { Header } from '@codegouvfr/react-dsfr/Header'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 // Import pages
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminPage } from './pages/AdminPage'
 import { DatabasePage } from './pages/DatabasePage'
 import { Home } from './pages/Home'
@@ -33,7 +34,14 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/processing" element={<ProcessingPage />} />
           <Route path="/database" element={<DatabasePage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
 
         <Footer

@@ -81,7 +81,7 @@ export const Home = () => {
             <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
               <div className={fr.cx('fr-text--sm')}>
                 <strong>Connecté en tant que:</strong> {user.email}
-                {user.is_admin && (
+                {isAdmin && (
                   <Badge severity="success" small className={fr.cx('fr-ml-2w')}>
                     Administrateur
                   </Badge>
