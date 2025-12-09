@@ -1,3 +1,33 @@
+# [1.27.0](https://github.com/SocialGouv/graal/compare/v1.26.1...v1.27.0) (2025-12-09)
+
+
+### Bug Fixes
+
+* Actually use `input_files` column ([1344cdc](https://github.com/SocialGouv/graal/commit/1344cdcafc35fb42f6cbbe24697cfba210ee27fb))
+* Adding new files in a DB and refactor of complex funcs ([fa01ded](https://github.com/SocialGouv/graal/commit/fa01ded0c0cfc2dc838e2a1802fa97bbe6f5689b))
+* Remove s3_config_file_path from user config to avoid overwritting selected one ([89e05e9](https://github.com/SocialGouv/graal/commit/89e05e9b1f5c00a24215395d00cfa1ac391ae910))
+* Rename 'metadata' column to 'db_metadata' in similarity_db_manifests table ([f3233f6](https://github.com/SocialGouv/graal/commit/f3233f647de2438813a69786aad21233a9505c48))
+
+
+### Features
+
+* **front:** Add ProtectedRoute for admin access to pages ([cb76430](https://github.com/SocialGouv/graal/commit/cb7643097120acf2e4f5d7c673be964e700264c9))
+* **front:** Add s3 file browser ([c9553a1](https://github.com/SocialGouv/graal/commit/c9553a1a8827b05e350113ffec209844903dd1fd))
+* **frontend:** Add API calls to backend for S3 admin pannel ([832198c](https://github.com/SocialGouv/graal/commit/832198c4bbdfd6678ac5b1cfde594998ffe92258))
+* **UI:** Add a delete confirm modal ([63bc6fb](https://github.com/SocialGouv/graal/commit/63bc6fb83419e8370eceaf3d39d26f108b1459dc))
+* **UI:** Add admin page on the UI ([ab805de](https://github.com/SocialGouv/graal/commit/ab805de031d60f7089f3996548a00d97d658d06e))
+* **UI:** Add FileListTable ([9b12613](https://github.com/SocialGouv/graal/commit/9b1261310ff60886cc47e7bdb330319ef698bdb9))
+* Add backend routes to manipulate S3 files ([66f9b47](https://github.com/SocialGouv/graal/commit/66f9b4710d841b037a05d5f460470d6ad8bbbbcc))
+* Add configuration manager module ([2422a5b](https://github.com/SocialGouv/graal/commit/2422a5ba9054b714449fd6d88c536f7fa488c3f7))
+* Add DatabaseAuthorizationProvider to auth providers ([1fe715b](https://github.com/SocialGouv/graal/commit/1fe715b2631d8edb25de46aebf2ddb3eb9296716))
+* Add frontend code to handle proconnect login/logout ([cc6e06a](https://github.com/SocialGouv/graal/commit/cc6e06ac588b935f3aa71d554de593e66eb57db3))
+* Add proconnect and session services ([adde108](https://github.com/SocialGouv/graal/commit/adde108ea4c856e53f7b99894117156e77427cb0))
+* Add proconnect and users routes ([9dfd8ab](https://github.com/SocialGouv/graal/commit/9dfd8abfa558341867de4f69594c69a1b03dc37d))
+* Add similarity DB manifest route and service ([edfe957](https://github.com/SocialGouv/graal/commit/edfe957b19eff4d8c4cd554f04f53144084404a7))
+* Add user configuration service and route ([3583b60](https://github.com/SocialGouv/graal/commit/3583b609a65d56ab108642cb3a2402bee5c4fb28))
+* Make use of manifests and user configs in the backend ([ed3a3ee](https://github.com/SocialGouv/graal/commit/ed3a3ee2323d262213206426e203a7d8db38056b))
+* Update UI calls to use the new DB + user configs ([1940006](https://github.com/SocialGouv/graal/commit/19400068543e1eba989b04605207eb9744a0048b))
+
 ## [1.26.1](https://github.com/SocialGouv/graal/compare/v1.26.0...v1.26.1) (2025-11-27)
 
 
