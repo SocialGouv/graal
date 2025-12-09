@@ -1,0 +1,14 @@
+app:
+  ~chart: app
+  imagePackage: frontend
+  probesPath: /live
+  containerPort: 8080
+
+api:
+  ~chart: app
+  imagePackage: api
+  probesPath: /api/v1/health
+  containerPort: 8000
+
+pg:
+  ~chart: pg
