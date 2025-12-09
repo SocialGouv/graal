@@ -44,7 +44,6 @@ api:
           key: bucket_region
     - name: USE_S3_CONFIG
       value: "true"
-
     - name: S3_BUCKET_ENDPOINT
       valueFrom:
         secretKeyRef:
