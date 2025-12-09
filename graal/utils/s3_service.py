@@ -116,6 +116,18 @@ class S3Service:
             )
 
         except (ClientError, NoCredentialsError) as e:
+            required_vars = [
+                "S3_BUCKET_NAME",
+                "S3_BUCKET_ENDPOINT",
+                "S3_BUCKET_ACCESS_KEY",
+                "S3_BUCKET_SECRET_KEY",
+                "S3_CONFIG_FOLDER",
+                "S3_SIMILARITY_DB_FOLDER",
+            ]
+
+            for var in required_vars:
+                value = os.getenv(var)
+                logging.warning(f"{var}: {value}")
             raise Exception(
                 f"S3 initialization failed: Failed to initialize S3 client: {e}"
             ) from e
