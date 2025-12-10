@@ -1,3 +1,10 @@
+## [1.27.1](https://github.com/SocialGouv/graal/compare/v1.27.0...v1.27.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* preprod env was not correctly setup ([9c52fb9](https://github.com/SocialGouv/graal/commit/9c52fb9525367c81852054b0495b3a1a52f31004))
+
 # [1.27.0](https://github.com/SocialGouv/graal/compare/v1.26.1...v1.27.0) (2025-12-09)
 
 
