@@ -167,7 +167,7 @@ class AuthorizationService:
         )
 
     async def get_current_user(
-        self, request: Request, session: Optional[str] = Cookie(default=None)
+        self, _request: Request, session: Optional[str] = Cookie(default=None)
     ) -> UserResponse:
         """Get current authenticated user information from session cookie.
 

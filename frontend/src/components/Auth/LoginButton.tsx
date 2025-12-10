@@ -4,7 +4,7 @@ export const LoginButton = () => {
   return (
     <Button
       linkProps={{
-        href: '/api/v1/auth/login'
+        href: `${import.meta.env.VITE_API_URL}/api/v1/auth/login`
       }}
       iconId="fr-icon-account-circle-line"
     >

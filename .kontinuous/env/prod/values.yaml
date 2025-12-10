@@ -20,6 +20,10 @@ api:
         name: graal
     - secretRef:
         name: graal-prod-app-access-key
+    - secretRef:
+        name: graal-prod
+    - secretRef:
+        name: pg-app
   env:
     - name: FRONTEND_URL
       value: "https://{{ .Values.global.host }}"
@@ -77,3 +81,11 @@ pg:
             key: bucket_region
   backup:
     name: prod-ovh # backup on a new folder
+
+jobs:
+  migrate:
+    envFrom:
+      - secretRef:
+          name: graal-prod-app-access-key
+      - secretRef:
+          name: graal-prod
