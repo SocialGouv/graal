@@ -12,6 +12,10 @@ api:
         name: graal
     - secretRef:
         name: graal-dev-app-access-key
+    - secretRef:
+        name: graal-preprod
+    - secretRef:
+        name: pg-app
   env:
     - name: FRONTEND_URL
       value: "https://{{ .Values.global.host }}"
@@ -39,3 +43,11 @@ api:
         secretKeyRef:
           name: graal-dev-app-access-key
           key: bucket_secret_key
+
+jobs:
+  migrate:
+    envFrom:
+      - secretRef:
+          name: graal-dev-app-access-key
+      - secretRef:
+          name: graal-preprod

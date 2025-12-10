@@ -3,7 +3,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button'
 export const LogoutButton = () => {
   const handleLogout = async () => {
     try {
-      await fetch('/api/v1/auth/logout', {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       })

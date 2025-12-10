@@ -1,7 +1,6 @@
 app:
   annotations:
     oblik.socialgouv.io/min-limit-cpu: 2
-
 api:
   annotations:
     oblik.socialgouv.io/min-limit-cpu: "3"
@@ -12,6 +11,10 @@ api:
         name: graal
     - secretRef:
         name: graal-dev-app-access-key
+    - secretRef:
+        name: graal-dev
+    - secretRef:
+        name: pg-app
   env:
     - name: FRONTEND_URL
       value: "https://{{ .Values.global.host }}"
