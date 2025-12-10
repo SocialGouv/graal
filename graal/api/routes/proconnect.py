@@ -53,6 +53,9 @@ async def login():
         # Generate authorization URL with state and PKCE
         logging.info("[API] Generating authorization URL...")
         auth_url, state, code_verifier = await proconnect.get_authorization_url()
+        logging.info(f"[API][DEBUG] state={state}")
+        logging.info(f"[API][DEBUG] code_verifier={code_verifier}")
+        logging.info(f"[API][DEBUG] auth_url={auth_url}")
         logging.info(
             f"[API] Authorization URL generated successfully with state={state[:8]}..."
         )

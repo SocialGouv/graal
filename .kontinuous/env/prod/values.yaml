@@ -20,11 +20,13 @@ api:
         name: graal
     - secretRef:
         name: graal-prod-app-access-key
+    - secretRef:
+        name: graal-prod
   env:
     - name: FRONTEND_URL
       value: "https://{{ .Values.global.host }}"
     - name: PROCONNECT_REDIRECT_URI
-      value: "https://api-{{ .Values.global.host }}/api/v1/auth/callback"
+      value: "https://{{ .Values.global.host }}/api/v1/auth/callback"
     - name: S3_BUCKET_NAME
       valueFrom:
         secretKeyRef:
