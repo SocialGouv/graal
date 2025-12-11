@@ -24,28 +24,28 @@ class S3Service:
     """
 
     def __init__(self):
-        self.bucket_name = os.getenv("S3_BUCKET_NAME")
+        self.bucket_name: str = os.getenv("S3_BUCKET_NAME")
         if self.bucket_name is None:
             raise ValueError("S3_BUCKET_NAME environment variable is required")
-        self.endpoint_url = os.getenv("S3_BUCKET_ENDPOINT")
+        self.endpoint_url: str = os.getenv("S3_BUCKET_ENDPOINT")
         if self.endpoint_url is None:
             raise ValueError("S3_BUCKET_ENDPOINT environment variable is required")
-        self.access_key = os.getenv("S3_BUCKET_ACCESS_KEY")
+        self.access_key: str = os.getenv("S3_BUCKET_ACCESS_KEY")
         if self.access_key is None:
             raise ValueError("S3_ACCESS_KEY environment variable is required")
-        self.secret_key = os.getenv("S3_BUCKET_SECRET_KEY")
+        self.secret_key: str = os.getenv("S3_BUCKET_SECRET_KEY")
         if self.secret_key is None:
             raise ValueError("S3_SECRET_KEY environment variable is required")
-        self.region = os.getenv("S3_BUCKET_REGION", "gra")
+        self.region: str = os.getenv("S3_BUCKET_REGION", "gra")
         if self.region is None:
             raise ValueError("S3_BUCKET_REGION environment variable is required")
-        self.config_folder = os.getenv("S3_CONFIG_FOLDER")
+        self.config_folder: str = os.getenv("S3_CONFIG_FOLDER")
         if self.config_folder is None:
             raise ValueError("S3_CONFIG_FOLDER environment variable is required")
-        self.similarity_db_folder = os.getenv("S3_SIMILARITY_DB_FOLDER")
+        self.similarity_db_folder: str = os.getenv("S3_SIMILARITY_DB_FOLDER")
         if self.similarity_db_folder is None:
             raise ValueError("S3_SIMILARITY_DB_FOLDER environment variable is required")
-        self.input_pool_folder = os.getenv("S3_INPUT_POOL_FOLDER")
+        self.input_pool_folder: str = os.getenv("S3_INPUT_POOL_FOLDER")
         if self.input_pool_folder is None:
             raise ValueError("S3_INPUT_POOL_FOLDER environment variable is required")
 
