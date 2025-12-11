@@ -1,3 +1,11 @@
+# [1.28.0](https://github.com/SocialGouv/graal/compare/v1.27.2...v1.28.0) (2025-12-11)
+
+
+### Features
+
+* Add migration service for DB migrations ([ef3afa9](https://github.com/SocialGouv/graal/commit/ef3afa95987fee4e7d1b492f27d0c9703f78a0d5))
+* Make use of MigrationService in docker entry point script ([599da2a](https://github.com/SocialGouv/graal/commit/599da2aa8d58f99624aa176fb805ddb0cad72c4b))
+
 ## [1.27.2](https://github.com/SocialGouv/graal/compare/v1.27.1...v1.27.2) (2025-12-11)
 
 
