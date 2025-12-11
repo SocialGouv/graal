@@ -21,6 +21,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from graal.api.models.responses import UserResponse
+from graal.api.services.database_permission_service import (
+    get_database_permission_service,
+)
 from graal.database.models import User
 
 logging.config.fileConfig("logging.conf")
@@ -139,6 +142,18 @@ class DatabaseAuthorizationProvider(AuthorizationProvider):
                 email=user.email,
                 is_admin=user.is_admin,
             )
+
+
+class DbRole:
+    reader = "reader"
+    writer = "writer"
+    owner = "owner"
+
+    RANK = {
+        reader: 1,
+        writer: 2,
+        owner: 3,
+    }
 
 
 class AuthorizationService:
@@ -280,6 +295,52 @@ class AuthorizationService:
         logging.info(
             f"[AuthorizationService] Admin access granted for user: {user.user_id}"
         )
+        return user
+
+    async def get_db_role(
+        self,
+        db_id: str,
+        request: Request,
+        session: Optional[str] = Cookie(default=None),
+    ) -> str | None:
+        """
+        Return the user's role for a specific amendment database.
+        """
+        user = await self.get_current_user(request, session)
+
+        perm_service = get_database_permission_service()
+        return await perm_service.get_user_role(db_id, user.user_id)
+
+    async def require_db_role(
+        self,
+        db_id: str,
+        min_role: str,
+        request: Request,
+        session: Optional[str] = Cookie(default=None),
+    ) -> UserResponse:
+        """
+        Require that the current user has at least the specified role for a DB.
+        Raises HTTP 403 if insufficient permission.
+        """
+        user = await self.get_current_user(request, session)
+
+        perm_service = get_database_permission_service()
+        role = await perm_service.get_user_role(db_id, user.user_id)
+
+        # No role at all
+        if role is None:
+            raise HTTPException(
+                status_code=403,
+                detail="Insufficient permissions for this database",
+            )
+
+        # Hierarchical check
+        if DbRole.RANK[role] < DbRole.RANK[min_role]:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Requires {min_role} role on this database",
+            )
+
         return user
 
 
