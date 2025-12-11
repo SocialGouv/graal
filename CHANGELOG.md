@@ -1,3 +1,10 @@
+## [1.27.2](https://github.com/SocialGouv/graal/compare/v1.27.1...v1.27.2) (2025-12-11)
+
+
+### Bug Fixes
+
+* Add credentials to config_s3_service ([042cbd5](https://github.com/SocialGouv/graal/commit/042cbd5bbd2712f66d9382e6ba7ce00ae0eee0ae))
+
 ## [1.27.1](https://github.com/SocialGouv/graal/compare/v1.27.0...v1.27.1) (2025-12-10)
 
 
