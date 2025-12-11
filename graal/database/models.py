@@ -386,3 +386,43 @@ class SimilarityDBManifest(Base):
 
     def __repr__(self) -> str:
         return f"<SimilarityDBManifest(id={self.id}, name={self.name}, is_active={self.is_active})>"
+
+
+class AmendmentDatabasePermission(Base):
+    """Permission entry for a user on a specific amendment database.
+
+    Tracks whether a user is an owner, writer, or reader of a database.
+    Ensures mutual exclusivity and supports multi-owner setups.
+    """
+
+    __tablename__ = "amendment_database_permissions"
+
+    db_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("similarity_db_manifests.id", ondelete="CASCADE"),
+        primary_key=True,
+        comment="Target database ID (foreign key to SimilarityDBManifest)",
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+        comment="User ID with permissions on this database",
+    )
+
+    role: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        comment="Permission role: owner, writer, reader",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Timestamp when permission was granted",
+    )
+
+    def __repr__(self) -> str:
+        return f"<DBPerm(db_id={self.db_id}, user_id={self.user_id}, role={self.role})>"
