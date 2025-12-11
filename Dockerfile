@@ -69,5 +69,7 @@ USER 1000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1
 
-# Commande par défaut pour lancer l'API FastAPI
-CMD ["uvicorn", "graal.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Commande par défaut :
+# 1. Exécuter les migrations Alembic
+# 2. Lancer l'API FastAPI
+CMD ["sh", "-c", "python scripts/run_migrations.py && uvicorn graal.api.main:app --host 0.0.0.0 --port 8000"]

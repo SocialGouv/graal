@@ -81,11 +81,3 @@ pg:
             key: bucket_region
   backup:
     name: prod-ovh # backup on a new folder
-
-jobs:
-  migrate:
-    envFrom:
-      - secretRef:
-          name: graal-prod-app-access-key
-      - secretRef:
-          name: graal-prod
