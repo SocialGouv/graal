@@ -13,6 +13,10 @@
 - Use synchronous S3 operations for large file transfers
 - Skip error handling for S3 operations
 - Store sensitive data in S3 without proper access controls
+- Store aioboto3 sessions or clients on a singleton S3Service instance
+- Use synchronous boto3 calls inside async code without wrapping them in asyncio.to_thread
+- Reuse aioboto3 sessions or clients across concurrent async tasks
+- Block FastAPI workers with synchronous S3 calls during long-running database builds
 
 ## S3 Configuration
 
