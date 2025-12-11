@@ -78,9 +78,7 @@ class InputPoolS3Service:
                 Bucket=self.bucket_name,
                 Key=full_key,
             )
-            file_bytes = await response["Body"].read()
-
-        return file_bytes
+            return await response["Body"].read()
 
     # -------------------------------------------------------------------------
     # INPUT POOL: List by hash prefix
