@@ -20,11 +20,17 @@ class ConfigS3Service:
         endpoint_url: str,
         config_folder: str,
         s3_config: Config,
+        region_name: str,
+        access_key: str,
+        secret_key: str,
     ):
         self.bucket_name = bucket_name
         self.endpoint_url = endpoint_url
         self.config_folder = config_folder
         self.s3_config = s3_config
+        self.region_name = region_name
+        self.access_key = access_key
+        self.secret_key = secret_key
 
     # -------------------------------------------------------------------------
     # Internal helper: create fresh boto3 client
@@ -33,6 +39,9 @@ class ConfigS3Service:
         return boto3.client(
             "s3",
             endpoint_url=self.endpoint_url,
+            region_name=self.region_name,
+            aws_access_key_id=self.access_key,
+            aws_secret_access_key=self.secret_key,
             config=self.s3_config,
         )
 

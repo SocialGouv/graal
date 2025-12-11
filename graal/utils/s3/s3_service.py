@@ -61,6 +61,9 @@ class S3Service:
             endpoint_url=self.endpoint_url,
             config_folder=self.config_folder,
             s3_config=self.s3_config,
+            region_name=self.region,
+            access_key=self.access_key,
+            secret_key=self.secret_key,
         )
 
         self.database = DatabaseS3Service(
