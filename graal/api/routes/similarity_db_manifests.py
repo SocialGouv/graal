@@ -14,6 +14,9 @@ from uuid import UUID
 from fastapi import APIRouter, Cookie, HTTPException, Request, status
 
 from graal.api.services.authorization_service import get_authorization_service
+from graal.api.services.database_permission_service import (
+    get_database_permission_service,
+)
 from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
@@ -59,7 +62,17 @@ async def list_similarity_databases(
         manifest_service = get_similarity_db_manifest_service()
         manifests = await manifest_service.list_active_manifests()
 
-        logging.info(f"[API] Retrieved {len(manifests)} active manifests")
+        # Identify current user
+        current_user = await auth_service.get_current_user(request, session)
+
+        # Filter by database permissions (reader+)
+        perm_service = get_database_permission_service()
+        accessible_ids = await perm_service.list_accessible_databases(
+            current_user.user_id
+        )
+        manifests = [m for m in manifests if str(m.id) in accessible_ids]
+
+        logging.info(f"[API] Retrieved {len(manifests)} permitted active manifests")
         return [SimilarityDBManifestRead.model_validate(m) for m in manifests]
 
     except HTTPException:
