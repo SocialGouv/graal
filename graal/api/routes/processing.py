@@ -15,7 +15,7 @@ from graal.api.models.responses import (
     ProcessingResponse,
     ProgressResponse,
 )
-from graal.utils.s3_service import get_s3_service
+from graal.utils.s3.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
 router = APIRouter()
@@ -43,7 +43,7 @@ async def list_config_files():
 
     try:
         s3_service = get_s3_service()
-        files = s3_service.list_available_config_files()
+        files = await s3_service.config.list_available_config_files()
 
         logging.info(f"[API] Found {len(files)} configuration files")
         return ConfigFilesResponse(files=files, total=len(files))
@@ -132,7 +132,7 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):  # noq
 
     try:
         s3_service = get_s3_service()
-        if not s3_service.validate_config_file_exists(config_file):
+        if not await s3_service.config.validate_config_file_exists(config_file):
             logging.warning(f"[API] Config file not found in S3: {config_file}")
             raise HTTPException(
                 status_code=404,

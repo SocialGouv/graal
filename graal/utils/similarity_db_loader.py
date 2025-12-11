@@ -12,7 +12,7 @@ from typing import Dict
 
 import pandas as pd
 
-from graal.utils.s3_service import get_s3_service
+from graal.utils.s3.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
 
@@ -45,7 +45,7 @@ class SimilarityDatabaseLoader:
 
         # Load from S3
         logging.info(f"Loading similarity database from S3: {s3_path}")
-        df = await self._s3_service.load_database_parquet(s3_path)
+        df = await self._s3_service.database.load_database_parquet(s3_path)
 
         # Cache the result
         self._cache[s3_path] = df

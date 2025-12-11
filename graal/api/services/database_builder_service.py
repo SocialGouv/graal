@@ -5,6 +5,7 @@ import logging.config
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from graal.api.services.job_registry import InMemoryJobRegistry
 from graal.api.services.similarity_db_manifest_service import (
@@ -12,7 +13,7 @@ from graal.api.services.similarity_db_manifest_service import (
 )
 from graal.database.schemas import SimilarityDBManifestCreate
 from graal.utils.config.base_config import InputFileConfig
-from graal.utils.s3_service import get_s3_service
+from graal.utils.s3.s3_service import get_s3_service
 from graal.utils.similarity_db_builder_service import (
     get_similarity_db_builder,
 )
@@ -98,7 +99,7 @@ class DatabaseBuilderService:
             )
             logging.info(f"[Job {job_id}] Uploading database to S3: {database_name}")
 
-            await self.s3_service.upload_database_parquet(df, database_name)
+            await self.s3_service.database.upload_database_parquet(df, database_name)
 
             logging.info(f"[Job {job_id}] Database uploaded successfully")
 
@@ -226,7 +227,7 @@ class DatabaseBuilderService:
         s3_metadata = await self._get_s3_metadata(job_id, database_name)
 
         # Construct S3 paths
-        s3_folder = self.s3_service._similarity_db_folder
+        s3_folder = self.s3_service.similarity_db_folder
         if s3_folder and not s3_folder.endswith("/"):
             s3_folder += "/"
         s3_file_path = f"{s3_folder}{database_name}.parquet"
@@ -306,7 +307,7 @@ class DatabaseBuilderService:
 
         return input_files_data
 
-    async def _get_s3_metadata(self, job_id: str, database_name: str) -> dict[str, any]:
+    async def _get_s3_metadata(self, job_id: str, database_name: str) -> dict[str, Any]:
         """Get metadata from S3 for the database.
 
         Args:
@@ -317,7 +318,7 @@ class DatabaseBuilderService:
             Dictionary containing S3 metadata (size, last_modified)
         """
         try:
-            return await self.s3_service.get_database_metadata(database_name)
+            return await self.s3_service.database.get_database_metadata(database_name)
         except Exception as e:
             logging.warning(
                 f"[Job {job_id}] Could not get S3 metadata, using defaults: {e}"

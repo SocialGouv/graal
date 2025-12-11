@@ -24,7 +24,7 @@ from graal.database.schemas import (
     UserConfigurationCreate,
     UserConfigurationUpdate,
 )
-from graal.utils.s3_service import S3Service
+from graal.utils.s3.s3_service import S3Service
 
 logging.config.fileConfig("logging.conf")
 
@@ -396,7 +396,7 @@ def get_user_configuration_service() -> UserConfigurationService:
         logging.info("[UserConfigurationService] Initializing singleton instance")
 
         from graal.database.base import get_async_session_maker
-        from graal.utils.s3_service import get_s3_service
+        from graal.utils.s3.s3_service import get_s3_service
 
         session_factory = get_async_session_maker()
         s3_service = get_s3_service()

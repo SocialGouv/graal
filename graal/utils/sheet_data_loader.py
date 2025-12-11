@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import pandas as pd
 
-from graal.utils.s3_service import get_s3_service
+from graal.utils.s3.s3_service import get_s3_service
 
 
 class SheetDataLoader:
@@ -34,7 +34,7 @@ class SheetDataLoader:
         # Load from S3 using the S3 config service
         s3_service = get_s3_service()
         logging.info(f"Loading configuration from S3: {file_path_str}")
-        return s3_service.load_config_excel(file_path_str)
+        return s3_service.config.load_config_excel(file_path_str)
 
     def extract_sheet_data(self, sheet_name: str) -> Optional[pd.DataFrame]:
         """Extract data from a specific sheet.

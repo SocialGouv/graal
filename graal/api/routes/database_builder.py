@@ -33,7 +33,7 @@ from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
 from graal.utils.file_hash_service import get_file_hash_service
-from graal.utils.s3_service import get_s3_service
+from graal.utils.s3.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
 router = APIRouter(prefix="/databases", tags=["databases"])
@@ -231,7 +231,7 @@ async def upload_amendment_file(
         logging.info(f"[API] Computed hash for {filename}: {file_hash}")
 
         # Check if file exists in pool by listing files with this hash prefix
-        existing_files = await s3_service.list_pool_files_by_hash_prefix(file_hash)
+        existing_files = await s3_service.pool.list_pool_files_by_hash_prefix(file_hash)
         already_existed = len(existing_files) > 0
 
         # Generate S3 key for the file
@@ -241,7 +241,7 @@ async def upload_amendment_file(
             logging.info(f"[API] File already exists in pool: {s3_key}")
         else:
             # Upload new file to pool
-            await s3_service.upload_to_input_pool(contents, s3_key)
+            await s3_service.pool.upload_to_input_pool(contents, s3_key)
             logging.info(f"[API] Uploaded new file to pool: {s3_key}")
 
         # Generate upload_id for backward compatibility (use hash as ID)
@@ -590,7 +590,7 @@ async def append_to_database(
         # Download files from S3 pool to temp directory for building
         temp_dir = _ensure_temp_upload_dir()
         s3_service = get_s3_service()
-        await _download_all_files(s3_service, all_files_metadata, temp_dir)
+        await _download_all_files(s3_service.pool, all_files_metadata, temp_dir)
 
         # Create job for rebuild
         job_id = create_job_id()

@@ -24,7 +24,7 @@ from graal.database.schemas import (
     SimilarityDBManifestCreate,
     SimilarityDBManifestUpdate,
 )
-from graal.utils.s3_service import S3Service
+from graal.utils.s3.s3_service import S3Service
 
 logging.config.fileConfig("logging.conf")
 
@@ -76,7 +76,7 @@ class SimilarityDBManifestService:
         )
 
         # Get all database files from S3
-        database_names = await self._s3_service.list_database_files()
+        database_names = await self._s3_service.database.list_database_files()
         logging.info(
             f"[SimilarityDBManifestService] Found {len(database_names)} files in S3"
         )
@@ -87,10 +87,12 @@ class SimilarityDBManifestService:
             for db_name in database_names:
                 try:
                     # Get metadata from S3
-                    metadata = await self._s3_service.get_database_metadata(db_name)
+                    metadata = await self._s3_service.database.get_database_metadata(
+                        db_name
+                    )
 
                     # Construct S3 paths
-                    s3_folder = self._s3_service._similarity_db_folder
+                    s3_folder = self._s3_service.similarity_db_folder
                     if s3_folder and not s3_folder.endswith("/"):
                         s3_folder += "/"
                     s3_file_path = f"{s3_folder}{db_name}.parquet"
@@ -184,7 +186,7 @@ class SimilarityDBManifestService:
             else:
                 db_name = file_path.split("/")[-1]
 
-            await self._s3_service.get_database_metadata(db_name)
+            await self._s3_service.database.get_database_metadata(db_name)
         except FileNotFoundError as e:
             logging.error(
                 f"[SimilarityDBManifestService] S3 file not found: {manifest_data.s3_file_path}"
@@ -418,7 +420,7 @@ def get_similarity_db_manifest_service() -> SimilarityDBManifestService:
         logging.info("[SimilarityDBManifestService] Initializing singleton instance")
 
         from graal.database.base import get_async_session_maker
-        from graal.utils.s3_service import get_s3_service
+        from graal.utils.s3.s3_service import get_s3_service
 
         session_factory = get_async_session_maker()
         s3_service = get_s3_service()

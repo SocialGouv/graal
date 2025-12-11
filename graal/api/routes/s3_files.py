@@ -12,7 +12,7 @@ from graal.api.models.responses import (
     S3FileMetadata,
 )
 from graal.api.services.authorization_service import get_authorization_service
-from graal.utils.s3_service import get_s3_service
+from graal.utils.s3.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
 router = APIRouter(prefix="/admin/s3", tags=["s3-files"])
@@ -37,7 +37,7 @@ async def list_config_files(
 
     try:
         s3_service = get_s3_service()
-        files_metadata = s3_service.list_config_files_with_metadata()
+        files_metadata = await s3_service.config.list_config_files_with_metadata()
 
         files = [
             S3FileMetadata(
@@ -87,7 +87,7 @@ async def delete_config_file(
 
     try:
         s3_service = get_s3_service()
-        s3_service.delete_config_file(filename)
+        await s3_service.config.delete_config_file(filename)
 
         logging.info(f"Admin deleted config file: {filename}")
         return S3DeleteResponse(
@@ -127,7 +127,7 @@ async def list_database_files(
 
     try:
         s3_service = get_s3_service()
-        files_metadata = await s3_service.list_database_files_with_metadata()
+        files_metadata = await s3_service.database.list_database_files_with_metadata()
 
         files = [
             S3FileMetadata(
@@ -179,7 +179,7 @@ async def delete_database_file(
 
     try:
         s3_service = get_s3_service()
-        await s3_service.delete_database_file(database_name)
+        await s3_service.database.delete_database_file(database_name)
 
         logging.info(f"Admin deleted database: {database_name}")
         return S3DeleteResponse(
@@ -219,7 +219,7 @@ async def list_input_pool_files(
 
     try:
         s3_service = get_s3_service()
-        files_metadata = await s3_service.list_input_pool_files_with_metadata()
+        files_metadata = await s3_service.pool.list_input_pool_files_with_metadata()
 
         files = [
             S3FileMetadata(
@@ -269,7 +269,7 @@ async def delete_input_pool_file(
 
     try:
         s3_service = get_s3_service()
-        await s3_service.delete_input_pool_file(s3_key)
+        await s3_service.pool.delete_input_pool_file(s3_key)
 
         logging.info(f"Admin deleted input pool file: {s3_key}")
         return S3DeleteResponse(

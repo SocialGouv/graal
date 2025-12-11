@@ -100,14 +100,14 @@ class ConfigS3Service:
     # -------------------------------------------------------------------------
     # Public API: load Excel config file
     # -------------------------------------------------------------------------
-    async def load_config_excel(self, filename: str) -> Dict[str, pd.DataFrame]:
+    def load_config_excel(self, filename: str) -> Dict[str, pd.DataFrame]:
         key = (
             f"{self.config_folder}/{filename}"
             if not self.config_folder.endswith("/")
             else f"{self.config_folder}{filename}"
         )
 
-        file_bytes = await asyncio.to_thread(self._download_from_s3_sync, key)
+        file_bytes = self._download_from_s3_sync(key)
         return pd.read_excel(file_bytes, sheet_name=None)
 
     # -------------------------------------------------------------------------
