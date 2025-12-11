@@ -214,16 +214,6 @@ class ProConnectService:
             raise
         authorization_endpoint = discovery.get("authorization_endpoint")
 
-        logging.info(
-            "[ProConnectService][DEBUG] Building authorization URL parameters:"
-        )
-        logging.info(
-            f"[ProConnectService][DEBUG] authorization_endpoint={authorization_endpoint}"
-        )
-        logging.info(f"[ProConnectService][DEBUG] client_id={self._client_id}")
-        logging.info(f"[ProConnectService][DEBUG] redirect_uri={self._redirect_uri}")
-        logging.info(f"[ProConnectService][DEBUG] scopes={self._scopes}")
-
         if not authorization_endpoint:
             logging.error(
                 "[ProConnectService] No authorization_endpoint in discovery document"
@@ -255,7 +245,6 @@ class ProConnectService:
         logging.info(
             f"[ProConnectService] Generated authorization URL with state={state[:8]}..."
         )
-        logging.info(f"[ProConnectService] Full authorization URL: {authorization_url}")
         return authorization_url, state, code_verifier
 
     async def exchange_code_for_token(

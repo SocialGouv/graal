@@ -40,17 +40,6 @@ async def lifespan(app: FastAPI):
     # Startup
     logging.info("GRAAL Web API starting up...")
 
-    # Check login route availability
-    routes = [
-        p
-        for p in (getattr(route, "path", None) for route in app.router.routes)
-        if p is not None
-    ]
-    if "/api/v1/auth/login" in routes:
-        logging.info("Route /api/v1/auth/login is available and working.")
-    else:
-        logging.warning("Route /api/v1/auth/login is missing from FastAPI app.")
-
     yield
     # Shutdown
     logging.info("GRAAL Web API shutting down...")
@@ -93,16 +82,8 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(user_configurations.router, prefix="/api/v1")
 app.include_router(similarity_db_manifests.router, prefix="/api/v1")
 app.include_router(s3_files.router, prefix="/api/v1")
-if any(
-    getattr(route, "name", None) == "login" for route in authorization.router.routes
-):
-    logging.info("Route /api/v1/auth/login is registered and ready.")
-else:
-    logging.warning("Route /api/v1/auth/login is NOT registered.")
-
 
 if __name__ == "__main__":
     import uvicorn
 
-    logging.info("COUCOU")
     uvicorn.run(app, host="localhost", port=8000, reload=True)
