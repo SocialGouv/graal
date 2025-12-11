@@ -12,19 +12,3 @@ api:
 
 pg:
   ~chart: pg
-
-jobs:
-  migrate:
-    ~chart: job
-    annotations:
-      "kontinuous.dev/hook": "pre-deploy"
-    imagePackage: api
-    args:
-      - bash
-      - -c
-      - alembic upgrade head
-    envFrom:
-      - configMapRef:
-          name: graal
-      - secretRef:
-          name: pg-app
