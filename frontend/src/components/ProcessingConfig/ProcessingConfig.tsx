@@ -40,7 +40,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     handleAttributionShouldOverwriteChange,
     handleSimilaritySearchEnabledChange,
     handleSimilaritySearchOriginProjectChange,
-    handleSimilaritySearchDatabaseFileChange,
+    handleSimilaritySearchDatabaseIdChange,
     handleSimilaritySearchShouldOverwriteChange,
     handleColumnsToCopyChange,
     handleSimilaritiesWithinLecturesEnabledChange,
@@ -58,7 +58,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   const similaritySearchOriginProjectError = useMemo(
     () =>
       processingConfig.similaritySearch.enabled &&
-        processingConfig.similaritySearch.originProject
+      processingConfig.similaritySearch.originProject
         ? getOriginProjectError(processingConfig.similaritySearch.originProject)
         : null,
     [
@@ -118,7 +118,8 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                     stateRelatedMessage={allotmentsColumnError || undefined}
                     nativeSelectProps={{
                       value: processingConfig.allotments.column,
-                      onChange: (e) => handleAllotmentsColumnChange(e.target.value),
+                      onChange: (e) =>
+                        handleAllotmentsColumnChange(e.target.value),
                       disabled: disabled || isProcessing
                     }}
                   >
@@ -179,21 +180,30 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               />
 
               <div
-                className={fr.cx('fr-grid-row', 'fr-grid-row--gutters', 'fr-mb-4w')}
+                className={fr.cx(
+                  'fr-grid-row',
+                  'fr-grid-row--gutters',
+                  'fr-mb-4w'
+                )}
               >
                 <div className={fr.cx('fr-col-12')}>
                   <Input
                     label="Nom du projet législatif"
                     hintText="Permet de faire aussi une recherche de similarité via le corps des amendements de lectures précédentes sur le même projet"
-                    state={similaritySearchOriginProjectError ? 'error' : 'default'}
+                    state={
+                      similaritySearchOriginProjectError ? 'error' : 'default'
+                    }
                     stateRelatedMessage={
                       similaritySearchOriginProjectError || undefined
                     }
                     nativeInputProps={{
                       placeholder: 'Ex: PLFSS 2025, PLF 2024...',
-                      value: processingConfig.similaritySearch.originProject || '',
+                      value:
+                        processingConfig.similaritySearch.originProject || '',
                       onChange: (e) =>
-                        handleSimilaritySearchOriginProjectChange(e.target.value),
+                        handleSimilaritySearchOriginProjectChange(
+                          e.target.value
+                        ),
                       disabled: disabled || isProcessing,
                       maxLength: 100
                     }}
@@ -203,15 +213,17 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
 
               <div>
                 <DatabaseSelectorConfig
-                  value={processingConfig.similaritySearch.databaseFile}
-                  onChange={handleSimilaritySearchDatabaseFileChange}
+                  value={processingConfig.similaritySearch.databaseId}
+                  onChange={handleSimilaritySearchDatabaseIdChange}
                   disabled={disabled || isProcessing}
                 />
               </div>
 
               <div>
                 <ColumnsToCopyConfig
-                  columnsToCopy={processingConfig.similaritySearch.columnsToCopy}
+                  columnsToCopy={
+                    processingConfig.similaritySearch.columnsToCopy
+                  }
                   onChange={handleColumnsToCopyChange}
                   disabled={disabled || isProcessing}
                   featureFlags={DEFAULT_FEATURE_FLAGS}
@@ -238,7 +250,9 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                     label="Colonne à analyser"
                     hint="Colonne utilisée pour la comparaison des similarités intra-lecture"
                     state={
-                      similaritiesWithinLecturesColumnError ? 'error' : 'default'
+                      similaritiesWithinLecturesColumnError
+                        ? 'error'
+                        : 'default'
                     }
                     stateRelatedMessage={
                       similaritiesWithinLecturesColumnError || undefined

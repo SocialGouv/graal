@@ -102,13 +102,13 @@ export const useProcessingConfigHandlers = () => {
     [setProcessingConfig, processingConfig]
   )
 
-  const handleSimilaritySearchDatabaseFileChange = useCallback(
+  const handleSimilaritySearchDatabaseIdChange = useCallback(
     (value: string | null) => {
       setProcessingConfig({
         ...processingConfig,
         similaritySearch: {
           ...processingConfig.similaritySearch,
-          databaseFile: value
+          databaseId: value
         }
       })
     },
@@ -272,7 +272,7 @@ export const useProcessingConfigHandlers = () => {
     // Similarity Search
     handleSimilaritySearchEnabledChange,
     handleSimilaritySearchOriginProjectChange,
-    handleSimilaritySearchDatabaseFileChange,
+    handleSimilaritySearchDatabaseIdChange,
     handleSimilaritySearchShouldOverwriteChange,
     handleColumnsToCopyChange,
 

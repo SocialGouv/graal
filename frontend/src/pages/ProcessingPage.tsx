@@ -2,6 +2,8 @@ import { fr } from '@codegouvfr/react-dsfr'
 import { Button } from '@codegouvfr/react-dsfr/Button'
 import { Stepper } from '@codegouvfr/react-dsfr/Stepper'
 import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { apiService } from '../services/api'
 import { useNavigate } from 'react-router-dom'
 import { ConfigFileSelector } from '../components/ConfigFileSelector'
 import { ConfigurationManager } from '../components/ConfigurationManager/ConfigurationManager'
@@ -37,6 +39,12 @@ export const ProcessingPage = () => {
     setProcessingConfig,
     reset
   } = useProcessingStore()
+
+  const { data: manifests = [] } = useQuery({
+    queryKey: ['similarity-databases'],
+    queryFn: () => apiService.listSimilarityDatabases(),
+    staleTime: 5 * 60 * 1000
+  })
 
   // API hooks
   const uploadFileMutation = useUploadFile()
@@ -94,7 +102,7 @@ export const ProcessingPage = () => {
         similarity_search: buildConfigIfEnabled(
           processingConfig.similaritySearch.enabled,
           {
-            database_file: processingConfig.similaritySearch.databaseFile,
+            database_id: processingConfig.similaritySearch.databaseId,
             origin_project: processingConfig.similaritySearch.originProject,
             clustering_similarity_thresholds:
               processingConfig.similaritySearch.clusteringSimilarityThresholds,
@@ -196,6 +204,8 @@ export const ProcessingPage = () => {
     const defOp = processingConfig.defaultOpinion
     const sum = processingConfig.summaryGeneration
 
+    const db = manifests.find((m) => m.id === ss?.databaseId)
+
     type OriginProject = { name?: string } | string | null | undefined
     const origin = ss?.originProject as OriginProject
     const originProject =
@@ -252,7 +262,7 @@ export const ProcessingPage = () => {
                 {ss?.enabled && (
                   <li>
                     Recherche de similarités
-                    {ss?.databaseFile ? ` — base: ${ss.databaseFile}` : ''}
+                    {db ? ` — base: ${db.name}` : ''}
                     {originProject ? `, origine: ${originProject}` : ''}
                   </li>
                 )}

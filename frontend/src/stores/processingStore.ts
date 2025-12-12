@@ -24,9 +24,9 @@ export interface ProcessingConfig {
   similaritySearch: {
     enabled: boolean
     originProject: string
-    databaseFile: string | null
+
     databaseId: UUID | null
-    databaseName: string | null
+
     clusteringSimilarityThresholds: ThresholdConfig
     fuzzyMatchSimilarityThresholds: ThresholdConfig
     similarityThresholdOverrides: ThresholdOverrides
@@ -161,8 +161,8 @@ const initialState = {
       enabled: true,
       originProject: '',
       databaseId: null,
-      databaseFile: null,
-      databaseName: null,
+
+
       clusteringSimilarityThresholds: {
         'Exposé amdt': 0.4,
         'Corps amdt': 0.4
