@@ -1,8 +1,6 @@
 // Import and re-export the generated types for easier imports
-import type { components, operations, paths } from './api-generated'
-
-export type { components, operations, paths }
-
+import type { components } from './api-generated'
+import type { UUID } from './common'
 // Type aliases for commonly used types
 export type JobStatus = components['schemas']['JobStatus']
 export type ProcessingResponse = components['schemas']['ProcessingResponse']
@@ -40,7 +38,7 @@ export interface SimilaritiesWithinLecturesConfig {
 export interface SimilaritySearchConfig {
   enabled: boolean
   origin_project?: string
-  database_file?: string | null
+  database_id?: UUID
   clustering_similarity_thresholds?: Record<string, number>
   fuzzy_match_similarity_thresholds?: Record<string, number>
   similarity_threshold_overrides?: Record<string, number>

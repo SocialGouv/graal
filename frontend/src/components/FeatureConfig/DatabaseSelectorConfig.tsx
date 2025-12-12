@@ -2,10 +2,11 @@ import { fr } from '@codegouvfr/react-dsfr'
 import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import { apiService } from '../../services/api'
+import { UUID } from '../../types/common'
 import { Combobox } from '../Combobox'
 
 export interface DatabaseSelectorConfigProps {
-  value: string | null
+  value: UUID | null // this will now hold the database *id*
   onChange: (value: string | null) => void
   disabled?: boolean
 }
@@ -30,9 +31,7 @@ export const DatabaseSelectorConfig: React.FC<DatabaseSelectorConfigProps> = ({
 
   // Extract database names from manifests with defensive check
   // Ensures manifests is always treated as an array to prevent crashes
-  const databases = Array.isArray(manifests)
-    ? manifests.map((manifest) => manifest.name)
-    : []
+  const databases = Array.isArray(manifests) ? manifests : []
 
   // Get error message
   const errorMessage = isError
@@ -52,9 +51,12 @@ export const DatabaseSelectorConfig: React.FC<DatabaseSelectorConfigProps> = ({
     <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
       <div className={fr.cx('fr-col-12', 'fr-col-md-6')}>
         <Combobox
-          options={databases}
-          value={value}
-          onChange={onChange}
+          options={databases.map((d) => d.name)}
+          value={databases.find((d) => d.id === value)?.name ?? null}
+          onChange={(name) => {
+            const match = databases.find((d) => d.name === name)
+            onChange(match ? match.id : null)
+          }}
           label="Base de données de recherche de similarité"
           hint="Recherchez et sélectionnez une base de données de précédentes lectures."
           state={isError ? 'error' : 'default'}
