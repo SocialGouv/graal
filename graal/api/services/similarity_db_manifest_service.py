@@ -270,6 +270,25 @@ class SimilarityDBManifestService:
 
             return manifest
 
+    async def resolve_s3_path_for_db(self, manifest_id: UUID) -> str:
+        """
+        Resolve the S3 file path for a given database ID.
+
+        Args:
+            manifest_id: UUID of the similarity database manifest
+
+        Returns:
+            S3 file path as a string
+
+        Raises:
+            ValueError: If no manifest exists for the given ID
+        """
+        manifest = await self.get_manifest(manifest_id)
+        if manifest is None:
+            raise ValueError(f"No database manifest found for id={manifest_id}")
+
+        return manifest.s3_file_path
+
     async def get_manifest_by_s3_path(
         self, s3_path: str
     ) -> Optional[SimilarityDBManifest]:

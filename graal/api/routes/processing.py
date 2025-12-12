@@ -4,8 +4,9 @@ Processing API routes for GRAAL amendment processing.
 
 import logging
 import logging.config
+from typing import Optional
 
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Cookie, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from graal.api.models.requests import ProcessingRequest
@@ -60,7 +61,12 @@ async def list_config_files():
 
 
 @router.post("/process", response_model=ProcessingResponse)
-async def process_amendments(file: UploadFile, request: str = Form(...)):  # noqa: C901
+async def process_amendments(  # noqa: C901
+    file: UploadFile,
+    request_obj: Request,
+    session: Optional[str] = Cookie(default=None),
+    request: str = Form(...),
+):  # noqa: C901
     """
     Upload and process a JSON file containing amendments.
 
@@ -176,6 +182,8 @@ async def process_amendments(file: UploadFile, request: str = Form(...)):  # noq
             file_content=file_content,
             filename=file.filename,
             processing_request=processing_request,
+            request=request_obj,
+            session=session,
         )
 
         logging.info(

@@ -99,10 +99,10 @@ class WebProcessingService:
                 "enabled": frontend_config.similarity_search.enabled,
             }
 
-            # Add database_file from frontend (required when similarity search is enabled)
-            if frontend_config.similarity_search.database_file:
-                similarity_config["database_file"] = (
-                    frontend_config.similarity_search.database_file
+            # Add database_id from frontend (required when similarity search is enabled)
+            if frontend_config.similarity_search.database_id:
+                similarity_config["database_id"] = (
+                    frontend_config.similarity_search.database_id
                 )
 
             # Add clustering similarity thresholds

@@ -11,6 +11,9 @@ from typing import Any
 
 import pandas as pd
 
+from graal.api.services.similarity_db_manifest_service import (
+    get_similarity_db_manifest_service,
+)
 from graal.core.feature_interface import BaseFeature, FeatureInput, FeatureOutput
 from graal.core.text_normalizers import TextNormalizerFactory
 from graal.similarities.similarity_search_handler import (
@@ -199,17 +202,25 @@ class SimilaritySearchFeature(BaseFeature):
             ValueError: If database_file is not configured
             FileNotFoundError: If the specified file is not found in S3
         """
-        database_file = similarity_config.get("database_file")
-        if not database_file:
+        database_id = similarity_config.get("database_id")
+        if not database_id:
             raise ValueError(
-                "No similarity database configured. Please provide 'database_file' "
-                "with the S3 path to a Parquet file (e.g., 'PLFSS/2024.parquet')."
+                "No similarity database configured. Please provide 'database_id' "
+                "with the UUID of the database manifest."
             )
 
-        logging.info(f"Loading similarity database from S3: {database_file}")
-        # Use asyncio to run the async S3 loader
-        # asyncio.run() creates a new event loop, which works in worker threads
+        # Resolve S3 path from manifest using database_id
+        manifest_service = get_similarity_db_manifest_service()
+
+        s3_path = asyncio.run(manifest_service.resolve_s3_path_for_db(database_id))
+
+        logging.info(
+            f"Loading similarity database from S3 (id={database_id}): {s3_path}"
+        )
+
+        # Load from S3 using the resolved path
         loader = get_similarity_db_loader()
-        df = asyncio.run(loader.load_from_s3(database_file))
-        logging.info(f"Loaded Parquet database from S3, shape: {df.shape}")
+        df = asyncio.run(loader.load_from_s3(s3_path))
+
+        logging.info(f"Loaded Parquet database for DB {database_id}, shape: {df.shape}")
         return df

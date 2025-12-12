@@ -63,9 +63,11 @@ class SimilaritySearchConfig(BaseModel):
     enabled: bool = Field(
         default=False, description="Whether similarity search feature is enabled"
     )
-    database_file: Optional[str] = Field(
+    from uuid import UUID
+
+    database_id: Optional[UUID] = Field(
         default=None,
-        description="S3 path to the Parquet database file (e.g., 'PLFSS/2024.parquet'). Required when similarity search is enabled.",
+        description="UUID of the similarity database manifest. Required when similarity search is enabled.",
     )
     origin_project: Optional[str] = Field(
         default=None,
@@ -294,10 +296,10 @@ class ProcessingConfig(BaseModel):
     ) -> SimilaritySearchConfig:
         """Validate similarity search configuration."""
         if params and params.enabled:
-            # Validate database_file is provided when enabled
-            if not params.database_file:
+            # Validate database_id is provided when enabled
+            if not params.database_id:
                 raise ValueError(
-                    "database_file is required when similarity search is enabled. "
+                    "database_id is required when similarity search is enabled. "
                     "Please select a similarity database."
                 )
 
