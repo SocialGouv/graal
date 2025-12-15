@@ -4,6 +4,7 @@ API request models.
 
 import re
 from typing import Any, ClassVar, Dict, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -63,7 +64,6 @@ class SimilaritySearchConfig(BaseModel):
     enabled: bool = Field(
         default=False, description="Whether similarity search feature is enabled"
     )
-    from uuid import UUID
 
     database_id: Optional[UUID] = Field(
         default=None,

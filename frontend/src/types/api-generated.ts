@@ -2028,7 +2028,9 @@ export interface operations {
       query?: never
       header?: never
       path?: never
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody: {
       content: {
