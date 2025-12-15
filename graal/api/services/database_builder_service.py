@@ -11,7 +11,7 @@ from graal.api.services.job_registry import InMemoryJobRegistry
 from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
-from graal.database.schemas import SimilarityDBManifestCreate
+from graal.database.models import AmendmentDatabasePermission, SimilarityDBManifest
 from graal.utils.config.base_config import InputFileConfig
 from graal.utils.s3.s3_service import get_s3_service
 from graal.utils.similarity_db_builder_service import (
@@ -391,18 +391,37 @@ class DatabaseBuilderService:
             user_id: User ID who initiated the build
         """
         logging.info(f"[Job {job_id}] Creating new manifest")
-        manifest_data = SimilarityDBManifestCreate(
-            name=database_name,
-            s3_folder_path=s3_folder or "",
-            s3_file_path=s3_file_path,
-            size_bytes=s3_metadata.get("size", 0),
-            row_count=row_count,
-            last_modified=s3_metadata.get("last_modified", datetime.now(timezone.utc)),
-            db_metadata=db_metadata,
-            input_files={"files": input_files_data},
-        )
 
-        await self.manifest_service.create_manifest(manifest_data, user_id)
+        # Transaction-safe creation of manifest + owner permission
+        async with self.manifest_service._session_factory() as session:
+            manifest = SimilarityDBManifest(
+                created_by_user_id=user_id,
+                name=database_name,
+                s3_folder_path=s3_folder or "",
+                s3_file_path=s3_file_path,
+                size_bytes=s3_metadata.get("size", 0),
+                row_count=row_count,
+                last_modified=s3_metadata.get(
+                    "last_modified", datetime.now(timezone.utc)
+                ),
+                db_metadata=db_metadata,
+                input_files={"files": input_files_data},
+                is_active=True,
+            )
+            session.add(manifest)
+            await session.flush()  # ensure manifest.id is available
+
+            # Assign creator as owner
+            perm = AmendmentDatabasePermission(
+                db_id=manifest.id,
+                user_id=user_id,
+                role="owner",
+            )
+            session.add(perm)
+
+            await session.commit()
+            await session.refresh(manifest)
+
         logging.info(
             f"[Job {job_id}] Similarity database manifest created successfully"
         )
