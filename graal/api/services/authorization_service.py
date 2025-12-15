@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from graal.api.models.responses import UserResponse
 from graal.api.services.database_permission_service import (
+    DbRole,
     get_database_permission_service,
 )
 from graal.database.models import User
@@ -142,18 +143,6 @@ class DatabaseAuthorizationProvider(AuthorizationProvider):
                 email=user.email,
                 is_admin=user.is_admin,
             )
-
-
-class DbRole:
-    reader = "reader"
-    writer = "writer"
-    owner = "owner"
-
-    RANK = {
-        reader: 1,
-        writer: 2,
-        owner: 3,
-    }
 
 
 class AuthorizationService:

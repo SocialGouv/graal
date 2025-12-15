@@ -1,17 +1,19 @@
 """Add amendment_database_permissions table
 
-Revision ID: 20251211_1735
-Revises: 20251209_0003_dfb8a3c40e7f
+Revision ID: add_amdt_db_perm_2025_12_15
+Revises: dfb8a3c40e7f
 Create Date: 2025-12-11 17:35:00
 """
+
+from typing import Union
 
 import sqlalchemy as sa
 
 from alembic import op
 
 # Revision identifiers, used by Alembic.
-revision = "20251211_1735"
-down_revision = "20251209_0003_dfb8a3c40e7f"
+revision = "add_amdt_db_perms_2025_12_15"
+down_revision: Union[str, None] = "dfb8a3c40e7f"
 branch_labels = None
 depends_on = None
 
