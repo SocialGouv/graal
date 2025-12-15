@@ -17,6 +17,10 @@ from graal.api.models.responses import (
     ProgressResponse,
 )
 from graal.utils.s3.s3_service import get_s3_service
+from graal.api.services.authorization_service import (
+    get_authorization_service,
+    DbRole,
+)
 
 logging.config.fileConfig("logging.conf")
 router = APIRouter()
@@ -130,6 +134,20 @@ async def process_amendments(  # noqa: C901
         raise HTTPException(
             status_code=400,
             detail="At least one feature must be enabled to start processing",
+        )
+
+    # Enforce DB permissions when similarity search is enabled
+    if (
+        processing_request.processing_config.similarity_search
+        and processing_request.processing_config.similarity_search.enabled
+    ):
+        db_id = str(processing_request.processing_config.similarity_search.database_id)
+        auth = get_authorization_service()
+        await auth.require_db_role(
+            db_id,
+            DbRole.reader,
+            request=request_obj,
+            session=session,
         )
 
     # Validate config file exists in S3
