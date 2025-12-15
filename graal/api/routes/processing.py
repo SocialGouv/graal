@@ -200,8 +200,6 @@ async def process_amendments(  # noqa: C901
             file_content=file_content,
             filename=file.filename,
             processing_request=processing_request,
-            request=request_obj,
-            session=session,
         )
 
         logging.info(

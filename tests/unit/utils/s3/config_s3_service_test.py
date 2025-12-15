@@ -29,6 +29,9 @@ class TestConfigS3Service:
 
         service = ConfigS3Service(
             bucket_name="test-bucket",
+            region_name="gra",
+            access_key="test-key",
+            secret_key="test-secret",  # noqa: S106
             endpoint_url="https://s3.test.com",
             config_folder="config_graal",
             s3_config=None,

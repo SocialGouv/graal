@@ -306,12 +306,20 @@ class AuthorizationService:
         min_role: str,
         request: Request,
         session: Optional[str] = Cookie(default=None),
+        allow_admin_bypass: bool = True,
     ) -> UserResponse:
-        """
-        Require that the current user has at least the specified role for a DB.
+        """Require that the current user has at least the specified role for a DB.
+
+        By default, admin users bypass DB-specific role checks. Set
+        ``allow_admin_bypass=False`` to enforce DB roles even for admins.
+
         Raises HTTP 403 if insufficient permission.
         """
         user = await self.get_current_user(request, session)
+
+        # Admins can bypass DB role checks by default
+        if allow_admin_bypass and user.is_admin:
+            return user
 
         perm_service = get_database_permission_service()
         role = await perm_service.get_user_role(db_id, user.user_id)

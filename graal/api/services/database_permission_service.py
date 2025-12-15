@@ -24,15 +24,21 @@ from typing import Optional
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from graal.database.models import AmendmentDatabasePermission
+from graal.database.models import AmendmentDatabasePermission, DbRoleEnum
 
 logging.config.fileConfig("logging.conf")
 
 
 class DbRole:
-    owner = "owner"
-    writer = "writer"
-    reader = "reader"
+    """Convenience wrapper for database roles.
+
+    Exposes enum members for external callers (e.g. routes) while providing
+    an ordering via the RANK mapping for hierarchical permission checks.
+    """
+
+    owner = DbRoleEnum.owner
+    writer = DbRoleEnum.writer
+    reader = DbRoleEnum.reader
 
     RANK = {
         reader: 1,
@@ -48,7 +54,7 @@ class DatabasePermissionService:
         self._session_factory = session_factory
         logging.info("[DatabasePermissionService] Initialized")
 
-    async def get_user_role(self, db_id: str, user_id: str) -> Optional[str]:
+    async def get_user_role(self, db_id: str, user_id: str) -> Optional[DbRoleEnum]:
         """Return the user's role for a specific database."""
         async with self._session_factory() as session:
             result = await session.execute(
@@ -89,8 +95,17 @@ class DatabasePermissionService:
         )
         return len(result.scalars().all())
 
-    async def set_user_role(self, db_id: str, target_user_id: str, role: str) -> None:
-        """Set or update a user's role for a DB."""
+    async def set_user_role(
+        self, db_id: str, target_user_id: str, role: DbRoleEnum | str
+    ) -> None:
+        """Set or update a user's role for a DB.
+
+        The ``role`` parameter may be provided either as a ``DbRoleEnum`` member
+        or as its corresponding string value ("owner", "writer", "reader").
+        """
+        # Normalise to enum instance for consistent storage and comparison
+        role_enum = DbRoleEnum(role)
+
         async with self._session_factory() as session:
             # Check if the user already has a role
             result = await session.execute(
@@ -105,20 +120,20 @@ class DatabasePermissionService:
                 # Handle owner demotion: ensure at least one owner remains
                 if (
                     existing.role == DbRole.owner
-                    and role != DbRole.owner
+                    and role_enum != DbRole.owner
                     and await self._count_owners(session, db_id) <= 1
                 ):
                     raise ValueError(
                         "Cannot demote the last remaining owner of this database"
                     )
 
-                existing.role = role
+                existing.role = role_enum
             else:
                 # Create new role entry
                 new_perm = AmendmentDatabasePermission(
                     db_id=db_id,
                     user_id=target_user_id,
-                    role=role,
+                    role=role_enum,
                 )
                 session.add(new_perm)
 

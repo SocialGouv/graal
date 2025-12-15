@@ -4,6 +4,7 @@ This module defines all database models using SQLAlchemy 2.0 declarative syntax
 with full type hints and relationship mappings.
 """
 
+import enum
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -12,6 +13,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Enum,
     ForeignKey,
     Index,
     Integer,
@@ -388,6 +390,12 @@ class SimilarityDBManifest(Base):
         return f"<SimilarityDBManifest(id={self.id}, name={self.name}, is_active={self.is_active})>"
 
 
+class DbRoleEnum(str, enum.Enum):
+    owner = "owner"
+    writer = "writer"
+    reader = "reader"
+
+
 class AmendmentDatabasePermission(Base):
     """Permission entry for a user on a specific amendment database.
 
@@ -411,8 +419,8 @@ class AmendmentDatabasePermission(Base):
         comment="User ID with permissions on this database",
     )
 
-    role: Mapped[str] = mapped_column(
-        String(16),
+    role: Mapped[DbRoleEnum] = mapped_column(
+        Enum(DbRoleEnum, name="dbrole", native_enum=True),
         nullable=False,
         comment="Permission role: owner, writer, reader",
     )
