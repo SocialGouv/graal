@@ -29,6 +29,9 @@ from graal.api.services.database_builder_service import (
     DatabaseBuilderService,
     create_job_id,
 )
+from graal.api.services.database_permission_service import (
+    get_database_permission_service,
+)
 from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
@@ -154,7 +157,10 @@ async def _download_file_to_temp(
 
 
 @router.get("", response_model=DatabaseListResponse)
-async def list_databases():
+async def list_databases(
+    request: Request,
+    session: Optional[str] = Cookie(default=None),
+):
     """List all available similarity databases from PostgreSQL manifests.
 
     Returns:
@@ -168,6 +174,18 @@ async def list_databases():
     try:
         manifest_service = get_similarity_db_manifest_service()
         manifests = await manifest_service.list_active_manifests()
+
+        # Authenticate user
+        auth_service = get_authorization_service()
+        current_user = await auth_service.get_current_user(request, session)
+
+        # Filter by permissions unless admin
+        if not current_user.is_admin:
+            perm_service = get_database_permission_service()
+            accessible_ids = await perm_service.list_accessible_databases(
+                current_user.user_id
+            )
+            manifests = [m for m in manifests if str(m.id) in accessible_ids]
 
         # Convert manifests to DatabaseInfo format
         databases = [

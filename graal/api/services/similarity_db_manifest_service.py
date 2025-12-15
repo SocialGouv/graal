@@ -19,7 +19,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from graal.database.models import SimilarityDBManifest
+from graal.database.models import AmendmentDatabasePermission, SimilarityDBManifest
 from graal.database.schemas import (
     SimilarityDBManifestCreate,
     SimilarityDBManifestUpdate,
@@ -237,6 +237,31 @@ class SimilarityDBManifestService:
 
             logging.info(
                 f"[SimilarityDBManifestService] Found {len(manifests)} active manifests"
+            )
+            return list(manifests)
+
+    async def list_accessible_manifests(
+        self, user_id: UUID
+    ) -> list[SimilarityDBManifest]:
+        """Return only the active manifests the user has permission to access."""
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(SimilarityDBManifest)
+                .join(
+                    AmendmentDatabasePermission,
+                    AmendmentDatabasePermission.db_id == SimilarityDBManifest.id,
+                )
+                .where(
+                    AmendmentDatabasePermission.user_id == user_id,
+                    SimilarityDBManifest.is_active == True,  # noqa: E712
+                )
+                .order_by(SimilarityDBManifest.created_at.desc())
+            )
+            manifests = result.scalars().all()
+
+            logging.info(
+                f"[SimilarityDBManifestService] Found {len(manifests)} accessible manifests for user {user_id}"
             )
             return list(manifests)
 
