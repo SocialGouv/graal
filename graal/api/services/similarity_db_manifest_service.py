@@ -348,6 +348,73 @@ class SimilarityDBManifestService:
 
             return manifest
 
+    async def delete_database_by_id(
+        self,
+        manifest_id: UUID,
+    ) -> SimilarityDBManifest:
+        """Delete a database by manifest ID, and delete the corresponding S3 file.
+
+        This is the canonical deletion entrypoint used by admin APIs.
+        It performs a hard delete of the manifest row, and removes the corresponding file from S3.
+
+        Args:
+            manifest_id: Manifest ID to delete
+
+        Returns:
+            The previously loaded manifest
+        """
+        logging.info(
+            "[SimilarityDBManifestService] Deleting database by id=%s",
+            manifest_id,
+        )
+
+        # Load the manifest once so we can derive the S3 key if needed
+        manifest = await self.get_manifest(manifest_id)
+        if manifest is None:
+            logging.error(
+                "[SimilarityDBManifestService] Manifest %s not found for deletion",
+                manifest_id,
+            )
+            raise ValueError("Manifest not found")
+
+        # Delete S3 file before mutating the database
+        s3_path = manifest.s3_file_path
+        folder = self._s3_service.similarity_db_folder
+        prefix = folder if folder.endswith("/") else f"{folder}/"
+        # Derive database_name as seen by DatabaseS3Service
+        if s3_path.startswith(prefix):
+            relative = s3_path[len(prefix) :]
+        else:
+            relative = s3_path
+        if relative.endswith(".parquet"):
+            relative = relative[:-8]
+        database_name = relative
+
+        logging.info(
+            "[SimilarityDBManifestService] Deleting S3 database file for manifest %s at path %s (database_name=%s)",
+            manifest_id,
+            s3_path,
+            database_name,
+        )
+        await self._s3_service.database.delete_database_file(database_name)
+
+        async with self._session_factory() as session:
+            # Attach manifest instance to this session
+            db_manifest = await session.get(SimilarityDBManifest, manifest_id)
+            if db_manifest is None:
+                # Manifest was removed between initial read and transaction
+                logging.error(
+                    "[SimilarityDBManifestService] Manifest %s disappeared before deletion",
+                    manifest_id,
+                )
+                raise ValueError("Manifest not found")
+
+            await session.delete(db_manifest)
+            await session.commit()
+
+        # For hard deletes we return the previously loaded manifest snapshot
+        return manifest
+
     async def update_manifest(
         self, manifest_id: UUID, updates: SimilarityDBManifestUpdate
     ) -> SimilarityDBManifest:

@@ -153,53 +153,6 @@ async def list_database_files(
         ) from e
 
 
-@router.delete("/databases/{database_name}", response_model=S3DeleteResponse)
-async def delete_database_file(
-    request: Request,
-    database_name: str = Path(
-        ..., description="Database name (without .parquet extension)"
-    ),
-    session: Optional[str] = Cookie(default=None),
-):
-    """Delete a similarity database file from S3.
-
-    Admin-only endpoint to delete database files.
-
-    Args:
-        database_name: Name of the database to delete (without .parquet extension)
-
-    Returns:
-        S3DeleteResponse with deletion status
-
-    Raises:
-        HTTPException: 403 if not admin, 404 if database not found, 500 if deletion fails
-    """
-    auth_service = get_authorization_service()
-    await auth_service.require_admin(request, session)
-
-    try:
-        s3_service = get_s3_service()
-        await s3_service.database.delete_database_file(database_name)
-
-        logging.info(f"Admin deleted database: {database_name}")
-        return S3DeleteResponse(
-            success=True,
-            message=f"Database '{database_name}' deleted successfully",
-            deleted_file=database_name,
-        )
-
-    except FileNotFoundError as e:
-        logging.warning(f"Database not found for deletion: {database_name}")
-        raise HTTPException(status_code=404, detail=str(e)) from e
-
-    except Exception as e:
-        logging.error(f"Failed to delete database {database_name}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete database: {str(e)}",
-        ) from e
-
-
 @router.get("/input-pool", response_model=S3FileListResponse)
 async def list_input_pool_files(
     request: Request, session: Optional[str] = Cookie(default=None)

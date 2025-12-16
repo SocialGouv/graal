@@ -324,3 +324,71 @@ async def delete_manifest(
         raise HTTPException(
             status_code=500, detail="Failed to deactivate manifest"
         ) from e
+
+
+@router.delete(
+    "/admin/similarity-databases/{manifest_id}/with-file",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_manifest_with_file(
+    manifest_id: UUID,
+    request: Request,
+    session: Optional[str] = Cookie(default=None),
+):
+    """Delete a similarity database and its manifest by ID (admin only).
+
+    This endpoint is the canonical way for admins to delete an amendment
+    database: it removes the underlying S3 parquet file *and* deactivates or
+    deletes the corresponding manifest, ensuring consistency between S3 and
+    Postgres.
+
+    Args:
+        manifest_id: Manifest UUID identifying the database to delete
+        request: FastAPI request object
+        session: Session cookie value
+
+    Returns:
+        204 No Content on success
+
+    Raises:
+        HTTPException: 401 if not authenticated
+        HTTPException: 403 if not admin
+        HTTPException: 404 if manifest not found
+    """
+    logging.info(
+        f"[API] Admin deleting database (with file) for manifest {manifest_id}"
+    )
+
+    try:
+        # Require admin access
+        auth_service = get_authorization_service()
+        current_user = await auth_service.get_current_user(request, session)
+
+        if not current_user.is_admin:
+            logging.warning(
+                f"[API] Non-admin user {current_user.user_id} attempted to delete database with file"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="Admin access required to delete similarity databases",
+            )
+
+        manifest_service = get_similarity_db_manifest_service()
+        await manifest_service.delete_database_by_id(manifest_id)
+
+        logging.info(
+            f"[API] Deleted database and deactivated manifest {manifest_id} (with file)"
+        )
+        return None
+
+    except ValueError as e:
+        logging.warning(f"[API] Error deleting database with file: {e}")
+        raise HTTPException(status_code=404, detail="Manifest not found") from e
+    except HTTPException:
+        raise
+    except Exception as e:  # pragma: no cover - defensive logging
+        logging.error(f"[API] Failed to delete database with file: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete similarity database and its file",
+        ) from e
