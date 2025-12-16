@@ -1,3 +1,23 @@
+# [1.29.0](https://github.com/SocialGouv/graal/compare/v1.28.0...v1.29.0) (2025-12-16)
+
+
+### Bug Fixes
+
+* DbRoleEnum usage ([0a6ad46](https://github.com/SocialGouv/graal/commit/0a6ad4675bca0121ddd00836aaa45ab272cfb4e9))
+* UUID import ([47f6c10](https://github.com/SocialGouv/graal/commit/47f6c102f2a97b7f24a167d01da4cc8b79ed3a9f))
+
+
+### Features
+
+* Add amendment_database_permissions table and models ([eac9e69](https://github.com/SocialGouv/graal/commit/eac9e693b1d8f8892c291ad113b9394f86ab313b))
+* Add db permission routes ([9100675](https://github.com/SocialGouv/graal/commit/910067598bab9facc8d59d15c47cdcab00802ed4))
+* Add DB permissions functions to the AuthorizationService ([95f6084](https://github.com/SocialGouv/graal/commit/95f60840d9efde5603c8815edc4117406791d538))
+* Enforce DB permissions when similarity search is enabled ([92a8997](https://github.com/SocialGouv/graal/commit/92a8997aa62377de10e85f62633149b67109c92a))
+* Filter accessible amdt databases based on permissions ([b77f80a](https://github.com/SocialGouv/graal/commit/b77f80aab84af61b5d5b45c27d950d168c50f049))
+* Only show allowed databases to user when listing sim dbs ([ac3b9da](https://github.com/SocialGouv/graal/commit/ac3b9dac6d321d48daca638c99ad7154617e9ac6))
+* Start working with the database ID in the frontend ([0294d01](https://github.com/SocialGouv/graal/commit/0294d01375289b27de5b21d8d2924de802d701c9))
+* Transaction-safe creation of manifest + owner permission ([68f5e9e](https://github.com/SocialGouv/graal/commit/68f5e9e30cfa51f693f7f9664d79e6c0771561c7))
+
 # [1.28.0](https://github.com/SocialGouv/graal/compare/v1.27.2...v1.28.0) (2025-12-11)
 
 
