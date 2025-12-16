@@ -3,20 +3,26 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert'
 import { Tabs } from '@codegouvfr/react-dsfr/Tabs'
 import { useState } from 'react'
 import {
+  useAdminDatabases,
+  useDeleteAdminDatabase
+} from '../../../hooks/useAdminDatabases'
+import {
   useConfigFiles,
-  useDatabaseFiles,
   useDeleteConfigFile,
-  useDeleteDatabaseFile,
   useDeleteInputPoolFile,
   useInputPoolFiles
 } from '../../../hooks/useS3Files'
+import { AdminDatabaseTable } from './AdminDatabaseTable'
 import { DeleteConfirmModal, deleteConfirmModal } from './DeleteConfirmModal'
 import { FileListTable } from './FileListTable'
 
 export const S3FileBrowser = () => {
   // State for delete modal
   const [deleteTarget, setDeleteTarget] = useState<{
+    // Human-readable labels displayed in the confirmation modal
     fileNames: string[]
+    // Optional internal IDs (used for database manifests)
+    ids?: string[]
     type: 'config' | 'database' | 'input'
   } | null>(null)
 
@@ -30,7 +36,7 @@ export const S3FileBrowser = () => {
     data: databaseData,
     isLoading: databaseLoading,
     error: databaseError
-  } = useDatabaseFiles()
+  } = useAdminDatabases()
   const {
     data: inputData,
     isLoading: inputLoading,
@@ -39,7 +45,7 @@ export const S3FileBrowser = () => {
 
   // Mutation hooks
   const deleteConfigMutation = useDeleteConfigFile()
-  const deleteDatabaseMutation = useDeleteDatabaseFile()
+  const deleteAdminDatabaseMutation = useDeleteAdminDatabase()
   const deleteInputMutation = useDeleteInputPoolFile()
 
   // Handle delete confirmation (batch deletion)
@@ -52,7 +58,12 @@ export const S3FileBrowser = () => {
         if (deleteTarget.type === 'config') {
           await deleteConfigMutation.mutateAsync(fileName)
         } else if (deleteTarget.type === 'database') {
-          await deleteDatabaseMutation.mutateAsync(fileName)
+          // For databases we delete by manifest ID, not by S3 key. Fallback
+          // to using the label as ID if ids are missing for any reason.
+          const ids = deleteTarget.ids ?? deleteTarget.fileNames
+          const index = deleteTarget.fileNames.indexOf(fileName)
+          const id = ids[index] ?? fileName
+          await deleteAdminDatabaseMutation.mutateAsync(id)
         } else if (deleteTarget.type === 'input') {
           await deleteInputMutation.mutateAsync(fileName)
         }
@@ -71,9 +82,10 @@ export const S3FileBrowser = () => {
   // Handle delete button click (supports batch deletion)
   const handleDelete = (
     fileNames: string[],
-    type: 'config' | 'database' | 'input'
+    type: 'config' | 'database' | 'input',
+    ids?: string[]
   ) => {
-    setDeleteTarget({ fileNames, type })
+    setDeleteTarget({ fileNames, type, ids })
     deleteConfirmModal.open()
   }
 
@@ -85,7 +97,7 @@ export const S3FileBrowser = () => {
 
   const isDeleting =
     deleteConfigMutation.isPending ||
-    deleteDatabaseMutation.isPending ||
+    deleteAdminDatabaseMutation.isPending ||
     deleteInputMutation.isPending
 
   return (
@@ -124,18 +136,18 @@ export const S3FileBrowser = () => {
           severity="error"
           title="Erreur de suppression"
           description={
-            (deleteConfigMutation.error as Error)?.message ||
+            deleteConfigMutation.error?.message ||
             'Impossible de supprimer le fichier de configuration'
           }
           className={fr.cx('fr-mb-4w')}
         />
       )}
-      {deleteDatabaseMutation.isError && (
+      {deleteAdminDatabaseMutation.isError && (
         <Alert
           severity="error"
           title="Erreur de suppression"
           description={
-            (deleteDatabaseMutation.error as Error)?.message ||
+            deleteAdminDatabaseMutation.error?.message ||
             'Impossible de supprimer la base de données'
           }
           className={fr.cx('fr-mb-4w')}
@@ -169,11 +181,12 @@ export const S3FileBrowser = () => {
           {
             label: 'Bases de données',
             content: (
-              <FileListTable
-                files={databaseData?.files || []}
+              <AdminDatabaseTable
+                databases={databaseData || []}
                 isLoading={databaseLoading}
-                onDelete={(fileNames) => handleDelete(fileNames, 'database')}
-                fileType="database"
+                onDelete={(ids: string[], labels: string[]) =>
+                  handleDelete(labels, 'database', ids)
+                }
               />
             )
           },

@@ -256,6 +256,25 @@ class ApiService {
   }
 
   /**
+   * Delete a similarity database and its backing S3 file by manifest ID (admin only).
+   */
+  async deleteSimilarityDatabaseWithFile(id: string): Promise<void> {
+    console.log('[API_CLIENT] Deleting similarity database and file', { id })
+
+    try {
+      await this.client.delete(`/admin/similarity-databases/${id}/with-file`)
+
+      console.log('[API_CLIENT] Similarity database and file deleted', { id })
+    } catch (error) {
+      console.error(
+        '[API_CLIENT] Failed to delete similarity database and file',
+        error
+      )
+      throw error
+    }
+  }
+
+  /**
    * Upload a JSON file and start processing
    */
   async uploadFile(
