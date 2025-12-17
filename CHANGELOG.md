@@ -1,3 +1,11 @@
+# [1.30.0](https://github.com/SocialGouv/graal/compare/v1.29.0...v1.30.0) (2025-12-17)
+
+
+### Features
+
+* Better handling of auth in backend routes ([1e9aa64](https://github.com/SocialGouv/graal/commit/1e9aa64cfa552093de9980a843119fe6201bba8a))
+* Better handling of auth in the frontend ([1974dc3](https://github.com/SocialGouv/graal/commit/1974dc372fce63d57903427845c5c9c15ec882b2))
+
 # [1.29.0](https://github.com/SocialGouv/graal/compare/v1.28.0...v1.29.0) (2025-12-16)
 
 
