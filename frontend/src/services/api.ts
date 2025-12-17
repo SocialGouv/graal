@@ -2,12 +2,15 @@ import axios, { type AxiosInstance, type AxiosProgressEvent } from 'axios'
 import type {
   ApiError,
   AppendDatabaseRequest,
+  AssignPermissionRequest,
   BuildDatabaseRequest,
   ConfigFilesResponse,
   DatabaseListResponse,
   DatabaseManifest,
+  DatabasePermission,
   DeleteFileResponse,
   JobStatusResponse,
+  ManagedDatabase,
   PreviewResponse,
   ProcessingRequest,
   ProcessJobResponse,
@@ -990,6 +993,124 @@ class ApiService {
       return response.data
     } catch (error) {
       console.error('[API_CLIENT] Failed to delete S3 input pool file', error)
+      throw error
+    }
+  }
+
+  /**
+   * Search for users by email (for permission assignment)
+   */
+  async searchUsersByEmail(email: string): Promise<UserResponse[]> {
+    console.log('[API_CLIENT] Searching users by email', { email })
+
+    try {
+      const response = await this.client.get<UserResponse[]>(
+        '/databases/users/search',
+        {
+          params: { email }
+        }
+      )
+
+      console.log('[API_CLIENT] Users search results', {
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to search users', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get list of databases that user can manage (owns or is admin)
+   */
+  async getManagedDatabases(): Promise<ManagedDatabase[]> {
+    console.log('[API_CLIENT] Fetching managed databases')
+
+    try {
+      const response =
+        await this.client.get<ManagedDatabase[]>('/databases/managed')
+
+      console.log('[API_CLIENT] Managed databases retrieved', {
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch managed databases', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get all permissions for a database
+   */
+  async getDatabasePermissions(dbId: string): Promise<DatabasePermission[]> {
+    console.log('[API_CLIENT] Fetching database permissions', { dbId })
+
+    try {
+      const response = await this.client.get<DatabasePermission[]>(
+        `/databases/${dbId}/permissions`
+      )
+
+      console.log('[API_CLIENT] Database permissions retrieved', {
+        dbId,
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch database permissions', error)
+      throw error
+    }
+  }
+
+  /**
+   * Assign a permission to a user for a database
+   */
+  async assignDatabasePermission(
+    dbId: string,
+    request: AssignPermissionRequest
+  ): Promise<DatabasePermission> {
+    console.log('[API_CLIENT] Assigning database permission', {
+      dbId,
+      user_id: request.user_id,
+      role: request.role
+    })
+
+    try {
+      const response = await this.client.post<DatabasePermission>(
+        `/databases/${dbId}/permissions`,
+        request
+      )
+
+      console.log('[API_CLIENT] Database permission assigned', {
+        dbId,
+        user_id: response.data.user_id,
+        email: response.data.email,
+        role: response.data.role
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to assign database permission', error)
+      throw error
+    }
+  }
+
+  /**
+   * Remove a user's permission from a database
+   */
+  async removeDatabasePermission(dbId: string, userId: string): Promise<void> {
+    console.log('[API_CLIENT] Removing database permission', { dbId, userId })
+
+    try {
+      await this.client.delete(`/databases/${dbId}/permissions/${userId}`)
+
+      console.log('[API_CLIENT] Database permission removed', { dbId, userId })
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to remove database permission', error)
       throw error
     }
   }

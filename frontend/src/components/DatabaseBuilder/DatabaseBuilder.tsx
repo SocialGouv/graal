@@ -6,12 +6,15 @@ import { ButtonsGroup } from '@codegouvfr/react-dsfr/ButtonsGroup'
 import { Input } from '@codegouvfr/react-dsfr/Input'
 import { Select } from '@codegouvfr/react-dsfr/Select'
 import { Table } from '@codegouvfr/react-dsfr/Table'
+import { Tabs } from '@codegouvfr/react-dsfr/Tabs'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import React, { useEffect, useRef, useState } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 import { apiService } from '../../services/api'
 import { useProcessingStore } from '../../stores/processingStore'
 import type { FileReference, FileReferenceWithMetadata } from '../../types/api'
 import { ConfigFileSelector } from '../ConfigFileSelector'
+import { ManageDatabases } from '../ManageDatabases/ManageDatabases'
 
 interface PendingFile {
   file: File
@@ -63,6 +66,7 @@ const extractDateFromAmendmentJSON = (fileContent: string): string | null => {
 }
 
 export const DatabaseBuilder: React.FC = () => {
+  const { user, isAdmin, isLoading: authLoading } = useAuth()
   const {
     databaseBuilder,
     setDatabaseConfigFile,
@@ -479,7 +483,17 @@ export const DatabaseBuilder: React.FC = () => {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
   }
 
-  return (
+  // Check if user can manage databases (owns at least one or is admin)
+  const { data: managedDatabases } = useQuery({
+    queryKey: ['managed-databases'],
+    queryFn: () => apiService.getManagedDatabases(),
+    enabled: !authLoading && !!user
+  })
+
+  const canManageDatabases =
+    isAdmin || (managedDatabases && managedDatabases.length > 0)
+
+  const buildDatabaseContent = (
     <>
       <style>{`
         .upload-dropzone {
@@ -518,16 +532,11 @@ export const DatabaseBuilder: React.FC = () => {
           color: var(--text-mention-grey);
         }
       `}</style>
-      <div className={fr.cx('fr-container', 'fr-my-6w')}>
-        <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
-          <div className={fr.cx('fr-col-12')}>
-            <h1>Constructeur de base de données</h1>
-            <p className={fr.cx('fr-text--lead')}>
-              Créez des bases de données de similarité à partir de fichiers
-              d'amendements pour la recherche de similarité.
-            </p>
-          </div>
-        </div>
+      <div>
+        <p className={fr.cx('fr-text--lead', 'fr-mb-4w')}>
+          Créez des bases de données de similarité à partir de fichiers
+          d'amendements pour la recherche de similarité.
+        </p>
 
         {/* Mode Selection */}
         <section className={fr.cx('fr-mb-6w', 'fr-mt-4w')}>
@@ -1023,5 +1032,39 @@ export const DatabaseBuilder: React.FC = () => {
         </section>
       </div>
     </>
+  )
+
+  // Only show tabs if user can manage databases, otherwise show build content directly
+  if (authLoading) {
+    return <div>Chargement...</div>
+  }
+
+  if (!canManageDatabases) {
+    // User cannot manage databases - show only build tab content
+    return buildDatabaseContent
+  }
+
+  // User can manage databases - show tabs
+  return (
+    <div className={fr.cx('fr-container', 'fr-my-6w')}>
+      <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
+        <div className={fr.cx('fr-col-12')}>
+          <h1>Constructeur de base de données</h1>
+        </div>
+      </div>
+
+      <Tabs
+        tabs={[
+          {
+            label: 'Construire une base de données',
+            content: buildDatabaseContent
+          },
+          {
+            label: 'Gérer les bases de données',
+            content: <ManageDatabases />
+          }
+        ]}
+      />
+    </div>
   )
 }

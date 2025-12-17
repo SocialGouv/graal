@@ -290,3 +290,27 @@ export interface UserConfigurationRead extends UserConfigurationBase {
   created_at: string
   updated_at: string
 }
+
+// Database Permission types
+export interface DatabasePermission {
+  db_id: string
+  user_id: string
+  email: string
+  role: 'owner' | 'writer' | 'reader'
+  created_at: string
+}
+
+export interface ManagedDatabase {
+  id: string
+  name: string
+  size_bytes: number
+  row_count: number | null
+  last_modified: string
+  created_at: string
+  user_role: 'owner' | null
+}
+
+export interface AssignPermissionRequest {
+  user_id: string
+  role: 'owner' | 'writer' | 'reader'
+}

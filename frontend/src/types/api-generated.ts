@@ -1189,6 +1189,161 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/databases/users/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Search Users By Email
+     * @description Search for users by email (partial match).
+     *
+     *     Used for autocomplete/search when assigning permissions.
+     *     Only returns users whose email contains the search term.
+     *
+     *     Args:
+     *         email: Email search term (partial match)
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
+     *     Returns:
+     *         List of UserResponse matching the search term (max 10 results)
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     */
+    get: operations['search_users_by_email_api_v1_databases_users_search_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/databases/managed': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Managed Databases
+     * @description List databases that user can manage (owns or is admin).
+     *
+     *     Owners see only databases they own.
+     *     Admins see all active databases.
+     *
+     *     Args:
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
+     *     Returns:
+     *         List of ManagedDatabaseResponse with database info and user role
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     */
+    get: operations['list_managed_databases_api_v1_databases_managed_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/databases/{db_id}/permissions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Db Permissions
+     * @description List all permission entries for a database.
+     *
+     *     Only database owners and admins can view permissions.
+     *
+     *     Args:
+     *         db_id: Database UUID
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
+     *     Returns:
+     *         List of DatabasePermissionResponse with user email and role
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not owner or admin
+     */
+    get: operations['list_db_permissions_api_v1_databases__db_id__permissions_get']
+    put?: never
+    /**
+     * Assign Db Permission
+     * @description Assign a role to a user for a database by user ID.
+     *
+     *     Only database owners and admins can assign permissions.
+     *     Validates that the user ID exists in the system before assigning.
+     *
+     *     Args:
+     *         db_id: Database UUID
+     *         request: Request with user_id and role
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
+     *     Returns:
+     *         DatabasePermissionResponse with assigned permission details
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not owner or admin
+     *         HTTPException: 404 if user not found
+     *         HTTPException: 400 if cannot demote last owner
+     */
+    post: operations['assign_db_permission_api_v1_databases__db_id__permissions_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/databases/{db_id}/permissions/{target_user_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Remove Db Permission
+     * @description Remove a user's role for a database.
+     *
+     *     Only database owners and admins can remove permissions.
+     *     Cannot remove the last owner.
+     *
+     *     Args:
+     *         db_id: Database UUID
+     *         target_user_id: User UUID whose permission to remove
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
+     *     Returns:
+     *         204 No Content on success
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not owner or admin
+     *         HTTPException: 400 if cannot remove last owner
+     */
+    delete: operations['remove_db_permission_api_v1_databases__db_id__permissions__target_user_id__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1274,6 +1429,22 @@ export interface components {
        * @description References to new files to append
        */
       file_references: components['schemas']['FileUploadReference'][]
+    }
+    /**
+     * AssignPermissionRequest
+     * @description Request model for assigning database permissions.
+     */
+    AssignPermissionRequest: {
+      /**
+       * User Id
+       * @description User ID (UUID) to grant permission to
+       */
+      user_id: string
+      /**
+       * Role
+       * @description Role to assign (owner, writer, reader)
+       */
+      role: string
     }
     /** Body_process_amendments_api_v1_process_post */
     Body_process_amendments_api_v1_process_post: {
@@ -1432,6 +1603,38 @@ export interface components {
       total_files: number
     }
     /**
+     * DatabasePermissionResponse
+     * @description Response model for database permission entry.
+     */
+    DatabasePermissionResponse: {
+      /**
+       * Db Id
+       * @description Database ID
+       */
+      db_id: string
+      /**
+       * User Id
+       * @description User ID with permission
+       */
+      user_id: string
+      /**
+       * Email
+       * @description User email address
+       */
+      email: string
+      /**
+       * Role
+       * @description Role (owner, writer, reader)
+       */
+      role: string
+      /**
+       * Created At
+       * Format: date-time
+       * @description When permission was granted
+       */
+      created_at: string
+    }
+    /**
      * FileReferenceInfo
      * @description Information about a file in a database manifest.
      */
@@ -1567,6 +1770,49 @@ export interface components {
      * @enum {string}
      */
     JobStatus: 'queued' | 'running' | 'completed' | 'failed' | 'timeout'
+    /**
+     * ManagedDatabaseResponse
+     * @description Response model for databases that can be managed by the user.
+     */
+    ManagedDatabaseResponse: {
+      /**
+       * Id
+       * @description Database ID (UUID)
+       */
+      id: string
+      /**
+       * Name
+       * @description Database name
+       */
+      name: string
+      /**
+       * Size Bytes
+       * @description File size in bytes
+       */
+      size_bytes: number
+      /**
+       * Row Count
+       * @description Number of rows in database
+       */
+      row_count?: number | null
+      /**
+       * Last Modified
+       * Format: date-time
+       * @description Last modification timestamp
+       */
+      last_modified: string
+      /**
+       * Created At
+       * Format: date-time
+       * @description Database creation timestamp
+       */
+      created_at: string
+      /**
+       * User Role
+       * @description User's role (owner) or null for admins viewing all databases
+       */
+      user_role?: string | null
+    }
     /**
      * PreviewResponse
      * @description Response model for results preview.
@@ -3206,6 +3452,172 @@ export interface operations {
         content: {
           'application/json': components['schemas']['S3DeleteResponse']
         }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  search_users_by_email_api_v1_databases_users_search_get: {
+    parameters: {
+      query: {
+        email: string
+      }
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UserResponse'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_managed_databases_api_v1_databases_managed_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ManagedDatabaseResponse'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_db_permissions_api_v1_databases__db_id__permissions_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        db_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatabasePermissionResponse'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  assign_db_permission_api_v1_databases__db_id__permissions_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        db_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AssignPermissionRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatabasePermissionResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  remove_db_permission_api_v1_databases__db_id__permissions__target_user_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        db_id: string
+        target_user_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       /** @description Validation Error */
       422: {
