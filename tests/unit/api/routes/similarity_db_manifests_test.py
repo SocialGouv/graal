@@ -34,17 +34,21 @@ def mock_admin_session_cookie() -> dict[str, str]:
 def mock_auth_service():
     """Mock authorization service to always authorize as admin."""
 
-    mock_service = AsyncMock()
-    mock_service.get_current_user = AsyncMock(
-        return_value=type(
-            "User",
-            (),
-            {"user_id": "00000000-0000-0000-0000-000000000000", "is_admin": True},
-        )(),
-    )
+    admin_user = type(
+        "User",
+        (),
+        {"user_id": "00000000-0000-0000-0000-000000000000", "is_admin": True},
+    )()
 
+    mock_service = AsyncMock()
+    # Used by CurrentUser dependency
+    mock_service.get_current_user = AsyncMock(return_value=admin_user)
+    # Used by require_admin / AdminUser dependency
+    mock_service.require_admin = AsyncMock(return_value=admin_user)
+
+    # Patch the authorization service factory in the auth dependencies module
     with patch(
-        "graal.api.routes.similarity_db_manifests.get_authorization_service",
+        "graal.api.dependencies.auth.get_authorization_service",
         return_value=mock_service,
     ):
         yield mock_service

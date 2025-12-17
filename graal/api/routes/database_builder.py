@@ -5,11 +5,12 @@ import json
 import logging
 import logging.config
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Form, HTTPException, UploadFile
 
+from graal.api.dependencies.auth import AdminUser, CurrentUser
 from graal.api.models.requests import (
     AppendDatabaseRequest,
     DatabaseBuildRequest,
@@ -24,7 +25,6 @@ from graal.api.models.responses import (
     JobStatus,
     ProcessingResponse,
 )
-from graal.api.services.authorization_service import get_authorization_service
 from graal.api.services.database_builder_service import (
     DatabaseBuilderService,
     create_job_id,
@@ -47,30 +47,6 @@ def get_database_builder_service() -> DatabaseBuilderService:
     from graal.api.main import database_builder_service
 
     return database_builder_service
-
-
-# Helper functions for DRYing up common patterns
-
-
-def _convert_file_ref_to_metadata(file_ref: FileReferenceInfo) -> dict[str, Any]:
-    """Convert a FileReferenceInfo to metadata dictionary format.
-
-    Args:
-        file_ref: File reference to convert
-
-    Returns:
-        Dictionary with file metadata
-    """
-    return {
-        "upload_id": file_ref.file_hash,
-        "filename": file_ref.filename,
-        "file_hash": file_ref.file_hash,  # Add file_hash for manifest creation
-        "s3_key": file_ref.s3_key,
-        "default_processing_timestamp": file_ref.metadata.get(
-            "default_processing_timestamp"
-        ),
-        "origin_project": file_ref.metadata.get("origin_project"),
-    }
 
 
 def _convert_upload_ref_to_metadata(
@@ -158,26 +134,26 @@ async def _download_file_to_temp(
 
 @router.get("", response_model=DatabaseListResponse)
 async def list_databases(
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser,
 ):
     """List all available similarity databases from PostgreSQL manifests.
+
+    Args:
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         DatabaseListResponse: List of available databases with metadata
 
     Raises:
-        HTTPException: 500 if listing fails
+        HTTPException: 401 if not authenticated, 500 if listing fails
     """
-    logging.info("[API] Listing available similarity databases from manifests")
+    logging.info(
+        f"[API] Listing available similarity databases for user {current_user.user_id}"
+    )
 
     try:
         manifest_service = get_similarity_db_manifest_service()
         manifests = await manifest_service.list_active_manifests()
-
-        # Authenticate user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
 
         # Filter by permissions unless admin
         if not current_user.is_admin:
@@ -211,6 +187,7 @@ async def list_databases(
 async def upload_amendment_file(
     file: UploadFile,
     metadata: Annotated[str, Form()],
+    _current_user: CurrentUser = None,
 ) -> FileUploadResponse:
     """Upload an amendment file for database building.
 
@@ -221,13 +198,15 @@ async def upload_amendment_file(
     Args:
         file: The amendment file to upload
         metadata: JSON string with required default_processing_timestamp and origin_project
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         FileUploadResponse: Upload information including hash, s3_key, and deduplication status
 
     Raises:
-        HTTPException: 500 if upload fails
+        HTTPException: 401 if not authenticated, 500 if upload fails
     """
+
     try:
         # Parse metadata
         file_metadata = json.loads(metadata)
@@ -297,8 +276,7 @@ async def upload_amendment_file(
 @router.post("/build", response_model=ProcessingResponse)
 async def build_database(
     request: DatabaseBuildRequest,
-    http_request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser = None,
 ):
     """Start building a similarity database in the background.
 
@@ -333,9 +311,6 @@ async def build_database(
     logging.info(f"[API] Received database build request: {request.database_name}")
 
     try:
-        # Get current user for manifest creation
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(http_request, session)
         user_id = UUID(current_user.user_id)
 
         # Create job
@@ -413,7 +388,7 @@ async def build_database(
 
 
 @router.delete("/uploads/{upload_id}")
-async def delete_uploaded_file(upload_id: str):
+async def delete_uploaded_file(upload_id: str, _admin_user: AdminUser = None):
     """Delete an uploaded file that's no longer needed.
 
     This endpoint is idempotent - if the file doesn't exist, it returns success
@@ -545,8 +520,7 @@ async def _download_all_files(
 async def append_to_database(
     database_name: str,
     request: AppendDatabaseRequest,
-    http_request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser = None,
 ):
     """Append new files to an existing database by rebuilding with all files.
 
@@ -572,9 +546,6 @@ async def append_to_database(
         )
 
     try:
-        # Get current user for manifest creation
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(http_request, session)
         user_id = UUID(current_user.user_id)
 
         # Get PostgreSQL manifest service and find manifest
@@ -660,19 +631,25 @@ async def append_to_database(
 
 
 @router.get("/{database_name}/manifest", response_model=DatabaseManifestResponse)
-async def get_database_manifest(database_name: str):
+async def get_database_manifest(
+    database_name: str,
+    current_user: CurrentUser,
+):
     """Retrieve the manifest for a database showing all input files.
 
     Args:
         database_name: Name of the database
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         DatabaseManifestResponse: Manifest with list of files and metadata
 
     Raises:
-        HTTPException: 404 if database/manifest not found, 500 for other errors
+        HTTPException: 401 if not authenticated, 404 if database/manifest not found, 500 for other errors
     """
-    logging.info(f"[API] Retrieving manifest for database: {database_name}")
+    logging.info(
+        f"[API] Retrieving manifest for database: {database_name} (user: {current_user.user_id})"
+    )
 
     try:
         # Get PostgreSQL manifest service

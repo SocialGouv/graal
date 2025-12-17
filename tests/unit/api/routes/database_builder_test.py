@@ -6,92 +6,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from graal.api.models.responses import FileReferenceInfo
 from graal.api.routes.database_builder import (
-    _convert_file_ref_to_metadata,
     _download_file_to_temp,
 )
-
-
-class TestConvertFileRefToMetadata:
-    """Test _convert_file_ref_to_metadata helper function."""
-
-    def test_converts_file_reference_with_all_fields(self):
-        """Test conversion with all metadata fields present."""
-        # Arrange
-        file_ref = FileReferenceInfo(
-            upload_id="upload123",
-            filename="test_amendments.json",
-            file_hash="abc123def456",  # pragma: allowlist secret
-            s3_key="pool/abc/123/test_amendments.json",
-            uploaded_at="2024-01-15T10:30:00Z",
-            metadata={
-                "default_processing_timestamp": 1704067200,
-                "origin_project": "PLFSS 2024",
-            },
-        )
-
-        # Act
-        result = _convert_file_ref_to_metadata(file_ref)
-
-        # Assert
-        assert result == {
-            "upload_id": "abc123def456",
-            "filename": "test_amendments.json",
-            "file_hash": "abc123def456",  # pragma: allowlist secret
-            "s3_key": "pool/abc/123/test_amendments.json",
-            "default_processing_timestamp": 1704067200,
-            "origin_project": "PLFSS 2024",
-        }
-
-    def test_converts_file_reference_with_missing_metadata_fields(self):
-        """Test conversion when metadata fields are missing."""
-        # Arrange
-        file_ref = FileReferenceInfo(
-            upload_id="upload456",
-            filename="incomplete.json",
-            file_hash="def789ghi012",  # pragma: allowlist secret
-            s3_key="pool/def/789/incomplete.json",
-            uploaded_at="2024-01-16T14:20:00Z",
-            metadata={},  # Empty metadata
-        )
-
-        # Act
-        result = _convert_file_ref_to_metadata(file_ref)
-
-        # Assert
-        assert result == {
-            "upload_id": "def789ghi012",
-            "filename": "incomplete.json",
-            "file_hash": "def789ghi012",
-            "s3_key": "pool/def/789/incomplete.json",
-            "default_processing_timestamp": None,
-            "origin_project": None,
-        }
-
-    def test_converts_file_reference_with_partial_metadata(self):
-        """Test conversion with only some metadata fields."""
-        # Arrange
-        file_ref = FileReferenceInfo(
-            upload_id="upload789",
-            filename="partial.json",
-            file_hash="ghi345jkl678",  # pragma: allowlist secret
-            s3_key="pool/ghi/345/partial.json",
-            uploaded_at="2024-01-17T09:15:00Z",
-            metadata={
-                "origin_project": "Test Project",
-                # default_processing_timestamp missing
-            },
-        )
-
-        # Act
-        result = _convert_file_ref_to_metadata(file_ref)
-
-        # Assert
-        assert result["origin_project"] == "Test Project"
-        assert result["default_processing_timestamp"] is None
-        assert result["upload_id"] == "ghi345jkl678"
-        assert result["file_hash"] == "ghi345jkl678"
 
 
 class TestDownloadFileToTemp:

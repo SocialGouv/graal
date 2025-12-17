@@ -7,20 +7,18 @@ including listing users and toggling admin status.
 
 import logging
 import logging.config
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
+from graal.api.dependencies.auth import AdminUser, CurrentUser
 from graal.api.models.responses import UserResponse
-from graal.api.services.authorization_service import get_authorization_service
 from graal.database.base import get_async_session_maker
 from graal.database.models import User
 
 logging.config.fileConfig("logging.conf")
-
 
 router = APIRouter(tags=["users"])
 
@@ -41,9 +39,7 @@ class ToggleAdminRequest(BaseModel):
 
 
 @router.get("/users/me", response_model=UserResponse)
-async def get_my_profile(
-    request: Request, session: Optional[str] = Cookie(default=None)
-):
+async def get_my_profile(current_user: CurrentUser):
     """
     Get current user's profile.
 
@@ -60,28 +56,15 @@ async def get_my_profile(
     Raises:
         HTTPException: 401 if not authenticated
     """
-    logging.info("[API] Getting user profile")
-
-    try:
-        auth_service = get_authorization_service()
-        user = await auth_service.get_current_user(request, session)
-        logging.info(f"[API] Profile retrieved for user {user.user_id}")
-        return user
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"[API] Failed to retrieve profile: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to retrieve user profile"
-        ) from e
+    logging.info(f"[API] Profile retrieved for user {current_user.user_id}")
+    return current_user
 
 
 @router.get("/admin/users", response_model=UserListResponse)
 async def list_users(
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Users per page"),
+    _admin_user: AdminUser = None,
 ):
     """
     List all users (admin only).
@@ -105,10 +88,6 @@ async def list_users(
     logging.info(f"[API] Listing users (page={page}, page_size={page_size})")
 
     try:
-        # Check admin access
-        auth_service = get_authorization_service()
-        await auth_service.require_admin(request, session)
-
         # Query users from database
         session_maker = get_async_session_maker()
         async with session_maker() as db_session:
@@ -153,8 +132,7 @@ async def list_users(
 async def toggle_admin_status(
     user_id: UUID,
     toggle_request: ToggleAdminRequest,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    admin_user: AdminUser = None,
 ):
     """
     Toggle admin status for a user (admin only).
@@ -179,14 +157,10 @@ async def toggle_admin_status(
     logging.info(f"[API] Toggling admin status for user {user_id}")
 
     try:
-        # Check admin access
-        auth_service = get_authorization_service()
-        current_user = await auth_service.require_admin(request, session)
-
         # Prevent self-modification
-        if str(user_id) == current_user.user_id:
+        if str(user_id) == admin_user.user_id:
             logging.warning(
-                f"[API] User {current_user.user_id} attempted to modify own admin status"
+                f"[API] User {admin_user.user_id} attempted to modify own admin status"
             )
             raise HTTPException(
                 status_code=403,

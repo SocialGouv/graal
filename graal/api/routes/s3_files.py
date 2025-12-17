@@ -2,38 +2,40 @@
 
 import logging
 import logging.config
-from typing import Optional
 
-from fastapi import APIRouter, Cookie, HTTPException, Path, Request
+from fastapi import APIRouter, Depends, HTTPException, Path
 
+from graal.api.dependencies.auth import require_admin
 from graal.api.models.responses import (
     S3DeleteResponse,
     S3FileListResponse,
     S3FileMetadata,
 )
-from graal.api.services.authorization_service import get_authorization_service
 from graal.utils.s3.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
-router = APIRouter(prefix="/admin/s3", tags=["s3-files"])
+router = APIRouter(
+    prefix="/admin/s3",
+    tags=["s3-files"],
+    dependencies=[Depends(require_admin)],  # Applied to all routes
+)
 
 
 @router.get("/config-files", response_model=S3FileListResponse)
-async def list_config_files(
-    request: Request, session: Optional[str] = Cookie(default=None)
-):
+async def list_config_files():
     """List all configuration files from S3.
 
     Admin-only endpoint to view all available config files.
+
+    Args:
+        admin_user: Authenticated admin user (injected by FastAPI)
 
     Returns:
         S3FileListResponse with list of config files and metadata
 
     Raises:
-        HTTPException: 403 if not admin, 500 if S3 operation fails
+        HTTPException: 401 if not authenticated, 403 if not admin, 500 if S3 operation fails
     """
-    auth_service = get_authorization_service()
-    await auth_service.require_admin(request, session)
 
     try:
         s3_service = get_s3_service()
@@ -65,9 +67,7 @@ async def list_config_files(
 
 @router.delete("/config-files/{filename}", response_model=S3DeleteResponse)
 async def delete_config_file(
-    request: Request,
     filename: str = Path(..., description="Configuration file name"),
-    session: Optional[str] = Cookie(default=None),
 ):
     """Delete a configuration file from S3.
 
@@ -80,10 +80,8 @@ async def delete_config_file(
         S3DeleteResponse with deletion status
 
     Raises:
-        HTTPException: 403 if not admin, 404 if file not found, 500 if deletion fails
+        HTTPException: 401 if not authenticated, 403 if not admin, 404 if file not found, 500 if deletion fails
     """
-    auth_service = get_authorization_service()
-    await auth_service.require_admin(request, session)
 
     try:
         s3_service = get_s3_service()
@@ -109,9 +107,7 @@ async def delete_config_file(
 
 
 @router.get("/databases", response_model=S3FileListResponse)
-async def list_database_files(
-    request: Request, session: Optional[str] = Cookie(default=None)
-):
+async def list_database_files():
     """List all similarity database files from S3.
 
     Admin-only endpoint to view all available similarity databases.
@@ -120,10 +116,8 @@ async def list_database_files(
         S3FileListResponse with list of database files and metadata
 
     Raises:
-        HTTPException: 403 if not admin, 500 if S3 operation fails
+        HTTPException: 401 if not authenticated, 403 if not admin, 500 if S3 operation fails
     """
-    auth_service = get_authorization_service()
-    await auth_service.require_admin(request, session)
 
     try:
         s3_service = get_s3_service()
@@ -153,10 +147,50 @@ async def list_database_files(
         ) from e
 
 
-@router.get("/input-pool", response_model=S3FileListResponse)
-async def list_input_pool_files(
-    request: Request, session: Optional[str] = Cookie(default=None)
+@router.delete("/databases/{database_name}", response_model=S3DeleteResponse)
+async def delete_database_file(
+    database_name: str = Path(
+        ..., description="Database name (without .parquet extension)"
+    ),
 ):
+    """Delete a similarity database file from S3.
+
+    Admin-only endpoint to delete database files.
+
+    Args:
+        database_name: Name of the database to delete (without .parquet extension)
+
+    Returns:
+        S3DeleteResponse with deletion status
+
+    Raises:
+        HTTPException: 403 if not admin, 404 if database not found, 500 if deletion fails
+    """
+    try:
+        s3_service = get_s3_service()
+        await s3_service.database.delete_database_file(database_name)
+
+        logging.info(f"Admin deleted database: {database_name}")
+        return S3DeleteResponse(
+            success=True,
+            message=f"Database '{database_name}' deleted successfully",
+            deleted_file=database_name,
+        )
+
+    except FileNotFoundError as e:
+        logging.warning(f"Database not found for deletion: {database_name}")
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+    except Exception as e:
+        logging.error(f"Failed to delete database {database_name}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete database: {str(e)}",
+        ) from e
+
+
+@router.get("/input-pool", response_model=S3FileListResponse)
+async def list_input_pool_files():
     """List all files in the input pool from S3.
 
     Admin-only endpoint to view all uploaded files in the input pool.
@@ -167,8 +201,6 @@ async def list_input_pool_files(
     Raises:
         HTTPException: 403 if not admin, 500 if S3 operation fails
     """
-    auth_service = get_authorization_service()
-    await auth_service.require_admin(request, session)
 
     try:
         s3_service = get_s3_service()
@@ -200,9 +232,7 @@ async def list_input_pool_files(
 
 @router.delete("/input-pool/{s3_key:path}", response_model=S3DeleteResponse)
 async def delete_input_pool_file(
-    request: Request,
     s3_key: str = Path(..., description="S3 key of the file to delete"),
-    session: Optional[str] = Cookie(default=None),
 ):
     """Delete a file from the input pool in S3.
 
@@ -217,9 +247,6 @@ async def delete_input_pool_file(
     Raises:
         HTTPException: 403 if not admin, 404 if file not found, 500 if deletion fails
     """
-    auth_service = get_authorization_service()
-    await auth_service.require_admin(request, session)
-
     try:
         s3_service = get_s3_service()
         await s3_service.pool.delete_input_pool_file(s3_key)

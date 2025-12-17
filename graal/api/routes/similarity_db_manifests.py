@@ -8,12 +8,11 @@ and users to list available databases.
 
 import logging
 import logging.config
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, status
 
-from graal.api.services.authorization_service import get_authorization_service
+from graal.api.dependencies.auth import AdminUser, CurrentUser
 from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
@@ -30,17 +29,14 @@ router = APIRouter(tags=["Similarity Databases"])
 
 
 @router.get("/similarity-databases", response_model=list[SimilarityDBManifestRead])
-async def list_similarity_databases(
-    request: Request, session: Optional[str] = Cookie(default=None)
-):
+async def list_similarity_databases(current_user: CurrentUser):
     """
     List all active similarity database manifests.
 
     Available to all authenticated users.
 
     Args:
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         List of SimilarityDBManifestRead schemas
@@ -48,13 +44,11 @@ async def list_similarity_databases(
     Raises:
         HTTPException: 401 if not authenticated
     """
-    logging.info("[API] Listing active similarity database manifests")
+    logging.info(
+        f"[API] Listing active similarity database manifests for user {current_user.user_id}"
+    )
 
     try:
-        # Require authentication (but not admin)
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
-
         manifest_service = get_similarity_db_manifest_service()
 
         # Admins see all active manifests
@@ -79,72 +73,13 @@ async def list_similarity_databases(
 
 
 @router.post(
-    "/admin/similarity-databases/sync",
-    response_model=list[SimilarityDBManifestRead],
-)
-async def sync_manifests_from_s3(
-    request: Request, session: Optional[str] = Cookie(default=None)
-):
-    """
-    Sync similarity database manifests from S3 (admin only).
-
-    Scans S3 for similarity database files and creates or updates
-    manifests accordingly. This is typically run once to populate
-    the database from existing S3 files.
-
-    Args:
-        request: FastAPI request object
-        session: Session cookie value
-
-    Returns:
-        List of synced SimilarityDBManifestRead schemas
-
-    Raises:
-        HTTPException: 401 if not authenticated
-        HTTPException: 403 if not admin
-    """
-    logging.info("[API] Admin sync request for similarity database manifests")
-
-    try:
-        # Require admin access
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
-
-        if not current_user.is_admin:
-            logging.warning(
-                f"[API] Non-admin user {current_user.user_id} attempted to sync manifests"
-            )
-            raise HTTPException(
-                status_code=403,
-                detail="Admin access required to sync similarity database manifests",
-            )
-
-        # Sync manifests from S3
-        manifest_service = get_similarity_db_manifest_service()
-        user_id = UUID(current_user.user_id)
-        manifests = await manifest_service.sync_manifests_from_s3(user_id)
-
-        logging.info(f"[API] Synced {len(manifests)} manifests from S3")
-        return [SimilarityDBManifestRead.model_validate(m) for m in manifests]
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"[API] Failed to sync manifests from S3: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to sync manifests from S3"
-        ) from e
-
-
-@router.post(
     "/admin/similarity-databases",
     response_model=SimilarityDBManifestRead,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_manifest(
     manifest: SimilarityDBManifestCreate,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    admin_user: AdminUser,
 ):
     """
     Manually create a similarity database manifest (admin only).
@@ -153,8 +88,7 @@ async def create_manifest(
 
     Args:
         manifest: Manifest data to create
-        request: FastAPI request object
-        session: Session cookie value
+        admin_user: Authenticated admin user (injected by FastAPI)
 
     Returns:
         Created SimilarityDBManifestRead schema
@@ -164,25 +98,14 @@ async def create_manifest(
         HTTPException: 403 if not admin
         HTTPException: 400 if S3 file validation fails
     """
-    logging.info(f"[API] Admin creating manifest '{manifest.name}'")
+    logging.info(
+        f"[API] Admin creating manifest '{manifest.name}' (user: {admin_user.user_id})"
+    )
 
     try:
-        # Require admin access
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
-
-        if not current_user.is_admin:
-            logging.warning(
-                f"[API] Non-admin user {current_user.user_id} attempted to create manifest"
-            )
-            raise HTTPException(
-                status_code=403,
-                detail="Admin access required to create similarity database manifests",
-            )
-
         # Create manifest
         manifest_service = get_similarity_db_manifest_service()
-        user_id = UUID(current_user.user_id)
+        user_id = UUID(admin_user.user_id)
         new_manifest = await manifest_service.create_manifest(manifest, user_id)
 
         logging.info(f"[API] Created manifest {new_manifest.id}")
@@ -205,8 +128,7 @@ async def create_manifest(
 async def update_manifest(
     manifest_id: UUID,
     updates: SimilarityDBManifestUpdate,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    admin_user: AdminUser,
 ):
     """
     Update a similarity database manifest (admin only).
@@ -217,8 +139,7 @@ async def update_manifest(
     Args:
         manifest_id: Manifest UUID to update
         updates: Fields to update
-        request: FastAPI request object
-        session: Session cookie value
+        admin_user: Authenticated admin user (injected by FastAPI)
 
     Returns:
         Updated SimilarityDBManifestRead schema
@@ -228,22 +149,11 @@ async def update_manifest(
         HTTPException: 403 if not admin
         HTTPException: 404 if manifest not found
     """
-    logging.info(f"[API] Admin updating manifest {manifest_id}")
+    logging.info(
+        f"[API] Admin updating manifest {manifest_id} (user: {admin_user.user_id})"
+    )
 
     try:
-        # Require admin access
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
-
-        if not current_user.is_admin:
-            logging.warning(
-                f"[API] Non-admin user {current_user.user_id} attempted to update manifest"
-            )
-            raise HTTPException(
-                status_code=403,
-                detail="Admin access required to update similarity database manifests",
-            )
-
         # Update manifest
         manifest_service = get_similarity_db_manifest_service()
         updated_manifest = await manifest_service.update_manifest(manifest_id, updates)
@@ -269,8 +179,7 @@ async def update_manifest(
 )
 async def delete_manifest(
     manifest_id: UUID,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    admin_user: AdminUser,
 ):
     """
     Deactivate a similarity database manifest (admin only, soft delete).
@@ -280,8 +189,7 @@ async def delete_manifest(
 
     Args:
         manifest_id: Manifest UUID to deactivate
-        request: FastAPI request object
-        session: Session cookie value
+        admin_user: Authenticated admin user (injected by FastAPI)
 
     Returns:
         204 No Content on success
@@ -291,22 +199,11 @@ async def delete_manifest(
         HTTPException: 403 if not admin
         HTTPException: 404 if manifest not found
     """
-    logging.info(f"[API] Admin deactivating manifest {manifest_id}")
+    logging.info(
+        f"[API] Admin deactivating manifest {manifest_id} (user: {admin_user.user_id})"
+    )
 
     try:
-        # Require admin access
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
-
-        if not current_user.is_admin:
-            logging.warning(
-                f"[API] Non-admin user {current_user.user_id} attempted to delete manifest"
-            )
-            raise HTTPException(
-                status_code=403,
-                detail="Admin access required to delete similarity database manifests",
-            )
-
         # Deactivate manifest
         manifest_service = get_similarity_db_manifest_service()
         await manifest_service.deactivate_manifest(manifest_id)
@@ -332,8 +229,7 @@ async def delete_manifest(
 )
 async def delete_manifest_with_file(
     manifest_id: UUID,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    _admin_user: AdminUser,
 ):
     """Delete a similarity database and its manifest by ID (admin only).
 
@@ -360,19 +256,6 @@ async def delete_manifest_with_file(
     )
 
     try:
-        # Require admin access
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
-
-        if not current_user.is_admin:
-            logging.warning(
-                f"[API] Non-admin user {current_user.user_id} attempted to delete database with file"
-            )
-            raise HTTPException(
-                status_code=403,
-                detail="Admin access required to delete similarity databases",
-            )
-
         manifest_service = get_similarity_db_manifest_service()
         await manifest_service.delete_database_by_id(manifest_id)
 

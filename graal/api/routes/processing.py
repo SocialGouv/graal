@@ -6,9 +6,10 @@ import logging
 import logging.config
 from typing import Optional
 
-from fastapi import APIRouter, Cookie, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
+from graal.api.dependencies.auth import CurrentUser, get_current_user
 from graal.api.models.requests import ProcessingRequest
 from graal.api.models.responses import (
     ConfigFilesResponse,
@@ -16,14 +17,16 @@ from graal.api.models.responses import (
     ProcessingResponse,
     ProgressResponse,
 )
-from graal.utils.s3.s3_service import get_s3_service
 from graal.api.services.authorization_service import (
-    get_authorization_service,
     DbRole,
+    get_authorization_service,
 )
+from graal.utils.s3.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
-router = APIRouter()
+router = APIRouter(
+    dependencies=[Depends(get_current_user)]  # Applied to all routes
+)
 
 
 def get_web_processing_service():
@@ -34,17 +37,22 @@ def get_web_processing_service():
 
 
 @router.get("/config-files", response_model=ConfigFilesResponse)
-async def list_config_files():
+async def list_config_files(current_user: CurrentUser):
     """
     List available configuration files from S3.
+
+    Args:
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         ConfigFilesResponse with list of available configuration files
 
     Raises:
-        HTTPException: 503 if S3 is not available, 500 for other errors
+        HTTPException: 401 if not authenticated, 503 if S3 is not available, 500 for other errors
     """
-    logging.info("[API] Listing available configuration files")
+    logging.info(
+        f"[API] Listing available configuration files for user {current_user.user_id}"
+    )
 
     try:
         s3_service = get_s3_service()
@@ -70,6 +78,7 @@ async def process_amendments(  # noqa: C901
     request_obj: Request,
     session: Optional[str] = Cookie(default=None),
     request: str = Form(...),
+    current_user: CurrentUser = None,
 ):  # noqa: C901
     """
     Upload and process a JSON file containing amendments.
@@ -77,12 +86,13 @@ async def process_amendments(  # noqa: C901
     Args:
         file: JSON file containing amendments data
         request: JSON string containing ProcessingRequest data (see ProcessingRequest model)
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         ProcessingResponse with job_id and initial status
 
     Raises:
-        HTTPException: 400 for validation errors, 413 for file too large, 422 for invalid JSON
+        HTTPException: 401 if not authenticated, 400 for validation errors, 413 for file too large, 422 for invalid JSON
 
     Example request JSON:
         {

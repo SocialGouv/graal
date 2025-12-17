@@ -7,12 +7,11 @@ allowing them to create, read, update, and delete configurations, as well as set
 
 import logging
 import logging.config
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from graal.api.services.authorization_service import get_authorization_service
+from graal.api.dependencies.auth import CurrentUser, get_current_user
 from graal.api.services.user_configuration_service import (
     get_user_configuration_service,
 )
@@ -25,21 +24,22 @@ from graal.database.schemas import (
 logging.config.fileConfig("logging.conf")
 
 
-router = APIRouter(prefix="/users/me/configurations", tags=["User Configurations"])
+router = APIRouter(
+    prefix="/users/me/configurations",
+    tags=["User Configurations"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("", response_model=list[UserConfigurationRead])
-async def list_user_configurations(
-    request: Request, session: Optional[str] = Cookie(default=None)
-):
+async def list_user_configurations(current_user: CurrentUser):
     """
     List all configurations for the current user.
 
     Returns configurations ordered by creation date (newest first).
 
     Args:
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         List of UserConfigurationRead schemas
@@ -47,12 +47,9 @@ async def list_user_configurations(
     Raises:
         HTTPException: 401 if not authenticated
     """
-    logging.info("[API] Listing user configurations")
+    logging.info(f"[API] Listing user configurations for user {current_user.user_id}")
 
     try:
-        # Get current user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
         user_id = UUID(current_user.user_id)
 
         # Get configurations
@@ -80,8 +77,7 @@ async def list_user_configurations(
 )
 async def create_user_configuration(
     config: UserConfigurationCreate,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser,
 ):
     """
     Create a new configuration for the current user.
@@ -91,8 +87,7 @@ async def create_user_configuration(
 
     Args:
         config: Configuration data to create
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         Created UserConfigurationRead schema
@@ -101,12 +96,11 @@ async def create_user_configuration(
         HTTPException: 401 if not authenticated
         HTTPException: 400 if S3 file validation fails
     """
-    logging.info(f"[API] Creating configuration '{config.name}'")
+    logging.info(
+        f"[API] Creating configuration '{config.name}' for user {current_user.user_id}"
+    )
 
     try:
-        # Get current user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
         user_id = UUID(current_user.user_id)
 
         # Create configuration
@@ -129,15 +123,12 @@ async def create_user_configuration(
 
 
 @router.get("/default", response_model=UserConfigurationRead)
-async def get_default_configuration(
-    request: Request, session: Optional[str] = Cookie(default=None)
-):
+async def get_default_configuration(current_user: CurrentUser):
     """
     Get the user's default configuration.
 
     Args:
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         UserConfigurationRead schema of default configuration
@@ -146,12 +137,9 @@ async def get_default_configuration(
         HTTPException: 401 if not authenticated
         HTTPException: 404 if no default configuration set
     """
-    logging.info("[API] Getting default configuration")
+    logging.info(f"[API] Getting default configuration for user {current_user.user_id}")
 
     try:
-        # Get current user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
         user_id = UUID(current_user.user_id)
 
         # Get default configuration
@@ -177,8 +165,7 @@ async def get_default_configuration(
 @router.get("/{config_id}", response_model=UserConfigurationRead)
 async def get_user_configuration(
     config_id: UUID,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser,
 ):
     """
     Get a specific configuration by ID.
@@ -187,8 +174,7 @@ async def get_user_configuration(
 
     Args:
         config_id: Configuration UUID
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         UserConfigurationRead schema
@@ -197,12 +183,11 @@ async def get_user_configuration(
         HTTPException: 401 if not authenticated
         HTTPException: 404 if not found or doesn't belong to user
     """
-    logging.info(f"[API] Getting configuration {config_id}")
+    logging.info(
+        f"[API] Getting configuration {config_id} for user {current_user.user_id}"
+    )
 
     try:
-        # Get current user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
         user_id = UUID(current_user.user_id)
 
         # Get configuration
@@ -233,8 +218,7 @@ async def get_user_configuration(
 async def update_user_configuration(
     config_id: UUID,
     updates: UserConfigurationUpdate,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser,
 ):
     """
     Update a configuration.
@@ -245,8 +229,7 @@ async def update_user_configuration(
     Args:
         config_id: Configuration UUID to update
         updates: Fields to update
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         Updated UserConfigurationRead schema
@@ -256,12 +239,11 @@ async def update_user_configuration(
         HTTPException: 404 if not found or doesn't belong to user
         HTTPException: 400 if S3 validation fails
     """
-    logging.info(f"[API] Updating configuration {config_id}")
+    logging.info(
+        f"[API] Updating configuration {config_id} for user {current_user.user_id}"
+    )
 
     try:
-        # Get current user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
         user_id = UUID(current_user.user_id)
 
         # Update configuration
@@ -292,8 +274,7 @@ async def update_user_configuration(
 @router.post("/{config_id}/set-default", response_model=UserConfigurationRead)
 async def set_default_configuration(
     config_id: UUID,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser,
 ):
     """
     Set a configuration as the user's default.
@@ -302,8 +283,7 @@ async def set_default_configuration(
 
     Args:
         config_id: Configuration UUID to set as default
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         Updated UserConfigurationRead schema
@@ -312,12 +292,11 @@ async def set_default_configuration(
         HTTPException: 401 if not authenticated
         HTTPException: 404 if not found or doesn't belong to user
     """
-    logging.info(f"[API] Setting configuration {config_id} as default")
+    logging.info(
+        f"[API] Setting configuration {config_id} as default for user {current_user.user_id}"
+    )
 
     try:
-        # Get current user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
         user_id = UUID(current_user.user_id)
 
         # Set as default
@@ -346,8 +325,7 @@ async def set_default_configuration(
 @router.delete("/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_configuration(
     config_id: UUID,
-    request: Request,
-    session: Optional[str] = Cookie(default=None),
+    current_user: CurrentUser,
 ):
     """
     Delete a configuration.
@@ -356,8 +334,7 @@ async def delete_user_configuration(
 
     Args:
         config_id: Configuration UUID to delete
-        request: FastAPI request object
-        session: Session cookie value
+        current_user: Authenticated user (injected by FastAPI)
 
     Returns:
         204 No Content on success
@@ -366,12 +343,11 @@ async def delete_user_configuration(
         HTTPException: 401 if not authenticated
         HTTPException: 404 if not found or doesn't belong to user
     """
-    logging.info(f"[API] Deleting configuration {config_id}")
+    logging.info(
+        f"[API] Deleting configuration {config_id} for user {current_user.user_id}"
+    )
 
     try:
-        # Get current user
-        auth_service = get_authorization_service()
-        current_user = await auth_service.get_current_user(request, session)
         user_id = UUID(current_user.user_id)
 
         # Delete configuration

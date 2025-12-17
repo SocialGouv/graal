@@ -39,21 +39,6 @@ def mock_admin_session_cookie():
 
 
 @pytest.fixture
-def mock_auth_service(mocker):
-    """Mock authorization service to always authorize as admin."""
-
-    mock_service = AsyncMock()
-    mock_service.require_admin = AsyncMock()
-
-    # get_authorization_service is imported in the routes module, so patch there.
-    with patch(
-        "graal.api.routes.s3_files.get_authorization_service",
-        return_value=mock_service,
-    ):
-        yield mock_service
-
-
-@pytest.fixture
 def mock_s3_service(mocker):
     """Mock S3Service used by the routes."""
 
