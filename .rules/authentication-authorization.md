@@ -12,6 +12,12 @@ The system follows SOLID principles with a provider-based architecture that enab
 
 ### Core Components
 
+**Auth Dependencies Module** ([`dependencies/auth.py`](../graal/api/dependencies/auth.py))
+- **PRIMARY PATTERN**: Use FastAPI dependency injection for all auth
+- `CurrentUser`: Type alias for authenticated user dependency
+- `AdminUser`: Type alias for admin-only dependency
+- Provides `get_current_user()` and `require_admin()` as FastAPI dependencies
+
 **AuthorizationProvider Interface** ([`authorization_service.py:25`](../graal/api/services/authorization_service.py:25))
 - Abstract base class defining the authorization contract
 - Enables swapping implementations without changing service code
@@ -26,6 +32,7 @@ The system follows SOLID principles with a provider-based architecture that enab
   - `check_admin()`: Check if current user is admin
   - `require_admin()`: Enforce admin access (raises HTTP 403 if not admin)
 - Factory: [`get_authorization_service()`](../graal/api/services/authorization_service.py:188)
+- **Note**: Service is now primarily used via dependency injection
 
 **UserResponse Model** ([`responses.py:152`](../graal/api/models/responses.py:152))
 - **Single source of truth** for user data structure
@@ -41,14 +48,65 @@ The system follows SOLID principles with a provider-based architecture that enab
 
 ### ✅ DO
 
-**Use Authorization Service Methods**
+**Use FastAPI Dependencies (PRIMARY PATTERN)**
 ```python
-from graal.api.services.authorization_service import get_authorization_service
+from graal.api.dependencies.auth import CurrentUser, AdminUser
 
-auth_service = get_authorization_service()
-user = await auth_service.get_current_user()        # Get current user
-is_admin = await auth_service.check_admin()         # Check admin status
-user = await auth_service.require_admin()           # Require admin (raises 403 if not)
+# For routes that need authenticated user
+@router.get("/my-route")
+async def my_route(current_user: CurrentUser):
+    # current_user is automatically authenticated (401 if not)
+    # Type: UserResponse with user_id, email, is_admin
+    print(f"User {current_user.user_id} is accessing route")
+    return {"message": "Success"}
+
+# For admin-only routes
+@router.post("/admin/sensitive")
+async def admin_route(admin_user: AdminUser):
+    # admin_user is automatically validated as admin (403 if not)
+    # No manual auth checks needed!
+    return {"message": "Admin operation completed"}
+```
+
+**Access User Data from Dependency**
+```python
+@router.post("/update-profile")
+async def update_profile(data: ProfileData, current_user: CurrentUser):
+    # Use current_user fields directly
+    user_id = current_user.user_id
+    email = current_user.email
+    is_admin = current_user.is_admin
+
+    # Perform operation with user context
+    return {"updated_by": user_id}
+```
+
+**Protect Entire Router (Alternative Pattern)**
+```python
+from fastapi import APIRouter, Depends
+from graal.api.dependencies.auth import get_current_user, require_admin
+
+# All routes in this router require authentication
+router = APIRouter(
+    prefix="/user",
+    dependencies=[Depends(get_current_user)]  # Applied to all routes
+)
+
+@router.get("/profile")  # Automatically protected!
+async def get_profile():
+    # No need to add current_user param if you don't need user data
+    return {"message": "Profile data"}
+
+@router.get("/settings", response_model=Settings)
+async def get_settings(current_user: CurrentUser):
+    # Can still access user if needed by adding the param
+    return get_user_settings(current_user.user_id)
+
+# For admin-only routers
+admin_router = APIRouter(
+    prefix="/admin",
+    dependencies=[Depends(require_admin)]  # All routes require admin
+)
 ```
 
 **Use UserResponse for All User Models**
@@ -60,26 +118,48 @@ def some_function() -> UserResponse:
     return UserResponse(user_id="123", email="user@example.com", is_admin=False)
 ```
 
-**Protect Admin Endpoints**
-```python
-@router.post("/admin/sensitive-operation")
-async def admin_only_endpoint():
-    auth_service = get_authorization_service()
-    user = await auth_service.require_admin()  # Enforce admin access
-    # Proceed with admin operation...
-```
-
 ### ❌ DON'T
 
-**Don't Bypass Authorization Service**
+**Don't Use Manual Auth Checks in Routes**
+```python
+# ❌ WRONG - Don't do this anymore!
+@router.post("/my-route")
+async def my_route(request: Request, session: Optional[str] = Cookie(default=None)):
+    auth_service = get_authorization_service()
+    user = await auth_service.get_current_user(request, session)
+    # ...
+
+# ✅ CORRECT - Use dependency injection
+@router.post("/my-route")
+async def my_route(current_user: CurrentUser):
+    # Auth is automatic!
+    # ...
+```
+
+**Don't Manually Check Admin Status in Routes**
+```python
+# ❌ WRONG
+@router.post("/admin/feature")
+async def admin_feature(current_user: CurrentUser):
+    if not current_user.is_admin:
+        raise HTTPException(403, "Not admin")
+    # ...
+
+# ✅ CORRECT - Use AdminUser dependency
+@router.post("/admin/feature")
+async def admin_feature(admin_user: AdminUser):
+    # Admin check is automatic!
+    # ...
+```
+
+**Don't Bypass Dependency Injection**
 ```python
 # ❌ WRONG
 if user_id == "hardcoded-admin":
     is_admin = True
 
-# ✅ CORRECT
-auth_service = get_authorization_service()
-is_admin = await auth_service.check_admin()
+# ✅ CORRECT - Let FastAPI handle it
+# Just use CurrentUser or AdminUser dependency
 ```
 
 ---
@@ -202,15 +282,32 @@ if (isAdmin) { ... }
 ### Backend: Create Admin-Only Endpoint
 
 ```python
-from graal.api.services.authorization_service import get_authorization_service
+from graal.api.dependencies.auth import AdminUser
 
 @router.post("/admin/my-feature")
-async def admin_feature():
-    auth_service = get_authorization_service()
-    user = await auth_service.require_admin()  # Require admin first
+async def admin_feature(admin_user: AdminUser):
+    # admin_user is automatically validated as admin (403 if not)
+    # No manual auth checks needed!
 
-    # User is admin if we reach here
+    # Access user info if needed
+    print(f"Admin {admin_user.email} performed operation")
+
     return {"message": "Admin operation completed"}
+```
+
+### Backend: Create Authenticated (Non-Admin) Endpoint
+
+```python
+from graal.api.dependencies.auth import CurrentUser
+
+@router.get("/user/my-data")
+async def get_user_data(current_user: CurrentUser):
+    # current_user is automatically authenticated (401 if not)
+    # Available to any authenticated user (not just admins)
+
+    user_id = current_user.user_id
+    # Fetch and return user-specific data
+    return {"user_id": user_id, "data": "..."}
 ```
 
 ### Frontend: Create Protected Component
@@ -227,6 +324,37 @@ export const MyAdminFeature = () => {
 
   return <div>{/* Your admin feature UI */}</div>
 }
+```
+
+### Frontend: Protect Routes with ProtectedRoute
+
+```typescript
+// In App.tsx - wrap routes that require authentication
+import { ProtectedRoute } from './components/ProtectedRoute'
+
+<Routes>
+  <Route path="/" element={<Home />} />
+
+  {/* Routes requiring authentication */}
+  <Route
+    path="/processing"
+    element={
+      <ProtectedRoute>
+        <ProcessingPage />
+      </ProtectedRoute>
+    }
+  />
+
+  {/* Admin-only routes */}
+  <Route
+    path="/admin"
+    element={
+      <ProtectedRoute requireAdmin>
+        <AdminPage />
+      </ProtectedRoute>
+    }
+  />
+</Routes>
 ```
 
 ### Frontend: Add API Method & Use with React Query
