@@ -17,6 +17,16 @@ class MigrationService:
     """
 
     def __init__(self, database_url: str, lock_id: int = 1357911):
+        # Convert to async driver format if needed
+        if database_url.startswith("postgresql://"):
+            database_url = database_url.replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
+        # Remove unsupported sslmode parameters for asyncpg
+        if "?sslmode=" in database_url:
+            database_url = database_url.replace("?sslmode=require", "")
+            database_url = database_url.replace("?sslmode=prefer", "")
+
         self.database_url = database_url
         self.lock_id = lock_id
         # Engine must be created lazily inside run_migrations(), not in the constructor
