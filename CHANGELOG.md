@@ -1,3 +1,10 @@
+## [1.31.2](https://github.com/SocialGouv/graal/compare/v1.31.1...v1.31.2) (2025-12-17)
+
+
+### Bug Fixes
+
+* Handle async migration in MigrationService ([d41063c](https://github.com/SocialGouv/graal/commit/d41063cce807251f2784ceb2f3e39e6a61929399))
+
 ## [1.31.1](https://github.com/SocialGouv/graal/compare/v1.31.0...v1.31.1) (2025-12-17)
 
 
