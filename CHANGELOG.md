@@ -1,3 +1,12 @@
+# [1.31.0](https://github.com/SocialGouv/graal/compare/v1.30.0...v1.31.0) (2025-12-17)
+
+
+### Features
+
+* Add backend to handle sim DB permissions ([4cfa4ef](https://github.com/SocialGouv/graal/commit/4cfa4ef9ea89d28be3d821a5a57d980fedf98451))
+* Add frontend to manade sim DBs ([8b3f784](https://github.com/SocialGouv/graal/commit/8b3f784fad330edc249d4b8b41796f0750c25ade))
+* Add index on email to improve performance on email column of `users` ([2fd51d8](https://github.com/SocialGouv/graal/commit/2fd51d8fbccf0f0b77a922583f907f81f11e3dce))
+
 # [1.30.0](https://github.com/SocialGouv/graal/compare/v1.29.0...v1.30.0) (2025-12-17)
 
 
