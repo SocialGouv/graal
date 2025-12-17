@@ -68,7 +68,8 @@ yarn.lock
 docs/
 
 # Scripts
-scripts/
+scripts/*
+!scripts/run_migrations.py
 
 # Fichiers temporaires
 .tmp/
