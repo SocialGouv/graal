@@ -1,3 +1,10 @@
+## [1.31.1](https://github.com/SocialGouv/graal/compare/v1.31.0...v1.31.1) (2025-12-17)
+
+
+### Bug Fixes
+
+* Do not ignore `scripts/run_migrations.py` in docker build ([7737b97](https://github.com/SocialGouv/graal/commit/7737b970bb8f5492a24a60c2ddc96d86107417ba))
+
 # [1.31.0](https://github.com/SocialGouv/graal/compare/v1.30.0...v1.31.0) (2025-12-17)
 
 
