@@ -4,6 +4,7 @@ import { UserResponse } from '../types/api'
 
 export interface UseAuthReturn {
   user: UserResponse | null
+  isAuthenticated: boolean
   isAdmin: boolean
   isLoading: boolean
   error: string | null
@@ -52,6 +53,7 @@ export const useAuth = (): UseAuthReturn => {
 
   return {
     user,
+    isAuthenticated: user !== null,
     isAdmin: user?.is_admin ?? false,
     isLoading: query.isLoading,
     error,

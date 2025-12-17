@@ -28,6 +28,7 @@ describe('ProtectedRoute', () => {
     it('should show loading state while authentication is loading', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: true,
         error: null,
@@ -51,6 +52,7 @@ describe('ProtectedRoute', () => {
     it('should render children when user is admin and requireAdmin is true', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -73,6 +75,7 @@ describe('ProtectedRoute', () => {
     it('should redirect to home when user is not admin and requireAdmin is true', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '2', email: 'user@example.com', is_admin: false },
+        isAuthenticated: true,
         isAdmin: false,
         isLoading: false,
         error: null,
@@ -94,6 +97,7 @@ describe('ProtectedRoute', () => {
     it('should redirect to home when user is null and requireAdmin is true', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: false,
         error: null,
@@ -117,6 +121,7 @@ describe('ProtectedRoute', () => {
     it('should render children when requireAdmin is false (default)', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '2', email: 'user@example.com', is_admin: false },
+        isAuthenticated: true,
         isAdmin: false,
         isLoading: false,
         error: null,
@@ -138,6 +143,7 @@ describe('ProtectedRoute', () => {
     it('should render children for admin users when requireAdmin is false', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -155,6 +161,28 @@ describe('ProtectedRoute', () => {
       expect(screen.getByText('Protected Content')).toBeInTheDocument()
       expect(screen.queryByTestId('navigate')).not.toBeInTheDocument()
     })
+
+    it('should redirect to home when user is not authenticated', () => {
+      vi.mocked(useAuth).mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        isAdmin: false,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn()
+      })
+
+      render(
+        <BrowserRouter>
+          <ProtectedRoute>
+            <div>Protected Content</div>
+          </ProtectedRoute>
+        </BrowserRouter>
+      )
+
+      expect(screen.queryByText('Protected Content')).not.toBeInTheDocument()
+      expect(screen.getByTestId('navigate')).toHaveTextContent('/')
+    })
   })
 
   describe('Edge cases', () => {
@@ -170,6 +198,7 @@ describe('ProtectedRoute', () => {
       // Initially loading
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: true,
         error: null,
@@ -189,6 +218,7 @@ describe('ProtectedRoute', () => {
       // Then loaded as admin
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -210,6 +240,7 @@ describe('ProtectedRoute', () => {
     it('should display error alert when authentication fails', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: false,
         error: 'Authentication failed',
@@ -234,6 +265,7 @@ describe('ProtectedRoute', () => {
     it('should not redirect when there is an error', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: false,
         error: 'Network connection failed',
@@ -259,6 +291,7 @@ describe('ProtectedRoute', () => {
       const customError = 'Session expired. Please log in again.'
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: false,
         error: customError,

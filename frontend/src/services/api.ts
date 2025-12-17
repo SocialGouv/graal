@@ -150,28 +150,6 @@ class ApiService {
   }
 
   /**
-   * Sync similarity database manifests from S3 (admin only)
-   */
-  async syncSimilarityDatabaseManifests(): Promise<SimilarityDBManifestRead[]> {
-    console.log('[API_CLIENT] Syncing similarity database manifests from S3')
-
-    try {
-      const response = await this.client.post<SimilarityDBManifestRead[]>(
-        '/admin/similarity-databases/sync'
-      )
-
-      console.log('[API_CLIENT] Similarity databases synced', {
-        count: response.data.length
-      })
-
-      return response.data
-    } catch (error) {
-      console.error('[API_CLIENT] Failed to sync similarity databases', error)
-      throw error
-    }
-  }
-
-  /**
    * Create a similarity database manifest (admin only)
    */
   async createSimilarityDatabaseManifest(

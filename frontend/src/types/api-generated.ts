@@ -37,11 +37,14 @@ export interface paths {
      * List Config Files
      * @description List available configuration files from S3.
      *
+     *     Args:
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
      *     Returns:
      *         ConfigFilesResponse with list of available configuration files
      *
      *     Raises:
-     *         HTTPException: 503 if S3 is not available, 500 for other errors
+     *         HTTPException: 401 if not authenticated, 503 if S3 is not available, 500 for other errors
      */
     get: operations['list_config_files_api_v1_config_files_get']
     put?: never
@@ -68,12 +71,13 @@ export interface paths {
      *     Args:
      *         file: JSON file containing amendments data
      *         request: JSON string containing ProcessingRequest data (see ProcessingRequest model)
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         ProcessingResponse with job_id and initial status
      *
      *     Raises:
-     *         HTTPException: 400 for validation errors, 413 for file too large, 422 for invalid JSON
+     *         HTTPException: 401 if not authenticated, 400 for validation errors, 413 for file too large, 422 for invalid JSON
      *
      *     Example request JSON:
      *         {
@@ -236,11 +240,14 @@ export interface paths {
      * List Databases
      * @description List all available similarity databases from PostgreSQL manifests.
      *
+     *     Args:
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
      *     Returns:
      *         DatabaseListResponse: List of available databases with metadata
      *
      *     Raises:
-     *         HTTPException: 500 if listing fails
+     *         HTTPException: 401 if not authenticated, 500 if listing fails
      */
     get: operations['list_databases_api_v1_databases_get']
     put?: never
@@ -271,12 +278,13 @@ export interface paths {
      *     Args:
      *         file: The amendment file to upload
      *         metadata: JSON string with required default_processing_timestamp and origin_project
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         FileUploadResponse: Upload information including hash, s3_key, and deduplication status
      *
      *     Raises:
-     *         HTTPException: 500 if upload fails
+     *         HTTPException: 401 if not authenticated, 500 if upload fails
      */
     post: operations['upload_amendment_file_api_v1_databases_upload_file_post']
     delete?: never
@@ -410,12 +418,13 @@ export interface paths {
      *
      *     Args:
      *         database_name: Name of the database
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         DatabaseManifestResponse: Manifest with list of files and metadata
      *
      *     Raises:
-     *         HTTPException: 404 if database/manifest not found, 500 for other errors
+     *         HTTPException: 401 if not authenticated, 404 if database/manifest not found, 500 for other errors
      */
     get: operations['get_database_manifest_api_v1_databases__database_name__manifest_get']
     put?: never
@@ -674,8 +683,7 @@ export interface paths {
      *     Returns configurations ordered by creation date (newest first).
      *
      *     Args:
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         List of UserConfigurationRead schemas
@@ -694,8 +702,7 @@ export interface paths {
      *
      *     Args:
      *         config: Configuration data to create
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         Created UserConfigurationRead schema
@@ -723,8 +730,7 @@ export interface paths {
      * @description Get the user's default configuration.
      *
      *     Args:
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         UserConfigurationRead schema of default configuration
@@ -757,8 +763,7 @@ export interface paths {
      *
      *     Args:
      *         config_id: Configuration UUID
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         UserConfigurationRead schema
@@ -778,8 +783,7 @@ export interface paths {
      *
      *     Args:
      *         config_id: Configuration UUID to delete
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         204 No Content on success
@@ -801,8 +805,7 @@ export interface paths {
      *     Args:
      *         config_id: Configuration UUID to update
      *         updates: Fields to update
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         Updated UserConfigurationRead schema
@@ -832,8 +835,7 @@ export interface paths {
      *
      *     Args:
      *         config_id: Configuration UUID to set as default
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         Updated UserConfigurationRead schema
@@ -863,8 +865,7 @@ export interface paths {
      *     Available to all authenticated users.
      *
      *     Args:
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         current_user: Authenticated user (injected by FastAPI)
      *
      *     Returns:
      *         List of SimilarityDBManifestRead schemas
@@ -875,41 +876,6 @@ export interface paths {
     get: operations['list_similarity_databases_api_v1_similarity_databases_get']
     put?: never
     post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/v1/admin/similarity-databases/sync': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Sync Manifests From S3
-     * @description Sync similarity database manifests from S3 (admin only).
-     *
-     *     Scans S3 for similarity database files and creates or updates
-     *     manifests accordingly. This is typically run once to populate
-     *     the database from existing S3 files.
-     *
-     *     Args:
-     *         request: FastAPI request object
-     *         session: Session cookie value
-     *
-     *     Returns:
-     *         List of synced SimilarityDBManifestRead schemas
-     *
-     *     Raises:
-     *         HTTPException: 401 if not authenticated
-     *         HTTPException: 403 if not admin
-     */
-    post: operations['sync_manifests_from_s3_api_v1_admin_similarity_databases_sync_post']
     delete?: never
     options?: never
     head?: never
@@ -933,8 +899,7 @@ export interface paths {
      *
      *     Args:
      *         manifest: Manifest data to create
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         admin_user: Authenticated admin user (injected by FastAPI)
      *
      *     Returns:
      *         Created SimilarityDBManifestRead schema
@@ -970,8 +935,7 @@ export interface paths {
      *
      *     Args:
      *         manifest_id: Manifest UUID to deactivate
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         admin_user: Authenticated admin user (injected by FastAPI)
      *
      *     Returns:
      *         204 No Content on success
@@ -994,8 +958,7 @@ export interface paths {
      *     Args:
      *         manifest_id: Manifest UUID to update
      *         updates: Fields to update
-     *         request: FastAPI request object
-     *         session: Session cookie value
+     *         admin_user: Authenticated admin user (injected by FastAPI)
      *
      *     Returns:
      *         Updated SimilarityDBManifestRead schema
@@ -1006,6 +969,44 @@ export interface paths {
      *         HTTPException: 404 if manifest not found
      */
     patch: operations['update_manifest_api_v1_admin_similarity_databases__manifest_id__patch']
+    trace?: never
+  }
+  '/api/v1/admin/similarity-databases/{manifest_id}/with-file': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Manifest With File
+     * @description Delete a similarity database and its manifest by ID (admin only).
+     *
+     *     This endpoint is the canonical way for admins to delete an amendment
+     *     database: it removes the underlying S3 parquet file *and* deactivates or
+     *     deletes the corresponding manifest, ensuring consistency between S3 and
+     *     Postgres.
+     *
+     *     Args:
+     *         manifest_id: Manifest UUID identifying the database to delete
+     *         request: FastAPI request object
+     *         session: Session cookie value
+     *
+     *     Returns:
+     *         204 No Content on success
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not admin
+     *         HTTPException: 404 if manifest not found
+     */
+    delete: operations['delete_manifest_with_file_api_v1_admin_similarity_databases__manifest_id__with_file_delete']
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
   '/api/v1/admin/s3/config-files': {
@@ -1021,11 +1022,14 @@ export interface paths {
      *
      *     Admin-only endpoint to view all available config files.
      *
+     *     Args:
+     *         admin_user: Authenticated admin user (injected by FastAPI)
+     *
      *     Returns:
      *         S3FileListResponse with list of config files and metadata
      *
      *     Raises:
-     *         HTTPException: 403 if not admin, 500 if S3 operation fails
+     *         HTTPException: 401 if not authenticated, 403 if not admin, 500 if S3 operation fails
      */
     get: operations['list_config_files_api_v1_admin_s3_config_files_get']
     put?: never
@@ -1059,7 +1063,7 @@ export interface paths {
      *         S3DeleteResponse with deletion status
      *
      *     Raises:
-     *         HTTPException: 403 if not admin, 404 if file not found, 500 if deletion fails
+     *         HTTPException: 401 if not authenticated, 403 if not admin, 404 if file not found, 500 if deletion fails
      */
     delete: operations['delete_config_file_api_v1_admin_s3_config_files__filename__delete']
     options?: never
@@ -1084,7 +1088,7 @@ export interface paths {
      *         S3FileListResponse with list of database files and metadata
      *
      *     Raises:
-     *         HTTPException: 403 if not admin, 500 if S3 operation fails
+     *         HTTPException: 401 if not authenticated, 403 if not admin, 500 if S3 operation fails
      */
     get: operations['list_database_files_api_v1_admin_s3_databases_get']
     put?: never
@@ -2008,7 +2012,9 @@ export interface operations {
       query?: never
       header?: never
       path?: never
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -2019,6 +2025,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ConfigFilesResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }
@@ -2065,7 +2080,9 @@ export interface operations {
       path: {
         job_id: string
       }
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -2096,7 +2113,9 @@ export interface operations {
       path: {
         job_id: string
       }
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -2127,7 +2146,9 @@ export interface operations {
       path: {
         job_id: string
       }
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -2158,7 +2179,9 @@ export interface operations {
       path: {
         job_id: string
       }
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -2218,7 +2241,9 @@ export interface operations {
       query?: never
       header?: never
       path?: never
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody: {
       content: {
@@ -2288,7 +2313,9 @@ export interface operations {
       path: {
         upload_id: string
       }
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -2356,7 +2383,9 @@ export interface operations {
       path: {
         database_name: string
       }
-      cookie?: never
+      cookie?: {
+        session?: string | null
+      }
     }
     requestBody?: never
     responses: {
@@ -2860,37 +2889,6 @@ export interface operations {
       }
     }
   }
-  sync_manifests_from_s3_api_v1_admin_similarity_databases_sync_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: {
-        session?: string | null
-      }
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SimilarityDBManifestRead'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
   create_manifest_api_v1_admin_similarity_databases_post: {
     parameters: {
       query?: never
@@ -2982,6 +2980,37 @@ export interface operations {
         content: {
           'application/json': components['schemas']['SimilarityDBManifestRead']
         }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_manifest_with_file_api_v1_admin_similarity_databases__manifest_id__with_file_delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        manifest_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       /** @description Validation Error */
       422: {

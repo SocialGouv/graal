@@ -32,7 +32,7 @@ export const ProtectedRoute = ({
   children,
   requireAdmin = false
 }: ProtectedRouteProps) => {
-  const { isAdmin, isLoading, error } = useAuth()
+  const { isAuthenticated, isAdmin, isLoading, error } = useAuth()
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -60,8 +60,12 @@ export const ProtectedRoute = ({
     )
   }
 
+  // Redirect to home if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
+
   // Redirect to home if admin access required but user is not admin
-  // Only redirect when we're certain: not loading, no error, and not authorized
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/" replace />
   }

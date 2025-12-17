@@ -35,6 +35,7 @@ describe('Admin', () => {
     it('should display error alert when there is an auth error', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: false,
         error: 'Failed to authenticate',
@@ -56,6 +57,7 @@ describe('Admin', () => {
     it('should not render admin content when error is present', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: 'Network error',
@@ -77,6 +79,7 @@ describe('Admin', () => {
     it('should deny access when isAdmin is false (ProtectedRoute bypass scenario)', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'user@example.com', is_admin: false },
+        isAuthenticated: true,
         isAdmin: false,
         isLoading: false,
         error: null,
@@ -106,6 +109,7 @@ describe('Admin', () => {
           email: 'normaluser@example.com',
           is_admin: false
         },
+        isAuthenticated: true,
         isAdmin: false,
         isLoading: false,
         error: null,
@@ -126,6 +130,7 @@ describe('Admin', () => {
       // This test ensures the order: error check -> isAdmin check -> content
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: false,
         isAdmin: false,
         isLoading: false,
         error: null,
@@ -149,6 +154,7 @@ describe('Admin', () => {
     it('should render admin content for admin users', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -172,6 +178,7 @@ describe('Admin', () => {
     it('should display user email when available', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'test@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -192,6 +199,7 @@ describe('Admin', () => {
     it('should not display user email section when user email is missing', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', is_admin: true, email: null },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -214,6 +222,7 @@ describe('Admin', () => {
 
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -240,6 +249,7 @@ describe('Admin', () => {
     it('should properly integrate S3FileBrowser component', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -260,6 +270,7 @@ describe('Admin', () => {
     it('should not render S3FileBrowser when there is an error', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', email: 'admin@example.com', is_admin: true },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: 'Auth error',
@@ -280,6 +291,7 @@ describe('Admin', () => {
     it('should handle user without email gracefully', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: { user_id: '1', is_admin: true, email: null },
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,
@@ -299,6 +311,7 @@ describe('Admin', () => {
     it('should render admin interface even without a user object (edge case)', () => {
       vi.mocked(useAuth).mockReturnValue({
         user: null,
+        isAuthenticated: true,
         isAdmin: true,
         isLoading: false,
         error: null,

@@ -32,8 +32,22 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/processing" element={<ProcessingPage />} />
-          <Route path="/database" element={<DatabasePage />} />
+          <Route
+            path="/processing"
+            element={
+              <ProtectedRoute>
+                <ProcessingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/database"
+            element={
+              <ProtectedRoute>
+                <DatabasePage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin"
             element={
@@ -52,7 +66,7 @@ function App() {
               Française
             </>
           }
-          accessibility="fully compliant"
+          accessibility="non compliant"
           contentDescription="Application web pour le traitement automatisé des amendements législatifs"
           websiteMapLinkProps={{
             href: '#'
