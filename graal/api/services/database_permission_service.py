@@ -24,7 +24,12 @@ from typing import Optional
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from graal.database.models import AmendmentDatabasePermission, DbRoleEnum
+from graal.database.models import (
+    AmendmentDatabasePermission,
+    DbRoleEnum,
+    SimilarityDBManifest,
+    User,
+)
 
 logging.config.fileConfig("logging.conf")
 
@@ -84,6 +89,46 @@ class DatabasePermissionService:
                 )
             )
             return [row[0] for row in result.all()]
+
+    async def get_user_by_email(self, email: str) -> Optional[User]:
+        """Get user by email address.
+
+        Args:
+            email: User email to look up
+
+        Returns:
+            User object if found, None otherwise
+        """
+        async with self._session_factory() as session:
+            result = await session.execute(select(User).where(User.email == email))
+            return result.scalar_one_or_none()
+
+    async def list_databases_with_owner_role(
+        self, user_id: str
+    ) -> list[SimilarityDBManifest]:
+        """List all active databases where user has owner role.
+
+        Args:
+            user_id: User ID to filter by
+
+        Returns:
+            List of SimilarityDBManifest objects where user is owner
+        """
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(SimilarityDBManifest)
+                .join(
+                    AmendmentDatabasePermission,
+                    AmendmentDatabasePermission.db_id == SimilarityDBManifest.id,
+                )
+                .where(
+                    AmendmentDatabasePermission.user_id == user_id,
+                    AmendmentDatabasePermission.role == DbRole.owner,
+                    SimilarityDBManifest.is_active == True,  # noqa: E712
+                )
+                .order_by(SimilarityDBManifest.created_at.desc())
+            )
+            return list(result.scalars().all())
 
     async def _count_owners(self, session: AsyncSession, db_id: str) -> int:
         """Count current owners (internal helper)."""

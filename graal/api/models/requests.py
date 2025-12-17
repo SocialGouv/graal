@@ -11,6 +11,20 @@ from pydantic import BaseModel, Field, field_validator
 from graal.custom_types import LLMType
 
 
+class AssignPermissionRequest(BaseModel):
+    """Request model for assigning database permissions."""
+
+    user_id: str = Field(
+        ...,
+        description="User ID (UUID) to grant permission to",
+    )
+    role: str = Field(
+        ...,
+        description="Role to assign (owner, writer, reader)",
+        pattern="^(owner|writer|reader)$",
+    )
+
+
 class AllotmentConfig(BaseModel):
     """Configuration for allotment feature."""
 

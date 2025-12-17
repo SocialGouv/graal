@@ -177,3 +177,27 @@ class S3DeleteResponse(BaseModel):
     success: bool = Field(..., description="Whether deletion was successful")
     message: str = Field(..., description="Success or error message")
     deleted_file: str = Field(..., description="Name of deleted file")
+
+
+class DatabasePermissionResponse(BaseModel):
+    """Response model for database permission entry."""
+
+    db_id: str = Field(..., description="Database ID")
+    user_id: str = Field(..., description="User ID with permission")
+    email: str = Field(..., description="User email address")
+    role: str = Field(..., description="Role (owner, writer, reader)")
+    created_at: datetime = Field(..., description="When permission was granted")
+
+
+class ManagedDatabaseResponse(BaseModel):
+    """Response model for databases that can be managed by the user."""
+
+    id: str = Field(..., description="Database ID (UUID)")
+    name: str = Field(..., description="Database name")
+    size_bytes: int = Field(..., description="File size in bytes")
+    row_count: Optional[int] = Field(None, description="Number of rows in database")
+    last_modified: datetime = Field(..., description="Last modification timestamp")
+    created_at: datetime = Field(..., description="Database creation timestamp")
+    user_role: Optional[str] = Field(
+        None, description="User's role (owner) or null for admins viewing all databases"
+    )

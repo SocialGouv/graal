@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from graal.api.routes import (
     authorization,
     database_builder,
+    db_permissions,
     proconnect,
     s3_files,
     similarity_db_manifests,
@@ -81,6 +82,7 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(user_configurations.router, prefix="/api/v1")
 app.include_router(similarity_db_manifests.router, prefix="/api/v1")
 app.include_router(s3_files.router, prefix="/api/v1")
+app.include_router(db_permissions.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
