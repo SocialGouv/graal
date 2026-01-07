@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Multi-stage build pour optimiser la taille finale
 FROM python:3.11-slim AS builder
 
@@ -57,7 +59,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 RUN python -c "import nltk; nltk.download('stopwords', download_dir='/usr/local/nltk_data'); nltk.download('punkt', download_dir='/usr/local/nltk_data'); nltk.download('punkt_tab', download_dir='/usr/local/nltk_data')"
 
 # Copie du code source
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser --exclude=fontrend/ . .
 
 # Création du répertoire tmp pour le service WebProcessingService
 RUN mkdir -p /app/tmp && chown -R appuser:appuser /app/tmp

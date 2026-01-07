@@ -1,20 +1,22 @@
 {
     "name": "graal",
     "private": true,
-    "workspaces": [
-        "frontend"
-    ],
-    "packageManager": "yarn@4.10.3",
+    "packageManager": "pnpm@10.27.0",
     "devDependencies": {
         "baseline-browser-mapping": "^2.8.30",
         "typescript": "^5.0.0"
     },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild"
+        ]
+    },
     "scripts": {
-        "dev:frontend": "yarn workspace frontend dev",
-        "build:frontend": "yarn workspace frontend build",
+        "dev:frontend": "pnpm --filter frontend dev",
+        "build:frontend": "pnpm --filter frontend build",
         "build:ts": "tsc --build",
         "clean:ts": "tsc --build --clean",
-        "install:all": "yarn install"
+        "install:all": "pnpm install"
     },
     "version": "1.31.2"
 }
