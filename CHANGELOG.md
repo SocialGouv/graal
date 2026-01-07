@@ -1,3 +1,10 @@
+## [1.31.3](https://github.com/SocialGouv/graal/compare/v1.31.2...v1.31.3) (2026-01-07)
+
+
+### Bug Fixes
+
+* pnpm migration ([#208](https://github.com/SocialGouv/graal/issues/208)) ([b4d32fa](https://github.com/SocialGouv/graal/commit/b4d32fa64f26ab866707324026385b127416590c))
+
 ## [1.31.2](https://github.com/SocialGouv/graal/compare/v1.31.1...v1.31.2) (2025-12-17)
 
 
