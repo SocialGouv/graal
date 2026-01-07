@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Multi-stage build pour optimiser la taille finale
 FROM python:3.11-slim AS builder
 
