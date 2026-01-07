@@ -5,9 +5,11 @@ tests
 .env
 
 # Fichiers de développement et configuration
+.git
 .gitignore
 .dockerignore
 Dockerfile
+docker-compose.yml
 makefile
 README.md
 LICENSE
@@ -53,13 +55,10 @@ env/
 *.log
 # logging.conf - NEEDED by the application, do not exclude
 
-# Frontend (si build séparément)
-frontend/
+# Dépendances et fichiers de build
 node_modules/
 *.tgz
-package-lock.json
-yarn.lock
-.yarnrc.yml
+
 
 # Configuration locale
 *.local
@@ -96,3 +95,14 @@ Thumbs.db
 
 # Poetry
 poetry.lock.bak
+
+# CI
+.kontinuous
+.github
+renovate.json
+
+# Versionning
+CHANGELOG.md
+
+# AI Agents
+AGENTS.md

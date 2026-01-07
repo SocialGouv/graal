@@ -93,7 +93,7 @@ export default defineConfig({
         '../graal/api/models/**/*.py',
         '../graal/api/main.py'
       ],
-      generateCommand: 'yarn generate-types:dev',
+      generateCommand: 'pnpm generate-types:dev',
       debounceMs: 5000,
       generateOnStart: true
     })
@@ -314,7 +314,7 @@ export default defineConfig({
 ### Development Workflow
 
 1. **Start your FastAPI backend** (must be running for type generation)
-2. **Start your frontend dev server** with `npm run dev` or `yarn dev`
+2. **Start your frontend dev server** with `pnpm dev`
 3. **Types are automatically generated** on startup
 4. **Make changes to backend files** (routes, models, etc.)
 5. **Types are automatically regenerated** after the debounce delay

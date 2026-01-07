@@ -332,8 +332,9 @@ The project uses **Yarn Workspaces** for monorepo management:
 graal/
 ├── package.json          # Root workspace configuration
 ├── tsconfig.json         # Root TypeScript project references
-├── .yarnrc.yml           # Yarn configuration (node-modules mode)
-├── yarn.lock             # Lockfile for all workspaces
+├── .npmrc                # pnpm configuration (security + caching)
+├── pnpm-lock.yaml        # Lockfile for all workspaces
+├── pnpm-workspace.yaml   # Workspace definition
 └── frontend/             # Frontend workspace
     ├── package.json      # Frontend dependencies
     ├── tsconfig.json     # Frontend TypeScript config
@@ -356,7 +357,7 @@ From the root directory, install all workspace dependencies:
 
 ```bash
 # Install all dependencies (backend + frontend)
-yarn install
+pnpm install
 
 # Or use the make command
 make install
@@ -386,7 +387,7 @@ make web-backend
 
 # Start only frontend server
 make web-frontend
-# Or from root: yarn dev:frontend
+# Or from root: pnpm dev:frontend
 
 # Show help
 make dev-help
@@ -427,21 +428,20 @@ The web application provides:
 
 #### Workspace Commands
 
-From the root directory, you can run frontend commands using yarn workspaces:
+From the root directory, you can run frontend commands using pnpm workspaces:
 
 ```bash
 # Development server
-yarn dev:frontend
+pnpm dev:frontend
 
 # Build for production
-yarn build:frontend
+pnpm build:frontend
 
 # TypeScript compilation (workspace-aware)
-yarn tsc --build
-yarn build:ts
+pnpm build:ts
 
 # Clean TypeScript build cache
-yarn clean:ts
+pnpm clean:ts
 ```
 
 #### TypeScript Configuration
@@ -459,10 +459,10 @@ The frontend automatically generates TypeScript types from the backend's OpenAPI
 
 ```bash
 # Generate types from running backend (localhost:8000)
-yarn workspace frontend generate-types
+pnpm --filter frontend generate-types
 
 # Or from frontend directory
-cd frontend && yarn generate-types
+cd frontend && pnpm generate-types
 ```
 
 See [Auto type generation doc](frontend/docs/auto_type_generation_from_backend.md) for more details.
@@ -477,19 +477,19 @@ The frontend automatically proxies API requests to the backend server running on
 
 ```bash
 # Build TypeScript (from root)
-yarn build:ts
+pnpm build:ts
 
 # Build frontend for production
-yarn build:frontend
+pnpm build:frontend
 ```
 
 #### Production Deployment
 
 ```bash
 # Build everything
-yarn install --immutable
-yarn build:ts
-yarn build:frontend
+pnpm install --frozen-lockfile
+pnpm build:ts
+pnpm build:frontend
 
 # Frontend build output
 ls frontend/dist/

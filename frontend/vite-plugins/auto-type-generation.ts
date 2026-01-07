@@ -33,7 +33,7 @@ export function autoTypeGeneration(
       '../graal/api/models/**/*.py',
       '../graal/api/main.py'
     ],
-    generateCommand = 'yarn generate-types:dev',
+    generateCommand = 'pnpm generate-types:dev',
     debounceMs = 1000,
     generateOnStart = true
   } = options

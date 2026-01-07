@@ -13,7 +13,7 @@ install:
 	poetry run pre-commit install --allow-missing-config -f
 	poetry run detect-secrets scan > .secrets.baseline
 	poetry run python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
-	cd frontend && yarn install && cd -
+	cd frontend && pnpm install && cd -
 
 similarity-db-all:
 	poetry run python graal/utils/build_similarity_db.py
@@ -29,7 +29,7 @@ web-backend:
 	poetry run python start_web_server.py
 
 web-frontend:
-	cd frontend && yarn dev
+	cd frontend && pnpm dev
 
 dev:
 	@echo "Starting GRAAL web application..."
@@ -38,7 +38,7 @@ dev:
 	@echo "Press Ctrl+C to stop both servers"
 	@trap 'kill %1 %2 2>/dev/null; exit' INT; \
 	poetry run python start_web_server.py & \
-	cd frontend && yarn dev & \
+	cd frontend && pnpm dev & \
 	wait
 
 dev-help:

@@ -12,9 +12,9 @@ export default defineConfig({
         '../graal/api/models/**/*.py',
         '../graal/api/main.py'
       ],
-      generateCommand: 'yarn generate-types:dev',
+      generateCommand: 'pnpm generate-types:dev',
       debounceMs: 5000,
-      generateOnStart: true
+      generateOnStart: process.env.NODE_ENV !== 'production'
     })
   ],
   server: {

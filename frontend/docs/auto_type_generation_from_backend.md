@@ -54,7 +54,7 @@ When any watched file changes:
 
 ```bash
 cd frontend
-yarn dev
+pnpm dev
 ```
 
 The system will:
@@ -78,10 +78,10 @@ If needed, you can manually generate types:
 
 ```bash
 # Basic generation
-yarn generate-types
+pnpm generate-types
 
 # With prettier formatting (recommended for development)
-yarn generate-types:dev
+pnpm generate-types:dev
 ```
 
 ## Configuration Options
@@ -98,7 +98,7 @@ autoTypeGeneration({
   ],
 
   // Command to run when files change
-  generateCommand: 'yarn generate-types:dev',
+  generateCommand: 'pnpm generate-types:dev',
 
   // Debounce delay in milliseconds
   debounceMs: 1000,
@@ -168,7 +168,7 @@ If type generation fails:
 These are automatically installed with:
 
 ```bash
-yarn install
+pnpm install
 ```
 
 ## Integration with Existing Workflow
