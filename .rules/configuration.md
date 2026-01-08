@@ -43,9 +43,8 @@ For detailed S3 configuration and usage, see [storage-s3.md](storage-s3.md).
 ### Feature Configuration Fields
 
 **Similarity Search** (`similarity_search` key):
-- `database_file`: (required) S3 path to Parquet similarity database file
-  - Format: `"PLFSS/2024.parquet"` (relative to S3 similarity folder)
-  - Only Parquet format on S3 is supported
+- `database_id`: (required) UUID of the similarity database manifest
+  - The manifest resolves to an S3 `.parquet` file path
   - Selected via UI dropdown when using web application
   - Must be present when similarity search feature is enabled
 

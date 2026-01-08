@@ -43,7 +43,7 @@ class TestConfigPreprocessor(unittest.TestCase):
         config = {
             "similarity_search": {
                 "enabled": True,
-                "database_file": "PLFSS/2024.parquet",
+                "database_id": "00000000-0000-0000-0000-000000000000",
                 "thresholds": {"expose": 0.4, "corps": 0.9},
             },
             "output": {"file_prefix_template": "${DATA_FOLDER}/results_%Y-%m-%d"},
@@ -55,7 +55,7 @@ class TestConfigPreprocessor(unittest.TestCase):
         expected = {
             "similarity_search": {
                 "enabled": True,
-                "database_file": "PLFSS/2024.parquet",
+                "database_id": "00000000-0000-0000-0000-000000000000",
                 "thresholds": {"expose": 0.4, "corps": 0.9},
             },
             "output": {

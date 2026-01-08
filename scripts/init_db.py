@@ -88,6 +88,20 @@ async def create_seed_configurations(
     """
     print("Creating seed configurations...")
 
+    # Resolve seed manifests (must exist before configurations).
+    manifest_2024 = await session.scalar(
+        select(SimilarityDBManifest).where(SimilarityDBManifest.name == "PLFSS 2024")
+    )
+    manifest_2023 = await session.scalar(
+        select(SimilarityDBManifest).where(SimilarityDBManifest.name == "PLFSS 2023")
+    )
+
+    if manifest_2024 is None or manifest_2023 is None:
+        raise RuntimeError(
+            "Seed similarity DB manifests were not found. "
+            "Ensure create_seed_manifests() runs before create_seed_configurations()."
+        )
+
     # Admin's configurations
     admin_config_1 = UserConfiguration(
         id=uuid.uuid4(),
@@ -101,7 +115,7 @@ async def create_seed_configurations(
             },
             "similarity_search": {
                 "enabled": True,
-                "database_file": "PLFSS/2024.parquet",
+                "database_id": str(manifest_2024.id),
             },
             "attribution": {"enabled": True},
             "allotment": {"enabled": True},
@@ -118,7 +132,7 @@ async def create_seed_configurations(
             "summary_generation": {"enabled": False},
             "similarity_search": {
                 "enabled": True,
-                "database_file": "PLFSS/2024.parquet",
+                "database_id": str(manifest_2024.id),
             },
             "attribution": {"enabled": True},
             "allotment": {"enabled": True},
@@ -136,7 +150,7 @@ async def create_seed_configurations(
             "summary_generation": {"enabled": True, "strategy": "legacy"},
             "similarity_search": {
                 "enabled": True,
-                "database_file": "PLFSS/2023.parquet",
+                "database_id": str(manifest_2023.id),
             },
             "attribution": {"enabled": True},
         },
@@ -158,6 +172,20 @@ async def create_seed_jobs(session: AsyncSession, users: dict[str, User]) -> Non
     """
     print("Creating seed processing jobs...")
 
+    # Resolve seed manifests (must exist before jobs).
+    manifest_2024 = await session.scalar(
+        select(SimilarityDBManifest).where(SimilarityDBManifest.name == "PLFSS 2024")
+    )
+    manifest_2023 = await session.scalar(
+        select(SimilarityDBManifest).where(SimilarityDBManifest.name == "PLFSS 2023")
+    )
+
+    if manifest_2024 is None or manifest_2023 is None:
+        raise RuntimeError(
+            "Seed similarity DB manifests were not found. "
+            "Ensure create_seed_manifests() runs before create_seed_jobs()."
+        )
+
     # Completed job
     completed_job = ProcessingJob(
         id=uuid.uuid4(),
@@ -172,7 +200,7 @@ async def create_seed_jobs(session: AsyncSession, users: dict[str, User]) -> Non
             "summary_generation": {"enabled": True, "strategy": "dspy"},
             "similarity_search": {
                 "enabled": True,
-                "database_file": "PLFSS/2024.parquet",
+                "database_id": str(manifest_2024.id),
             },
         },
         started_at=datetime.now(timezone.utc) - timedelta(hours=1),
@@ -196,7 +224,7 @@ async def create_seed_jobs(session: AsyncSession, users: dict[str, User]) -> Non
             "summary_generation": {"enabled": False},
             "similarity_search": {
                 "enabled": True,
-                "database_file": "PLFSS/2023.parquet",
+                "database_id": str(manifest_2023.id),
             },
         },
         started_at=datetime.now(timezone.utc) - timedelta(minutes=5),
@@ -354,14 +382,14 @@ async def init_database() -> None:
                 # Create users
                 users = await create_seed_users(session)
 
-                # Create configurations
-                await create_seed_configurations(session, users)
-
-                # Create processing jobs
-                await create_seed_jobs(session, users)
-
                 # Create similarity database manifests
                 await create_seed_manifests(session, users)
+
+                # Create configurations (require manifests)
+                await create_seed_configurations(session, users)
+
+                # Create processing jobs (may reference manifests)
+                await create_seed_jobs(session, users)
 
                 print("\n" + "=" * 60)
                 print("✓ Database initialization completed successfully!")

@@ -199,10 +199,11 @@ class SimilaritySearchFeature(BaseFeature):
             pd.DataFrame: The loaded similarity database
 
         Raises:
-            ValueError: If database_file is not configured
+            ValueError: If database_id is not configured
             FileNotFoundError: If the specified file is not found in S3
         """
         database_id = similarity_config.get("database_id")
+
         if not database_id:
             raise ValueError(
                 "No similarity database configured. Please provide 'database_id' "
@@ -211,16 +212,12 @@ class SimilaritySearchFeature(BaseFeature):
 
         # Resolve S3 path from manifest using database_id
         manifest_service = get_similarity_db_manifest_service()
-
         s3_path = asyncio.run(manifest_service.resolve_s3_path_for_db(database_id))
-
         logging.info(
             f"Loading similarity database from S3 (id={database_id}): {s3_path}"
         )
 
-        # Load from S3 using the resolved path
         loader = get_similarity_db_loader()
         df = asyncio.run(loader.load_from_s3(s3_path))
-
         logging.info(f"Loaded Parquet database for DB {database_id}, shape: {df.shape}")
         return df

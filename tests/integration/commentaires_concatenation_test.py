@@ -4,6 +4,7 @@ import logging
 import logging.config
 import random
 from pathlib import Path
+from uuid import UUID
 
 import numpy as np
 import pandas as pd
@@ -125,7 +126,7 @@ def test_multiple_features_commentaires_concatenation(
         },
         "similarity_search": {
             "enabled": True,
-            "database_file": similarity_db_cache_key,
+            "database_id": UUID("00000000-0000-0000-0000-000000000001"),
             "clustering_similarity_thresholds": {
                 "Exposé amdt": 0.2,
                 "Corps amdt": 0.2,

@@ -35,8 +35,9 @@ similarity_search:
   similarity_threshold_overrides:
     "Exposé amdt":
       "amendement redactionnel": 0.95
-  # S3 path to the Parquet similarity database file (required)
-  database_file: "PLFSS/test_db.parquet"
+  # UUID of the similarity database manifest (required when enabled)
+  # Example: "c52c1e2f-2a07-4d7d-9f4e-2af5f0c3f1a1"
+  database_id: null
   # Columns to copy from similar amendments
   columns_to_copy:
     Réponse:
