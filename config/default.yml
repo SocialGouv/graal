@@ -87,10 +87,6 @@ default_opinion:
   enabled: false
   should_overwrite: true
 
-# Filter for mission short titles
-# mission_short_title_filter: ["solidarite", "sante", "travail"]
-mission_short_title_filter: []
-
 # LLM client configuration
 llm_clients:
   fake:

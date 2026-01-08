@@ -207,6 +207,16 @@ class SummaryGenerationConfig(BaseModel):
 class ProcessingConfig(BaseModel):
     """Configuration model for processing parameters."""
 
+    # Dynamic filter for missions (read from uploaded JSON in frontend)
+    mission_short_title_filter: Optional[list[str]] = Field(
+        default=None,
+        description=(
+            "List of mission short titles to keep. "
+            "If omitted, keep backend/config defaults. "
+            "If provided as an empty list, means no mission filtering."
+        ),
+    )
+
     # Feature configurations
     allotment: Optional[AllotmentConfig] = Field(
         default_factory=AllotmentConfig, description="Allotment feature configuration"

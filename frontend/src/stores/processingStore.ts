@@ -11,6 +11,12 @@ export type ThresholdConfig = Record<string, number>
 export type ThresholdOverrides = Record<string, Record<string, number>>
 
 export interface ProcessingConfig {
+  /**
+   * Missions filter (dynamic - set by user in UI from the uploaded JSON).
+   * This corresponds to backend `mission_short_title_filter`.
+   */
+  missionShortTitleFilter: string[]
+
   allotments: {
     enabled: boolean
     column: 'Corps amdt' | 'Exposé amdt'
@@ -113,6 +119,7 @@ export interface ProcessingState {
 
   // Actions
   setCurrentStep: (step: number) => void
+  goBackToConfiguration: () => void
   setUploadedFile: (file: File | null) => void
   setUploadProgress: (progress: number) => void
   setSelectedConfigFile: (filename: string | null) => void
@@ -147,6 +154,7 @@ const initialState = {
   uploadProgress: 0,
   selectedConfigFile: null,
   processingConfig: {
+    missionShortTitleFilter: [],
     allotments: {
       enabled: true,
       column: 'Corps amdt' as const,
@@ -161,7 +169,6 @@ const initialState = {
       enabled: true,
       originProject: '',
       databaseId: null,
-
 
       clusteringSimilarityThresholds: {
         'Exposé amdt': 0.4,
@@ -222,6 +229,25 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
     set((state) => ({
       ...state,
       currentStep: step
+    })),
+
+  goBackToConfiguration: () =>
+    set((state) => ({
+      ...state,
+      // return to step 2 where configuration happens
+      currentStep: 2,
+
+      // exit processing mode so the UI shows step content again
+      processingStatus: 'idle',
+      jobId: null,
+      uploadProgress: 0,
+      progressPercent: 0,
+      progressMessage: null,
+      startedAt: null,
+      updatedAt: null,
+      resultsPreview: null,
+      totalRows: 0,
+      error: null
     })),
 
   setUploadedFile: (file) =>

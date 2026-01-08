@@ -71,6 +71,14 @@ class WebProcessingService:
         # Create a copy to avoid modifying the original
         config = base_config.copy()
 
+        # Update mission filter (dynamic; configured from frontend UI)
+        # Only override backend/config defaults when the field is explicitly
+        # provided by the client.
+        if frontend_config.mission_short_title_filter is not None:
+            config["mission_short_title_filter"] = (
+                frontend_config.mission_short_title_filter
+            )
+
         # Update allotment configuration
         if frontend_config.allotment:
             config["allotment"] = {
