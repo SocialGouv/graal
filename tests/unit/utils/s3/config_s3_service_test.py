@@ -82,7 +82,8 @@ class TestConfigS3Service:
         result = await config_service.validate_config_file_exists("file.xlsx")
         assert result is True
 
-    def test_load_config_excel_success(self, config_service, mocker):
+    @pytest.mark.asyncio
+    async def test_load_config_excel_success(self, config_service, mocker):
         mock_file_content = BytesIO(b"fake excel")
         config_service._download_from_s3_sync = MagicMock(
             return_value=mock_file_content
@@ -91,7 +92,7 @@ class TestConfigS3Service:
         mock_df = pd.DataFrame({"A": [1, 2]})
         mocker.patch("pandas.read_excel", return_value={"Sheet1": mock_df})
 
-        result = config_service.load_config_excel("test.xlsx")
+        result = await config_service.load_config_excel("test.xlsx")
 
         assert "Sheet1" in result
         assert isinstance(result["Sheet1"], pd.DataFrame)

@@ -92,12 +92,12 @@ class AmendmentFileHandler(ABC):
     """Abstract base class for handling different amendment file types."""
 
     @abstractmethod
-    def load_amendments(
+    async def load_amendments(
         self,
         file_configs: dict[Path, InputFileConfig],
     ) -> pd.DataFrame:
         """
-        Load amendments from files.
+        Load amendments from files asynchronously.
 
         Args:
             file_configs: Configuration for each file.
@@ -121,12 +121,12 @@ class AmendmentFileHandler(ABC):
 class JsonFileHandler(AmendmentFileHandler):
     """Handler for JSON amendment files."""
 
-    def load_amendments(
+    async def load_amendments(
         self,
         file_configs: dict[Path, InputFileConfig],
     ) -> pd.DataFrame:
         """Load amendments from JSON files."""
-        return AmendmentPreProcessor.load_amendments_json(
+        return await AmendmentPreProcessor.load_amendments_json(
             list(file_configs.keys()), file_configs
         )
 
@@ -138,12 +138,12 @@ class JsonFileHandler(AmendmentFileHandler):
 class ExcelFileHandler(AmendmentFileHandler):
     """Handler for Excel amendment files."""
 
-    def load_amendments(
+    async def load_amendments(
         self,
         file_configs: dict[Path, InputFileConfig],
     ) -> pd.DataFrame:
         """Load amendments from Excel files."""
-        return AmendmentPreProcessor.load_amendments_excel(
+        return await AmendmentPreProcessor.load_amendments_excel(
             list(file_configs.keys()), file_configs
         )
 

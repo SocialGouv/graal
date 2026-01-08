@@ -2,6 +2,7 @@
 Utility functions for robust JSON handling with different UTF-8 encodings.
 """
 
+import asyncio
 import json
 import logging
 import logging.config
@@ -94,9 +95,9 @@ def load_json(content: Union[bytes, str], filename: str = "unknown") -> Any:
     raise ValueError(f"Unsupported content type: {type(content)}")
 
 
-def load_json_from_file(file_path: str) -> Any:
+async def load_json_from_file(file_path: str) -> Any:
     """
-    Load JSON from a file path with robust encoding handling.
+    Load JSON from a file path with robust encoding handling (async).
 
     Args:
         file_path: Path to the JSON file
@@ -108,31 +109,39 @@ def load_json_from_file(file_path: str) -> Any:
         ValueError: If file cannot be read or parsed as JSON
         FileNotFoundError: If file does not exist
     """
-    logging.debug(f"[JSON_UTILS] Loading JSON from file: {file_path}")
 
-    try:
-        # Try utf-8-sig first (optimal for French content with potential BOM)
-        with open(file_path, "r", encoding="utf-8-sig") as f:
-            content = f.read()
-            logging.debug(f"[JSON_UTILS] Successfully read {file_path} using utf-8-sig")
-            return json.loads(content)
-    except UnicodeDecodeError:
-        logging.debug(
-            f"[JSON_UTILS] utf-8-sig reading failed for {file_path}, trying utf-8"
-        )
+    def _load_sync() -> Any:
+        logging.debug(f"[JSON_UTILS] Loading JSON from file: {file_path}")
+
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            # Try utf-8-sig first (optimal for French content with potential BOM)
+            with open(file_path, "r", encoding="utf-8-sig") as f:
                 content = f.read()
-                logging.debug(f"[JSON_UTILS] Successfully read {file_path} using utf-8")
+                logging.debug(
+                    f"[JSON_UTILS] Successfully read {file_path} using utf-8-sig"
+                )
                 return json.loads(content)
-        except UnicodeDecodeError as e:
-            logging.error(
-                f"[JSON_UTILS] UTF-8 reading failed for {file_path}: {str(e)}"
+        except UnicodeDecodeError:
+            logging.debug(
+                f"[JSON_UTILS] utf-8-sig reading failed for {file_path}, trying utf-8"
             )
-            raise ValueError(f"Unable to read file as UTF-8: {str(e)}") from e
-    except json.JSONDecodeError as e:
-        logging.error(f"[JSON_UTILS] JSON parsing failed for {file_path}: {str(e)}")
-        raise ValueError(f"Invalid JSON file: {str(e)}") from e
-    except FileNotFoundError:
-        logging.error(f"[JSON_UTILS] File not found: {file_path}")
-        raise
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    logging.debug(
+                        f"[JSON_UTILS] Successfully read {file_path} using utf-8"
+                    )
+                    return json.loads(content)
+            except UnicodeDecodeError as e:
+                logging.error(
+                    f"[JSON_UTILS] UTF-8 reading failed for {file_path}: {str(e)}"
+                )
+                raise ValueError(f"Unable to read file as UTF-8: {str(e)}") from e
+        except json.JSONDecodeError as e:
+            logging.error(f"[JSON_UTILS] JSON parsing failed for {file_path}: {str(e)}")
+            raise ValueError(f"Invalid JSON file: {str(e)}") from e
+        except FileNotFoundError:
+            logging.error(f"[JSON_UTILS] File not found: {file_path}")
+            raise
+
+    return await asyncio.to_thread(_load_sync)

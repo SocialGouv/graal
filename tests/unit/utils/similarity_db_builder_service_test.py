@@ -7,7 +7,9 @@ exception handling.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock
+
+# Mock async method
+from unittest.mock import AsyncMock
 
 import pandas as pd
 import pytest
@@ -46,15 +48,15 @@ class TestSimilarityDatabaseBuilderService:
         mock_loader = mocker.MagicMock()
         mock_loader.excel_data = {"Acronymes": pd.DataFrame()}
         mocker.patch(
-            "graal.utils.similarity_db_builder_service.SheetDataLoader",
+            "graal.utils.similarity_db_builder_service.SheetDataLoader.create",
             return_value=mock_loader,
         )
         mocker.patch(
             "graal.utils.similarity_db_builder_service.AmendmentPreProcessor.load_acronyms",
             return_value={},
         )
-        # Use MagicMock since _load_and_preprocess_amendments is synchronous
-        service._load_and_preprocess_amendments = MagicMock(return_value=pd.DataFrame())
+
+        service._load_and_preprocess_amendments = AsyncMock(return_value=pd.DataFrame())
 
         amendment_files: dict[Path, InputFileConfig] = {
             Path("test.json"): {
@@ -89,15 +91,17 @@ class TestSimilarityDatabaseBuilderService:
         mock_loader = mocker.MagicMock()
         mock_loader.excel_data = {"Acronymes": pd.DataFrame()}
         mocker.patch(
-            "graal.utils.similarity_db_builder_service.SheetDataLoader",
+            "graal.utils.similarity_db_builder_service.SheetDataLoader.create",
             return_value=mock_loader,
         )
         mocker.patch(
             "graal.utils.similarity_db_builder_service.AmendmentPreProcessor.load_acronyms",
             return_value={},
         )
-        # Use MagicMock since _load_and_preprocess_amendments is synchronous
-        service._load_and_preprocess_amendments = MagicMock(return_value=sample_df)
+        # Mock async method
+        from unittest.mock import AsyncMock
+
+        service._load_and_preprocess_amendments = AsyncMock(return_value=sample_df)
         mocker.patch(
             "graal.utils.similarity_db_builder_service.AllotmentHandler.process_allotments",
             return_value=(sample_df, []),
@@ -122,7 +126,7 @@ class TestSimilarityDatabaseBuilderService:
 
         # Mock to raise an unexpected error
         mocker.patch(
-            "graal.utils.similarity_db_builder_service.SheetDataLoader",
+            "graal.utils.similarity_db_builder_service.SheetDataLoader.create",
             side_effect=RuntimeError("Unexpected error"),
         )
 

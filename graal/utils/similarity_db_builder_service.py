@@ -131,7 +131,7 @@ class SimilarityDatabaseBuilderService:
 
             # Load acronym mappings from office config
             logging.info(f"Loading acronym mappings from: {config_file_to_use}")
-            sheet_loader = SheetDataLoader(config_file_to_use)
+            sheet_loader = await SheetDataLoader.create(config_file_to_use)
             office_config_file = sheet_loader.excel_data
             acronym_mapping = AmendmentPreProcessor.load_acronyms(
                 office_config_file["Acronymes"]
@@ -140,7 +140,7 @@ class SimilarityDatabaseBuilderService:
 
             # Load and preprocess amendments
             logging.info("Loading and preprocessing amendments...")
-            amendments_df = self._load_and_preprocess_amendments(
+            amendments_df = await self._load_and_preprocess_amendments(
                 amendment_files=amendment_files,
                 acronym_mapping=acronym_mapping,
                 empty_columns_to_drop=drop_empty_columns,
@@ -191,7 +191,7 @@ class SimilarityDatabaseBuilderService:
                 f"Failed to build similarity database: {e}"
             ) from e
 
-    def _load_and_preprocess_amendments(
+    async def _load_and_preprocess_amendments(
         self,
         amendment_files: dict[Path, InputFileConfig],
         acronym_mapping: dict[Acronym, str],
@@ -230,7 +230,7 @@ class SimilarityDatabaseBuilderService:
                 logging.info(f"Loading {file_count} files using {handler_name}...")
 
                 # Load amendments using the handler
-                df = handler.load_amendments(file_configs)
+                df = await handler.load_amendments(file_configs)
 
                 # Apply similarity preprocessing
                 df = SimilaritySearchHandler.preprocess_for_similarity(

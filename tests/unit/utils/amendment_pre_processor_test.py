@@ -398,7 +398,8 @@ def test_replace_acronyms(input_df, acronym_mapping, columns_to_normalize, expec
     )
 
 
-def test_load_amendments_json(mocker):
+@pytest.mark.asyncio
+async def test_load_amendments_json(mocker):
     mocker.patch(
         "builtins.open",
         mocker.mock_open(
@@ -439,7 +440,9 @@ def test_load_amendments_json(mocker):
         },
     }
 
-    result_df = AmendmentPreProcessor.load_amendments_json(input_files, file_config)
+    result_df = await AmendmentPreProcessor.load_amendments_json(
+        input_files, file_config
+    )
 
     expected_df = pd.DataFrame(
         {
@@ -477,7 +480,8 @@ def test_load_amendments_json(mocker):
     )
 
 
-def test_load_amendments_excel(mocker):
+@pytest.mark.asyncio
+async def test_load_amendments_excel(mocker):
     mocker.patch(
         "pandas.read_excel",
         side_effect=[
@@ -508,7 +512,9 @@ def test_load_amendments_excel(mocker):
         },
     }
 
-    result_df = AmendmentPreProcessor.load_amendments_excel(input_files, file_config)
+    result_df = await AmendmentPreProcessor.load_amendments_excel(
+        input_files, file_config
+    )
 
     expected_df = pd.DataFrame(
         {

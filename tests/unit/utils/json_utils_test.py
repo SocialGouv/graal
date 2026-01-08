@@ -67,7 +67,8 @@ class TestJsonUtils:
         with pytest.raises(ValueError, match="Unable to decode file content as UTF-8"):
             load_json(invalid_content, "invalid_encoding.json")
 
-    def test_load_json_from_file_with_bom(self):
+    @pytest.mark.asyncio
+    async def test_load_json_from_file_with_bom(self):
         """Test loading JSON from file with UTF-8 BOM."""
         json_data = {"amendements": [{"num": "4", "objet": "Test français éàç"}]}
 
@@ -78,13 +79,14 @@ class TestJsonUtils:
             temp_path = f.name
 
         try:
-            result = load_json_from_file(temp_path)
+            result = await load_json_from_file(temp_path)
             assert result == json_data
             assert result["amendements"][0]["objet"] == "Test français éàç"
         finally:
             Path(temp_path).unlink()
 
-    def test_load_json_from_file_without_bom(self):
+    @pytest.mark.asyncio
+    async def test_load_json_from_file_without_bom(self):
         """Test loading JSON from file without BOM."""
         json_data = {"amendements": [{"num": "5", "objet": "Test français éàç"}]}
 
@@ -95,18 +97,20 @@ class TestJsonUtils:
             temp_path = f.name
 
         try:
-            result = load_json_from_file(temp_path)
+            result = await load_json_from_file(temp_path)
             assert result == json_data
             assert result["amendements"][0]["objet"] == "Test français éàç"
         finally:
             Path(temp_path).unlink()
 
-    def test_load_json_from_file_not_found(self):
+    @pytest.mark.asyncio
+    async def test_load_json_from_file_not_found(self):
         """Test error handling for file not found."""
         with pytest.raises(FileNotFoundError):
-            load_json_from_file("nonexistent_file.json")
+            await load_json_from_file("nonexistent_file.json")
 
-    def test_load_json_from_file_invalid_json(self):
+    @pytest.mark.asyncio
+    async def test_load_json_from_file_invalid_json(self):
         """Test error handling for invalid JSON file."""
         with tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8", suffix=".json", delete=False
@@ -116,7 +120,7 @@ class TestJsonUtils:
 
         try:
             with pytest.raises(ValueError, match="Invalid JSON file"):
-                load_json_from_file(temp_path)
+                await load_json_from_file(temp_path)
         finally:
             Path(temp_path).unlink()
 

@@ -4,6 +4,7 @@ It includes functions for loading, cleaning, and normalizing amendment data, as 
 common patterns in amendment bodies and exposes.
 """
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
@@ -38,14 +39,14 @@ class AmendmentPreProcessor:
         return amendments_df
 
     @staticmethod
-    def load_amendments_json(
+    async def load_amendments_json(
         input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
     ) -> pd.DataFrame:
         df_accumulator = []
         # Initialize default_processing_timestamp before the loop to avoid warnings
         default_processing_timestamp = 0
         for file_name in input_files:
-            data = load_json_from_file(str(file_name))
+            data = await load_json_from_file(str(file_name))
             df = pd.DataFrame(data["amendements"])
 
             if file_config:
@@ -83,13 +84,13 @@ class AmendmentPreProcessor:
         return amendments_df
 
     @staticmethod
-    def load_amendments_excel(
+    async def load_amendments_excel(
         input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
     ) -> pd.DataFrame:
         df_accumulator = []
         default_processing_timestamp = 0
         for file_name in input_files:
-            df = pd.read_excel(file_name)
+            df = await asyncio.to_thread(pd.read_excel, file_name)
 
             if file_config:
                 default_processing_timestamp = file_config[file_name][
