@@ -1,3 +1,10 @@
+# [1.33.0](https://github.com/SocialGouv/graal/compare/v1.32.0...v1.33.0) (2026-01-08)
+
+
+### Features
+
+* Use Shared executors for offloading CPU-bound work ([8c81c09](https://github.com/SocialGouv/graal/commit/8c81c092942d13e7a87bd13ba251da5598b92d1f))
+
 # [1.32.0](https://github.com/SocialGouv/graal/compare/v1.31.3...v1.32.0) (2026-01-08)
 
 
