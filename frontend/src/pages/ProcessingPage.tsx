@@ -1,9 +1,8 @@
 import { fr } from '@codegouvfr/react-dsfr'
 import { Button } from '@codegouvfr/react-dsfr/Button'
 import { Stepper } from '@codegouvfr/react-dsfr/Stepper'
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { apiService } from '../services/api'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigFileSelector } from '../components/ConfigFileSelector'
 import { ConfigurationManager } from '../components/ConfigurationManager/ConfigurationManager'
@@ -20,6 +19,7 @@ import {
   useUploadFile
 } from '../hooks/useApi'
 import { useValidation } from '../hooks/useValidation'
+import { apiService } from '../services/api'
 import {
   useProcessingStore,
   type ProcessingConfig as ProcessingConfigType
@@ -35,6 +35,7 @@ export const ProcessingPage = () => {
     uploadedFile,
     selectedConfigFile,
     setCurrentStep,
+    goBackToConfiguration,
     setUploadedFile,
     setProcessingConfig,
     reset
@@ -63,7 +64,7 @@ export const ProcessingPage = () => {
   // Results preview - only when job is completed
   useResultsPreview(jobId, processingStatus === 'completed')
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = (file: File | null) => {
     setUploadedFile(file)
   }
 
@@ -124,6 +125,12 @@ export const ProcessingPage = () => {
             should_overwrite: processingConfig.similaritySearch.should_overwrite
           }
         ),
+        ...(processingConfig.missionShortTitleFilter.length > 0
+          ? {
+              mission_short_title_filter:
+                processingConfig.missionShortTitleFilter
+            }
+          : {}),
         attribution: buildConfigIfEnabled(
           processingConfig.attribution.enabled,
           {
@@ -409,9 +416,7 @@ export const ProcessingPage = () => {
               <section className={fr.cx('fr-mb-6w')}>
                 <FileUpload
                   onFileSelect={handleFileSelect}
-                  onStartProcessing={handleStartProcessing}
                   disabled={uploadFileMutation.isPending}
-                  isFormValid={!!isFormValid}
                 />
                 <div
                   className={fr.cx(
@@ -462,7 +467,7 @@ export const ProcessingPage = () => {
                 <Button
                   priority="secondary"
                   size="small"
-                  onClick={() => setCurrentStep(2)}
+                  onClick={goBackToConfiguration}
                   iconId="fr-icon-arrow-left-line"
                   iconPosition="left"
                 >

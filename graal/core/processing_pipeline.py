@@ -362,6 +362,18 @@ class ProcessingPipeline:
         if not mission_filters:
             return amendments_df
 
+        # Normalize user-provided filters to match Mission normalization below.
+        # Frontend sends raw labels (with accents/case), backend ensures matching behavior.
+        normalized_filters = (
+            pd.Series(mission_filters, dtype="string")
+            .fillna("")
+            .str.normalize("NFKD")
+            .str.encode("ascii", errors="ignore")
+            .str.decode("utf-8")
+            .str.lower()
+            .tolist()
+        )
+
         amendments_df["Mission"] = (
             amendments_df["Mission"]
             .str.normalize("NFKD")
@@ -373,7 +385,7 @@ class ProcessingPipeline:
         amendments_df["Mission"] = amendments_df["Mission"].fillna("")
         amendments_df = amendments_df[
             amendments_df["Mission"].apply(
-                lambda x: any(mission in x for mission in mission_filters)
+                lambda x: any(mission in x for mission in normalized_filters)
             )
         ]
         return amendments_df

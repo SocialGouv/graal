@@ -41,7 +41,7 @@ export interface SimilaritySearchConfig {
   database_id?: UUID
   clustering_similarity_thresholds?: Record<string, number>
   fuzzy_match_similarity_thresholds?: Record<string, number>
-  similarity_threshold_overrides?: Record<string, number>
+  similarity_threshold_overrides?: Record<string, Record<string, number>>
   columns_to_copy?: Record<string, { enabled: boolean; condition?: string }>
   should_overwrite?: boolean
 }
@@ -80,6 +80,7 @@ export interface DefaultOpinionConfig {
 }
 
 export interface ProcessingConfig {
+  mission_short_title_filter?: string[]
   allotments?: AllotmentsConfig
   similarities_within_lectures?: SimilaritiesWithinLecturesConfig
   similarity_search?: SimilaritySearchConfig

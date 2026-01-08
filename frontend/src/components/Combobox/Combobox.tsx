@@ -27,6 +27,24 @@ export interface ComboboxProps {
   emptyMessage?: string
   /** Additional CSS class for wrapper */
   className?: string
+
+  /**
+   * If true, the input is cleared after selecting an option.
+   * Useful when using the Combobox as a picker for multi-select.
+   */
+  clearInputOnSelect?: boolean
+
+  /**
+   * If true (default), selecting an option closes the dropdown.
+   * Set to false to keep the list open after selection (multi-pick UX).
+   */
+  closeOnSelect?: boolean
+
+  /**
+   * If true (default), typing an exact option value triggers `onChange`.
+   * Set to false to only commit selection on explicit option click.
+   */
+  selectOnExactMatch?: boolean
 }
 
 export const Combobox: React.FC<ComboboxProps> = ({
@@ -41,13 +59,15 @@ export const Combobox: React.FC<ComboboxProps> = ({
   isLoading = false,
   placeholder,
   emptyMessage = 'Aucun résultat trouvé',
-  className
+  className,
+  clearInputOnSelect = false,
+  closeOnSelect = true,
+  selectOnExactMatch = true
 }) => {
   const [inputValue, setInputValue] = useState<string>(value || '')
   const [showDropdown, setShowDropdown] = useState<boolean>(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const justSelectedRef = useRef<boolean>(false)
 
   // Sync input value with prop changes
   useEffect(() => {
@@ -86,20 +106,26 @@ export const Combobox: React.FC<ComboboxProps> = ({
       setShowDropdown(true)
 
       // Only update parent if value is valid (empty or in options list)
-      if (newValue === '' || options.includes(newValue)) {
+      if (
+        selectOnExactMatch &&
+        (newValue === '' || options.includes(newValue))
+      ) {
         onChange(newValue === '' ? null : newValue)
       }
     },
-    [options, onChange]
+    [options, onChange, selectOnExactMatch]
   )
 
   // Handle focus to show dropdown
   const handleFocus = useCallback(() => {
-    // Don't open dropdown if we just selected an option
-    if (justSelectedRef.current) {
-      justSelectedRef.current = false
-      return
+    if (!disabled && !isLoading) {
+      setShowDropdown(true)
     }
+  }, [disabled, isLoading])
+
+  // Some UX flows close the dropdown while keeping focus on the input.
+  // In that case, focusing won't fire again; clicking should reopen.
+  const handleClick = useCallback(() => {
     if (!disabled && !isLoading) {
       setShowDropdown(true)
     }
@@ -118,14 +144,30 @@ export const Combobox: React.FC<ComboboxProps> = ({
     (option: string, event?: React.MouseEvent) => {
       // Prevent blur event from firing when clicking option
       event?.preventDefault()
-      setInputValue(option)
+      event?.stopPropagation()
       onChange(option)
-      setShowDropdown(false)
-      // Set flag to prevent dropdown from reopening on focus
-      justSelectedRef.current = true
+
+      if (clearInputOnSelect) {
+        setInputValue('')
+      } else {
+        setInputValue(option)
+      }
+
+      setShowDropdown(!closeOnSelect)
+
+      // Ensure the input stays focused for fast consecutive selections.
+      // Some browsers/UI flows may still move focus to the clicked item.
       inputRef.current?.focus()
+
+      // In multi-pick mode we want the dropdown to remain visible immediately
+      // after selection, even if any intermediate focus/blur/click handlers run.
+      if (!closeOnSelect) {
+        Promise.resolve().then(() => {
+          setShowDropdown(true)
+        })
+      }
     },
-    [onChange]
+    [clearInputOnSelect, closeOnSelect, onChange]
   )
 
   // Handle clear button
@@ -133,9 +175,6 @@ export const Combobox: React.FC<ComboboxProps> = ({
     setInputValue('')
     onChange(null)
     setShowDropdown(false)
-    // Set flag to prevent dropdown from reopening on focus
-    justSelectedRef.current = true
-    inputRef.current?.focus()
   }, [onChange])
 
   // Handle dropdown toggle
@@ -165,6 +204,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
               value: inputValue,
               onChange: handleInputChange,
               onFocus: handleFocus,
+              onClick: handleClick,
               onBlur: handleBlur,
               placeholder: effectivePlaceholder,
               disabled: disabled || isLoading,

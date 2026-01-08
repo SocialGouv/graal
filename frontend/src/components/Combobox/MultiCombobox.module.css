@@ -1,0 +1,124 @@
+/**
+ * MultiCombobox
+ *
+ * “Email recipients” like input: selected values are displayed as chips inside
+ * the input field, with an inline text input used to filter options.
+ */
+
+.inputShell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2.5rem;
+    height: auto;
+    padding: 0.25rem 0.5rem;
+    line-height: 1.4;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: 100%;
+    border-radius: 9999px;
+    padding: 0.15rem 0.5rem;
+}
+
+.chipSelected {
+    outline: 2px solid #000091;
+    outline-offset: 1px;
+}
+
+.chipText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 18rem;
+}
+
+.chipRemove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.chipRemove:focus-visible {
+    outline: 2px solid #000091;
+    outline-offset: 2px;
+}
+
+.textInput {
+    flex: 1;
+    min-width: 8rem;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.25rem 0;
+}
+
+.textInput:focus-visible {
+    outline: 2px solid transparent;
+}
+
+.textInput:disabled {
+    cursor: not-allowed;
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.25rem;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    list-style: none;
+    padding: 0;
+}
+
+.dropdownItem {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s ease;
+}
+
+.dropdownItem:hover {
+    background-color: #f6f6f6;
+}
+
+.dropdownEmpty {
+    padding: 0.75rem 1rem;
+    color: #666;
+    text-align: left;
+    font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+    .dropdownMenu {
+        background-color: #242424;
+        border-color: #3a3a3a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        color: #f0f0f0;
+    }
+
+    .dropdownItem {
+        color: #f0f0f0;
+    }
+
+    .dropdownItem:hover {
+        background-color: #333333;
+    }
+
+    .dropdownEmpty {
+        color: #cecece;
+    }
+}
