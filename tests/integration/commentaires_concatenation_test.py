@@ -4,6 +4,7 @@ import logging
 import logging.config
 import random
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 from uuid import UUID
 
 import numpy as np
@@ -157,7 +158,16 @@ def test_multiple_features_commentaires_concatenation(
         concatenated_column_separator="\n",
     )
 
-    result_df, _ = orchestrator.process(amendments_df, config)
+    with patch(
+        "graal.features.similarity_search_feature.get_similarity_db_manifest_service"
+    ) as mock_manifest_service_factory:
+        mock_manifest_service = AsyncMock()
+        mock_manifest_service.resolve_s3_path_for_db = AsyncMock(
+            return_value=similarity_db_cache_key
+        )
+        mock_manifest_service_factory.return_value = mock_manifest_service
+
+        result_df, _ = orchestrator.process(amendments_df, config)
 
     # Verify Commentaires column exists
     assert "Commentaires" in result_df.columns

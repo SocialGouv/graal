@@ -25,6 +25,7 @@ from graal.api.routes.processing import router as processing_router
 from graal.api.services.database_builder_service import DatabaseBuilderService
 from graal.api.services.job_registry import InMemoryJobRegistry
 from graal.api.services.web_processing_service import WebProcessingService
+from graal.utils.executors import shutdown_db_build_executor
 
 logging.config.fileConfig("logging.conf")
 
@@ -44,6 +45,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     logging.info("GRAAL Web API shutting down...")
+    shutdown_db_build_executor()
 
 
 # Create FastAPI application

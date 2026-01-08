@@ -1,5 +1,6 @@
 """Tests for similarity_db_manifests admin routes."""
 
+from collections.abc import Iterator
 from unittest.mock import ANY, AsyncMock, patch
 
 import pytest
@@ -17,10 +18,11 @@ def mock_logging_config(mocker):
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client() -> Iterator[TestClient]:
     """FastAPI test client."""
 
-    return TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture

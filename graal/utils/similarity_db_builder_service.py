@@ -8,6 +8,8 @@ handle file I/O operations (local saving, S3 uploads). File persistence
 is the responsibility of the caller.
 """
 
+import asyncio
+import functools
 import logging
 import logging.config
 from pathlib import Path
@@ -21,6 +23,7 @@ from graal.similarities.similarity_search_handler import SimilaritySearchHandler
 from graal.utils.amendment_file_handlers import AmendmentFileHandlerRegistry
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.base_config import InputFileConfig
+from graal.utils.executors import get_db_build_executor
 from graal.utils.sheet_data_loader import SheetDataLoader
 
 logging.config.fileConfig("logging.conf")
@@ -157,13 +160,19 @@ class SimilarityDatabaseBuilderService:
 
             # Apply clustering and deduplication
             logging.info("Applying deduplication via clustering...")
-            filtered_df, _clusters = AllotmentHandler.process_allotments(
-                amendments_df=amendments_df,
-                allotment_column="Exposé amdt",
-                similarity_threshold=similarity_threshold,
-                group_by_columns=group_by_columns,
-                eps=eps,
-                removal_strategy_func=self._get_all_indices_oldest_or_shorter_responses,
+            # CPU-bound: run clustering off the event loop to keep the API responsive.
+            loop = asyncio.get_running_loop()
+            filtered_df, _clusters = await loop.run_in_executor(
+                get_db_build_executor(),
+                functools.partial(
+                    AllotmentHandler.process_allotments,
+                    amendments_df=amendments_df,
+                    allotment_column="Exposé amdt",
+                    similarity_threshold=similarity_threshold,
+                    group_by_columns=group_by_columns,
+                    eps=eps,
+                    removal_strategy_func=self._get_all_indices_oldest_or_shorter_responses,
+                ),
             )
 
             logging.info(
@@ -233,8 +242,17 @@ class SimilarityDatabaseBuilderService:
                 df = await handler.load_amendments(file_configs)
 
                 # Apply similarity preprocessing
-                df = SimilaritySearchHandler.preprocess_for_similarity(
-                    df, acronym_mapping
+                # CPU-bound (pandas-heavy): run on the dedicated DB build executor
+                # to keep the event loop responsive and avoid starving the default
+                # asyncio threadpool used by S3 config I/O.
+                loop = asyncio.get_running_loop()
+                df = await loop.run_in_executor(
+                    get_db_build_executor(),
+                    functools.partial(
+                        SimilaritySearchHandler.preprocess_for_similarity,
+                        df,
+                        acronym_mapping,
+                    ),
                 )
 
                 logging.info(f"Loaded {len(df)} amendments using {handler_name}")
@@ -271,10 +289,16 @@ class SimilarityDatabaseBuilderService:
             logging.info(
                 "Applying universal preprocessing to Corps amdt and Exposé amdt..."
             )
-            amendments_df = AmendmentPreProcessor.apply_universal_preprocessing(
-                amendments_df=amendments_df,
-                acronym_mapping=None,  # No acronym replacement for similarity DB
-                columns_to_process=["Corps amdt", "Exposé amdt"],
+            # CPU-bound (string ops): run on the dedicated DB build executor.
+            loop = asyncio.get_running_loop()
+            amendments_df = await loop.run_in_executor(
+                get_db_build_executor(),
+                functools.partial(
+                    AmendmentPreProcessor.apply_universal_preprocessing,
+                    amendments_df,
+                    None,  # acronym_mapping: no acronym replacement for similarity DB
+                    ["Corps amdt", "Exposé amdt"],
+                ),
             )
 
             # Handle empty Corps amdt by generating placeholder text
