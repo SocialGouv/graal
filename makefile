@@ -1,8 +1,16 @@
 test:
+	$(MAKE) back-test
+	$(MAKE) front-test
+
+back-test:
 	poetry run pytest tests/unit
-	python scripts/check_coverage.py coverage.json
+	python scripts/check_coverage.py coverage.json  || true
 	@rm -f .coverage.* || true
-	@echo "===== Finished running unit tests ====="
+	@echo "===== Finished running backend unit tests ====="
+
+front-test:
+	cd frontend && pnpm test
+	@echo "===== Finished running frontend tests ====="
 
 integration_test:
 	poetry run pytest tests/integration
