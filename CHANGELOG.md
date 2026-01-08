@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/SocialGouv/graal/compare/v1.33.0...v1.34.0) (2026-01-08)
+
+
+### Features
+
+* Add mission filter for amdt processing ([66a62c4](https://github.com/SocialGouv/graal/commit/66a62c446cf4eb449de6e67fee097e1c5361ba5b))
+
 # [1.33.0](https://github.com/SocialGouv/graal/compare/v1.32.0...v1.33.0) (2026-01-08)
 
 
