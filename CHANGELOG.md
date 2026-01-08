@@ -1,3 +1,10 @@
+# [1.32.0](https://github.com/SocialGouv/graal/compare/v1.31.3...v1.32.0) (2026-01-08)
+
+
+### Features
+
+* Make preprocessing and file loading async ([7950b62](https://github.com/SocialGouv/graal/commit/7950b625b88185206db1fef5581962621b17e6ba))
+
 ## [1.31.3](https://github.com/SocialGouv/graal/compare/v1.31.2...v1.31.3) (2026-01-07)
 
 
