@@ -5,6 +5,7 @@ These tests focus on the behavior of deleting similarity database files via
 similarity DB manifests.
 """
 
+from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -21,10 +22,11 @@ def mock_logging_config(mocker):
 
 
 @pytest.fixture
-def client():
+def client() -> Iterator[TestClient]:
     """FastAPI test client."""
 
-    return TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture
