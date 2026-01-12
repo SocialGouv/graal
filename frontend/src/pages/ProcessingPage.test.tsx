@@ -55,6 +55,16 @@ describe('ProcessingPage - mission filter payload', () => {
       }),
       processingConfig: {
         ...state.processingConfig,
+        // Make similarity search config valid (the page now blocks submission otherwise)
+        similaritySearch: {
+          ...state.processingConfig.similaritySearch,
+          enabled: false
+        },
+        // Summary generation requires an LLM type when enabled; disable for this test.
+        summaryGeneration: {
+          ...state.processingConfig.summaryGeneration,
+          enabled: false
+        },
         missionShortTitleFilter: ['Santé', 'Travail'],
         // ensure form validation passes: at least one feature enabled
         attribution: {
@@ -88,6 +98,14 @@ describe('ProcessingPage - mission filter payload', () => {
       ...state,
       processingConfig: {
         ...state.processingConfig,
+        similaritySearch: {
+          ...state.processingConfig.similaritySearch,
+          enabled: false
+        },
+        summaryGeneration: {
+          ...state.processingConfig.summaryGeneration,
+          enabled: false
+        },
         missionShortTitleFilter: [],
         attribution: {
           ...state.processingConfig.attribution,
@@ -107,6 +125,47 @@ describe('ProcessingPage - mission filter payload', () => {
     expect(
       'mission_short_title_filter' in args.processingRequest.processing_config
     ).toBe(false)
+  })
+})
+
+describe('ProcessingPage - similarity search validation blocks start', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useProcessingStore.getState().reset()
+
+    // Step 3 with required fields
+    useProcessingStore.setState((state) => ({
+      ...state,
+      currentStep: 3,
+      selectedConfigFile: 'Fichier.xlsx',
+      uploadedFile: new File(['{}'], 'amendements.json', {
+        type: 'application/json'
+      }),
+      processingConfig: {
+        ...state.processingConfig,
+        similaritySearch: {
+          ...state.processingConfig.similaritySearch,
+          enabled: true,
+          originProject: '',
+          databaseId: null
+        },
+        attribution: {
+          ...state.processingConfig.attribution,
+          enabled: true
+        }
+      }
+    }))
+  })
+
+  it('should not start processing when similarity search is enabled but required fields are missing', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<ProcessingPage />)
+
+    await user.click(
+      screen.getByRole('button', { name: /commencer le traitement/i })
+    )
+
+    expect(mockMutate).toHaveBeenCalledTimes(0)
   })
 })
 

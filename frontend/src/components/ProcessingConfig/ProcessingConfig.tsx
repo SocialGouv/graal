@@ -55,18 +55,32 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
   } = useProcessingConfigHandlers()
 
   // Validation errors
-  const similaritySearchOriginProjectError = useMemo(
-    () =>
-      processingConfig.similaritySearch.enabled &&
-      processingConfig.similaritySearch.originProject
-        ? getOriginProjectError(processingConfig.similaritySearch.originProject)
-        : null,
-    [
-      processingConfig.similaritySearch.enabled,
-      processingConfig.similaritySearch.originProject,
-      getOriginProjectError
-    ]
-  )
+  const similaritySearchOriginProjectError = useMemo(() => {
+    if (!processingConfig.similaritySearch.enabled) {
+      return null
+    }
+
+    return getOriginProjectError(
+      processingConfig.similaritySearch.originProject ?? ''
+    )
+  }, [
+    processingConfig.similaritySearch.enabled,
+    processingConfig.similaritySearch.originProject,
+    getOriginProjectError
+  ])
+
+  const similaritySearchDatabaseError = useMemo(() => {
+    if (!processingConfig.similaritySearch.enabled) {
+      return null
+    }
+
+    return processingConfig.similaritySearch.databaseId
+      ? null
+      : 'Veuillez sélectionner une base de données.'
+  }, [
+    processingConfig.similaritySearch.enabled,
+    processingConfig.similaritySearch.databaseId
+  ])
 
   const allotmentsColumnError = useMemo(
     () =>
@@ -216,6 +230,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
                   value={processingConfig.similaritySearch.databaseId}
                   onChange={handleSimilaritySearchDatabaseIdChange}
                   disabled={disabled || isProcessing}
+                  validationError={similaritySearchDatabaseError}
                 />
               </div>
 

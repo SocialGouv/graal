@@ -85,8 +85,6 @@ class SimilaritySearchConfig(BaseModel):
     )
     origin_project: Optional[str] = Field(
         default=None,
-        min_length=2,
-        max_length=100,
         description="Name of the legislative project for similarity search (e.g., 'PLFSS 2025')",
     )
     clustering_similarity_thresholds: Dict[str, float] = Field(
@@ -319,7 +317,17 @@ class ProcessingConfig(BaseModel):
         cls, params: SimilaritySearchConfig
     ) -> SimilaritySearchConfig:
         """Validate similarity search configuration."""
-        if params and params.enabled:
+        if not params:
+            return params
+
+        # When the feature is disabled, accept empty strings from the UI
+        # and normalize to None so optional Field constraints don't trip.
+        if not params.enabled:
+            if params.origin_project is not None and not params.origin_project.strip():
+                params.origin_project = None
+            return params
+
+        if params.enabled:
             # Validate database_id is provided when enabled
             if not params.database_id:
                 raise ValueError(

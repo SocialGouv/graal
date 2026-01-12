@@ -9,12 +9,15 @@ export interface DatabaseSelectorConfigProps {
   value: UUID | null // this will now hold the database *id*
   onChange: (value: string | null) => void
   disabled?: boolean
+  /** Validation error from parent (e.g. "required") */
+  validationError?: string | null
 }
 
 export const DatabaseSelectorConfig: React.FC<DatabaseSelectorConfigProps> = ({
   value,
   onChange,
-  disabled = false
+  disabled = false,
+  validationError
 }) => {
   // Fetch available databases using React Query
   const {
@@ -33,12 +36,15 @@ export const DatabaseSelectorConfig: React.FC<DatabaseSelectorConfigProps> = ({
   // Ensures manifests is always treated as an array to prevent crashes
   const databases = Array.isArray(manifests) ? manifests : []
 
-  // Get error message
-  const errorMessage = isError
+  // Prefer validation errors (missing selection) over fetch errors.
+  // Fetch errors are still displayed when present.
+  const fetchErrorMessage = isError
     ? error instanceof Error
       ? error.message
       : 'Erreur lors du chargement des bases de données'
     : undefined
+
+  const errorMessage = validationError ?? fetchErrorMessage
 
   // Show loading or error placeholder
   const placeholder = isLoading
@@ -59,7 +65,7 @@ export const DatabaseSelectorConfig: React.FC<DatabaseSelectorConfigProps> = ({
           }}
           label="Base de données de recherche de similarité"
           hint="Recherchez et sélectionnez une base de données de précédentes lectures."
-          state={isError ? 'error' : 'default'}
+          state={errorMessage ? 'error' : 'default'}
           stateRelatedMessage={errorMessage}
           disabled={disabled}
           isLoading={isLoading}

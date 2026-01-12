@@ -53,7 +53,7 @@ export const ProcessingPage = () => {
   const downloadExcelResultsMutation = useDownloadExcelResults()
 
   // Validation hook
-  const { isAnyFeatureEnabled } = useValidation()
+  const { isAnyFeatureEnabled, validateOriginProject } = useValidation()
 
   // Job status polling - only when we have a jobId and processing
   useJobStatus(
@@ -69,12 +69,30 @@ export const ProcessingPage = () => {
   }
 
   // Simplified validation: only require file, config, and at least one feature enabled
+  const isSimilaritySearchConfigValid = useMemo(() => {
+    const ss = processingConfig.similaritySearch
+    if (!ss.enabled) return true
+
+    const originValid = validateOriginProject(ss.originProject).isValid
+    const dbValid = !!ss.databaseId
+    return originValid && dbValid
+  }, [processingConfig.similaritySearch, validateOriginProject])
+
+  const isStep2Valid = useMemo(() => {
+    if (!isAnyFeatureEnabled(processingConfig)) return false
+    if (
+      processingConfig.summaryGeneration.enabled &&
+      !processingConfig.summaryGeneration.llm_type
+    ) {
+      return false
+    }
+
+    return isSimilaritySearchConfigValid
+  }, [processingConfig, isAnyFeatureEnabled, isSimilaritySearchConfigValid])
+
   const isFormValid = useMemo(
-    () =>
-      !!uploadedFile &&
-      !!selectedConfigFile &&
-      isAnyFeatureEnabled(processingConfig),
-    [uploadedFile, selectedConfigFile, processingConfig, isAnyFeatureEnabled]
+    () => !!uploadedFile && !!selectedConfigFile && isStep2Valid,
+    [uploadedFile, selectedConfigFile, isStep2Valid]
   )
 
   const handleStartProcessing = () => {
@@ -397,11 +415,7 @@ export const ProcessingPage = () => {
                   <Button
                     priority="primary"
                     onClick={() => setCurrentStep(3)}
-                    disabled={
-                      !isAnyFeatureEnabled(processingConfig) ||
-                      (processingConfig.summaryGeneration.enabled &&
-                        !processingConfig.summaryGeneration.llm_type)
-                    }
+                    disabled={!isStep2Valid}
                     iconId="fr-icon-arrow-right-line"
                     iconPosition="right"
                   >
