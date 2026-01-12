@@ -1,3 +1,10 @@
+## [1.34.1](https://github.com/SocialGouv/graal/compare/v1.34.0...v1.34.1) (2026-01-12)
+
+
+### Bug Fixes
+
+* Stop validation error on origin project if feature is not enabled ([c71e8f0](https://github.com/SocialGouv/graal/commit/c71e8f014b7187b143d884bb74e1952c1fa8e8fc))
+
 # [1.34.0](https://github.com/SocialGouv/graal/compare/v1.33.0...v1.34.0) (2026-01-08)
 
 
