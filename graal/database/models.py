@@ -4,7 +4,6 @@ This module defines all database models using SQLAlchemy 2.0 declarative syntax
 with full type hints and relationship mappings.
 """
 
-import enum
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -25,6 +24,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from graal.database.base import Base
+from graal.database.enums import DbRoleEnum
 
 
 def utc_now() -> datetime:
@@ -388,12 +388,6 @@ class SimilarityDBManifest(Base):
 
     def __repr__(self) -> str:
         return f"<SimilarityDBManifest(id={self.id}, name={self.name}, is_active={self.is_active})>"
-
-
-class DbRoleEnum(str, enum.Enum):
-    owner = "owner"
-    writer = "writer"
-    reader = "reader"
 
 
 class AmendmentDatabasePermission(Base):

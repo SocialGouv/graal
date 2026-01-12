@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from graal.database.enums import DbRoleEnum
+
 
 class JobStatus(str, Enum):
     """Job processing status enumeration."""
@@ -185,7 +187,7 @@ class DatabasePermissionResponse(BaseModel):
     db_id: str = Field(..., description="Database ID")
     user_id: str = Field(..., description="User ID with permission")
     email: str = Field(..., description="User email address")
-    role: str = Field(..., description="Role (owner, writer, reader)")
+    role: DbRoleEnum = Field(..., description="Role")
     created_at: datetime = Field(..., description="When permission was granted")
 
 
@@ -198,6 +200,6 @@ class ManagedDatabaseResponse(BaseModel):
     row_count: Optional[int] = Field(None, description="Number of rows in database")
     last_modified: datetime = Field(..., description="Last modification timestamp")
     created_at: datetime = Field(..., description="Database creation timestamp")
-    user_role: Optional[str] = Field(
+    user_role: Optional[DbRoleEnum] = Field(
         None, description="User's role (owner) or null for admins viewing all databases"
     )

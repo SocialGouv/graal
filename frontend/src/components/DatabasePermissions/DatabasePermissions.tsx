@@ -7,7 +7,7 @@ import { Table } from '@codegouvfr/react-dsfr/Table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useState } from 'react'
 import { apiService } from '../../services/api'
-import type { DatabasePermission, UserResponse } from '../../types/api'
+import type { DatabasePermission, DbRole, UserResponse } from '../../types/api'
 
 interface DatabasePermissionsProps {
   databaseId: string
@@ -15,7 +15,7 @@ interface DatabasePermissionsProps {
   onClose: () => void
 }
 
-const ROLE_DESCRIPTIONS = {
+const ROLE_DESCRIPTIONS: Record<DbRole, string> = {
   owner:
     'Contrôle total : peut gérer les permissions, renommer et supprimer la base de données',
   writer:
@@ -31,7 +31,7 @@ export const DatabasePermissions: React.FC<DatabasePermissionsProps> = ({
   const queryClient = useQueryClient()
   const [emailSearch, setEmailSearch] = useState('')
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null)
-  const [role, setRole] = useState<'owner' | 'writer' | 'reader'>('reader')
+  const [role, setRole] = useState<DbRole>('reader')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [userToRemove, setUserToRemove] = useState<string | null>(null)
   const [showUserResults, setShowUserResults] = useState(false)
@@ -55,10 +55,8 @@ export const DatabasePermissions: React.FC<DatabasePermissionsProps> = ({
 
   // Assign permission mutation
   const assignMutation = useMutation({
-    mutationFn: (data: {
-      user_id: string
-      role: 'owner' | 'writer' | 'reader'
-    }) => apiService.assignDatabasePermission(databaseId, data),
+    mutationFn: (data: { user_id: string; role: DbRole }) =>
+      apiService.assignDatabasePermission(databaseId, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['database-permissions', databaseId]
@@ -110,7 +108,7 @@ export const DatabasePermissions: React.FC<DatabasePermissionsProps> = ({
     // Pre-fill role if user already has permissions
     const existingPerm = permissions?.find((p) => p.user_id === user.user_id)
     if (existingPerm) {
-      setRole(existingPerm.role as 'owner' | 'writer' | 'reader')
+      setRole(existingPerm.role)
     } else {
       setRole('reader') // Default for new users
     }
@@ -310,8 +308,7 @@ export const DatabasePermissions: React.FC<DatabasePermissionsProps> = ({
                 label="Rôle"
                 nativeSelectProps={{
                   value: role,
-                  onChange: (e) =>
-                    setRole(e.target.value as 'owner' | 'writer' | 'reader')
+                  onChange: (e) => setRole(e.target.value as DbRole)
                 }}
               >
                 <option value="reader">Lecteur</option>

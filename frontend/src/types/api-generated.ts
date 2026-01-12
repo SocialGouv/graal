@@ -1440,11 +1440,8 @@ export interface components {
        * @description User ID (UUID) to grant permission to
        */
       user_id: string
-      /**
-       * Role
-       * @description Role to assign (owner, writer, reader)
-       */
-      role: string
+      /** @description Role to assign */
+      role: components['schemas']['DbRoleEnum']
     }
     /** Body_process_amendments_api_v1_process_post */
     Body_process_amendments_api_v1_process_post: {
@@ -1622,11 +1619,8 @@ export interface components {
        * @description User email address
        */
       email: string
-      /**
-       * Role
-       * @description Role (owner, writer, reader)
-       */
-      role: string
+      /** @description Role */
+      role: components['schemas']['DbRoleEnum']
       /**
        * Created At
        * Format: date-time
@@ -1634,6 +1628,12 @@ export interface components {
        */
       created_at: string
     }
+    /**
+     * DbRoleEnum
+     * @description Roles for amendment database permissions.
+     * @enum {string}
+     */
+    DbRoleEnum: 'owner' | 'writer' | 'reader'
     /**
      * FileReferenceInfo
      * @description Information about a file in a database manifest.
@@ -1807,11 +1807,8 @@ export interface components {
        * @description Database creation timestamp
        */
       created_at: string
-      /**
-       * User Role
-       * @description User's role (owner) or null for admins viewing all databases
-       */
-      user_role?: string | null
+      /** @description User's role (owner) or null for admins viewing all databases */
+      user_role?: components['schemas']['DbRoleEnum'] | null
     }
     /**
      * PreviewResponse

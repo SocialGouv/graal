@@ -33,8 +33,8 @@ export const ManageDatabases: React.FC = () => {
   }
 
   // Format number with thousands separator
-  const formatNumber = (num: number | null): string => {
-    if (num === null) return 'N/A'
+  const formatNumber = (num: number | null | undefined): string => {
+    if (num === null || num === undefined) return 'N/A'
     return num.toLocaleString('fr-FR')
   }
 

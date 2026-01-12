@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 from graal.custom_types import LLMType
+from graal.database.enums import DbRoleEnum
 
 
 class AssignPermissionRequest(BaseModel):
@@ -18,11 +19,7 @@ class AssignPermissionRequest(BaseModel):
         ...,
         description="User ID (UUID) to grant permission to",
     )
-    role: str = Field(
-        ...,
-        description="Role to assign (owner, writer, reader)",
-        pattern="^(owner|writer|reader)$",
-    )
+    role: DbRoleEnum = Field(..., description="Role to assign")
 
 
 class AllotmentConfig(BaseModel):

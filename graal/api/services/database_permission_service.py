@@ -24,9 +24,9 @@ from typing import Optional
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from graal.database.enums import DbRoleEnum
 from graal.database.models import (
     AmendmentDatabasePermission,
-    DbRoleEnum,
     SimilarityDBManifest,
     User,
 )
