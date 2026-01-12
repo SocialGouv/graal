@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import Path
 from typing import Optional, Union
@@ -40,6 +41,31 @@ class SheetDataLoader:
         """
         excel_data = await cls._load_excel_data(file_path)
         return cls(file_path, excel_data)
+
+    @classmethod
+    def create_sync(cls, file_path: Union[str, Path]) -> "SheetDataLoader":
+        """Create a SheetDataLoader instance from synchronous code.
+
+        This project still has synchronous entrypoints (e.g. ProcessingPipeline)
+        that need to load the Excel configuration from S3. The underlying loader
+        is async (S3 I/O), so this helper provides a safe boundary.
+
+        Notes:
+            - If called while an event loop is already running, we raise an
+              explicit error to avoid deadlocks / nested loops.
+            - In the web service, the pipeline runs in a thread pool, so there
+              is typically no running loop in that thread.
+        """
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop in this thread -> safe to run.
+            return asyncio.run(cls.create(file_path))
+
+        raise RuntimeError(
+            "SheetDataLoader.create_sync() cannot be called from within a running event loop. "
+            "Use: await SheetDataLoader.create(file_path)"
+        )
 
     @staticmethod
     async def _load_excel_data(file_path: Union[str, Path]) -> dict[str, pd.DataFrame]:

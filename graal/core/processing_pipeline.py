@@ -154,7 +154,7 @@ class ProcessingPipeline:
         )
 
         # Use SheetDataLoader which supports both S3 and local files
-        sheet_loader = SheetDataLoader(graal_config_file)
+        sheet_loader = SheetDataLoader.create_sync(graal_config_file)
         config_excel = sheet_loader.excel_data
         logging.debug(
             f"[PIPELINE] Configuration Excel loaded - sheets: {list(config_excel.keys())}"
@@ -338,12 +338,12 @@ class ProcessingPipeline:
 
         if suffix in [".xlsx", ".xls"]:
             logging.debug("[PIPELINE] Using Excel loader")
-            amendments_df = AmendmentPreProcessor.load_amendments_excel(
+            amendments_df = AmendmentPreProcessor.load_amendments_excel_sync(
                 [file_path], input_files_config
             )
         elif suffix == ".json":
             logging.debug("[PIPELINE] Using JSON loader")
-            amendments_df = AmendmentPreProcessor.load_amendments_json(
+            amendments_df = AmendmentPreProcessor.load_amendments_json_sync(
                 [file_path], input_files_config
             )
         else:

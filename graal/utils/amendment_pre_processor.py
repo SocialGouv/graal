@@ -84,6 +84,33 @@ class AmendmentPreProcessor:
         return amendments_df
 
     @staticmethod
+    def load_amendments_json_sync(
+        input_files: list[FilePath],
+        file_config: Optional[dict[FilePath, Any]] = None,
+    ) -> pd.DataFrame:
+        """Sync wrapper for :meth:`load_amendments_json`.
+
+        The main ProcessingPipeline is synchronous, but amendment loading is now
+        async because it performs I/O. In the web service, the pipeline runs in
+        a thread pool, so calling this method is safe (no running loop in that
+        worker thread).
+        """
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(
+                AmendmentPreProcessor.load_amendments_json(
+                    input_files=input_files,
+                    file_config=file_config,
+                )
+            )
+
+        raise RuntimeError(
+            "AmendmentPreProcessor.load_amendments_json_sync() cannot be called from within a running event loop. "
+            "Use: await AmendmentPreProcessor.load_amendments_json(...)"
+        )
+
+    @staticmethod
     async def load_amendments_excel(
         input_files: list[FilePath], file_config: Optional[dict[FilePath, Any]] = None
     ) -> pd.DataFrame:
@@ -112,6 +139,30 @@ class AmendmentPreProcessor:
         amendments_df = AmendmentPreProcessor._remove_pii_columns(amendments_df)
 
         return amendments_df
+
+    @staticmethod
+    def load_amendments_excel_sync(
+        input_files: list[FilePath],
+        file_config: Optional[dict[FilePath, Any]] = None,
+    ) -> pd.DataFrame:
+        """Sync wrapper for :meth:`load_amendments_excel`.
+
+        See :meth:`load_amendments_json_sync` for rationale.
+        """
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(
+                AmendmentPreProcessor.load_amendments_excel(
+                    input_files=input_files,
+                    file_config=file_config,
+                )
+            )
+
+        raise RuntimeError(
+            "AmendmentPreProcessor.load_amendments_excel_sync() cannot be called from within a running event loop. "
+            "Use: await AmendmentPreProcessor.load_amendments_excel(...)"
+        )
 
     @staticmethod
     def concatenate_dataframes(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
