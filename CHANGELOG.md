@@ -1,3 +1,10 @@
+## [1.34.2](https://github.com/SocialGouv/graal/compare/v1.34.1...v1.34.2) (2026-01-12)
+
+
+### Bug Fixes
+
+* Handle async operations in processing pipeline ([38ca320](https://github.com/SocialGouv/graal/commit/38ca320d6e1b2cc0240b301defe467dc64534a2f))
+
 ## [1.34.1](https://github.com/SocialGouv/graal/compare/v1.34.0...v1.34.1) (2026-01-12)
 
 
