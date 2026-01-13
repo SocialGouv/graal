@@ -1,3 +1,10 @@
+## [1.37.1](https://github.com/SocialGouv/graal/compare/v1.37.0...v1.37.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* Don't count duplicated keywords twice ([9248226](https://github.com/SocialGouv/graal/commit/9248226785a46f9bb31f9656e093313c7c461373))
+
 # [1.37.0](https://github.com/SocialGouv/graal/compare/v1.36.0...v1.37.0) (2026-01-13)
 
 
