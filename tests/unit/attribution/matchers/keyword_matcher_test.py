@@ -51,6 +51,30 @@ def test_match_multiple_keywords(matcher):
     assert attributions == {"Test User", "Another User"}
 
 
+def test_match_repeated_keyword_counts_occurrences(matcher):
+    """Repeated occurrences of a keyword should produce multiple matches."""
+    amendment = {
+        "amdt_idx": "TEST002B",
+        "Corps amdt": "test keyword then some text then test keyword again",
+    }
+    matches = matcher.match(amendment, "Corps amdt")
+
+    repeated_matches = [m for m in matches if m["keyword"] == "test keyword"]
+    assert len(repeated_matches) == 2
+
+
+def test_match_overlapping_multi_word_phrase():
+    """Overlapping multi-word occurrences should be counted (e.g. 'a a' in 'a a a')."""
+    keywords_df = pd.DataFrame(
+        {"Mots clés": ["a a"], "Affectation (nom)": ["Test User"]}
+    )
+    matcher = KeywordMatcher(keywords_df, allowed_columns={"Corps amdt"})
+    amendment = {"amdt_idx": "TEST002C", "Corps amdt": "a a a"}
+
+    matches = matcher.match(amendment, "Corps amdt")
+    assert len(matches) == 2
+
+
 def test_match_multi_word_keyword(matcher):
     """Test matching keywords with multiple words."""
     amendment = {
@@ -102,6 +126,28 @@ def test_get_attribution_comment_single_match():
     assert "Corps amdt" in comment
     assert "Test User" in comment
     assert "test keyword" in comment
+
+
+def test_get_attribution_comment_includes_counts():
+    """Comments should include keyword occurrence counts like 'keyword (x3)'."""
+    matches = [
+        {
+            "amdt_idx": "TEST006B",
+            "attribution": "Test User",
+            "keyword": "test keyword",
+            "column": "Corps amdt",
+        },
+        {
+            "amdt_idx": "TEST006B",
+            "attribution": "Test User",
+            "keyword": "test keyword",
+            "column": "Corps amdt",
+        },
+    ]
+    matcher = KeywordMatcher(pd.DataFrame({"Mots clés": [None]}), allowed_columns=set())
+    comment = matcher.get_attribution_comment(matches)
+
+    assert "test keyword (x2)" in comment
 
 
 def test_get_attribution_comment_multiple_matches():

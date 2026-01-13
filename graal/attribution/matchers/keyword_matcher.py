@@ -1,6 +1,7 @@
 """Matcher implementation for keyword-based matching."""
 
 import re
+from collections import Counter
 from typing import Any, Dict, List
 
 import pandas as pd
@@ -60,32 +61,34 @@ class KeywordMatcher(BaseMatcher):
                 if len(word.strip()) > 0
             ]
 
-            for word in keyword_words:
-                # Find all starting positions where this word matches
-                start_indexes = [i for i, w in enumerate(amdt_words) if w == word]
+            if not keyword_words:
+                continue
 
-                for start_idx in start_indexes:
-                    if start_idx != -1:
-                        end_idx = start_idx + len(keyword_words)
-                        # Check if all following words match in sequence
-                        if amdt_words[start_idx:end_idx] == keyword_words:
-                            # Get attribution(s) for this keyword
-                            attributions = self.keywords_df[
-                                self.keywords_df["Mots clés"] == keyword
-                            ]["Affectation (nom)"].tolist()
+            # Get attribution(s) for this keyword once.
+            attributions = self.keywords_df[self.keywords_df["Mots clés"] == keyword][
+                "Affectation (nom)"
+            ].tolist()
+            if not attributions:
+                continue
 
-                            for attribution in attributions:
-                                results.append(
-                                    {
-                                        "amdt_idx": amendment["amdt_idx"],
-                                        "attribution": attribution,
-                                        "keyword": keyword,
-                                        "matcher": KeywordMatcher,
-                                        "matcher_type": self.matcher_type,
-                                        "column": column_name,
-                                    }
-                                )
-                            break  # Once we find a match for this word, move to next keyword
+            # Count every occurrence of the full keyword phrase, including overlapping.
+            phrase_len = len(keyword_words)
+            for start_idx in range(0, max(0, len(amdt_words) - phrase_len + 1)):
+                end_idx = start_idx + phrase_len
+                if amdt_words[start_idx:end_idx] != keyword_words:
+                    continue
+
+                for attribution in attributions:
+                    results.append(
+                        {
+                            "amdt_idx": amendment["amdt_idx"],
+                            "attribution": attribution,
+                            "keyword": keyword,
+                            "matcher": KeywordMatcher,
+                            "matcher_type": self.matcher_type,
+                            "column": column_name,
+                        }
+                    )
 
         return results
 
@@ -110,13 +113,17 @@ class KeywordMatcher(BaseMatcher):
             column_matches = [m for m in matches if m["column"] == column]
             attributions = {match["attribution"] for match in column_matches}
             for attribution in sorted(attributions):
-                attribution_keywords = sorted(
-                    {
-                        m["keyword"]
-                        for m in column_matches
-                        if m["attribution"] == attribution
-                    }
+                keyword_counts: Counter[str] = Counter(
+                    m["keyword"]
+                    for m in column_matches
+                    if m["attribution"] == attribution
                 )
-                comments.append(f"{attribution} : [{', '.join(attribution_keywords)}]")
+                attribution_keywords = sorted(
+                    keyword_counts.items(), key=lambda x: x[0]
+                )
+                formatted_keywords = ", ".join(
+                    f"{keyword} (x{count})" for keyword, count in attribution_keywords
+                )
+                comments.append(f"{attribution} : [{formatted_keywords}]")
 
         return "\n".join(comments)
