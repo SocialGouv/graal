@@ -606,6 +606,29 @@ class ApiService {
   }
 
   /**
+   * List databases that the current user can append to (admin, owner, writer)
+   */
+  async listAppendableDatabases(): Promise<DatabaseListResponse> {
+    console.log('[API_CLIENT] Fetching appendable databases')
+
+    try {
+      const response = await this.client.get<DatabaseListResponse>(
+        '/databases/appendable'
+      )
+
+      console.log('[API_CLIENT] Appendable databases retrieved', {
+        total: response.data.total,
+        databases: response.data.databases
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch appendable databases', error)
+      throw error
+    }
+  }
+
+  /**
    * Delete uploaded file
    */
   async deleteUploadedFile(uploadId: string): Promise<DeleteFileResponse> {

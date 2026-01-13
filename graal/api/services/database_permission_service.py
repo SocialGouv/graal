@@ -90,6 +90,31 @@ class DatabasePermissionService:
             )
             return [row[0] for row in result.all()]
 
+    async def list_databases_for_user_with_roles(
+        self, user_id: str, roles: list[DbRoleEnum]
+    ) -> list[str]:
+        """List DB IDs where the user has one of the specified roles.
+
+        Args:
+            user_id: User ID to filter by
+            roles: Allowed roles
+
+        Returns:
+            List of database IDs (as strings)
+        """
+
+        if not roles:
+            return []
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(AmendmentDatabasePermission.db_id).where(
+                    AmendmentDatabasePermission.user_id == user_id,
+                    AmendmentDatabasePermission.role.in_(roles),
+                )
+            )
+            return [row[0] for row in result.all()]
+
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email address.
 
