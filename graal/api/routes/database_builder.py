@@ -168,6 +168,7 @@ async def list_databases(
         # Convert manifests to DatabaseInfo format
         databases = [
             DatabaseInfo(
+                id=str(manifest.id),
                 name=manifest.name,
                 size_bytes=manifest.size_bytes,
                 last_modified=manifest.last_modified,
@@ -215,6 +216,7 @@ async def list_appendable_databases(
 
         databases = [
             DatabaseInfo(
+                id=str(manifest.id),
                 name=manifest.name,
                 size_bytes=manifest.size_bytes,
                 last_modified=manifest.last_modified,

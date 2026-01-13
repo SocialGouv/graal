@@ -87,6 +87,7 @@ class ErrorResponse(BaseModel):
 class DatabaseInfo(BaseModel):
     """Information about a similarity database."""
 
+    id: str = Field(..., description="Database ID (UUID)")
     name: str = Field(..., description="Database name (without extension)")
     size_bytes: int = Field(..., description="File size in bytes")
     last_modified: datetime = Field(..., description="Last modification timestamp")

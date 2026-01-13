@@ -146,6 +146,7 @@ export interface BuildDatabaseRequest {
 }
 
 export interface DatabaseInfo {
+  id: string
   name: string
   size_bytes: number
   last_modified: string

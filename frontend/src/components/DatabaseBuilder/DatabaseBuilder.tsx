@@ -11,6 +11,11 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import React, { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { apiService } from '../../services/api'
+import {
+  selectActiveJobs,
+  useJobsStore,
+  type TrackedJob
+} from '../../stores/jobsStore'
 import { useProcessingStore } from '../../stores/processingStore'
 import type { FileReference, FileReferenceWithMetadata } from '../../types/api'
 import { ConfigFileSelector } from '../ConfigFileSelector'
@@ -77,8 +82,11 @@ export const DatabaseBuilder: React.FC = () => {
     setJobId
   } = useProcessingStore()
 
+  const { registerJob, addToast, jobs } = useJobsStore()
+
   const [mode, setMode] = useState<BuildMode>('create')
   const [selectedDatabase, setSelectedDatabase] = useState<string>('')
+  const [selectedDatabaseId, setSelectedDatabaseId] = useState<string>('')
   const [existingFiles, setExistingFiles] = useState<
     FileReferenceWithMetadata[]
   >([])
@@ -90,21 +98,69 @@ export const DatabaseBuilder: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const ProgressBar = ({ percent }: { percent: number }) => (
+    <div
+      style={{
+        width: '100%',
+        height: '8px',
+        backgroundColor: '#e5e5e5',
+        borderRadius: '4px',
+        overflow: 'hidden'
+      }}
+      aria-label={`Progression ${percent}%`}
+    >
+      <div
+        style={{
+          width: `${Math.max(0, Math.min(100, percent))}%`,
+          height: '100%',
+          backgroundColor: '#000091',
+          transition: 'width 0.3s ease'
+        }}
+      />
+    </div>
+  )
+
   // Query for listing databases
-  const { data: databaseList, refetch: refetchDatabases } = useQuery({
+  const { data: databaseList } = useQuery({
     queryKey: ['databases'],
     queryFn: () => apiService.listDatabases(),
     refetchInterval: false
   })
 
   // Query for listing databases the user can append to
-  const { data: appendableDatabaseList, refetch: refetchAppendableDatabases } =
-    useQuery({
-      queryKey: ['appendable-databases'],
-      queryFn: () => apiService.listAppendableDatabases(),
-      enabled: mode === 'append',
-      refetchInterval: false
-    })
+  const { data: appendableDatabaseList } = useQuery({
+    queryKey: ['appendable-databases'],
+    queryFn: () => apiService.listAppendableDatabases(),
+    enabled: mode === 'append',
+    refetchInterval: false
+  })
+
+  const activeDbJobForCurrentSelection: TrackedJob | undefined = (() => {
+    const active = selectActiveJobs(jobs)
+    const dbJobs = active.filter(
+      (j) => j.kind === 'database_build' || j.kind === 'database_append'
+    )
+
+    // Append mode: strictly by databaseId (as requested)
+    if (mode === 'append' && selectedDatabaseId) {
+      return dbJobs.find((j) => j.context?.databaseId === selectedDatabaseId)
+    }
+
+    // Create mode: no ID exists yet. We still display a best-effort progress indicator,
+    // but we DO NOT use it to block the button.
+    if (mode === 'create' && databaseBuilder.databaseName) {
+      return dbJobs.find(
+        (j) =>
+          j.kind === 'database_build' &&
+          j.context?.databaseName === databaseBuilder.databaseName
+      )
+    }
+
+    return undefined
+  })()
+
+  const isDbBuildOngoingBlocking =
+    mode === 'append' && Boolean(activeDbJobForCurrentSelection)
 
   // Query for loading manifest in append mode
   const {
@@ -141,11 +197,14 @@ export const DatabaseBuilder: React.FC = () => {
   useEffect(() => {
     if (mode === 'create') {
       setSelectedDatabase('')
+      setSelectedDatabaseId('')
       setExistingFiles([])
       setManifestError(null)
     } else {
       // Reset database name in append mode
       setDatabaseName('')
+      setSelectedDatabase('')
+      setSelectedDatabaseId('')
       // Clear any uploaded files when switching to append
       setPendingFiles([])
     }
@@ -196,14 +255,20 @@ export const DatabaseBuilder: React.FC = () => {
     },
     onSuccess: (data) => {
       setJobId(data.job_id)
+      registerJob({
+        jobId: data.job_id,
+        kind: 'database_build',
+        label: `Construction base ${databaseBuilder.databaseName}`,
+        context: { databaseName: databaseBuilder.databaseName }
+      })
+      addToast({
+        severity: 'info',
+        title: `Construction base ${databaseBuilder.databaseName} — démarrée`,
+        description: `Job ${data.job_id}`
+      })
       setBuildError(null)
       // Clear uploaded files after successful build
       clearUploadedFiles()
-      // Refetch database list after build completes (with delay)
-      setTimeout(() => {
-        void refetchDatabases()
-        void refetchAppendableDatabases()
-      }, 2000)
     },
     onError: (error: any) => {
       setBuildError(error.detail || error.message || 'Failed to build database')
@@ -245,14 +310,23 @@ export const DatabaseBuilder: React.FC = () => {
     },
     onSuccess: (data) => {
       setJobId(data.job_id)
+      registerJob({
+        jobId: data.job_id,
+        kind: 'database_append',
+        label: `Reconstruction base ${selectedDatabase}`,
+        context: {
+          databaseName: selectedDatabase,
+          databaseId: selectedDatabaseId
+        }
+      })
+      addToast({
+        severity: 'info',
+        title: `Reconstruction base ${selectedDatabase} — démarrée`,
+        description: `Job ${data.job_id}`
+      })
       setBuildError(null)
       // Clear uploaded files after successful append
       clearUploadedFiles()
-      // Refetch database list after append completes (with delay)
-      setTimeout(() => {
-        void refetchDatabases()
-        void refetchAppendableDatabases()
-      }, 2000)
     },
     onError: (error: any) => {
       setBuildError(
@@ -542,6 +616,16 @@ export const DatabaseBuilder: React.FC = () => {
           font-size: 0.875rem;
           color: var(--text-mention-grey);
         }
+
+        .db-spin {
+          display: inline-block;
+          animation: db-spin 1s linear infinite;
+        }
+
+        @keyframes db-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
       `}</style>
       <div>
         <p className={fr.cx('fr-text--lead', 'fr-mb-4w')}>
@@ -628,7 +712,12 @@ export const DatabaseBuilder: React.FC = () => {
                 nativeSelectProps={{
                   value: selectedDatabase,
                   onChange: (e) => {
-                    setSelectedDatabase(e.target.value)
+                    const nextName = e.target.value
+                    setSelectedDatabase(nextName)
+                    const nextDb = appendableDatabaseList?.databases.find(
+                      (db) => db.name === nextName
+                    )
+                    setSelectedDatabaseId(nextDb?.id ?? '')
                     setBuildError(null)
                     setManifestError(null)
                   },
@@ -637,7 +726,7 @@ export const DatabaseBuilder: React.FC = () => {
               >
                 <option value="">Sélectionner une base de données</option>
                 {appendableDatabaseList?.databases.map((db) => (
-                  <option key={db.name} value={db.name}>
+                  <option key={db.id} value={db.name}>
                     {db.name}
                   </option>
                 ))}
@@ -989,37 +1078,55 @@ export const DatabaseBuilder: React.FC = () => {
                 : !databaseBuilder.selectedConfigFile ||
                   !selectedDatabase ||
                   databaseBuilder.uploadedFiles.length === 0 ||
-                  appendMutation.isPending
+                  appendMutation.isPending ||
+                  isDbBuildOngoingBlocking
             }
             iconId="fr-icon-checkbox-circle-line"
             iconPosition="left"
             className="fr-btn--block"
           >
+            <span className={fr.cx('fr-mr-1w')}>
+              {activeDbJobForCurrentSelection && (
+                <i className="ri-loader-4-line db-spin" />
+              )}
+            </span>
             {mode === 'create'
-              ? buildMutation.isPending
-                ? 'Construction...'
+              ? activeDbJobForCurrentSelection || buildMutation.isPending
+                ? 'Construction en cours...'
                 : 'Construire la base de données'
-              : appendMutation.isPending
-                ? 'Reconstruction...'
+              : activeDbJobForCurrentSelection || appendMutation.isPending
+                ? 'Reconstruction en cours...'
                 : 'Reconstruire la base de données'}
           </Button>
-          {mode === 'create'
-            ? (!databaseBuilder.selectedConfigFile ||
-                !databaseBuilder.databaseName ||
-                databaseBuilder.uploadedFiles.length === 0) && (
-                <p className={fr.cx('fr-text--sm', 'fr-hint-text', 'fr-mt-2w')}>
-                  Veuillez compléter toutes les étapes précédentes avant de
-                  construire la base de données
-                </p>
-              )
-            : (!databaseBuilder.selectedConfigFile ||
-                !selectedDatabase ||
-                databaseBuilder.uploadedFiles.length === 0) && (
-                <p className={fr.cx('fr-text--sm', 'fr-hint-text', 'fr-mt-2w')}>
-                  Veuillez compléter toutes les étapes précédentes avant de
-                  reconstruire la base de données
-                </p>
-              )}
+
+          {activeDbJobForCurrentSelection && (
+            <Alert
+              severity="info"
+              title="Construction en cours"
+              description={
+                <div>
+                  <div className={fr.cx('fr-mb-1w')}>
+                    {activeDbJobForCurrentSelection.message ?? '...'}
+                  </div>
+                  <ProgressBar
+                    percent={activeDbJobForCurrentSelection.percent}
+                  />
+                  <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
+                    {activeDbJobForCurrentSelection.percent}%
+                  </div>
+                  <Button
+                    size="small"
+                    priority="tertiary"
+                    className={fr.cx('fr-mt-2w')}
+                    iconId="fr-icon-eye-line"
+                  >
+                    Voir les jobs
+                  </Button>
+                </div>
+              }
+              className={fr.cx('fr-mt-2w')}
+            />
+          )}
         </section>
 
         {/* Existing Databases */}
