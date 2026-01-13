@@ -3,6 +3,8 @@ import { Header } from '@codegouvfr/react-dsfr/Header'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 // Import pages
+import { JobsPoller } from './components/Jobs/JobsPoller'
+import { ToastCenter } from './components/Jobs/ToastCenter'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminPage } from './pages/AdminPage'
 import { DatabasePage } from './pages/DatabasePage'
@@ -14,6 +16,8 @@ function App() {
   return (
     <QueryProvider>
       <BrowserRouter>
+        <JobsPoller />
+        <ToastCenter />
         <Header
           brandTop={
             <>

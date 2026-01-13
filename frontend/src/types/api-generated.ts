@@ -258,6 +258,30 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/databases/appendable': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Appendable Databases
+     * @description List databases the user can append to (admin, owner, or writer).
+     *
+     *     This endpoint is intentionally *role-allowlist* based (owner/writer) for
+     *     non-admins, rather than hierarchical, to avoid implicitly granting access
+     *     if new roles are added later.
+     */
+    get: operations['list_appendable_databases_api_v1_databases_appendable_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/databases/upload-file': {
     parameters: {
       query?: never
@@ -1536,6 +1560,11 @@ export interface components {
      */
     DatabaseInfo: {
       /**
+       * Id
+       * @description Database ID (UUID)
+       */
+      id: string
+      /**
        * Name
        * @description Database name (without extension)
        */
@@ -2449,6 +2478,37 @@ export interface operations {
     }
   }
   list_databases_api_v1_databases_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatabaseListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_appendable_databases_api_v1_databases_appendable_get: {
     parameters: {
       query?: never
       header?: never

@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import type { AxiosProgressEvent } from 'axios'
 import React from 'react'
 import apiService from '../services/api'
+import { useJobsStore } from '../stores/jobsStore'
 import { useProcessingStore } from '../stores/processingStore'
 import type {
   JobStatusResponse,
@@ -14,6 +15,7 @@ import type {
 export const useUploadFile = () => {
   const { setJobId, setUploadProgress, updateProgress, setError } =
     useProcessingStore()
+  const { registerJob } = useJobsStore()
 
   return useMutation({
     mutationFn: async ({
@@ -43,6 +45,11 @@ export const useUploadFile = () => {
     onSuccess: (data: { job_id: string }) => {
       setJobId(data.job_id)
       updateProgress('queued', 0, 'Fichier téléchargé, traitement en cours...')
+      registerJob({
+        jobId: data.job_id,
+        kind: 'processing',
+        label: 'Traitement amendements'
+      })
       setError(null)
     },
     onError: (error: any) => {
