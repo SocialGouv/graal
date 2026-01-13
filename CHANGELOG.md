@@ -1,3 +1,10 @@
+# [1.36.0](https://github.com/SocialGouv/graal/compare/v1.35.0...v1.36.0) (2026-01-13)
+
+
+### Features
+
+* Better feedback when building amdt DBs ([a08486c](https://github.com/SocialGouv/graal/commit/a08486ca1a6d32b1e8eae9dc0661ef86b0ef649a))
+
 # [1.35.0](https://github.com/SocialGouv/graal/compare/v1.34.2...v1.35.0) (2026-01-13)
 
 
