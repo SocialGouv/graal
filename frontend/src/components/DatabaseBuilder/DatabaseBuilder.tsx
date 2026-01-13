@@ -97,6 +97,15 @@ export const DatabaseBuilder: React.FC = () => {
     refetchInterval: false
   })
 
+  // Query for listing databases the user can append to
+  const { data: appendableDatabaseList, refetch: refetchAppendableDatabases } =
+    useQuery({
+      queryKey: ['appendable-databases'],
+      queryFn: () => apiService.listAppendableDatabases(),
+      enabled: mode === 'append',
+      refetchInterval: false
+    })
+
   // Query for loading manifest in append mode
   const {
     data: manifest,
@@ -193,6 +202,7 @@ export const DatabaseBuilder: React.FC = () => {
       // Refetch database list after build completes (with delay)
       setTimeout(() => {
         void refetchDatabases()
+        void refetchAppendableDatabases()
       }, 2000)
     },
     onError: (error: any) => {
@@ -241,6 +251,7 @@ export const DatabaseBuilder: React.FC = () => {
       // Refetch database list after append completes (with delay)
       setTimeout(() => {
         void refetchDatabases()
+        void refetchAppendableDatabases()
       }, 2000)
     },
     onError: (error: any) => {
@@ -625,7 +636,7 @@ export const DatabaseBuilder: React.FC = () => {
                 }}
               >
                 <option value="">Sélectionner une base de données</option>
-                {databaseList?.databases.map((db) => (
+                {appendableDatabaseList?.databases.map((db) => (
                   <option key={db.name} value={db.name}>
                     {db.name}
                   </option>

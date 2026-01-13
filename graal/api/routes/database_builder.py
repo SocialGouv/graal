@@ -30,11 +30,13 @@ from graal.api.services.database_builder_service import (
     create_job_id,
 )
 from graal.api.services.database_permission_service import (
+    DbRole,
     get_database_permission_service,
 )
 from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
+from graal.database.models import SimilarityDBManifest
 from graal.utils.file_hash_service import get_file_hash_service
 from graal.utils.s3.s3_service import get_s3_service
 
@@ -181,6 +183,52 @@ async def list_databases(
     except Exception as e:
         logging.error(f"[API] Error listing databases: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to list databases") from e
+
+
+@router.get("/appendable", response_model=DatabaseListResponse)
+async def list_appendable_databases(
+    current_user: CurrentUser,
+):
+    """List databases the user can append to (admin, owner, or writer).
+
+    This endpoint is intentionally *role-allowlist* based (owner/writer) for
+    non-admins, rather than hierarchical, to avoid implicitly granting access
+    if new roles are added later.
+    """
+
+    logging.info(
+        "[API] Listing appendable similarity databases for user %s",
+        current_user.user_id,
+    )
+
+    try:
+        manifest_service = get_similarity_db_manifest_service()
+        manifests = await manifest_service.list_active_manifests()
+
+        if not current_user.is_admin:
+            perm_service = get_database_permission_service()
+            appendable_ids = await perm_service.list_databases_for_user_with_roles(
+                current_user.user_id,
+                [DbRole.writer, DbRole.owner],
+            )
+            manifests = [m for m in manifests if str(m.id) in appendable_ids]
+
+        databases = [
+            DatabaseInfo(
+                name=manifest.name,
+                size_bytes=manifest.size_bytes,
+                last_modified=manifest.last_modified,
+            )
+            for manifest in manifests
+        ]
+
+        return DatabaseListResponse(databases=databases, total=len(databases))
+
+    except Exception as e:
+        logging.error("[API] Error listing appendable databases: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="Failed to list appendable databases"
+        ) from e
 
 
 @router.post("/upload-file", response_model=FileUploadResponse)
@@ -425,7 +473,9 @@ async def delete_uploaded_file(upload_id: str, _admin_user: AdminUser = None):
         raise HTTPException(status_code=500, detail="Failed to delete file") from e
 
 
-def _find_manifest_by_name(all_manifests: list, database_name: str):
+def _find_manifest_by_name(
+    all_manifests: list[SimilarityDBManifest], database_name: str
+) -> SimilarityDBManifest:
     """Find manifest by database name.
 
     Args:
@@ -433,7 +483,7 @@ def _find_manifest_by_name(all_manifests: list, database_name: str):
         database_name: Name of the database to find
 
     Returns:
-        The matching manifest or None
+        The matching manifest.
 
     Raises:
         HTTPException: If manifest not found
@@ -553,6 +603,26 @@ async def append_to_database(
         all_manifests = await pg_manifest_service.list_active_manifests()
         manifest = _find_manifest_by_name(all_manifests, database_name)
 
+        # Defensive: _find_manifest_by_name currently raises if missing.
+        # Keep this guard to fail fast if behavior changes in the future.
+        if manifest is None:  # pragma: no cover
+            raise HTTPException(
+                status_code=404,
+                detail=f"Database '{database_name}' not found. Create it first using the build endpoint.",
+            )
+
+        # Authorization: admin OR explicit role allowlist (owner/writer)
+        if not current_user.is_admin:
+            perm_service = get_database_permission_service()
+            user_role = await perm_service.get_user_role(
+                str(manifest.id), current_user.user_id
+            )
+            if user_role not in {DbRole.owner, DbRole.writer}:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Insufficient permissions to append to this database",
+                )
+
         logging.info(f"[API] Loaded PostgreSQL manifest for {database_name}")
 
         # Convert new file references to metadata format
@@ -631,7 +701,7 @@ async def append_to_database(
 
 
 @router.get("/{database_name}/manifest", response_model=DatabaseManifestResponse)
-async def get_database_manifest(
+async def get_database_manifest(  # noqa: C901
     database_name: str,
     current_user: CurrentUser,
 ):
@@ -667,6 +737,18 @@ async def get_database_manifest(
 
         if not manifest:
             raise FileNotFoundError(f"No manifest found for database: {database_name}")
+
+        # Authorization: require at least reader role on the DB (or admin)
+        if not current_user.is_admin:
+            perm_service = get_database_permission_service()
+            user_role = await perm_service.get_user_role(
+                str(manifest.id), current_user.user_id
+            )
+            if user_role is None:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Insufficient permissions to view this database manifest",
+                )
 
         logging.info(
             f"[API] Successfully loaded PostgreSQL manifest for: {database_name}"
@@ -714,6 +796,8 @@ async def get_database_manifest(
             status_code=404,
             detail=f"Manifest not found for database '{database_name}'.",
         ) from e
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(
             f"[API] Error retrieving manifest for {database_name}: {e}", exc_info=True
