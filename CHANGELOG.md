@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/SocialGouv/graal/compare/v1.36.0...v1.37.0) (2026-01-13)
+
+
+### Features
+
+* Count multiple occurences of keywords ([45fdcbe](https://github.com/SocialGouv/graal/commit/45fdcbeb7e95450819e0ff2a1d2f6f9edf31f260))
+
 # [1.36.0](https://github.com/SocialGouv/graal/compare/v1.35.0...v1.36.0) (2026-01-13)
 
 
