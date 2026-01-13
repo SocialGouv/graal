@@ -82,6 +82,36 @@ def test_load_keywords(excel_data, mocker):
     pd.testing.assert_frame_equal(result, expected)
 
 
+def test_load_keywords_deduplicates_after_acronym_expansion(excel_data, mocker):
+    mocker.patch.object(
+        AttributionTextNormalizer,
+        "normalize_for_feature",
+        side_effect=lambda x: x.lower(),
+    )
+
+    # Arrange: one row already in long form, one row in acronym form.
+    # After acronym expansion + normalization, they become identical.
+    excel_data["Mots clés"] = pd.DataFrame(
+        {
+            "Prénom Nom": ["John Doe", "John Doe"],
+            "Mots clés": [
+                "Testing with the replaced_acronym acronym",
+                "Testing with the BLA acronym",
+            ],
+        }
+    )
+
+    acronym_mapping = {"BLA": "replaced_acronym"}
+
+    # Act
+    result = AttributionDataLoader.load_keywords(excel_data, acronym_mapping)
+
+    # Assert
+    assert len(result) == 1
+    assert result.iloc[0]["Affectation (nom)"] == "john doe"
+    assert result.iloc[0]["Mots clés"] == "testing with the replaced_acronym acronym"
+
+
 def test_load_name_to_user_info_mappings(excel_data):
     result = AttributionDataLoader.load_name_to_user_info_mappings(excel_data)
     expected = {

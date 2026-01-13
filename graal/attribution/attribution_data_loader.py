@@ -107,6 +107,16 @@ class AttributionDataLoader:
         keywords_df.rename(columns={"Prénom Nom": "Affectation (nom)"}, inplace=True)
         keywords_df["Affectation (nom)"] = keywords_df["Affectation (nom)"].str.lower()
 
+        # Deduplicate after acronym replacement + normalization.
+        # Without this, a keyword already in long form and the same keyword in acronym form
+        # become identical and will artificially increase match counts during attribution.
+        #
+        # We only drop exact duplicates of (keyword, attribution) to preserve the ability
+        # to intentionally map a single keyword to multiple people.
+        keywords_df = keywords_df.drop_duplicates(
+            subset=["Mots clés", "Affectation (nom)"], keep="first"
+        )
+
         return keywords_df
 
     @staticmethod
