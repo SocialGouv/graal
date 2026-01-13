@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/SocialGouv/graal/compare/v1.34.2...v1.35.0) (2026-01-13)
+
+
+### Features
+
+* Allow writers to add to existing amdt DBs ([30361a0](https://github.com/SocialGouv/graal/commit/30361a091ecab9eee46b7e57e2e79cc99a705991))
+
 ## [1.34.2](https://github.com/SocialGouv/graal/compare/v1.34.1...v1.34.2) (2026-01-12)
 
 
