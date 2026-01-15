@@ -250,6 +250,12 @@ export interface S3FileMetadata {
   size: number
   last_modified: string
   file_type: string
+
+  // Optional enrichment fields (input pool UI)
+  display_name?: string | null
+  file_hash?: string | null
+  known_filenames?: string[] | null
+  referenced_by_databases?: Array<{ id: string; name: string }> | null
 }
 
 export interface S3FileListResponse {

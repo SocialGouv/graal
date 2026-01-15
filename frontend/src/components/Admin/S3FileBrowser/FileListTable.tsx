@@ -6,6 +6,11 @@ import { Table } from '@codegouvfr/react-dsfr/Table'
 import { useState } from 'react'
 import type { S3FileMetadata } from '../../../types/api'
 
+import {
+  InputPoolFileDetailsModal,
+  inputPoolFileDetailsModal
+} from './InputPoolFileDetailsModal'
+
 interface FileListTableProps {
   files: S3FileMetadata[]
   isLoading: boolean
@@ -46,6 +51,7 @@ export const FileListTable = ({
   const ITEMS_PER_PAGE = 50
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
+  const [detailsFile, setDetailsFile] = useState<S3FileMetadata | null>(null)
 
   if (isLoading) {
     return (
@@ -115,6 +121,16 @@ export const FileListTable = ({
     }
   }
 
+  const openDetailsModal = (file: S3FileMetadata) => {
+    setDetailsFile(file)
+    inputPoolFileDetailsModal.open()
+  }
+
+  const closeDetailsModal = () => {
+    inputPoolFileDetailsModal.close()
+    setDetailsFile(null)
+  }
+
   return (
     <div className={fr.cx('fr-mt-4w')}>
       {/* File count and selection controls */}
@@ -162,29 +178,61 @@ export const FileListTable = ({
           overflowY: 'auto'
         }}
       >
-        <Table
-          fixed
-          headers={['', 'Nom du fichier', 'Taille', 'Dernière modification']}
-          data={currentFiles.map((file) => [
-            <Checkbox
-              key={`checkbox-${file.key}`}
-              options={[
-                {
-                  label: '',
-                  nativeInputProps: {
-                    checked: selectedFiles.has(file.key),
-                    onChange: (e) =>
-                      handleSelectFile(file.key, e.target.checked)
-                  }
-                }
-              ]}
-            />,
-            file.key,
-            formatFileSize(file.size),
-            formatDate(file.last_modified)
-          ])}
-        />
+        <div className="fr-table--responsive">
+          <Table
+            fixed
+            headers={['', 'Nom du fichier', 'Taille', 'Dernière modification']}
+            data={currentFiles.map((file) => [
+              <div
+                key={`checkbox-${file.key}`}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  flexDirection: 'row',
+                  height: '20px'
+                }}
+              >
+                <Checkbox
+                  className={fr.cx('fr-mb-0')}
+                  options={[
+                    {
+                      label: '',
+                      nativeInputProps: {
+                        checked: selectedFiles.has(file.key),
+                        onChange: (e) =>
+                          handleSelectFile(file.key, e.target.checked)
+                      }
+                    }
+                  ]}
+                />
+              </div>,
+              <div key={`name-${file.key}`} style={{ textAlign: 'left' }}>
+                {fileType === 'input' ? (
+                  <Button
+                    priority="tertiary no outline"
+                    size="small"
+                    onClick={() => openDetailsModal(file)}
+                  >
+                    {file.display_name || file.key}
+                  </Button>
+                ) : (
+                  file.key
+                )}
+              </div>,
+              formatFileSize(file.size),
+              formatDate(file.last_modified)
+            ])}
+          />
+        </div>
       </div>
+
+      {/* Input pool file details modal */}
+      {fileType === 'input' && (
+        <InputPoolFileDetailsModal
+          file={detailsFile}
+          onClose={closeDetailsModal}
+        />
+      )}
 
       {/* Pagination controls */}
       {totalPages > 1 && (

@@ -165,6 +165,30 @@ class S3FileMetadata(BaseModel):
         ..., description="Type of file (config, database, input_file)"
     )
 
+    display_name: str | None = Field(
+        default=None,
+        description=(
+            "Human-friendly name to display in the UI (e.g., original filename). "
+            "For input pool files, this is derived from similarity_db_manifests.input_files."
+        ),
+    )
+    file_hash: str | None = Field(
+        default=None,
+        description="SHA256 hash for the pool file (derived from manifest input_files).",
+    )
+    known_filenames: list[str] | None = Field(
+        default=None,
+        description=(
+            "All filenames seen in manifests for this hash (deduplicated uploads may have aliases)."
+        ),
+    )
+    referenced_by_databases: list[dict[str, str]] | None = Field(
+        default=None,
+        description=(
+            "List of databases (id/name) whose manifest references this file_hash."
+        ),
+    )
+
 
 class S3FileListResponse(BaseModel):
     """Response model for listing S3 files."""

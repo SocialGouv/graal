@@ -19,8 +19,10 @@ import { FileListTable } from './FileListTable'
 export const S3FileBrowser = () => {
   // State for delete modal
   const [deleteTarget, setDeleteTarget] = useState<{
+    // S3 keys (or identifiers) used for deletion
+    keys: string[]
     // Human-readable labels displayed in the confirmation modal
-    fileNames: string[]
+    labels: string[]
     // Optional internal IDs (used for database manifests)
     ids?: string[]
     type: 'config' | 'database' | 'input'
@@ -54,18 +56,18 @@ export const S3FileBrowser = () => {
 
     try {
       // Delete all selected files sequentially
-      for (const fileName of deleteTarget.fileNames) {
+      for (const key of deleteTarget.keys) {
         if (deleteTarget.type === 'config') {
-          await deleteConfigMutation.mutateAsync(fileName)
+          await deleteConfigMutation.mutateAsync(key)
         } else if (deleteTarget.type === 'database') {
           // For databases we delete by manifest ID, not by S3 key. Fallback
           // to using the label as ID if ids are missing for any reason.
-          const ids = deleteTarget.ids ?? deleteTarget.fileNames
-          const index = deleteTarget.fileNames.indexOf(fileName)
-          const id = ids[index] ?? fileName
+          const ids = deleteTarget.ids ?? deleteTarget.keys
+          const index = deleteTarget.keys.indexOf(key)
+          const id = ids[index] ?? key
           await deleteAdminDatabaseMutation.mutateAsync(id)
         } else if (deleteTarget.type === 'input') {
-          await deleteInputMutation.mutateAsync(fileName)
+          await deleteInputMutation.mutateAsync(key)
         }
       }
 
@@ -81,11 +83,21 @@ export const S3FileBrowser = () => {
 
   // Handle delete button click (supports batch deletion)
   const handleDelete = (
-    fileNames: string[],
+    keys: string[],
     type: 'config' | 'database' | 'input',
     ids?: string[]
   ) => {
-    setDeleteTarget({ fileNames, type, ids })
+    setDeleteTarget({ keys, labels: keys, type, ids })
+    deleteConfirmModal.open()
+  }
+
+  const handleInputDelete = (fileKeys: string[]) => {
+    // Convert keys to user-friendly labels when possible.
+    const labelByKey = new Map(
+      (inputData?.files ?? []).map((f) => [f.key, f.display_name || f.key])
+    )
+    const labels = fileKeys.map((k) => labelByKey.get(k) || k)
+    setDeleteTarget({ keys: fileKeys, labels, type: 'input' })
     deleteConfirmModal.open()
   }
 
@@ -173,7 +185,7 @@ export const S3FileBrowser = () => {
               <FileListTable
                 files={configData?.files || []}
                 isLoading={configLoading}
-                onDelete={(fileNames) => handleDelete(fileNames, 'config')}
+                onDelete={(fileKeys) => handleDelete(fileKeys, 'config')}
                 fileType="config"
               />
             )
@@ -196,7 +208,7 @@ export const S3FileBrowser = () => {
               <FileListTable
                 files={inputData?.files || []}
                 isLoading={inputLoading}
-                onDelete={(fileNames) => handleDelete(fileNames, 'input')}
+                onDelete={handleInputDelete}
                 fileType="input"
               />
             )
@@ -207,7 +219,7 @@ export const S3FileBrowser = () => {
       {/* Delete confirmation modal */}
       <DeleteConfirmModal
         isOpen={deleteTarget !== null}
-        fileNames={deleteTarget?.fileNames || []}
+        labels={deleteTarget?.labels || []}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
         isDeleting={isDeleting}

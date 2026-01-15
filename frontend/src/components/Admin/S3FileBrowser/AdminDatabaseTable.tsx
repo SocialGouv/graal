@@ -165,28 +165,46 @@ export const AdminDatabaseTable = ({
           overflowY: 'auto'
         }}
       >
-        <Table
-          fixed
-          headers={['', 'Nom', 'Chemin S3', 'Taille', 'Dernière modification']}
-          data={currentItems.map((db) => [
-            <Checkbox
-              key={`checkbox-${db.id}`}
-              options={[
-                {
-                  label: '',
-                  nativeInputProps: {
-                    checked: selectedIds.has(db.id),
-                    onChange: (e) => handleSelect(db.id, e.target.checked)
-                  }
-                }
-              ]}
-            />,
-            db.name,
-            db.s3_key,
-            formatFileSize(db.size_bytes),
-            formatDate(db.last_modified)
-          ])}
-        />
+        <div className="fr-table--responsive">
+          <Table
+            fixed
+            headers={[
+              '',
+              'Nom',
+              'Chemin S3',
+              'Taille',
+              'Dernière modification'
+            ]}
+            data={currentItems.map((db) => [
+              <div
+                key={`checkbox-${db.id}`}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  flexDirection: 'row',
+                  height: '20px'
+                }}
+              >
+                <Checkbox
+                  className={fr.cx('fr-mb-0')}
+                  options={[
+                    {
+                      label: '',
+                      nativeInputProps: {
+                        checked: selectedIds.has(db.id),
+                        onChange: (e) => handleSelect(db.id, e.target.checked)
+                      }
+                    }
+                  ]}
+                />
+              </div>,
+              db.name,
+              db.s3_key,
+              formatFileSize(db.size_bytes),
+              formatDate(db.last_modified)
+            ])}
+          />
+        </div>
       </div>
 
       {totalPages > 1 && (

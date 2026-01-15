@@ -1955,6 +1955,30 @@ export interface components {
        * @description Type of file (config, database, input_file)
        */
       file_type: string
+      /**
+       * Display Name
+       * @description Human-friendly name to display in the UI (e.g., original filename). For input pool files, this is derived from similarity_db_manifests.input_files.
+       */
+      display_name?: string | null
+      /**
+       * File Hash
+       * @description SHA256 hash for the pool file (derived from manifest input_files).
+       */
+      file_hash?: string | null
+      /**
+       * Known Filenames
+       * @description All filenames seen in manifests for this hash (deduplicated uploads may have aliases).
+       */
+      known_filenames?: string[] | null
+      /**
+       * Referenced By Databases
+       * @description List of databases (id/name) whose manifest references this file_hash.
+       */
+      referenced_by_databases?:
+        | {
+            [key: string]: string
+          }[]
+        | null
     }
     /**
      * SimilarityDBManifestCreate

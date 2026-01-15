@@ -139,6 +139,32 @@ class SimilarityDBManifestService:
             )
             return list(manifests)
 
+    async def list_all_manifests(self) -> list[SimilarityDBManifest]:
+        """Return all manifests (active and inactive) ordered by creation date (newest first).
+
+        This is intended for admin / maintenance views where historical metadata
+        is useful (e.g., resolving input pool filenames from past database builds).
+
+        Returns:
+            List of SimilarityDBManifest instances
+        """
+
+        logging.debug("[SimilarityDBManifestService] Fetching all manifests")
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(SimilarityDBManifest).order_by(
+                    SimilarityDBManifest.created_at.desc()
+                )
+            )
+            manifests = result.scalars().all()
+
+            logging.info(
+                "[SimilarityDBManifestService] Found %s manifests (active + inactive)",
+                len(manifests),
+            )
+            return list(manifests)
+
     async def list_accessible_manifests(
         self, user_id: UUID
     ) -> list[SimilarityDBManifest]:

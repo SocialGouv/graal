@@ -2,7 +2,7 @@ import { createModal } from '@codegouvfr/react-dsfr/Modal'
 
 interface DeleteConfirmModalProps {
   isOpen: boolean
-  fileNames: string[]
+  labels: string[]
   onConfirm: () => void
   onCancel: () => void
   isDeleting: boolean
@@ -15,12 +15,12 @@ const modal = createModal({
 
 export const DeleteConfirmModal = ({
   isOpen: _isOpen,
-  fileNames,
+  labels,
   onConfirm,
   onCancel,
   isDeleting
 }: DeleteConfirmModalProps) => {
-  const fileCount = fileNames.length
+  const fileCount = labels.length
   const isMultiple = fileCount > 1
 
   return (
@@ -48,7 +48,7 @@ export const DeleteConfirmModal = ({
             <strong>{fileCount} fichiers</strong> ?
           </p>
           <ul style={{ maxHeight: '200px', overflowY: 'auto' }}>
-            {fileNames.map((name) => (
+            {labels.map((name) => (
               <li key={name}>{name}</li>
             ))}
           </ul>
@@ -56,7 +56,7 @@ export const DeleteConfirmModal = ({
       ) : (
         <p>
           Êtes-vous sûr de vouloir supprimer le fichier{' '}
-          <strong>{fileNames[0]}</strong> ?
+          <strong>{labels[0]}</strong> ?
         </p>
       )}
       <p style={{ color: 'var(--text-default-warning)' }}>
