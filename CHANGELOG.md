@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/SocialGouv/graal/compare/v1.37.1...v1.38.0) (2026-01-15)
+
+
+### Features
+
+* Show filenames and modal w/ metadata in admin pannel input pool tab ([8ec18fe](https://github.com/SocialGouv/graal/commit/8ec18fea0027b8ac99386963f2bda4aa74368a32))
+
 ## [1.37.1](https://github.com/SocialGouv/graal/compare/v1.37.0...v1.37.1) (2026-01-13)
 
 
