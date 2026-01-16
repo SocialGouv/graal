@@ -1,3 +1,10 @@
+## [1.38.1](https://github.com/SocialGouv/graal/compare/v1.38.0...v1.38.1) (2026-01-16)
+
+
+### Bug Fixes
+
+* disable cnpg recovery ([162352c](https://github.com/SocialGouv/graal/commit/162352c3bf24d624dd3e4a21bd90782c509c07f4))
+
 # [1.38.0](https://github.com/SocialGouv/graal/compare/v1.37.1...v1.38.0) (2026-01-15)
 
 
