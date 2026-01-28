@@ -28,9 +28,9 @@ from botocore.config import Config
 from botocore.exceptions import ClientError, NoCredentialsError
 
 # S3 Configuration
-S3_BUCKET_ENDPOINT = "https://s3.gra.io.cloud.ovh.net"
-S3_BUCKET_NAME = "graal-dev-app"  # TODO: make this configurable for prod uploads
-S3_BUCKET_REGION = "gra"
+S3_BUCKET_ENDPOINT = os.getenv("S3_BUCKET_ENDPOINT", "https://s3.gra.io.cloud.ovh.net")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "graal-dev-app")
+S3_BUCKET_REGION = os.getenv("S3_BUCKET_REGION", "gra")
 
 
 class S3Uploader:
