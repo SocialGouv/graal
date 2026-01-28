@@ -1,3 +1,10 @@
+## [1.39.2](https://github.com/SocialGouv/graal/compare/v1.39.1...v1.39.2) (2026-01-28)
+
+
+### Bug Fixes
+
+* Pipeline was crashing around similarity search because of S3 and async issues ([7a7bd4e](https://github.com/SocialGouv/graal/commit/7a7bd4eb6082aeeb66fec33a047f3659ac5759df))
+
 ## [1.39.1](https://github.com/SocialGouv/graal/compare/v1.39.0...v1.39.1) (2026-01-28)
 
 
