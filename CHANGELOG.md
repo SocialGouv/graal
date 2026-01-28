@@ -1,3 +1,10 @@
+## [1.39.1](https://github.com/SocialGouv/graal/compare/v1.39.0...v1.39.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* Impossible to delete db manifests if S3 file doesn't exist ([d4a18ee](https://github.com/SocialGouv/graal/commit/d4a18ee24d5ab982714fea11f6289835b89a36ac))
+
 # [1.39.0](https://github.com/SocialGouv/graal/compare/v1.38.1...v1.39.0) (2026-01-28)
 
 
