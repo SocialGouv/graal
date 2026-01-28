@@ -428,3 +428,47 @@ class AmendmentDatabasePermission(Base):
 
     def __repr__(self) -> str:
         return f"<DBPerm(db_id={self.db_id}, user_id={self.user_id}, role={self.role})>"
+
+
+class OAuthAuthRequest(Base):
+    """OAuth login request state storage for ProConnect flow."""
+
+    __tablename__ = "oauth_auth_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="OAuth auth request identifier",
+    )
+
+    state: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        unique=True,
+        comment="OAuth state parameter (PKCE)",
+    )
+
+    code_verifier: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="PKCE code verifier to redeem authorization code",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Timestamp when state was issued",
+    )
+
+    ip_address: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="Requester IP for observability"
+    )
+
+    user_agent: Mapped[str | None] = mapped_column(
+        String(512), nullable=True, comment="Requester user-agent"
+    )
+
+    def __repr__(self) -> str:
+        return f"<OAuthAuthRequest(id={self.id}, state={self.state[:8]}...)>"

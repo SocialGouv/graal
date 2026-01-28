@@ -11,6 +11,7 @@
 - Install packages outside Poetry workflow
 - Block on synchronous I/O in async functions
 - Mix feature logic into core orchestration
+- Log secret information
 
 ## Key Patterns
 - Features: Extend [`BaseFeature`](graal/core/feature_interface.py), implement `process()` method
