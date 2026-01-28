@@ -321,7 +321,22 @@ class SimilarityDBManifestService:
             s3_path,
             database_name,
         )
-        await self._s3_service.database.delete_database_file(database_name)
+        try:
+            await self._s3_service.database.delete_database_file(database_name)
+        except FileNotFoundError as exc:
+            logging.warning(
+                "[SimilarityDBManifestService] S3 database file missing for manifest %s (database_name=%s). Continuing manifest deletion.",
+                manifest_id,
+                database_name,
+                exc_info=exc,
+            )
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logging.warning(
+                "[SimilarityDBManifestService] Failed to delete S3 database file for manifest %s (database_name=%s). Continuing manifest deletion.",
+                manifest_id,
+                database_name,
+                exc_info=exc,
+            )
 
         async with self._session_factory() as session:
             # Attach manifest instance to this session

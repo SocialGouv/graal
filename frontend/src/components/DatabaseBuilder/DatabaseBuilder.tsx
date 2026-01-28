@@ -1114,14 +1114,6 @@ export const DatabaseBuilder: React.FC = () => {
                   <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
                     {activeDbJobForCurrentSelection.percent}%
                   </div>
-                  <Button
-                    size="small"
-                    priority="tertiary"
-                    className={fr.cx('fr-mt-2w')}
-                    iconId="fr-icon-eye-line"
-                  >
-                    Voir les jobs
-                  </Button>
                 </div>
               }
               className={fr.cx('fr-mt-2w')}
