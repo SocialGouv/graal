@@ -10,11 +10,12 @@ import logging
 import logging.config
 import os
 
-from fastapi import APIRouter, Cookie, HTTPException, Response
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from graal.api.services.oauth_state_service import get_oauth_state_service
 from graal.api.services.proconnect_service import get_proconnect_service
 from graal.api.services.session_service import get_session_service
 from graal.database.base import get_async_session_maker
@@ -24,13 +25,11 @@ logging.config.fileConfig("logging.conf")
 
 router = APIRouter(tags=["authentication"])
 
-# In-memory storage for OAuth state and PKCE verifiers
-# In production, this should be Redis or database-backed
-_oauth_state_store: dict[str, dict[str, str]] = {}
+OAUTH_STATE_MAX_AGE_SECONDS = 600  # 10 minutes
 
 
 @router.get("/auth/login")
-async def login():
+async def login(request: Request):
     """
     Initiate ProConnect OAuth login flow.
 
@@ -58,10 +57,15 @@ async def login():
         )
 
         # Store state and code_verifier for validation in callback
-        # TODO: Use Redis or database for production (state should expire)
-        _oauth_state_store[state] = {
-            "code_verifier": code_verifier,
-        }
+        oauth_state_service = get_oauth_state_service()
+        client_host = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent")
+        await oauth_state_service.create_state(
+            state=state,
+            code_verifier=code_verifier,
+            ip_address=client_host,
+            user_agent=user_agent,
+        )
 
         logging.info(f"[API] Redirecting to ProConnect with state={state[:8]}...")
         return RedirectResponse(url=auth_url)
@@ -82,6 +86,7 @@ async def login():
 
 @router.get("/auth/callback")
 async def callback(
+    request: Request,
     code: str,
     state: str,
 ):
@@ -112,18 +117,21 @@ async def callback(
 
     try:
         # Validate state parameter
-        stored_data = _oauth_state_store.get(state)
-        if not stored_data:
-            logging.warning(f"[API] Invalid or expired state: {state[:8]}...")
+        oauth_state_service = get_oauth_state_service()
+        stored_state = await oauth_state_service.consume_state(
+            state, max_age_seconds=OAUTH_STATE_MAX_AGE_SECONDS
+        )
+
+        if not stored_state:
+            logging.warning(
+                f"[API] Invalid or expired state: {state[:8]}..., referrer={request.headers.get('referer')}"
+            )
             raise HTTPException(
                 status_code=400,
                 detail="Invalid or expired authentication request",
             )
 
-        code_verifier = stored_data["code_verifier"]
-
-        # Clean up used state
-        del _oauth_state_store[state]
+        code_verifier = stored_state.code_verifier
 
         # Exchange code for token
         proconnect = get_proconnect_service()

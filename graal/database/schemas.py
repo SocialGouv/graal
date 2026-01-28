@@ -173,3 +173,16 @@ class SimilarityDBManifestRead(SimilarityDBManifestBase):
     last_modified: datetime
     is_active: bool
     created_at: datetime
+
+
+class OAuthAuthRequestRead(BaseModel):
+    """Schema for inspecting OAuth state records (mostly for tests/debug)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    state: str
+    code_verifier: str
+    created_at: datetime
+    ip_address: str | None = None
+    user_agent: str | None = None
