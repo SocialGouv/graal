@@ -116,6 +116,25 @@ class PipelineOrchestrator:
             f"[ORCHESTRATOR] Phase 2: Starting parallel processing with {len(current_df)} amendments"
         )
 
+        # Allow features to prepare synchronously before entering the thread pool
+        logging.info(
+            "[ORCHESTRATOR] Preparing enabled features before parallel execution"
+        )
+        for feature in self.features:
+            if feature.is_enabled(config):
+                try:
+                    feature_input = FeatureInput(
+                        amendments_df=current_df,
+                        config=config,
+                    )
+                    feature.prepare(feature_input)
+                except Exception as exc:
+                    logging.error(
+                        f"[ORCHESTRATOR] Feature preparation failed for '{feature.feature_name}': {exc}",
+                        exc_info=True,
+                    )
+                    raise
+
         # Get parallel processing configuration
         parallel_config = config.get("parallel_processing", {})
         max_workers = parallel_config.get("max_workers", 4)

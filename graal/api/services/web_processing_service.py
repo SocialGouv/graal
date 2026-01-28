@@ -24,6 +24,7 @@ from graal.api.models.responses import (
 from graal.api.services.job_registry import JobRegistry
 from graal.core.processing_pipeline import ProcessingPipeline
 from graal.full_pipeline import load_config
+from graal.utils.executors import set_main_event_loop
 from graal.utils.json_utils import load_json
 
 logging.config.fileConfig("logging.conf")
@@ -294,6 +295,9 @@ class WebProcessingService:
         # Register job
         logging.debug(f"[WEB_SERVICE] Registering job in registry - job_id: {job_id}")
         self.job_registry.create_job(job_id, str(input_file_path))
+
+        # Ensure the FastAPI event loop is registered for sync helpers
+        set_main_event_loop(asyncio.get_running_loop())
 
         # Start processing in background
         logging.info(

@@ -106,6 +106,15 @@ class BaseFeature(ABC):
         """
         pass
 
+    def prepare(self, feature_input: FeatureInput) -> None:
+        """Optional synchronous hook executed before parallel processing.
+
+        Features can override this method to perform setup work that may involve
+        network or database calls that need to stay on the main thread. The
+        default implementation is a no-op.
+        """
+        return None
+
     def validate_input(self, feature_input: FeatureInput) -> None:
         """Validate that required columns are present."""
         required_cols = self.get_required_columns()
