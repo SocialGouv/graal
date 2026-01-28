@@ -4,7 +4,6 @@ Similarity search feature implementation.
 This feature finds similarities with historical amendments.
 """
 
-import asyncio
 import logging
 import logging.config
 from typing import Any
@@ -20,6 +19,7 @@ from graal.similarities.similarity_search_handler import (
     SimilaritySearchHandler,
 )
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
+from graal.utils.executors import run_async_on_main_loop
 from graal.utils.similarity_db_loader import get_similarity_db_loader
 
 logging.config.fileConfig("logging.conf")
@@ -34,6 +34,9 @@ class SimilaritySearchFeature(BaseFeature):
         super().__init__("similarity_search")
         self.normalizer = TextNormalizerFactory.get_normalizer("similarity_search")
         self.config = config
+        self._cached_similarity_df: pd.DataFrame | None = None
+        self._cached_db_id: str | None = None
+        self._cached_s3_path: str | None = None
 
         if not config:
             raise ValueError("SimilaritySearchFeature requires config parameter")
@@ -79,6 +82,59 @@ class SimilaritySearchFeature(BaseFeature):
         clearable_columns = output_columns - {"Commentaires"}
         return clearable_columns
 
+    def prepare(self, feature_input: FeatureInput) -> None:
+        """Synchronously resolve and load the similarity database before threading."""
+        if not self.is_enabled(feature_input.config):
+            return
+
+        similarity_config = feature_input.config.get("similarity_search", {})
+        database_id = similarity_config.get("database_id")
+
+        if not database_id:
+            raise ValueError(
+                "No similarity database configured. Please provide 'database_id' "
+                "with the UUID of the database manifest."
+            )
+
+        # Avoid reloading if we already prepared the same database_id during this run
+        if self._cached_similarity_df is not None and database_id == self._cached_db_id:
+            logging.debug(
+                "[SimilaritySearchFeature] Reusing cached similarity DB for database_id=%s",
+                database_id,
+            )
+            return
+
+        manifest_service = get_similarity_db_manifest_service()
+        logging.info(
+            "[SimilaritySearchFeature] Resolving S3 path for database_id=%s",
+            database_id,
+        )
+        s3_path = run_async_on_main_loop(
+            manifest_service.resolve_s3_path_for_db(database_id)
+        )
+        loader = get_similarity_db_loader()
+        logging.info(
+            "[SimilaritySearchFeature] Loading similarity DB parquet at %s", s3_path
+        )
+        try:
+            self._cached_similarity_df = run_async_on_main_loop(
+                loader.load_from_s3(s3_path)
+            )
+        except FileNotFoundError as exc:
+            msg = (
+                "Similarity search database file missing on S3. "
+                f"Database id={database_id}, path={s3_path}."
+            )
+            logging.error(msg)
+            raise RuntimeError(msg) from exc
+        self._cached_db_id = database_id
+        self._cached_s3_path = s3_path
+        logging.info(
+            "[SimilaritySearchFeature] Similarity DB ready (id=%s, shape=%s)",
+            database_id,
+            self._cached_similarity_df.shape,
+        )
+
     def process(self, feature_input: FeatureInput) -> FeatureOutput:
         """
         Process amendments for similarity search.
@@ -99,8 +155,8 @@ class SimilaritySearchFeature(BaseFeature):
                 "Columns to copy configuration must be specified in similarity_search.columns_to_copy"
             )
 
-        # Load historical amendments from S3 Parquet
-        old_amendments_df = self._load_similarity_database(similarity_config)
+        # Use cached historical amendments prepared synchronously
+        old_amendments_df = self._get_prepared_similarity_df(similarity_config)
 
         # Create our own normalized version for processing
         normalized_working_df = self._create_normalized_dataframe(working_df)
@@ -187,37 +243,14 @@ class SimilaritySearchFeature(BaseFeature):
 
         return normalized_df
 
-    def _load_similarity_database(
+    def _get_prepared_similarity_df(
         self, similarity_config: dict[str, Any]
     ) -> pd.DataFrame:
-        """Load similarity database from S3 Parquet.
-
-        Args:
-            similarity_config: The similarity search configuration
-
-        Returns:
-            pd.DataFrame: The loaded similarity database
-
-        Raises:
-            ValueError: If database_id is not configured
-            FileNotFoundError: If the specified file is not found in S3
-        """
         database_id = similarity_config.get("database_id")
 
-        if not database_id:
-            raise ValueError(
-                "No similarity database configured. Please provide 'database_id' "
-                "with the UUID of the database manifest."
+        if self._cached_similarity_df is None or database_id != self._cached_db_id:
+            raise RuntimeError(
+                "Similarity database not prepared. Ensure PipelineOrchestrator.prepare was called before process."
             )
 
-        # Resolve S3 path from manifest using database_id
-        manifest_service = get_similarity_db_manifest_service()
-        s3_path = asyncio.run(manifest_service.resolve_s3_path_for_db(database_id))
-        logging.info(
-            f"Loading similarity database from S3 (id={database_id}): {s3_path}"
-        )
-
-        loader = get_similarity_db_loader()
-        df = asyncio.run(loader.load_from_s3(s3_path))
-        logging.info(f"Loaded Parquet database for DB {database_id}, shape: {df.shape}")
-        return df
+        return self._cached_similarity_df.copy()

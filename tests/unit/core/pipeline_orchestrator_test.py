@@ -18,6 +18,7 @@ class MockFeature(BaseFeature):
         super().__init__(feature_name)
         self.should_fail = should_fail
         self.process_called = False
+        self.prepare_called = False
 
     def get_required_columns(self) -> Set[str]:
         return {"amdt_idx", "Corps amdt"}
@@ -46,6 +47,10 @@ class MockFeature(BaseFeature):
         return FeatureOutput(
             amendments_df=result_df, outputs={"processed_count": len(result_df)}
         )
+
+    def prepare(self, feature_input: FeatureInput) -> None:
+        self.prepare_called = True
+        return None
 
 
 @pytest.fixture
@@ -84,8 +89,11 @@ class TestPipelineOrchestratorParallel:
         result_df, outputs = orchestrator.process(test_df, config)
 
         # Verify all features were called
+        assert feature1.prepare_called
         assert feature1.process_called
+        assert feature2.prepare_called
         assert feature2.process_called
+        assert feature3.prepare_called
         assert feature3.process_called
 
         # Verify output columns are present

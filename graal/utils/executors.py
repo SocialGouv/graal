@@ -11,12 +11,18 @@ We therefore provide dedicated executors for specific workloads.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from typing import Awaitable, TypeVar
 
 _db_build_executor: ThreadPoolExecutor | None = None
 _lock = threading.Lock()
+_main_event_loop: asyncio.AbstractEventLoop | None = None
+_loop_lock = threading.Lock()
+
+T = TypeVar("T")
 
 
 def shutdown_db_build_executor(
@@ -70,3 +76,28 @@ def get_db_build_executor() -> ThreadPoolExecutor:
                 )
 
     return _db_build_executor
+
+
+def set_main_event_loop(loop: asyncio.AbstractEventLoop) -> None:
+    """Register the main asyncio event loop (e.g., FastAPI/uvicorn loop)."""
+
+    global _main_event_loop
+    with _loop_lock:
+        _main_event_loop = loop
+
+
+def run_async_on_main_loop(awaitable: Awaitable[T]) -> T:
+    """Synchronously wait for an awaitable on the registered main event loop."""
+
+    with _loop_lock:
+        loop = _main_event_loop
+
+    if loop is not None and loop.is_running():
+        future = asyncio.run_coroutine_threadsafe(awaitable, loop)
+        return future.result()
+
+    temp_loop = asyncio.new_event_loop()
+    try:
+        return temp_loop.run_until_complete(awaitable)
+    finally:
+        temp_loop.close()

@@ -38,23 +38,47 @@ class SimilarityDatabaseLoader:
             FileNotFoundError: If the file is not found in S3.
             Exception: If there's an error loading the file.
         """
-        # Check cache first
-        if s3_path in self._cache:
-            logging.info(f"Loading similarity database from cache: {s3_path}")
-            return self._cache[s3_path].copy()
+        normalized_name = self._normalize_database_name(s3_path)
+        cache_key = normalized_name
+
+        if cache_key in self._cache:
+            logging.info(
+                "Loading similarity database from cache: requested=%s, normalized=%s",
+                s3_path,
+                cache_key,
+            )
+            return self._cache[cache_key].copy()
 
         # Load from S3
         logging.info(f"Loading similarity database from S3: {s3_path}")
-        df = await self._s3_service.database.load_database_parquet(s3_path)
+        df = await self._s3_service.database.load_database_parquet(normalized_name)
 
         # Cache the result
-        self._cache[s3_path] = df
+        self._cache[cache_key] = df
         logging.info(
-            f"Cached similarity database: {s3_path}, shape: {df.shape}, "
+            f"Cached similarity database: {cache_key}, shape: {df.shape}, "
             f"total cached: {len(self._cache)}"
         )
 
         return df.copy()
+
+    def _normalize_database_name(self, s3_path: str) -> str:
+        """Return the database name relative to the similarity folder.
+
+        DatabaseS3Service expects names without the leading similarity folder prefix,
+        so manifests storing full keys like "similarity_dbs/foo.parquet" must be
+        normalized before calling the service. Paths that are already relative are
+        left untouched.
+        """
+
+        relative_path = s3_path.lstrip("/")
+
+        folder = self._s3_service.similarity_db_folder
+        folder_prefix = folder if folder.endswith("/") else f"{folder}/"
+        if relative_path.startswith(folder_prefix):
+            relative_path = relative_path[len(folder_prefix) :]
+
+        return relative_path
 
     def load_from_local(self, file_path: str) -> pd.DataFrame:
         """Load a similarity database from local file system.
