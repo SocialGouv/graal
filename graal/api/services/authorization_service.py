@@ -225,7 +225,7 @@ class AuthorizationService:
                 detail="User not found",
             )
 
-        logging.info(
+        logging.debug(
             f"[AuthorizationService] Retrieved user {user.user_id} (admin={user.is_admin})"
         )
         return user
@@ -307,6 +307,7 @@ class AuthorizationService:
         request: Request,
         session: Optional[str] = Cookie(default=None),
         allow_admin_bypass: bool = True,
+        user: Optional[UserResponse] = None,
     ) -> UserResponse:
         """Require that the current user has at least the specified role for a DB.
 
@@ -315,14 +316,14 @@ class AuthorizationService:
 
         Raises HTTP 403 if insufficient permission.
         """
-        user = await self.get_current_user(request, session)
+        resolved_user = user or await self.get_current_user(request, session)
 
         # Admins can bypass DB role checks by default
-        if allow_admin_bypass and user.is_admin:
-            return user
+        if allow_admin_bypass and resolved_user.is_admin:
+            return resolved_user
 
         perm_service = get_database_permission_service()
-        role = await perm_service.get_user_role(db_id, user.user_id)
+        role = await perm_service.get_user_role(db_id, resolved_user.user_id)
 
         # No role at all
         if role is None:
@@ -338,7 +339,7 @@ class AuthorizationService:
                 detail=f"Requires {min_role} role on this database",
             )
 
-        return user
+        return resolved_user
 
 
 # Singleton instance (following project pattern from other services)

@@ -158,6 +158,7 @@ async def process_amendments(  # noqa: C901
             DbRole.reader,
             request=request_obj,
             session=session,
+            user=current_user,
         )
 
     # Validate config file exists in S3
