@@ -1461,6 +1461,7 @@ export interface components {
     AssignPermissionRequest: {
       /**
        * User Id
+       * Format: uuid
        * @description User ID (UUID) to grant permission to
        */
       user_id: string

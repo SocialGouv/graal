@@ -15,16 +15,20 @@ import logging
 import logging.config
 from abc import ABC, abstractmethod
 from typing import Optional
+from uuid import UUID
 
 from fastapi import Cookie, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from graal.api.models.responses import UserResponse
+from graal.api.models.types import ExcelConfigId
 from graal.api.services.database_permission_service import (
     DbRole,
     get_database_permission_service,
 )
+from graal.api.services.excel_config_service import get_excel_config_service
+from graal.database.enums import ExcelConfigRoleEnum
 from graal.database.models import User
 
 logging.config.fileConfig("logging.conf")
@@ -337,6 +341,43 @@ class AuthorizationService:
             raise HTTPException(
                 status_code=403,
                 detail=f"Requires {min_role} role on this database",
+            )
+
+        return resolved_user
+
+    async def require_config_role(
+        self,
+        config_id: ExcelConfigId,
+        min_role: ExcelConfigRoleEnum,
+        request: Request,
+        session: Optional[str] = Cookie(default=None),
+        allow_admin_bypass: bool = True,
+        user: Optional[UserResponse] = None,
+    ) -> UserResponse:
+        """Require that the current user has the specified role for a config."""
+        resolved_user = user or await self.get_current_user(request, session)
+
+        if allow_admin_bypass and resolved_user.is_admin:
+            return resolved_user
+
+        config_service = get_excel_config_service()
+        manifest = await config_service.get_manifest(UUID(config_id))
+        if not manifest:
+            raise HTTPException(status_code=404, detail="Configuration not found")
+
+        user_role = await config_service.get_user_role(
+            UUID(config_id), UUID(resolved_user.user_id)
+        )
+
+        role_rank = {
+            ExcelConfigRoleEnum.reader: 1,
+            ExcelConfigRoleEnum.owner: 2,
+        }
+
+        if user_role is None or role_rank[user_role] < role_rank[min_role]:
+            raise HTTPException(
+                status_code=403,
+                detail="Insufficient permissions for this config",
             )
 
         return resolved_user

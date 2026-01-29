@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from graal.database.enums import DbRoleEnum
+from graal.database.enums import DbRoleEnum, ExcelConfigRoleEnum
 
 
 class JobStatus(str, Enum):
@@ -228,3 +228,45 @@ class ManagedDatabaseResponse(BaseModel):
     user_role: Optional[DbRoleEnum] = Field(
         None, description="User's role (owner) or null for admins viewing all databases"
     )
+
+
+class ExcelConfigPermissionResponse(BaseModel):
+    """Permission entry for an Excel configuration."""
+
+    config_id: str = Field(..., description="Config identifier")
+    user_id: str = Field(..., description="User identifier")
+    email: Optional[str] = Field(
+        None, description="Email address for display when available"
+    )
+    role: ExcelConfigRoleEnum = Field(..., description="Assigned role")
+    created_at: datetime = Field(..., description="Grant timestamp")
+
+
+class ExcelConfigManifestResponse(BaseModel):
+    """Response model for Excel config manifests accessible to the user."""
+
+    id: str = Field(..., description="Config UUID")
+    owner_user_id: str = Field(..., description="Owner user ID")
+    file_name: str = Field(..., description="Original filename")
+    s3_key: str = Field(..., description="S3 key where file is stored")
+    file_size_bytes: int = Field(..., description="File size in bytes")
+    sheet_metadata: dict[str, Any] | None = Field(
+        None, description="Optional sheet metadata"
+    )
+    created_at: datetime = Field(..., description="Upload timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
+    deleted_at: datetime | None = Field(
+        None, description="Soft delete timestamp if removed"
+    )
+    current_user_role: ExcelConfigRoleEnum = Field(
+        ..., description="Role for current user"
+    )
+
+
+class ExcelConfigListResponse(BaseModel):
+    """Response wrapper for config listings."""
+
+    configs: list[ExcelConfigManifestResponse] = Field(
+        ..., description="Configs accessible to user"
+    )
+    total: int = Field(..., description="Total count")
