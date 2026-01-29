@@ -302,6 +302,35 @@ export interface UserConfigurationRead extends UserConfigurationBase {
 // Database Permission types
 export type DbRole = components['schemas']['DbRoleEnum']
 
+// Excel Config types
+export type ExcelConfigRole = 'reader' | 'owner'
+
+export interface ExcelConfigManifest {
+  id: string
+  owner_user_id: string
+  file_name: string
+  s3_key: string
+  file_size_bytes: number
+  sheet_metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+  current_user_role: ExcelConfigRole
+}
+
+export interface ExcelConfigListResponse {
+  configs: ExcelConfigManifest[]
+  total: number
+}
+
+export interface ExcelConfigPermission {
+  config_id: string
+  user_id: string
+  email: string | null
+  role: ExcelConfigRole
+  created_at: string
+}
+
 export type DatabasePermission =
   components['schemas']['DatabasePermissionResponse']
 export type ManagedDatabase = components['schemas']['ManagedDatabaseResponse']
