@@ -24,13 +24,20 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
   const handleChange = onChange || setSelectedConfigFile
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['config-files'],
-    queryFn: () => apiService.listConfigFiles(),
+    queryKey: ['excel-configs'],
+    queryFn: () => apiService.listExcelConfigs(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3
   })
 
-  const configFiles = data?.files || []
+  const manifests = data?.configs ?? []
+  const configFiles = manifests.map((manifest) => manifest.file_name)
+  const fileMetadata = new Map(
+    manifests.map((manifest) => [manifest.file_name, manifest])
+  )
+  const selectedManifest = currentValue
+    ? fileMetadata.get(currentValue)
+    : undefined
 
   const errorMessage = error
     ? 'Impossible de charger les fichiers de configuration'
@@ -49,7 +56,7 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
         value={currentValue}
         onChange={handleChange}
         label="Fichier de configuration"
-        hint="Sélectionnez un fichier de configuration depuis S3"
+        hint="Sélectionnez un fichier de configuration que vous pouvez utiliser"
         state={error ? 'error' : 'default'}
         stateRelatedMessage={errorMessage}
         disabled={disabled}
@@ -58,12 +65,25 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
         emptyMessage="Aucun fichier trouvé"
       />
 
+      {selectedManifest && (
+        <p className={fr.cx('fr-text--sm', 'fr-mt-1w')}>
+          <strong>Rôle :</strong>{' '}
+          {selectedManifest.current_user_role === 'owner'
+            ? 'Propriétaire'
+            : 'Lecteur'}
+          <span className={fr.cx('fr-ml-1w')}>
+            <strong>Ajouté le :</strong>{' '}
+            {new Date(selectedManifest.created_at).toLocaleDateString('fr-FR')}
+          </span>
+        </p>
+      )}
+
       {error && (
         <div className={fr.cx('fr-mt-2w')}>
           <Alert
             severity="error"
             title="Erreur"
-            description="Le service de configuration S3 n'est pas disponible."
+            description="Le service de configuration n'est pas disponible."
           />
           <Button
             priority="secondary"

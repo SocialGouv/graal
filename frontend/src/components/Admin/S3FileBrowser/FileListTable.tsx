@@ -65,7 +65,7 @@ export const FileListTable = ({
     return (
       <div className={fr.cx('fr-py-6w')} style={{ textAlign: 'center' }}>
         <p className={fr.cx('fr-text--lead')}>
-          {fileType === 'config' && 'Aucun fichier de configuration'}
+          {fileType === 'config' && 'Aucune configuration Excel'}
           {fileType === 'database' && 'Aucune base de données'}
           {fileType === 'input' && "Aucun fichier dans le pool d'entrée"}
         </p>
@@ -182,46 +182,49 @@ export const FileListTable = ({
           <Table
             fixed
             headers={['', 'Nom du fichier', 'Taille', 'Dernière modification']}
-            data={currentFiles.map((file) => [
-              <div
-                key={`checkbox-${file.key}`}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  flexDirection: 'row',
-                  height: '20px'
-                }}
-              >
-                <Checkbox
-                  className={fr.cx('fr-mb-0')}
-                  options={[
-                    {
-                      label: '',
-                      nativeInputProps: {
-                        checked: selectedFiles.has(file.key),
-                        onChange: (e) =>
-                          handleSelectFile(file.key, e.target.checked)
+            data={currentFiles.map((file) => {
+              const displayName = file.display_name || file.key
+              return [
+                <div
+                  key={`checkbox-${file.key}`}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    flexDirection: 'row',
+                    height: '20px'
+                  }}
+                >
+                  <Checkbox
+                    className={fr.cx('fr-mb-0')}
+                    options={[
+                      {
+                        label: '',
+                        nativeInputProps: {
+                          checked: selectedFiles.has(file.key),
+                          onChange: (e) =>
+                            handleSelectFile(file.key, e.target.checked)
+                        }
                       }
-                    }
-                  ]}
-                />
-              </div>,
-              <div key={`name-${file.key}`} style={{ textAlign: 'left' }}>
-                {fileType === 'input' ? (
-                  <Button
-                    priority="tertiary no outline"
-                    size="small"
-                    onClick={() => openDetailsModal(file)}
-                  >
-                    {file.display_name || file.key}
-                  </Button>
-                ) : (
-                  file.key
-                )}
-              </div>,
-              formatFileSize(file.size),
-              formatDate(file.last_modified)
-            ])}
+                    ]}
+                  />
+                </div>,
+                <div key={`name-${file.key}`} style={{ textAlign: 'left' }}>
+                  {fileType === 'input' ? (
+                    <Button
+                      priority="tertiary no outline"
+                      size="small"
+                      onClick={() => openDetailsModal(file)}
+                    >
+                      {displayName}
+                    </Button>
+                  ) : (
+                    displayName
+                  )}
+                </div>,
+                formatFileSize(file.size),
+                formatDate(file.last_modified)
+              ]
+            })}
           />
         </div>
       </div>

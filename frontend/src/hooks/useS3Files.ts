@@ -1,6 +1,35 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiService from '../services/api'
-import type { S3DeleteResponse, S3FileListResponse } from '../types/api'
+import type {
+  ExcelConfigListResponse,
+  S3DeleteResponse,
+  S3FileListResponse
+} from '../types/api'
+
+/**
+ * Query hook for fetching Excel config manifests (admin only)
+ */
+export const useAdminExcelConfigs = () => {
+  return useQuery<ExcelConfigListResponse>({
+    queryKey: ['admin', 'excel-configs'],
+    queryFn: () => apiService.listAdminExcelConfigs()
+  })
+}
+
+/**
+ * Mutation hook for deleting Excel config manifests (admin only)
+ */
+export const useDeleteAdminExcelConfig = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, string>({
+    mutationFn: (configId: string) =>
+      apiService.deleteAdminExcelConfig(configId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'excel-configs'] })
+    }
+  })
+}
 
 /**
  * Query hook for fetching config files from S3

@@ -7,8 +7,8 @@ import {
   useDeleteAdminDatabase
 } from '../../../hooks/useAdminDatabases'
 import {
-  useConfigFiles,
-  useDeleteConfigFile,
+  useAdminExcelConfigs,
+  useDeleteAdminExcelConfig,
   useDeleteInputPoolFile,
   useInputPoolFiles
 } from '../../../hooks/useS3Files'
@@ -33,7 +33,7 @@ export const S3FileBrowser = () => {
     data: configData,
     isLoading: configLoading,
     error: configError
-  } = useConfigFiles()
+  } = useAdminExcelConfigs()
   const {
     data: databaseData,
     isLoading: databaseLoading,
@@ -46,7 +46,7 @@ export const S3FileBrowser = () => {
   } = useInputPoolFiles()
 
   // Mutation hooks
-  const deleteConfigMutation = useDeleteConfigFile()
+  const deleteConfigMutation = useDeleteAdminExcelConfig()
   const deleteAdminDatabaseMutation = useDeleteAdminDatabase()
   const deleteInputMutation = useDeleteInputPoolFile()
 
@@ -87,7 +87,14 @@ export const S3FileBrowser = () => {
     type: 'config' | 'database' | 'input',
     ids?: string[]
   ) => {
-    setDeleteTarget({ keys, labels: keys, type, ids })
+    const labels =
+      type === 'config'
+        ? keys.map(
+            (key) =>
+              excelConfigs.find((config) => config.id === key)?.file_name || key
+          )
+        : keys
+    setDeleteTarget({ keys, labels, type, ids })
     deleteConfirmModal.open()
   }
 
@@ -112,16 +119,18 @@ export const S3FileBrowser = () => {
     deleteAdminDatabaseMutation.isPending ||
     deleteInputMutation.isPending
 
+  const excelConfigs = configData?.configs ?? []
+
   return (
     <div>
-      <h2 className={fr.cx('fr-h4', 'fr-mb-3w')}>Gestion des fichiers S3</h2>
+      <h2 className={fr.cx('fr-h4', 'fr-mb-3w')}>Gestion des fichiers</h2>
 
       {/* Display errors */}
       {configError && (
         <Alert
           severity="error"
           title="Erreur de chargement"
-          description="Impossible de charger les fichiers de configuration"
+          description="Impossible de charger les configurations Excel"
           className={fr.cx('fr-mb-4w')}
         />
       )}
@@ -149,7 +158,7 @@ export const S3FileBrowser = () => {
           title="Erreur de suppression"
           description={
             deleteConfigMutation.error?.message ||
-            'Impossible de supprimer le fichier de configuration'
+            'Impossible de supprimer la configuration Excel'
           }
           className={fr.cx('fr-mb-4w')}
         />
@@ -180,10 +189,16 @@ export const S3FileBrowser = () => {
       <Tabs
         tabs={[
           {
-            label: 'Fichiers de configuration',
+            label: 'Configurations Excel',
             content: (
               <FileListTable
-                files={configData?.files || []}
+                files={excelConfigs.map((config) => ({
+                  key: config.id,
+                  size: config.file_size_bytes,
+                  last_modified: config.updated_at,
+                  file_type: 'config',
+                  display_name: config.file_name
+                }))}
                 isLoading={configLoading}
                 onDelete={(fileKeys) => handleDelete(fileKeys, 'config')}
                 fileType="config"
