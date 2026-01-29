@@ -10,12 +10,10 @@ from uuid import UUID, uuid4
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from graal.api.models.requests import ExcelConfigPermissionRequest
 from graal.database.enums import ExcelConfigRoleEnum
-from graal.database.models import ExcelConfigManifest, ExcelConfigPermission
-from graal.database.schemas import (
-    ExcelConfigManifestCreate,
-    ExcelConfigPermissionCreate,
-)
+from graal.database.models import ExcelConfigManifest, ExcelConfigPermission, User
+from graal.database.schemas import ExcelConfigManifestCreate
 from graal.utils.s3.config_s3_service import ConfigS3Service
 from graal.utils.s3.s3_service import S3Service
 
@@ -51,7 +49,7 @@ class ExcelConfigService:
         self, user_id: UUID
     ) -> list[tuple[ExcelConfigManifest, ExcelConfigPermission]]:
         async with self._session_factory() as session:
-            result = await session.execute(
+            query = (
                 select(ExcelConfigManifest, ExcelConfigPermission)
                 .join(
                     ExcelConfigPermission,
@@ -60,10 +58,46 @@ class ExcelConfigService:
                 .where(ExcelConfigPermission.user_id == user_id)
                 .order_by(ExcelConfigManifest.created_at.desc())
             )
+            result = await session.execute(query)
             return list(result.all())
+
+    async def get_manifest(self, config_id: UUID) -> ExcelConfigManifest | None:
+        async with self._session_factory() as session:
+            return await session.get(ExcelConfigManifest, config_id)
+
+    async def get_user_permission(
+        self, config_id: UUID, user_id: UUID
+    ) -> ExcelConfigPermission | None:
+        async with self._session_factory() as session:
+            return await session.get(
+                ExcelConfigPermission,
+                {"config_id": config_id, "user_id": user_id},
+            )
+
+    async def get_user_role(
+        self, config_id: UUID, user_id: UUID
+    ) -> ExcelConfigRoleEnum | None:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(ExcelConfigPermission.role).where(
+                    ExcelConfigPermission.config_id == config_id,
+                    ExcelConfigPermission.user_id == user_id,
+                )
+            )
+            return result.scalar_one_or_none()
+
+    async def _count_owners(self, session: AsyncSession, config_id: UUID) -> int:
+        result = await session.execute(
+            select(ExcelConfigPermission).where(
+                ExcelConfigPermission.config_id == config_id,
+                ExcelConfigPermission.role == ExcelConfigRoleEnum.owner,
+            )
+        )
+        return len(result.scalars().all())
 
     async def create_config(
         self,
+        config_id: UUID,
         owner_id: UUID,
         manifest_data: ExcelConfigManifestCreate,
         file_bytes: bytes,
@@ -75,6 +109,7 @@ class ExcelConfigService:
 
         async with self._session_factory() as session:
             new_manifest = ExcelConfigManifest(
+                id=config_id,
                 owner_user_id=owner_id,
                 file_name=manifest_data.file_name,
                 s3_key=s3_key,
@@ -119,9 +154,26 @@ class ExcelConfigService:
             await session.commit()
 
     async def assign_permission(
-        self, config_id: UUID, request: ExcelConfigPermissionCreate
+        self, config_id: UUID, request: ExcelConfigPermissionRequest
     ) -> ExcelConfigPermission:
         async with self._session_factory() as session:
+            existing = await session.get(
+                ExcelConfigPermission,
+                {"config_id": config_id, "user_id": request.user_id},
+            )
+
+            if existing:
+                if (
+                    existing.role == ExcelConfigRoleEnum.owner
+                    and ExcelConfigRoleEnum(request.role) != ExcelConfigRoleEnum.owner
+                    and await self._count_owners(session, config_id) <= 1
+                ):
+                    raise ValueError("Cannot demote the last owner")
+                existing.role = ExcelConfigRoleEnum(request.role)
+                await session.commit()
+                await session.refresh(existing)
+                return existing
+
             permission = ExcelConfigPermission(
                 config_id=config_id,
                 user_id=request.user_id,
@@ -139,16 +191,10 @@ class ExcelConfigService:
                 {"config_id": config_id, "user_id": user_id},
             )
             if perm is None:
-                return
+                raise ValueError("Permission not found")
 
             if perm.role == ExcelConfigRoleEnum.owner:
-                owner_count = await session.execute(
-                    select(ExcelConfigPermission).where(
-                        ExcelConfigPermission.config_id == config_id,
-                        ExcelConfigPermission.role == ExcelConfigRoleEnum.owner,
-                    )
-                )
-                if len(owner_count.scalars().all()) <= 1:
+                if await self._count_owners(session, config_id) <= 1:
                     raise ValueError("Cannot remove last owner")
 
             await session.delete(perm)
@@ -162,6 +208,20 @@ class ExcelConfigService:
                 )
             )
             return list(result.scalars().all())
+
+    async def get_permissions_with_users(
+        self, config_id: UUID
+    ) -> list[tuple[ExcelConfigPermission, User | None]]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(ExcelConfigPermission, User)
+                .join(User, User.id == ExcelConfigPermission.user_id, isouter=True)
+                .where(ExcelConfigPermission.config_id == config_id)
+            )
+            return list(result.all())
+
+    async def download_config_file(self, manifest: ExcelConfigManifest) -> bytes:
+        return await self._config_s3.download_config_file(manifest.s3_key)
 
 
 # Singleton

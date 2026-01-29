@@ -9,17 +9,29 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 from graal.custom_types import LLMType
-from graal.database.enums import DbRoleEnum
+from graal.database.enums import DbRoleEnum, ExcelConfigRoleEnum
 
 
 class AssignPermissionRequest(BaseModel):
     """Request model for assigning database permissions."""
 
-    user_id: str = Field(
-        ...,
-        description="User ID (UUID) to grant permission to",
-    )
+    user_id: UUID = Field(..., description="User ID (UUID) to grant permission to")
     role: DbRoleEnum = Field(..., description="Role to assign")
+
+
+class ExcelConfigPermissionRequest(BaseModel):
+    """Request for assigning Excel config permissions."""
+
+    user_id: UUID = Field(..., description="Target user ID")
+    role: ExcelConfigRoleEnum = Field(
+        ..., description="Role to assign (owner or reader)"
+    )
+
+
+class ExcelConfigPermissionDeleteRequest(BaseModel):
+    """Request body for removing a specific Excel config permission."""
+
+    user_id: UUID = Field(..., description="User ID to remove")
 
 
 class AllotmentConfig(BaseModel):
