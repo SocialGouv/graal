@@ -19,3 +19,10 @@ class DbRoleEnum(str, enum.Enum):
     owner = "owner"
     writer = "writer"
     reader = "reader"
+
+
+class ExcelConfigRoleEnum(str, enum.Enum):
+    """Roles for excel configuration sharing."""
+
+    owner = "owner"
+    reader = "reader"

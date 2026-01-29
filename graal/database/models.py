@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from graal.database.base import Base
-from graal.database.enums import DbRoleEnum
+from graal.database.enums import DbRoleEnum, ExcelConfigRoleEnum
 
 
 def utc_now() -> datetime:
@@ -428,6 +428,124 @@ class AmendmentDatabasePermission(Base):
 
     def __repr__(self) -> str:
         return f"<DBPerm(db_id={self.db_id}, user_id={self.user_id}, role={self.role})>"
+
+
+class ExcelConfigManifest(Base):
+    """Metadata for user-uploaded Excel configuration files stored in S3."""
+
+    __tablename__ = "excel_config_manifests"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Excel config identifier",
+    )
+
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="Owner user ID",
+    )
+
+    file_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="Original filename provided by the user",
+    )
+
+    s3_key: Mapped[str] = mapped_column(
+        String(512),
+        unique=True,
+        nullable=False,
+        comment="Full S3 key where the Excel file is stored",
+    )
+
+    file_size_bytes: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        comment="Size of the Excel file in bytes",
+    )
+
+    sheet_metadata: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="Optional metadata about worksheets/columns",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Upload timestamp",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="Last modification timestamp",
+    )
+
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Soft delete timestamp",
+    )
+
+    owner: Mapped["User"] = relationship("User", backref="excel_configs")
+
+    permissions: Mapped[list["ExcelConfigPermission"]] = relationship(
+        "ExcelConfigPermission",
+        back_populates="config",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<ExcelConfigManifest(id={self.id}, owner={self.owner_user_id})>"
+
+
+class ExcelConfigPermission(Base):
+    """Role assignment for a user on a specific Excel config."""
+
+    __tablename__ = "excel_config_permissions"
+
+    config_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("excel_config_manifests.id", ondelete="CASCADE"),
+        primary_key=True,
+        comment="Excel config identifier",
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+        comment="User with access to this config",
+    )
+
+    role: Mapped[ExcelConfigRoleEnum] = mapped_column(
+        Enum(ExcelConfigRoleEnum, name="excelconfigrole", native_enum=True),
+        nullable=False,
+        comment="Role granted to the user",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Timestamp when role was granted",
+    )
+
+    config: Mapped["ExcelConfigManifest"] = relationship(
+        "ExcelConfigManifest", back_populates="permissions"
+    )
+
+    def __repr__(self) -> str:
+        return f"<ExcelConfigPermission(config_id={self.config_id}, user_id={self.user_id}, role={self.role})>"
 
 
 class OAuthAuthRequest(Base):

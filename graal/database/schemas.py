@@ -10,6 +10,60 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from graal.database.enums import ExcelConfigRoleEnum
+
+
+class ExcelConfigManifestBase(BaseModel):
+    """Base schema for Excel configuration metadata."""
+
+    file_name: str = Field(..., max_length=255, description="Original filename")
+    file_size_bytes: int = Field(..., ge=0, description="File size in bytes")
+    sheet_metadata: dict[str, Any] | None = Field(
+        None, description="Optional metadata about worksheets"
+    )
+
+
+class ExcelConfigManifestCreate(ExcelConfigManifestBase):
+    """Schema for creating Excel config manifests."""
+
+
+class ExcelConfigManifestRead(ExcelConfigManifestBase):
+    """Schema for reading Excel config manifests."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    owner_user_id: uuid.UUID
+    s3_key: str = Field(..., max_length=512, description="S3 key for the Excel file")
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None = None
+
+
+class ExcelConfigPermissionBase(BaseModel):
+    """Base schema for Excel config permissions."""
+
+    role: ExcelConfigRoleEnum = Field(
+        ..., description="Role for the user (owner or reader)"
+    )
+
+
+class ExcelConfigPermissionCreate(ExcelConfigPermissionBase):
+    """Schema for assigning a role to a user."""
+
+    user_id: uuid.UUID = Field(..., description="Target user ID")
+
+
+class ExcelConfigPermissionRead(ExcelConfigPermissionBase):
+    """Schema for reading permission entries."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    config_id: uuid.UUID
+    user_id: uuid.UUID
+    email: EmailStr | None = None
+    created_at: datetime
+
 
 class UserBase(BaseModel):
     """Base user schema with common fields."""
