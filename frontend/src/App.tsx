@@ -8,6 +8,7 @@ import { ToastCenter } from './components/Jobs/ToastCenter'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminPage } from './pages/AdminPage'
 import { DatabasePage } from './pages/DatabasePage'
+import { ExcelConfigsPage } from './pages/ExcelConfigsPage'
 import { Home } from './pages/Home'
 import { ProcessingPage } from './pages/ProcessingPage'
 import QueryProvider from './providers/QueryProvider'
@@ -49,6 +50,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DatabasePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/excel-configs"
+            element={
+              <ProtectedRoute>
+                <ExcelConfigsPage />
               </ProtectedRoute>
             }
           />

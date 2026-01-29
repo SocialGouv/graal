@@ -17,7 +17,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Cookie, HTTPException, Request
+from fastapi import HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -175,7 +175,9 @@ class AuthorizationService:
         )
 
     async def get_current_user(
-        self, _request: Request, session: Optional[str] = Cookie(default=None)
+        self,
+        request: Request,
+        session: Optional[str] = None,
     ) -> UserResponse:
         """Get current authenticated user information from session cookie.
 
@@ -194,6 +196,15 @@ class AuthorizationService:
         """
         # Import session service here to avoid circular imports
         from graal.api.services.session_service import get_session_service
+
+        if session is None:
+            session = request.cookies.get("session")
+
+        if session is not None and not isinstance(session, str):
+            logging.warning(
+                "[AuthorizationService] Non-string session cookie provided; treating as missing"
+            )
+            session = None
 
         # Check if session cookie exists
         if not session:
@@ -235,7 +246,7 @@ class AuthorizationService:
         return user
 
     async def check_admin(
-        self, request: Request, session: Optional[str] = Cookie(default=None)
+        self, request: Request, session: Optional[str] = None
     ) -> bool:
         """Check if current user has admin privileges.
 
@@ -256,7 +267,7 @@ class AuthorizationService:
             return False
 
     async def require_admin(
-        self, request: Request, session: Optional[str] = Cookie(default=None)
+        self, request: Request, session: Optional[str] = None
     ) -> UserResponse:
         """Require admin access, raise exception if not authorized.
 
@@ -294,7 +305,7 @@ class AuthorizationService:
         self,
         db_id: str,
         request: Request,
-        session: Optional[str] = Cookie(default=None),
+        session: Optional[str] = None,
     ) -> str | None:
         """
         Return the user's role for a specific amendment database.
@@ -309,7 +320,7 @@ class AuthorizationService:
         db_id: str,
         min_role: str,
         request: Request,
-        session: Optional[str] = Cookie(default=None),
+        session: Optional[str] = None,
         allow_admin_bypass: bool = True,
         user: Optional[UserResponse] = None,
     ) -> UserResponse:
@@ -350,7 +361,7 @@ class AuthorizationService:
         config_id: ExcelConfigId,
         min_role: ExcelConfigRoleEnum,
         request: Request,
-        session: Optional[str] = Cookie(default=None),
+        session: Optional[str] = None,
         allow_admin_bypass: bool = True,
         user: Optional[UserResponse] = None,
     ) -> UserResponse:

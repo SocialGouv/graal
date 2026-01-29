@@ -103,7 +103,7 @@ export const Home = () => {
 
           <div className={fr.cx('fr-grid-row', 'fr-grid-row--gutters')}>
             {/* Carte 1 : Traitement des amendements */}
-            <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
+            <div className={fr.cx('fr-col-12', 'fr-col-md-6', 'fr-col-lg-4')}>
               <Card
                 title="Traitement des amendements"
                 desc="Traitez et analysez automatiquement les amendements législatifs avec des fonctionnalités d'allotissement, d'attribution, de recherche de similarités et de génération de résumés."
@@ -139,7 +139,7 @@ export const Home = () => {
             </div>
 
             {/* Carte 2 : Database Builder */}
-            <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
+            <div className={fr.cx('fr-col-12', 'fr-col-md-6', 'fr-col-lg-4')}>
               <Card
                 title="Constructeur de bases de données"
                 desc="Construisez et gérez vos bases de données de similarités pour améliorer les résultats de recherche et optimiser le traitement des amendements."
@@ -169,9 +169,40 @@ export const Home = () => {
               />
             </div>
 
-            {/* Carte 3 : Admin (only for admins) */}
+            {/* Carte 3 : Excel configs */}
+            <div className={fr.cx('fr-col-12', 'fr-col-md-6', 'fr-col-lg-4')}>
+              <Card
+                title="Configurations Excel"
+                desc="Importez et partagez vos fichiers de configuration Excel pour le traitement des amendements."
+                start={
+                  <ul className={fr.cx('fr-badges-group')}>
+                    <li>
+                      <Badge severity="info" small>
+                        Excel
+                      </Badge>
+                    </li>
+                    <li>
+                      <Badge severity="info" small>
+                        Permissions
+                      </Badge>
+                    </li>
+                  </ul>
+                }
+                footer={
+                  <Button
+                    iconId="fr-icon-arrow-right-line"
+                    iconPosition="right"
+                    onClick={() => navigate('/excel-configs')}
+                  >
+                    Gérer les configurations Excel
+                  </Button>
+                }
+              />
+            </div>
+
+            {/* Carte 4 : Admin (only for admins) */}
             {isAdmin && (
-              <div className={fr.cx('fr-col-12', 'fr-col-md-4')}>
+              <div className={fr.cx('fr-col-12', 'fr-col-md-6', 'fr-col-lg-4')}>
                 <Card
                   title="Administration"
                   desc="Gérez les fichiers S3 (configurations, bases de données, fichiers d'entrée). Accès réservé aux administrateurs."

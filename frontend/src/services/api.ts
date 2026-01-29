@@ -9,6 +9,10 @@ import type {
   DatabaseManifest,
   DatabasePermission,
   DeleteFileResponse,
+  ExcelConfigListResponse,
+  ExcelConfigManifest,
+  ExcelConfigPermission,
+  ExcelConfigRole,
   JobStatusResponse,
   ManagedDatabase,
   PreviewResponse,
@@ -126,6 +130,167 @@ class ApiService {
       return response.data
     } catch (error) {
       console.error('[API_CLIENT] Failed to fetch config files', error)
+      throw error
+    }
+  }
+
+  /**
+   * List Excel config manifests accessible to the current user
+   */
+  async listExcelConfigs(): Promise<ExcelConfigListResponse> {
+    console.log('[API_CLIENT] Fetching Excel configs')
+
+    try {
+      const response =
+        await this.client.get<ExcelConfigListResponse>('/configs')
+
+      console.log('[API_CLIENT] Excel configs retrieved', {
+        total: response.data.total
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch Excel configs', error)
+      throw error
+    }
+  }
+
+  /**
+   * Upload a new Excel config (.xlsx)
+   */
+  async uploadExcelConfig(file: File): Promise<ExcelConfigManifest> {
+    console.log('[API_CLIENT] Uploading Excel config', { fileName: file.name })
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await this.client.post<ExcelConfigManifest>(
+        '/configs',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
+
+      console.log('[API_CLIENT] Excel config uploaded', {
+        id: response.data.id,
+        fileName: response.data.file_name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to upload Excel config', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete an Excel config
+   */
+  async deleteExcelConfig(configId: string): Promise<void> {
+    console.log('[API_CLIENT] Deleting Excel config', { configId })
+
+    try {
+      await this.client.delete(`/configs/${configId}`)
+      console.log('[API_CLIENT] Excel config deleted', { configId })
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to delete Excel config', error)
+      throw error
+    }
+  }
+
+  /**
+   * List permissions for an Excel config
+   */
+  async getExcelConfigPermissions(
+    configId: string
+  ): Promise<ExcelConfigPermission[]> {
+    console.log('[API_CLIENT] Fetching Excel config permissions', { configId })
+
+    try {
+      const response = await this.client.get<ExcelConfigPermission[]>(
+        `/configs/${configId}/permissions`
+      )
+
+      console.log('[API_CLIENT] Excel config permissions retrieved', {
+        configId,
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error(
+        '[API_CLIENT] Failed to fetch Excel config permissions',
+        error
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Assign a permission to a user for an Excel config
+   */
+  async assignExcelConfigPermission(
+    configId: string,
+    request: { user_id: string; role: ExcelConfigRole }
+  ): Promise<ExcelConfigPermission> {
+    console.log('[API_CLIENT] Assigning Excel config permission', {
+      configId,
+      user_id: request.user_id,
+      role: request.role
+    })
+
+    try {
+      const response = await this.client.post<ExcelConfigPermission>(
+        `/configs/${configId}/permissions`,
+        request
+      )
+
+      console.log('[API_CLIENT] Excel config permission assigned', {
+        configId,
+        user_id: response.data.user_id,
+        role: response.data.role
+      })
+
+      return response.data
+    } catch (error) {
+      console.error(
+        '[API_CLIENT] Failed to assign Excel config permission',
+        error
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Remove a user's permission from an Excel config
+   */
+  async removeExcelConfigPermission(
+    configId: string,
+    userId: string
+  ): Promise<void> {
+    console.log('[API_CLIENT] Removing Excel config permission', {
+      configId,
+      userId
+    })
+
+    try {
+      await this.client.delete(`/configs/${configId}/permissions`, {
+        data: { user_id: userId }
+      })
+
+      console.log('[API_CLIENT] Excel config permission removed', {
+        configId,
+        userId
+      })
+    } catch (error) {
+      console.error(
+        '[API_CLIENT] Failed to remove Excel config permission',
+        error
+      )
       throw error
     }
   }
