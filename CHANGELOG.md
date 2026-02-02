@@ -1,3 +1,10 @@
+# [1.40.0](https://github.com/SocialGouv/graal/compare/v1.39.2...v1.40.0) (2026-02-02)
+
+
+### Features
+
+* Add backend for handling Excel config files in S3 ([01077ec](https://github.com/SocialGouv/graal/commit/01077ec874874654577983976831162d428ed9dd))
+
 ## [1.39.2](https://github.com/SocialGouv/graal/compare/v1.39.1...v1.39.2) (2026-01-28)
 
 
