@@ -1,3 +1,10 @@
+# [1.41.0](https://github.com/SocialGouv/graal/compare/v1.40.0...v1.41.0) (2026-02-03)
+
+
+### Features
+
+* Add API routes for excel configs ([088b79d](https://github.com/SocialGouv/graal/commit/088b79d477b985266de8e14010a5f40fdc369b5e))
+
 # [1.40.0](https://github.com/SocialGouv/graal/compare/v1.39.2...v1.40.0) (2026-02-02)
 
 
