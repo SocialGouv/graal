@@ -1,3 +1,15 @@
+# [1.42.0](https://github.com/SocialGouv/graal/compare/v1.41.0...v1.42.0) (2026-02-03)
+
+
+### Bug Fixes
+
+* Backend for excel config deletion ([41a67dd](https://github.com/SocialGouv/graal/commit/41a67dd4a68d291227e4ade8a17cc6dd405606f7))
+
+
+### Features
+
+* Add UI for excel configuration ([54a38ea](https://github.com/SocialGouv/graal/commit/54a38ea9a98d24df57838af3abc58db9a3265f6e))
+
 # [1.41.0](https://github.com/SocialGouv/graal/compare/v1.40.0...v1.41.0) (2026-02-03)
 
 
