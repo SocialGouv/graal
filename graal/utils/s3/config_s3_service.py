@@ -196,9 +196,12 @@ class ConfigS3Service:
     # Public API: download raw Excel bytes
     # -------------------------------------------------------------------------
     async def download_config_file(self, filename: str) -> bytes:
+        key = self.build_config_key(filename)
+        return await self.download_config_file_by_key(key)
+
+    async def download_config_file_by_key(self, s3_key: str) -> bytes:
         def _download_bytes_sync() -> bytes:
-            key = self.build_config_key(filename)
-            buffer = self._download_from_s3_sync(key)
+            buffer = self._download_from_s3_sync(s3_key)
             return buffer.getvalue()
 
         return await asyncio.to_thread(_download_bytes_sync)

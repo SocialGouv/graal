@@ -45,6 +45,15 @@ class ExcelConfigService:
             )
             return list(result.scalars().all())
 
+    async def list_all_configs(self) -> list[ExcelConfigManifest]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(ExcelConfigManifest).order_by(
+                    ExcelConfigManifest.created_at.desc()
+                )
+            )
+            return list(result.scalars().all())
+
     async def list_configs_with_roles(
         self, user_id: UUID
     ) -> list[tuple[ExcelConfigManifest, ExcelConfigPermission]]:
@@ -143,8 +152,22 @@ class ExcelConfigService:
             )
             if not perm or perm.role != ExcelConfigRoleEnum.owner:
                 raise ValueError("Only owners can delete configs")
-            # Delete S3 object first using the stored key/filename
-            await self._config_s3.delete_config_file(manifest.s3_key)
+            # Delete S3 object first using the stored key
+            await self._config_s3.delete_config_file_by_key(manifest.s3_key)
+            await session.execute(
+                delete(ExcelConfigPermission).where(
+                    ExcelConfigPermission.config_id == config_id
+                )
+            )
+            await session.delete(manifest)
+            await session.commit()
+
+    async def delete_config_as_admin(self, config_id: UUID) -> None:
+        async with self._session_factory() as session:
+            manifest = await session.get(ExcelConfigManifest, config_id)
+            if not manifest:
+                raise ValueError("Configuration not found")
+            await self._config_s3.delete_config_file_by_key(manifest.s3_key)
             await session.execute(
                 delete(ExcelConfigPermission).where(
                     ExcelConfigPermission.config_id == config_id
@@ -221,7 +244,7 @@ class ExcelConfigService:
             return list(result.all())
 
     async def download_config_file(self, manifest: ExcelConfigManifest) -> bytes:
-        return await self._config_s3.download_config_file(manifest.s3_key)
+        return await self._config_s3.download_config_file_by_key(manifest.s3_key)
 
 
 # Singleton

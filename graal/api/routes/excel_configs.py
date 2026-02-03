@@ -8,7 +8,12 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 
-from graal.api.dependencies.auth import CurrentUser, get_current_user
+from graal.api.dependencies.auth import (
+    AdminUser,
+    CurrentUser,
+    get_current_user,
+    require_admin,
+)
 from graal.api.models.requests import (
     ExcelConfigPermissionDeleteRequest,
     ExcelConfigPermissionRequest,
@@ -29,6 +34,13 @@ router = APIRouter(
     prefix="/configs",
     tags=["Excel Configs"],
     dependencies=[Depends(get_current_user)],
+)
+
+
+admin_router = APIRouter(
+    prefix="/admin/excel-configs",
+    tags=["Excel Configs"],
+    dependencies=[Depends(require_admin)],
 )
 
 
@@ -254,5 +266,44 @@ async def remove_permission(
             status_code = status.HTTP_400_BAD_REQUEST
         else:
             # Unexpected ValueError – let it propagate for now
+            raise
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+
+
+@admin_router.get("", response_model=ExcelConfigListResponse)
+async def list_all_configs(admin_user: AdminUser):
+    service = get_excel_config_service()
+    manifests = await service.list_all_configs()
+    configs = [
+        ExcelConfigManifestResponse(
+            id=str(manifest.id),
+            owner_user_id=str(manifest.owner_user_id),
+            file_name=manifest.file_name,
+            s3_key=manifest.s3_key,
+            file_size_bytes=manifest.file_size_bytes,
+            sheet_metadata=manifest.sheet_metadata,
+            created_at=manifest.created_at,
+            updated_at=manifest.updated_at,
+            deleted_at=manifest.deleted_at,
+            current_user_role=ExcelConfigRoleEnum.owner,
+        )
+        for manifest in manifests
+    ]
+    return ExcelConfigListResponse(configs=configs, total=len(configs))
+
+
+@admin_router.delete("/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_config_as_admin(
+    config_id: ExcelConfigId,
+    admin_user: AdminUser,
+):
+    service = get_excel_config_service()
+    try:
+        await service.delete_config_as_admin(UUID(config_id))
+    except ValueError as exc:
+        detail = str(exc)
+        if detail == "Configuration not found":
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
             raise
         raise HTTPException(status_code=status_code, detail=detail) from exc

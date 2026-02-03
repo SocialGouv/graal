@@ -14,6 +14,7 @@ from graal.api.routes import (
     authorization,
     database_builder,
     db_permissions,
+    excel_configs,
     proconnect,
     s3_files,
     similarity_db_manifests,
@@ -85,6 +86,8 @@ app.include_router(user_configurations.router, prefix="/api/v1")
 app.include_router(similarity_db_manifests.router, prefix="/api/v1")
 app.include_router(s3_files.router, prefix="/api/v1")
 app.include_router(db_permissions.router, prefix="/api/v1")
+app.include_router(excel_configs.router, prefix="/api/v1")
+app.include_router(excel_configs.admin_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn

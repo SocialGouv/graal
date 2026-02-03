@@ -1368,6 +1368,95 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/configs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Configs */
+    get: operations['list_configs_api_v1_configs_get']
+    put?: never
+    /** Upload Config */
+    post: operations['upload_config_api_v1_configs_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/configs/{config_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Config */
+    get: operations['get_config_api_v1_configs__config_id__get']
+    put?: never
+    post?: never
+    /** Delete Config */
+    delete: operations['delete_config_api_v1_configs__config_id__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/configs/{config_id}/permissions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Permissions */
+    get: operations['list_permissions_api_v1_configs__config_id__permissions_get']
+    put?: never
+    /** Add Permission */
+    post: operations['add_permission_api_v1_configs__config_id__permissions_post']
+    /** Remove Permission */
+    delete: operations['remove_permission_api_v1_configs__config_id__permissions_delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/excel-configs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List All Configs */
+    get: operations['list_all_configs_api_v1_admin_excel_configs_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/excel-configs/{config_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Delete Config As Admin */
+    delete: operations['delete_config_as_admin_api_v1_admin_excel_configs__config_id__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1487,6 +1576,14 @@ export interface components {
       file: string
       /** Metadata */
       metadata: string
+    }
+    /** Body_upload_config_api_v1_configs_post */
+    Body_upload_config_api_v1_configs_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string
     }
     /**
      * ConfigFilesResponse
@@ -1664,6 +1761,140 @@ export interface components {
      * @enum {string}
      */
     DbRoleEnum: 'owner' | 'writer' | 'reader'
+    /**
+     * ExcelConfigListResponse
+     * @description Response wrapper for config listings.
+     */
+    ExcelConfigListResponse: {
+      /**
+       * Configs
+       * @description Configs accessible to user
+       */
+      configs: components['schemas']['ExcelConfigManifestResponse'][]
+      /**
+       * Total
+       * @description Total count
+       */
+      total: number
+    }
+    /**
+     * ExcelConfigManifestResponse
+     * @description Response model for Excel config manifests accessible to the user.
+     */
+    ExcelConfigManifestResponse: {
+      /**
+       * Id
+       * @description Config UUID
+       */
+      id: string
+      /**
+       * Owner User Id
+       * @description Owner user ID
+       */
+      owner_user_id: string
+      /**
+       * File Name
+       * @description Original filename
+       */
+      file_name: string
+      /**
+       * S3 Key
+       * @description S3 key where file is stored
+       */
+      s3_key: string
+      /**
+       * File Size Bytes
+       * @description File size in bytes
+       */
+      file_size_bytes: number
+      /**
+       * Sheet Metadata
+       * @description Optional sheet metadata
+       */
+      sheet_metadata?: {
+        [key: string]: unknown
+      } | null
+      /**
+       * Created At
+       * Format: date-time
+       * @description Upload timestamp
+       */
+      created_at: string
+      /**
+       * Updated At
+       * Format: date-time
+       * @description Last update timestamp
+       */
+      updated_at: string
+      /**
+       * Deleted At
+       * @description Soft delete timestamp if removed
+       */
+      deleted_at?: string | null
+      /** @description Role for current user */
+      current_user_role: components['schemas']['ExcelConfigRoleEnum']
+    }
+    /**
+     * ExcelConfigPermissionDeleteRequest
+     * @description Request body for removing a specific Excel config permission.
+     */
+    ExcelConfigPermissionDeleteRequest: {
+      /**
+       * User Id
+       * Format: uuid
+       * @description User ID to remove
+       */
+      user_id: string
+    }
+    /**
+     * ExcelConfigPermissionRequest
+     * @description Request for assigning Excel config permissions.
+     */
+    ExcelConfigPermissionRequest: {
+      /**
+       * User Id
+       * Format: uuid
+       * @description Target user ID
+       */
+      user_id: string
+      /** @description Role to assign (owner or reader) */
+      role: components['schemas']['ExcelConfigRoleEnum']
+    }
+    /**
+     * ExcelConfigPermissionResponse
+     * @description Permission entry for an Excel configuration.
+     */
+    ExcelConfigPermissionResponse: {
+      /**
+       * Config Id
+       * @description Config identifier
+       */
+      config_id: string
+      /**
+       * User Id
+       * @description User identifier
+       */
+      user_id: string
+      /**
+       * Email
+       * @description Email address for display when available
+       */
+      email?: string | null
+      /** @description Assigned role */
+      role: components['schemas']['ExcelConfigRoleEnum']
+      /**
+       * Created At
+       * Format: date-time
+       * @description Grant timestamp
+       */
+      created_at: string
+    }
+    /**
+     * ExcelConfigRoleEnum
+     * @description Roles for excel configuration sharing.
+     * @enum {string}
+     */
+    ExcelConfigRoleEnum: 'owner' | 'reader'
     /**
      * FileReferenceInfo
      * @description Information about a file in a database manifest.
@@ -3687,6 +3918,303 @@ export interface operations {
       path: {
         db_id: string
         target_user_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_configs_api_v1_configs_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ExcelConfigListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  upload_config_api_v1_configs_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_upload_config_api_v1_configs_post']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ExcelConfigManifestResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_config_api_v1_configs__config_id__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ExcelConfigManifestResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_config_api_v1_configs__config_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_permissions_api_v1_configs__config_id__permissions_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ExcelConfigPermissionResponse'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  add_permission_api_v1_configs__config_id__permissions_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ExcelConfigPermissionRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ExcelConfigPermissionResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  remove_permission_api_v1_configs__config_id__permissions_delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ExcelConfigPermissionDeleteRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_all_configs_api_v1_admin_excel_configs_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ExcelConfigListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_config_as_admin_api_v1_admin_excel_configs__config_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
       }
       cookie?: {
         session?: string | null
