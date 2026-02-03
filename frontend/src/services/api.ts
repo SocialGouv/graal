@@ -36,7 +36,12 @@ class ApiService {
   constructor() {
     // Use VITE_API_URL from environment or empty string for development
     // Empty string uses relative URLs which go through Vite proxy, enabling same-origin cookies
-    const apiBaseUrl = import.meta.env.VITE_API_URL || ''
+    const rawApiBaseUrl = import.meta.env.VITE_API_URL || ''
+    const normalizedApiBaseUrl = rawApiBaseUrl.endsWith('/')
+      ? rawApiBaseUrl.slice(0, -1)
+      : rawApiBaseUrl
+    const isLocalhostApi = normalizedApiBaseUrl.startsWith('http://localhost')
+    const apiBaseUrl = isLocalhostApi ? '' : normalizedApiBaseUrl
 
     this.client = axios.create({
       baseURL: apiBaseUrl ? `${apiBaseUrl}/api/v1` : '/api/v1',

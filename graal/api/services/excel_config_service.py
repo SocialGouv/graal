@@ -153,7 +153,22 @@ class ExcelConfigService:
             if not perm or perm.role != ExcelConfigRoleEnum.owner:
                 raise ValueError("Only owners can delete configs")
             # Delete S3 object first using the stored key
-            await self._config_s3.delete_config_file_by_key(manifest.s3_key)
+            try:
+                await self._config_s3.delete_config_file_by_key(manifest.s3_key)
+            except FileNotFoundError as exc:
+                logging.warning(
+                    "[ExcelConfigService] S3 config file missing for config %s (s3_key=%s). Continuing deletion.",
+                    config_id,
+                    manifest.s3_key,
+                    exc_info=exc,
+                )
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logging.warning(
+                    "[ExcelConfigService] Failed to delete S3 config file for config %s (s3_key=%s). Continuing deletion.",
+                    config_id,
+                    manifest.s3_key,
+                    exc_info=exc,
+                )
             await session.execute(
                 delete(ExcelConfigPermission).where(
                     ExcelConfigPermission.config_id == config_id
@@ -167,7 +182,22 @@ class ExcelConfigService:
             manifest = await session.get(ExcelConfigManifest, config_id)
             if not manifest:
                 raise ValueError("Configuration not found")
-            await self._config_s3.delete_config_file_by_key(manifest.s3_key)
+            try:
+                await self._config_s3.delete_config_file_by_key(manifest.s3_key)
+            except FileNotFoundError as exc:
+                logging.warning(
+                    "[ExcelConfigService] S3 config file missing for config %s (s3_key=%s). Continuing deletion.",
+                    config_id,
+                    manifest.s3_key,
+                    exc_info=exc,
+                )
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logging.warning(
+                    "[ExcelConfigService] Failed to delete S3 config file for config %s (s3_key=%s). Continuing deletion.",
+                    config_id,
+                    manifest.s3_key,
+                    exc_info=exc,
+                )
             await session.execute(
                 delete(ExcelConfigPermission).where(
                     ExcelConfigPermission.config_id == config_id

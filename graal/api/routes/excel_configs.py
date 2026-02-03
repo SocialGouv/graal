@@ -111,16 +111,13 @@ async def upload_config(
 
     file_bytes = await file.read()
     config_id = uuid4()
-    s3_key = file.filename or f"{config_id}.xlsx"
     manifest = await service.create_config(
         config_id=config_id,
         owner_id=UUID(current_user.user_id),
         manifest_data=ExcelConfigManifestCreate(
             file_name=file.filename or "",
-            s3_key=s3_key,
             file_size_bytes=len(file_bytes),
             sheet_metadata=None,
-            owner_user_id=UUID(current_user.user_id),
         ),
         file_bytes=file_bytes,
     )
@@ -295,11 +292,10 @@ async def list_all_configs(admin_user: AdminUser):
 @admin_router.delete("/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_config_as_admin(
     config_id: ExcelConfigId,
-    admin_user: AdminUser,
 ):
     service = get_excel_config_service()
     try:
-        await service.delete_config_as_admin(UUID(config_id))
+        await service.delete_config_as_admin(config_id)
     except ValueError as exc:
         detail = str(exc)
         if detail == "Configuration not found":
@@ -307,3 +303,13 @@ async def delete_config_as_admin(
         else:
             raise
         raise HTTPException(status_code=status_code, detail=detail) from exc
+    except Exception as exc:
+        logging.error(
+            "[API] Failed to delete excel config as admin (config_id=%s)",
+            config_id,
+            exc_info=exc,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete excel config",
+        ) from exc
