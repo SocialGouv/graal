@@ -11,7 +11,7 @@ import type {
  */
 export const useAdminExcelConfigs = () => {
   return useQuery<ExcelConfigListResponse>({
-    queryKey: ['admin', 'excel-configs'],
+    queryKey: ['excel-configs', 'admin'],
     queryFn: () => apiService.listAdminExcelConfigs()
   })
 }
@@ -26,7 +26,9 @@ export const useDeleteAdminExcelConfig = () => {
     mutationFn: (configId: string) =>
       apiService.deleteAdminExcelConfig(configId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'excel-configs'] })
+      // Invalidate parent key — React Query prefix matching clears both
+      // ['excel-configs', 'user'] and ['excel-configs', 'admin'] at once.
+      queryClient.invalidateQueries({ queryKey: ['excel-configs'] })
     }
   })
 }

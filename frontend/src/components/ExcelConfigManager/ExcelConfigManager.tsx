@@ -34,7 +34,7 @@ export const ExcelConfigManager: React.FC = () => {
   const uploadRef = useRef<HTMLDivElement>(null)
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['excel-configs'],
+    queryKey: ['excel-configs', 'user'],
     queryFn: () => apiService.listExcelConfigs()
   })
 

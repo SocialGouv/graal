@@ -19,17 +19,20 @@ export const ConfigFileSelector: React.FC<ConfigFileSelectorProps> = ({
   onChange,
   value
 }) => {
-  const {
-    selectedConfigFile,
-    setSelectedConfigFile,
-    setSelectedConfigFileName
-  } = useProcessingStore()
+  const { selectedConfigFile, setSelectedConfigFile } = useProcessingStore()
+
+  const setSelectedConfigFileName = (name: string | null) => {
+    useProcessingStore.setState((state) => ({
+      ...state,
+      selectedConfigFileName: name
+    }))
+  }
 
   // Use provided value prop if given, otherwise fall back to store
   const currentValue = value !== undefined ? value : selectedConfigFile
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['excel-configs'],
+    queryKey: ['excel-configs', 'user'],
     queryFn: () => apiService.listExcelConfigs(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3
