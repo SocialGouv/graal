@@ -42,7 +42,37 @@ export function autoTypeGeneration(
   let debounceTimer: NodeJS.Timeout | null = null
   let isGenerating = false
 
-  const generateTypes = async () => {
+  const waitForBackend = async (
+    maxRetries = 10,
+    initialDelay = 500
+  ): Promise<boolean> => {
+    const backendUrl = 'http://localhost:8000/docs'
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(backendUrl)
+        if (response.ok) {
+          console.log('✅ Backend is ready!')
+          return true
+        }
+      } catch {
+        // Backend not ready yet
+      }
+
+      if (attempt < maxRetries) {
+        const delay = initialDelay * Math.pow(1.5, attempt - 1)
+        console.log(
+          `⏳ Waiting for backend... (attempt ${attempt}/${maxRetries})`
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+    }
+
+    console.error('❌ Backend did not become ready in time')
+    return false
+  }
+
+  const generateTypes = async (waitForServer = false) => {
     if (isGenerating) {
       console.log('🔄 Type generation already in progress, skipping...')
       return
@@ -50,6 +80,16 @@ export function autoTypeGeneration(
 
     try {
       isGenerating = true
+
+      if (waitForServer) {
+        console.log('⏳ Waiting for backend to be ready...')
+        const isReady = await waitForBackend()
+        if (!isReady) {
+          console.warn('⚠️  Skipping type generation - backend not available')
+          return
+        }
+      }
+
       console.log('🔄 Generating TypeScript types from OpenAPI schema...')
 
       const { stdout, stderr } = await execAsync(generateCommand)
@@ -88,7 +128,8 @@ export function autoTypeGeneration(
         console.log(
           '🚀 Starting development server with auto type generation...'
         )
-        await generateTypes()
+        // Wait for backend when starting up since make dev runs both in parallel
+        await generateTypes(true)
       }
     },
 
