@@ -474,7 +474,7 @@ class ApiService {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
-      configFile: processingRequest.config_file,
+      configFile: processingRequest.config_file_id,
       processingRequest: processingRequest
     })
 
@@ -896,7 +896,7 @@ class ApiService {
   ): Promise<ProcessJobResponse> {
     console.log(`[API_CLIENT] Appending to database: ${databaseName}`, {
       fileCount: request.file_references.length,
-      configFile: request.config_file
+      configFile: request.config_file_id
     })
 
     const startTime = Date.now()

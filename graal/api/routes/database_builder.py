@@ -344,7 +344,7 @@ async def build_database(
 
     Example request:
         {
-            "config_file": "Fichier de configuration GRAAL - DSS - latest.xlsx",
+            "config_file_id": "550e8400-e29b-41d4-a716-446655440000",
             "database_name": "PLFSS_2024",
             "files_metadata": [
                 {
