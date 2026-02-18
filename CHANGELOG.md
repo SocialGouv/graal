@@ -1,3 +1,15 @@
+# [1.43.0](https://github.com/SocialGouv/graal/compare/v1.42.0...v1.43.0) (2026-02-18)
+
+
+### Bug Fixes
+
+* Align backend on how to handle excel config files (using IDs) ([7490e2c](https://github.com/SocialGouv/graal/commit/7490e2c070235e0718bacc6b4dab8a13aa0f590e))
+
+
+### Features
+
+* Add retry mechanism to generate new API types ([506b526](https://github.com/SocialGouv/graal/commit/506b526e52a58e370c310d941d36ba4a29a86b46))
+
 # [1.42.0](https://github.com/SocialGouv/graal/compare/v1.41.0...v1.42.0) (2026-02-03)
 
 
