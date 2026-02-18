@@ -233,7 +233,11 @@ class WebProcessingService:
         return config
 
     async def start_processing(
-        self, file_content: bytes, filename: str, processing_request: ProcessingRequest
+        self,
+        file_content: bytes,
+        filename: str,
+        processing_request: ProcessingRequest,
+        config_s3_key: str,
     ) -> ProcessingResponse:
         """
         Start processing a JSON file.
@@ -242,11 +246,11 @@ class WebProcessingService:
             file_content: Raw file content
             filename: Original filename
             processing_request: ProcessingRequest object containing all processing parameters
+            config_s3_key: Exact S3 key for the Excel config file (e.g. config_graal/{uuid}.xlsx)
 
         Returns:
             ProcessingResponse with job_id
         """
-        config_file = processing_request.config_file
         logging.info(
             f"[WEB_SERVICE] Starting processing for file: {filename}, size: {len(file_content)} bytes"
         )
@@ -301,10 +305,10 @@ class WebProcessingService:
 
         # Start processing in background
         logging.info(
-            f"[WEB_SERVICE] Starting background processing task - job_id: {job_id}, config_file: {config_file}"
+            f"[WEB_SERVICE] Starting background processing task - job_id: {job_id}, config_s3_key: {config_s3_key}"
         )
         task = asyncio.create_task(
-            self._process_file_async(job_id, config_file, processing_request)
+            self._process_file_async(job_id, config_s3_key, processing_request)
         )
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
@@ -317,13 +321,13 @@ class WebProcessingService:
         )
 
     async def _process_file_async(  # noqa: C901
-        self, job_id: str, config_file: str, processing_request: ProcessingRequest
+        self, job_id: str, config_s3_key: str, processing_request: ProcessingRequest
     ) -> None:
         """Process file asynchronously.
 
         Args:
             job_id: Unique job identifier
-            config_file: Name of the configuration file to use from S3
+            config_s3_key: Exact S3 key for the Excel config file (e.g. config_graal/{uuid}.xlsx)
             processing_request: Processing configuration parameters
         """
         import time
@@ -358,14 +362,14 @@ class WebProcessingService:
             )
             config = load_config(self.config_path)
 
-            # Update config with the selected config file
+            # Update config with the selected config file (exact S3 key)
             logging.info(
-                f"[WEB_SERVICE] Setting config file path - job_id: {job_id}, config_file: {config_file}"
+                f"[WEB_SERVICE] Setting config file path - job_id: {job_id}, config_s3_key: {config_s3_key}"
             )
             # Ensure paths section exists
             if "paths" not in config:
                 config["paths"] = {}
-            config["paths"]["graal_config_file"] = config_file
+            config["paths"]["graal_config_file"] = config_s3_key
 
             # Merge frontend configuration with base config
             logging.info(

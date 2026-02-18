@@ -71,6 +71,13 @@ class SheetDataLoader:
     async def _load_excel_data(file_path: Union[str, Path]) -> dict[str, pd.DataFrame]:
         """Load Excel data from S3 asynchronously.
 
+        Accepts either a bare filename (relative to the config folder) or a full
+        S3 key.  When the pipeline is invoked via the web API the config path is
+        the manifest's ``s3_key`` (e.g. ``"config_graal/3f7a8b2c-xxxx.xlsx"``),
+        which must be passed verbatim to S3 without any additional folder prefix.
+        We therefore always call ``load_config_excel_by_key`` so that the exact
+        key provided is used.
+
         Returns:
             dict[str, pd.DataFrame]: Dictionary mapping sheet names to DataFrames.
 
@@ -80,10 +87,10 @@ class SheetDataLoader:
         # Convert file_path to string for processing
         file_path_str = str(file_path)
 
-        # Load from S3 using the S3 config service
+        # Load from S3 using the exact key (no folder prefix added)
         s3_service = get_s3_service()
-        logging.info(f"Loading configuration from S3: {file_path_str}")
-        return await s3_service.config.load_config_excel(file_path_str)
+        logging.info(f"Loading configuration from S3 (by key): {file_path_str}")
+        return await s3_service.config.load_config_excel_by_key(file_path_str)
 
     def extract_sheet_data(self, sheet_name: str) -> Optional[pd.DataFrame]:
         """Extract data from a specific sheet.

@@ -1533,10 +1533,10 @@ export interface components {
        */
       group_by_columns: string[]
       /**
-       * Config File
-       * @description Office configuration Excel file to use
+       * Config File Id
+       * @description UUID of the Excel configuration manifest to use
        */
-      config_file: string
+      config_file_id: string
       /**
        * File References
        * @description References to new files to append
@@ -1637,10 +1637,10 @@ export interface components {
        */
       group_by_columns: string[]
       /**
-       * Config File
-       * @description Office configuration Excel file to use
+       * Config File Id
+       * @description UUID of the Excel configuration manifest to use
        */
-      config_file: string
+      config_file_id: string
       /**
        * Database Name
        * @description Name for the database (without extension)

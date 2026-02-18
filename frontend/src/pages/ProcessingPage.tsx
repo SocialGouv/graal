@@ -34,6 +34,7 @@ export const ProcessingPage = () => {
     processingConfig,
     uploadedFile,
     selectedConfigFile,
+    selectedConfigFileName,
     setCurrentStep,
     goBackToConfiguration,
     setUploadedFile,
@@ -104,7 +105,7 @@ export const ProcessingPage = () => {
     }
 
     const processingRequest = {
-      config_file: selectedConfigFile,
+      config_file_id: selectedConfigFile,
       processing_config: {
         allotment: buildConfigIfEnabled(processingConfig.allotments.enabled, {
           column: processingConfig.allotments.column,
@@ -253,9 +254,10 @@ export const ProcessingPage = () => {
         </h2>
         <div className={fr.cx('fr-text--sm')}>
           <ul className={fr.cx('fr-list', 'fr-mb-0')}>
-            {selectedConfigFile && (
+            {selectedConfigFileName && (
               <li>
-                <strong>Fichier de configuration :</strong> {selectedConfigFile}
+                <strong>Fichier de configuration :</strong>{' '}
+                {selectedConfigFileName}
               </li>
             )}
             {uploadedFile && (

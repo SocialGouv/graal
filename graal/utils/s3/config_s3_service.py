@@ -108,7 +108,7 @@ class ConfigS3Service:
         return await asyncio.to_thread(_exists_sync)
 
     # -------------------------------------------------------------------------
-    # Public API: load Excel config file
+    # Public API: load Excel config file (by filename, builds key internally)
     # -------------------------------------------------------------------------
     async def load_config_excel(self, filename: str) -> Dict[str, pd.DataFrame]:
         def _load_sync():
@@ -117,6 +117,53 @@ class ConfigS3Service:
             return pd.read_excel(file_bytes, sheet_name=None)
 
         return await asyncio.to_thread(_load_sync)
+
+    # -------------------------------------------------------------------------
+    # Public API: load Excel config file by exact S3 key (bypasses build_config_key)
+    # -------------------------------------------------------------------------
+    async def load_config_excel_by_key(self, s3_key: str) -> Dict[str, pd.DataFrame]:
+        """Load an Excel config file using its exact S3 key (not a relative filename).
+
+        Use this when you already have the full S3 key (e.g., from ExcelConfigManifest.s3_key)
+        and want to bypass the folder-prefix logic in build_config_key().
+
+        Args:
+            s3_key: The full S3 key, e.g. "config_graal/3f7a8b2c-xxxx.xlsx"
+
+        Returns:
+            dict mapping sheet names to DataFrames
+        """
+
+        def _load_sync():
+            file_bytes = self._download_from_s3_sync(s3_key)
+            return pd.read_excel(file_bytes, sheet_name=None)
+
+        return await asyncio.to_thread(_load_sync)
+
+    # -------------------------------------------------------------------------
+    # Public API: check existence by exact S3 key
+    # -------------------------------------------------------------------------
+    async def validate_config_file_exists_by_key(self, s3_key: str) -> bool:
+        """Check whether a config file exists using its exact S3 key.
+
+        Args:
+            s3_key: The full S3 key, e.g. "config_graal/3f7a8b2c-xxxx.xlsx"
+
+        Returns:
+            True if the object exists in S3, False otherwise
+        """
+
+        def _exists_sync():
+            client = self._new_client()
+            try:
+                client.head_object(Bucket=self.bucket_name, Key=s3_key)
+                return True
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "404":
+                    return False
+                raise
+
+        return await asyncio.to_thread(_exists_sync)
 
     # -------------------------------------------------------------------------
     # Public API: list config files with metadata

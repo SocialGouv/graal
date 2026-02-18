@@ -29,6 +29,7 @@ from graal.api.services.database_builder_service import (
     DatabaseBuilderService,
     create_job_id,
 )
+from graal.api.services.excel_config_service import get_excel_config_service
 from graal.api.services.database_permission_service import (
     DbRole,
     get_database_permission_service,
@@ -376,9 +377,29 @@ async def build_database(
             f"[API] Created job {job_id} for database build: {request.database_name}"
         )
 
+        # Resolve config_file_id → ExcelConfigManifest → s3_key
+        excel_service = get_excel_config_service()
+        config_manifest = await excel_service.get_manifest(UUID(request.config_file_id))
+        if not config_manifest:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Configuration not found: {request.config_file_id}",
+            )
+        if not current_user.is_admin:
+            perm = await excel_service.get_user_permission(
+                UUID(request.config_file_id), user_id
+            )
+            if not perm:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied to this configuration",
+                )
+        config_s3_key = config_manifest.s3_key
+        logging.info(f"[API] Resolved config manifest to s3_key: {config_s3_key}")
+
         # Start background task
         logging.info(f"[API] About to create background task for job {job_id}")
-        logging.info(f"[API] Config file: {request.config_file}")
+        logging.info(f"[API] Config s3_key: {config_s3_key}")
         logging.info(f"[API] Database name: {request.database_name}")
         logging.info(f"[API] File references: {request.file_references}")
         logging.info(f"[API] Number of file references: {len(request.file_references)}")
@@ -398,7 +419,7 @@ async def build_database(
             task = asyncio.create_task(
                 builder_service.start_database_build(
                     job_id=job_id,
-                    config_file=request.config_file,
+                    config_file=config_s3_key,
                     database_name=request.database_name,
                     files_metadata=files_metadata,
                     drop_empty_columns=request.drop_empty_columns,
@@ -664,11 +685,35 @@ async def append_to_database(
             f"[API] Created job {job_id} for appending to database: {database_name}"
         )
 
-        # Start background task for rebuild with provided config file
+        # Resolve config_file_id → ExcelConfigManifest → s3_key for append
+        excel_service = get_excel_config_service()
+        append_config_manifest = await excel_service.get_manifest(
+            UUID(request.config_file_id)
+        )
+        if not append_config_manifest:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Configuration not found: {request.config_file_id}",
+            )
+        if not current_user.is_admin:
+            append_perm = await excel_service.get_user_permission(
+                UUID(request.config_file_id), user_id
+            )
+            if not append_perm:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied to this configuration",
+                )
+        append_config_s3_key = append_config_manifest.s3_key
+        logging.info(
+            f"[API] Resolved append config manifest to s3_key: {append_config_s3_key}"
+        )
+
+        # Start background task for rebuild with resolved config s3_key
         task = asyncio.create_task(
             builder_service.start_database_build(
                 job_id=job_id,
-                config_file=request.config_file,
+                config_file=append_config_s3_key,
                 database_name=database_name,
                 files_metadata=all_files_metadata,
                 drop_empty_columns=request.drop_empty_columns,

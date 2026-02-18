@@ -5,6 +5,7 @@ Processing API routes for GRAAL amendment processing.
 import logging
 import logging.config
 from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
@@ -21,6 +22,7 @@ from graal.api.services.authorization_service import (
     DbRole,
     get_authorization_service,
 )
+from graal.api.services.excel_config_service import get_excel_config_service
 from graal.utils.s3.s3_service import get_s3_service
 
 logging.config.fileConfig("logging.conf")
@@ -161,29 +163,52 @@ async def process_amendments(  # noqa: C901
             user=current_user,
         )
 
-    # Validate config file exists in S3
-    config_file = processing_request.config_file
-    logging.info(f"[API] Validating config file: {config_file}")
+    # Resolve config_file_id (UUID) → ExcelConfigManifest → s3_key
+    config_file_id = processing_request.config_file_id
+    logging.info(f"[API] Resolving config manifest: {config_file_id}")
 
     try:
-        s3_service = get_s3_service()
-        if not await s3_service.config.validate_config_file_exists(config_file):
-            logging.warning(f"[API] Config file not found in S3: {config_file}")
+        excel_service = get_excel_config_service()
+        config_uuid = UUID(config_file_id)
+        manifest = await excel_service.get_manifest(config_uuid)
+        if not manifest:
             raise HTTPException(
                 status_code=404,
-                detail=f"Configuration file '{config_file}' not found in S3",
+                detail=f"Configuration not found: {config_file_id}",
             )
-        logging.info(f"[API] Config file validated successfully: {config_file}")
+        # Non-admins must have explicit access to the config
+        if not current_user.is_admin:
+            perm = await excel_service.get_user_permission(
+                config_uuid, UUID(current_user.user_id)
+            )
+            if not perm:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied to this configuration",
+                )
+        config_s3_key = manifest.s3_key
+        # Defensive check: verify the S3 object still exists
+        s3_service = get_s3_service()
+        if not await s3_service.config.validate_config_file_exists_by_key(
+            config_s3_key
+        ):
+            raise HTTPException(
+                status_code=404,
+                detail="Configuration file not found in S3",
+            )
+        logging.info(f"[API] Config manifest resolved: s3_key={config_s3_key}")
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"[API] Failed to validate config file: {str(e)}")
+        logging.error(f"[API] Failed to resolve config: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to validate configuration file: {str(e)}"
+            status_code=500,
+            detail=f"Failed to validate configuration: {str(e)}",
         ) from e
 
     logging.info(
-        f"[API] Received file upload request - filename: {file.filename}, content_type: {file.content_type}, config_file: {config_file}"
+        f"[API] Received file upload request - filename: {file.filename}, "
+        f"content_type: {file.content_type}, config_s3_key: {config_s3_key}"
     )
 
     if file.filename is None or file.filename == "":
@@ -211,6 +236,7 @@ async def process_amendments(  # noqa: C901
             file_content=file_content,
             filename=file.filename,
             processing_request=processing_request,
+            config_s3_key=config_s3_key,
         )
 
         logging.info(

@@ -404,31 +404,31 @@ class ProcessingConfig(BaseModel):
 class ProcessingRequest(BaseModel):
     """Request model for processing amendments."""
 
-    config_file: str = Field(
+    config_file_id: str = Field(
         ...,
-        min_length=1,
-        max_length=255,
-        description="Name of the configuration Excel file from S3",
+        min_length=36,
+        max_length=36,
+        description="UUID of the Excel configuration manifest (ExcelConfigManifest.id)",
     )
     processing_config: ProcessingConfig = Field(
         ..., description="Processing configuration parameters"
     )
 
-    @field_validator("config_file")
+    @field_validator("config_file_id")
     @classmethod
-    def validate_config_file(cls, v: str) -> str:
-        """Validate config_file field."""
+    def validate_config_file_id(cls, v: str) -> str:
+        """Validate that config_file_id is a valid UUID."""
         if not v or not v.strip():
-            raise ValueError("config_file cannot be empty")
+            raise ValueError("config_file_id cannot be empty")
 
         v = v.strip()
 
-        if not v.endswith(".xlsx"):
-            raise ValueError("config_file must be an Excel file (.xlsx)")
-
-        # Security: only safe characters allowed (including Unicode letters)
-        if not re.match(r"^[a-zA-Z0-9\u00C0-\u024F\s\-_\.()]+\.xlsx$", v):
-            raise ValueError("config_file contains invalid characters")
+        try:
+            UUID(v)
+        except ValueError as exc:
+            raise ValueError(
+                "config_file_id must be a valid UUID (e.g. '3f7a8b2c-1234-5678-abcd-ef0123456789')"
+            ) from exc
 
         return v
 
@@ -484,8 +484,11 @@ class BaseDatabaseOperationRequest(BaseModel):
 class DatabaseBuildRequest(BaseDatabaseOperationRequest):
     """Request to build a similarity database."""
 
-    config_file: str = Field(
-        ..., description="Office configuration Excel file to use", min_length=1
+    config_file_id: str = Field(
+        ...,
+        min_length=36,
+        max_length=36,
+        description="UUID of the Excel configuration manifest to use",
     )
     database_name: str = Field(
         ..., description="Name for the database (without extension)", min_length=1
@@ -493,6 +496,19 @@ class DatabaseBuildRequest(BaseDatabaseOperationRequest):
     file_references: list[FileUploadReference] = Field(
         ..., description="References to uploaded files"
     )
+
+    @field_validator("config_file_id")
+    @classmethod
+    def validate_config_file_id(cls, v: str) -> str:
+        """Validate that config_file_id is a valid UUID."""
+        if not v or not v.strip():
+            raise ValueError("config_file_id cannot be empty")
+        v = v.strip()
+        try:
+            UUID(v)
+        except ValueError as exc:
+            raise ValueError("config_file_id must be a valid UUID") from exc
+        return v
 
     @field_validator("file_references")
     @classmethod
@@ -506,29 +522,27 @@ class DatabaseBuildRequest(BaseDatabaseOperationRequest):
 class AppendDatabaseRequest(BaseDatabaseOperationRequest):
     """Request to append files to an existing database."""
 
-    config_file: str = Field(
-        ..., description="Office configuration Excel file to use", min_length=1
+    config_file_id: str = Field(
+        ...,
+        min_length=36,
+        max_length=36,
+        description="UUID of the Excel configuration manifest to use",
     )
     file_references: list[FileUploadReference] = Field(
         ..., description="References to new files to append"
     )
 
-    @field_validator("config_file")
+    @field_validator("config_file_id")
     @classmethod
-    def validate_config_file(cls, v: str) -> str:
-        """Validate config_file field."""
+    def validate_config_file_id(cls, v: str) -> str:
+        """Validate that config_file_id is a valid UUID."""
         if not v or not v.strip():
-            raise ValueError("config_file cannot be empty")
-
+            raise ValueError("config_file_id cannot be empty")
         v = v.strip()
-
-        if not v.endswith(".xlsx"):
-            raise ValueError("config_file must be an Excel file (.xlsx)")
-
-        # Security: only safe characters allowed (including Unicode letters)
-        if not re.match(r"^[a-zA-Z0-9\u00C0-\u024F\s\-_\.()]+\.xlsx$", v):
-            raise ValueError("config_file contains invalid characters")
-
+        try:
+            UUID(v)
+        except ValueError as exc:
+            raise ValueError("config_file_id must be a valid UUID") from exc
         return v
 
     @field_validator("file_references")

@@ -101,7 +101,7 @@ export interface SimilarityDatabasesListResponse {
 }
 
 export interface ProcessingRequest {
-  config_file: string
+  config_file_id: string
   processing_config: ProcessingConfig
 }
 
@@ -136,7 +136,7 @@ export interface FileReference {
 }
 
 export interface BuildDatabaseRequest {
-  config_file: string
+  config_file_id: string
   database_name: string
   file_references: FileReference[]
   drop_empty_columns?: string[]
@@ -195,7 +195,7 @@ export interface FileUploadResponse {
 }
 
 export interface AppendDatabaseRequest {
-  config_file: string
+  config_file_id: string
   file_references: Array<{
     upload_id: string
     filename: string

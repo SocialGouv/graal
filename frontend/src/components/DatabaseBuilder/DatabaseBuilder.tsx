@@ -248,7 +248,7 @@ export const DatabaseBuilder: React.FC = () => {
   const buildMutation = useMutation({
     mutationFn: (fileReferences: FileReference[]) => {
       return apiService.buildDatabase({
-        config_file: databaseBuilder.selectedConfigFile!,
+        config_file_id: databaseBuilder.selectedConfigFile!,
         database_name: databaseBuilder.databaseName,
         file_references: fileReferences
       })
@@ -304,7 +304,7 @@ export const DatabaseBuilder: React.FC = () => {
       }))
 
       return apiService.appendToDatabase(selectedDatabase, {
-        config_file: databaseBuilder.selectedConfigFile!,
+        config_file_id: databaseBuilder.selectedConfigFile!,
         file_references: newFileReferences
       })
     },

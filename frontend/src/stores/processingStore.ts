@@ -95,6 +95,8 @@ export interface ProcessingState {
 
   // Config file selection
   selectedConfigFile: string | null
+  /** Human-readable file name for display (file_name from ExcelConfigManifest) */
+  selectedConfigFileName: string | null
 
   // Processing configuration
   processingConfig: ProcessingConfig
@@ -123,6 +125,7 @@ export interface ProcessingState {
   setUploadedFile: (file: File | null) => void
   setUploadProgress: (progress: number) => void
   setSelectedConfigFile: (filename: string | null) => void
+  setSelectedConfigFileName: (name: string | null) => void
   setProcessingConfig: (config: ProcessingConfig) => void
   setJobId: (id: string | null) => void
   updateProgress: (
@@ -153,6 +156,7 @@ const initialState = {
   uploadedFile: null,
   uploadProgress: 0,
   selectedConfigFile: null,
+  selectedConfigFileName: null,
   processingConfig: {
     missionShortTitleFilter: [],
     allotments: {
@@ -268,6 +272,12 @@ export const useProcessingStore = create<ProcessingState>((set) => ({
       ...state,
       selectedConfigFile: filename,
       error: null
+    })),
+
+  setSelectedConfigFileName: (name) =>
+    set((state) => ({
+      ...state,
+      selectedConfigFileName: name
     })),
 
   setProcessingConfig: (config) =>
