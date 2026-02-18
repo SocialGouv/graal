@@ -1,3 +1,10 @@
+## [1.43.1](https://github.com/SocialGouv/graal/compare/v1.43.0...v1.43.1) (2026-02-18)
+
+
+### Bug Fixes
+
+* config_file_id usage ([24cb206](https://github.com/SocialGouv/graal/commit/24cb206c6c8d82d3ee54b645891f0b662f19dcdd))
+
 # [1.43.0](https://github.com/SocialGouv/graal/compare/v1.42.0...v1.43.0) (2026-02-18)
 
 
