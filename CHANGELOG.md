@@ -1,3 +1,10 @@
+# [1.44.0](https://github.com/SocialGouv/graal/compare/v1.43.1...v1.44.0) (2026-02-25)
+
+
+### Features
+
+* Add Claude workflows ([f6cc9f3](https://github.com/SocialGouv/graal/commit/f6cc9f3c223597daf497c76506e31bc906cda329))
+
 ## [1.43.1](https://github.com/SocialGouv/graal/compare/v1.43.0...v1.43.1) (2026-02-18)
 
 
