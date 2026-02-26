@@ -1,3 +1,10 @@
+# [1.45.0](https://github.com/SocialGouv/graal/compare/v1.44.2...v1.45.0) (2026-02-26)
+
+
+### Features
+
+* **frontend:** improve landing page layout with DSFR Tile components ([b525387](https://github.com/SocialGouv/graal/commit/b5253877539031ee8eae99618f5e8b34066449de)), closes [#224](https://github.com/SocialGouv/graal/issues/224)
+
 ## [1.44.2](https://github.com/SocialGouv/graal/compare/v1.44.1...v1.44.2) (2026-02-26)
 
 
