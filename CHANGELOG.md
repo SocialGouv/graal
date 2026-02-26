@@ -1,3 +1,10 @@
+## [1.44.2](https://github.com/SocialGouv/graal/compare/v1.44.1...v1.44.2) (2026-02-26)
+
+
+### Bug Fixes
+
+* use fallback empty string for VITE_API_URL in auth buttons ([b5a22db](https://github.com/SocialGouv/graal/commit/b5a22db79d0ddf7d4a5f3afbb6eea65abb5367cc)), closes [#226](https://github.com/SocialGouv/graal/issues/226)
+
 ## [1.44.1](https://github.com/SocialGouv/graal/compare/v1.44.0...v1.44.1) (2026-02-26)
 
 
