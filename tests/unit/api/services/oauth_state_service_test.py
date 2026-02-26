@@ -1,5 +1,6 @@
 """Unit tests for OAuthStateService."""
 
+import uuid
 from datetime import timedelta
 
 import pytest
@@ -15,12 +16,18 @@ from graal.database.models import OAuthAuthRequest
 
 @pytest_asyncio.fixture()
 async def session_factory():
+    # IMPORTANT: isolate test DB operations from the developer's environment.
+    # This suite deletes OAuth request rows during setup.
+    schema_name = f"test_{uuid.uuid4().hex}"
+
     engine = create_async_engine(
         get_database_url(),
         poolclass=NullPool,
+        connect_args={"server_settings": {"search_path": schema_name}},
     )
     oauth_requests_table = Base.metadata.tables[OAuthAuthRequest.__tablename__]
     async with engine.begin() as conn:
+        await conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
         await conn.run_sync(
             lambda sync_conn: Base.metadata.create_all(
                 bind=sync_conn, tables=[oauth_requests_table]
@@ -33,6 +40,8 @@ async def session_factory():
     try:
         yield factory
     finally:
+        async with engine.begin() as conn:
+            await conn.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
         await engine.dispose()
 
 

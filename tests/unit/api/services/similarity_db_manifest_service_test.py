@@ -32,7 +32,15 @@ class _DummyS3Service:
 
 @pytest_asyncio.fixture()
 async def session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    engine = create_async_engine(get_database_url(), poolclass=NullPool)
+    # IMPORTANT: isolate test DB operations from the developer's environment.
+    # This test suite truncates core tables (users, manifests...).
+    schema_name = f"test_{uuid.uuid4().hex}"
+
+    engine = create_async_engine(
+        get_database_url(),
+        poolclass=NullPool,
+        connect_args={"server_settings": {"search_path": schema_name}},
+    )
     tables = [
         Base.metadata.tables["amendment_database_permissions"],
         Base.metadata.tables["similarity_db_manifests"],
@@ -40,6 +48,7 @@ async def session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     ]
 
     async with engine.begin() as conn:
+        await conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
         await conn.run_sync(
             lambda sync_conn: Base.metadata.create_all(bind=sync_conn, tables=tables)
         )
@@ -52,6 +61,8 @@ async def session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     try:
         yield factory
     finally:
+        async with engine.begin() as conn:
+            await conn.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
         await engine.dispose()
 
 
