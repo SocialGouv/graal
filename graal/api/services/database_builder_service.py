@@ -1,7 +1,20 @@
-"""Service for building similarity databases via API."""
+"""Service for building similarity databases via API.
+
+This service is responsible for building a similarity DB parquet and keeping
+the Postgres manifest in sync.
+
+Important invariant:
+    - ``SimilarityDBManifest.id`` is the canonical identifier.
+    - ``SimilarityDBManifest.name`` is a friendly display name and **must not**
+      be used as a unique identifier.
+    - The S3 object key must be unique to avoid collisions when friendly names
+      collide.
+"""
 
 import logging
 import logging.config
+import re
+import unicodedata
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +24,7 @@ from graal.api.services.job_registry import InMemoryJobRegistry
 from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
+from graal.database.enums import DbRoleEnum
 from graal.database.models import AmendmentDatabasePermission, SimilarityDBManifest
 from graal.utils.config.base_config import InputFileConfig
 from graal.utils.s3.s3_service import get_s3_service
@@ -19,6 +33,27 @@ from graal.utils.similarity_db_builder_service import (
 )
 
 logging.config.fileConfig("logging.conf")
+
+
+_NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify_for_s3(value: str) -> str:
+    """Convert an arbitrary string to a safe ASCII slug for S3 keys."""
+
+    value = (value or "").strip()
+    if not value:
+        return "database"
+
+    # Remove accents / diacritics
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+
+    slug = ascii_value.lower().replace("_", " ")
+    slug = _NON_ALNUM_RE.sub("-", slug)
+    slug = re.sub(r"-+", "-", slug).strip("-")
+
+    return slug or "database"
 
 
 class DatabaseBuilderService:
@@ -35,11 +70,26 @@ class DatabaseBuilderService:
         self.s3_service = get_s3_service()
         self.manifest_service = get_similarity_db_manifest_service()
 
+    @staticmethod
+    def make_unique_s3_database_name(display_name: str, manifest_id: uuid.UUID) -> str:
+        """Build a human-readable but collision-proof S3 object name.
+
+        The returned value is the *database name* expected by DatabaseS3Service
+        (relative to the similarity folder, without extension).
+        """
+
+        slug = _slugify_for_s3(display_name)
+        short_id = str(manifest_id).split("-")[0]
+        return f"{slug}__{short_id}"
+
     async def start_database_build(
         self,
         job_id: str,
         config_file: str,
-        database_name: str,
+        display_name: str,
+        s3_database_name: str,
+        manifest_id: uuid.UUID,
+        is_new_manifest: bool,
         files_metadata: list[dict],
         drop_empty_columns: list[str],
         similarity_threshold: float,
@@ -52,7 +102,10 @@ class DatabaseBuilderService:
         Args:
             job_id: Unique job identifier
             config_file: Office configuration Excel file to use
-            database_name: Name for the database (without extension)
+            display_name: Friendly database name (not necessarily unique)
+            s3_database_name: Collision-proof S3 database key (relative, no extension)
+            manifest_id: SimilarityDBManifest UUID
+            is_new_manifest: True when creating a new manifest, False when appending
             files_metadata: List of file metadata dictionaries
             drop_empty_columns: Columns where empty rows should be dropped
             similarity_threshold: Threshold for Levenshtein refinement
@@ -63,7 +116,14 @@ class DatabaseBuilderService:
         try:
             # Update job status to running
             self.job_registry.update_job(job_id, status="running", percent=0)
-            logging.info(f"[Job {job_id}] Starting database build: {database_name}")
+            logging.info(
+                "[Job %s] Starting database build: display_name=%s, s3_database_name=%s, manifest_id=%s, is_new=%s",
+                job_id,
+                display_name,
+                s3_database_name,
+                manifest_id,
+                is_new_manifest,
+            )
 
             # Load amendment files from temporary upload directory
             amendment_files = await self._load_amendment_files(job_id, files_metadata)
@@ -97,25 +157,44 @@ class DatabaseBuilderService:
             self.job_registry.update_job(
                 job_id, percent=80, message="Uploading database to S3..."
             )
-            logging.info(f"[Job {job_id}] Uploading database to S3: {database_name}")
+            logging.info(
+                "[Job %s] Uploading database to S3: %s",
+                job_id,
+                s3_database_name,
+            )
 
-            await self.s3_service.database.upload_database_parquet(df, database_name)
+            await self.s3_service.database.upload_database_parquet(df, s3_database_name)
 
             logging.info(f"[Job {job_id}] Database uploaded successfully")
 
-            # Create or update PostgreSQL similarity database manifest
-            await self._create_or_update_manifest(
-                job_id=job_id,
-                database_name=database_name,
-                files_metadata=files_metadata,
-                df=df,
-                drop_empty_columns=drop_empty_columns,
-                similarity_threshold=similarity_threshold,
-                eps=eps,
-                group_by_columns=group_by_columns,
-                config_file=config_file,
-                user_id=user_id,
-            )
+            if is_new_manifest:
+                await self._create_new_manifest(
+                    job_id=job_id,
+                    manifest_id=manifest_id,
+                    display_name=display_name,
+                    s3_database_name=s3_database_name,
+                    files_metadata=files_metadata,
+                    df=df,
+                    drop_empty_columns=drop_empty_columns,
+                    similarity_threshold=similarity_threshold,
+                    eps=eps,
+                    group_by_columns=group_by_columns,
+                    config_file=config_file,
+                    user_id=user_id,
+                )
+            else:
+                await self._update_existing_manifest_by_id(
+                    job_id=job_id,
+                    manifest_id=manifest_id,
+                    s3_database_name=s3_database_name,
+                    files_metadata=files_metadata,
+                    df=df,
+                    drop_empty_columns=drop_empty_columns,
+                    similarity_threshold=similarity_threshold,
+                    eps=eps,
+                    group_by_columns=group_by_columns,
+                    config_file=config_file,
+                )
 
             # Cleanup uploaded files from temp directory
             await self._cleanup_temp_files(job_id, amendment_files)
@@ -186,10 +265,11 @@ class DatabaseBuilderService:
 
         return amendment_files
 
-    async def _create_or_update_manifest(
+    async def _update_existing_manifest_by_id(
         self,
         job_id: str,
-        database_name: str,
+        manifest_id: uuid.UUID,
+        s3_database_name: str,
         files_metadata: list[dict],
         df,
         drop_empty_columns: list[str],
@@ -197,40 +277,23 @@ class DatabaseBuilderService:
         eps: float,
         group_by_columns: list[str],
         config_file: str,
-        user_id: uuid.UUID,
     ) -> None:
-        """Create or update PostgreSQL similarity database manifest.
-
-        Args:
-            job_id: Unique job identifier
-            database_name: Name for the database
-            files_metadata: List of file metadata dictionaries
-            df: Built DataFrame
-            drop_empty_columns: Columns where empty rows should be dropped
-            similarity_threshold: Threshold for Levenshtein refinement
-            eps: Epsilon value for DBSCAN clustering
-            group_by_columns: Columns to group by during clustering
-            config_file: Office configuration Excel file used
-            user_id: User ID who initiated the build
-        """
+        """Update an existing PostgreSQL similarity database manifest by ID."""
         self.job_registry.update_job(
             job_id, percent=85, message="Updating database manifest..."
         )
         logging.info(
-            f"[Job {job_id}] Creating/updating PostgreSQL database manifest for: {database_name}"
+            "[Job %s] Updating PostgreSQL database manifest id=%s (s3_database_name=%s)",
+            job_id,
+            manifest_id,
+            s3_database_name,
         )
 
         # Prepare input files data
         input_files_data = self._prepare_input_files_data(files_metadata)
 
         # Get S3 metadata
-        s3_metadata = await self._get_s3_metadata(job_id, database_name)
-
-        # Construct S3 paths
-        s3_folder = self.s3_service.similarity_db_folder
-        if s3_folder and not s3_folder.endswith("/"):
-            s3_folder += "/"
-        s3_file_path = f"{s3_folder}{database_name}.parquet"
+        s3_metadata = await self._get_s3_metadata(job_id, s3_database_name)
 
         # Extract project names for metadata
         projects = list({f.get("origin_project", "unknown") for f in files_metadata})
@@ -245,32 +308,110 @@ class DatabaseBuilderService:
             "config_file": config_file,
         }
 
-        # Check if manifest already exists (for append operations)
-        existing_manifest = await self.manifest_service.get_manifest_by_s3_path(
-            s3_file_path
+        from graal.database.schemas import SimilarityDBManifestUpdate
+
+        update_data = SimilarityDBManifestUpdate(
+            size_bytes=s3_metadata.get("size", 0),
+            row_count=len(df),
+            last_modified=s3_metadata.get("last_modified", datetime.now(timezone.utc)),
+            db_metadata=db_metadata,
+            input_files={"files": input_files_data},
+            is_active=True,
         )
 
-        if existing_manifest:
-            await self._update_existing_manifest(
-                job_id,
-                existing_manifest,
-                s3_metadata,
-                len(df),
-                db_metadata,
-                input_files_data,
+        await self.manifest_service.update_manifest(manifest_id, update_data)
+
+    async def _create_new_manifest(
+        self,
+        job_id: str,
+        manifest_id: uuid.UUID,
+        display_name: str,
+        s3_database_name: str,
+        files_metadata: list[dict],
+        df,
+        drop_empty_columns: list[str],
+        similarity_threshold: float,
+        eps: float,
+        group_by_columns: list[str],
+        config_file: str,
+        user_id: uuid.UUID,
+    ) -> None:
+        """Create a new manifest and assign owner permissions.
+
+        This is called only for *create* builds. Append builds must target an
+        existing manifest by ID.
+        """
+
+        self.job_registry.update_job(
+            job_id, percent=85, message="Creating database manifest..."
+        )
+
+        logging.info(
+            "[Job %s] Creating new similarity DB manifest id=%s (display_name=%s, s3_database_name=%s)",
+            job_id,
+            manifest_id,
+            display_name,
+            s3_database_name,
+        )
+
+        input_files_data = self._prepare_input_files_data(files_metadata)
+        s3_metadata = await self._get_s3_metadata(job_id, s3_database_name)
+
+        s3_folder = self.s3_service.similarity_db_folder
+        if s3_folder and not s3_folder.endswith("/"):
+            s3_folder += "/"
+        s3_file_path = f"{s3_folder}{s3_database_name}.parquet"
+
+        projects = list({f.get("origin_project", "unknown") for f in files_metadata})
+        db_metadata = {
+            "projects": projects,
+            "drop_empty_columns": drop_empty_columns,
+            "similarity_threshold": similarity_threshold,
+            "eps": eps,
+            "group_by_columns": group_by_columns,
+            "config_file": config_file,
+        }
+
+        # Defensive: ensure we never overwrite an existing manifest/file.
+        existing = await self.manifest_service.get_manifest_by_s3_path(s3_file_path)
+        if existing is not None:
+            raise RuntimeError(
+                "Refusing to create manifest: S3 path already exists "
+                f"(s3_file_path={s3_file_path}, existing_manifest_id={existing.id})."
             )
-        else:
-            await self._create_new_manifest(
-                job_id,
-                database_name,
-                s3_folder,
-                s3_file_path,
-                s3_metadata,
-                len(df),
-                db_metadata,
-                input_files_data,
-                user_id,
-            )
+
+        async with self.manifest_service._session_factory() as session:
+            # IMPORTANT: we must ensure the manifest row exists before inserting
+            # permissions, otherwise we can hit FK violations depending on ORM
+            # flush ordering (there is no relationship configured between the
+            # two mappers).
+            async with session.begin():
+                manifest = SimilarityDBManifest(
+                    id=manifest_id,
+                    created_by_user_id=user_id,
+                    name=display_name,
+                    s3_folder_path=s3_folder or "",
+                    s3_file_path=s3_file_path,
+                    size_bytes=s3_metadata.get("size", 0),
+                    row_count=len(df),
+                    last_modified=s3_metadata.get(
+                        "last_modified", datetime.now(timezone.utc)
+                    ),
+                    db_metadata=db_metadata,
+                    input_files={"files": input_files_data},
+                    is_active=True,
+                )
+                session.add(manifest)
+                await session.flush()
+
+                perm = AmendmentDatabasePermission(
+                    db_id=manifest_id,
+                    user_id=user_id,
+                    role=DbRoleEnum.owner,
+                )
+                session.add(perm)
+
+            await session.refresh(manifest)
 
     def _prepare_input_files_data(self, files_metadata: list[dict]) -> list[dict]:
         """Prepare input files data for PostgreSQL storage.
@@ -327,104 +468,6 @@ class DatabaseBuilderService:
                 "size": 0,
                 "last_modified": datetime.now(timezone.utc),
             }
-
-    async def _update_existing_manifest(
-        self,
-        job_id: str,
-        existing_manifest,
-        s3_metadata: dict,
-        row_count: int,
-        db_metadata: dict,
-        input_files_data: list[dict],
-    ) -> None:
-        """Update an existing manifest.
-
-        Args:
-            job_id: Unique job identifier
-            existing_manifest: Existing manifest object
-            s3_metadata: S3 metadata dictionary
-            row_count: Number of rows in the database
-            db_metadata: Database metadata dictionary
-            input_files_data: List of input file data dictionaries
-        """
-        logging.info(
-            f"[Job {job_id}] Updating existing manifest {existing_manifest.id}"
-        )
-        from graal.database.schemas import SimilarityDBManifestUpdate
-
-        update_data = SimilarityDBManifestUpdate(
-            size_bytes=s3_metadata.get("size", 0),
-            row_count=row_count,
-            last_modified=s3_metadata.get("last_modified", datetime.now(timezone.utc)),
-            db_metadata=db_metadata,
-            input_files={"files": input_files_data},
-            is_active=True,
-        )
-        await self.manifest_service.update_manifest(existing_manifest.id, update_data)
-        logging.info(
-            f"[Job {job_id}] Similarity database manifest updated successfully"
-        )
-
-    async def _create_new_manifest(
-        self,
-        job_id: str,
-        database_name: str,
-        s3_folder: str,
-        s3_file_path: str,
-        s3_metadata: dict,
-        row_count: int,
-        db_metadata: dict,
-        input_files_data: list[dict],
-        user_id: uuid.UUID,
-    ) -> None:
-        """Create a new manifest.
-
-        Args:
-            job_id: Unique job identifier
-            database_name: Name for the database
-            s3_folder: S3 folder path
-            s3_file_path: S3 file path
-            s3_metadata: S3 metadata dictionary
-            row_count: Number of rows in the database
-            db_metadata: Database metadata dictionary
-            input_files_data: List of input file data dictionaries
-            user_id: User ID who initiated the build
-        """
-        logging.info(f"[Job {job_id}] Creating new manifest")
-
-        # Transaction-safe creation of manifest + owner permission
-        async with self.manifest_service._session_factory() as session:
-            manifest = SimilarityDBManifest(
-                created_by_user_id=user_id,
-                name=database_name,
-                s3_folder_path=s3_folder or "",
-                s3_file_path=s3_file_path,
-                size_bytes=s3_metadata.get("size", 0),
-                row_count=row_count,
-                last_modified=s3_metadata.get(
-                    "last_modified", datetime.now(timezone.utc)
-                ),
-                db_metadata=db_metadata,
-                input_files={"files": input_files_data},
-                is_active=True,
-            )
-            session.add(manifest)
-            await session.flush()  # ensure manifest.id is available
-
-            # Assign creator as owner
-            perm = AmendmentDatabasePermission(
-                db_id=manifest.id,
-                user_id=user_id,
-                role="owner",
-            )
-            session.add(perm)
-
-            await session.commit()
-            await session.refresh(manifest)
-
-        logging.info(
-            f"[Job {job_id}] Similarity database manifest created successfully"
-        )
 
     async def _cleanup_temp_files(
         self, job_id: str, amendment_files: dict[Path, InputFileConfig]

@@ -41,198 +41,13 @@ def _make_manifest(manifest_id: str, name: str):
     return SimpleNamespace(
         id=manifest_id,
         name=name,
+        is_active=True,
         size_bytes=123,
+        s3_file_path=f"similarity_dbs/{name}.parquet",
         last_modified=datetime.now(timezone.utc),
         created_at=datetime.now(timezone.utc),
         input_files={"files": []},
     )
-
-
-class TestAppendDatabasePermissions:
-    """Tests for POST /api/v1/databases/{name}/append permission checks."""
-
-    def _patch_auth_as_user(self, user_id: str, is_admin: bool):
-        user = SimpleNamespace(user_id=user_id, is_admin=is_admin)
-        mock_service = AsyncMock()
-        mock_service.get_current_user = AsyncMock(return_value=user)
-        mock_service.require_admin = AsyncMock(return_value=user)
-        return patch(
-            "graal.api.dependencies.auth.get_authorization_service",
-            return_value=mock_service,
-        )
-
-    @pytest.mark.usefixtures("mock_logging_config")
-    def test_append_forbidden_for_reader(self, client: TestClient, mock_session_cookie):
-        manifest = _make_manifest(
-            "11111111-1111-1111-1111-111111111111",
-            "DB1",
-        )
-
-        mock_manifest_service = AsyncMock()
-        mock_manifest_service.list_active_manifests = AsyncMock(return_value=[manifest])
-
-        mock_perm_service = AsyncMock()
-        mock_perm_service.get_user_role = AsyncMock(return_value=DbRoleEnum.reader)
-
-        with (
-            self._patch_auth_as_user(
-                user_id="00000000-0000-0000-0000-000000000001",
-                is_admin=False,
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_similarity_db_manifest_service",
-                return_value=mock_manifest_service,
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_database_permission_service",
-                return_value=mock_perm_service,
-            ),
-        ):
-            response = client.post(
-                "/api/v1/databases/DB1/append",
-                headers=mock_session_cookie,
-                json={
-                    "config_file": "Fichier de configuration GRAAL - DSS - latest.xlsx",
-                    "file_references": [
-                        {
-                            "upload_id": "hash1",
-                            "filename": "file.json",
-                            "file_hash": "hash1",
-                            "s3_key": "pool/hash1-file.json",
-                            "metadata": {
-                                "default_processing_timestamp": 1700000000,
-                                "origin_project": "PLFSS 2024",
-                            },
-                        }
-                    ],
-                },
-            )
-
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    @pytest.mark.usefixtures("mock_logging_config")
-    def test_append_allowed_for_writer(self, client: TestClient, mock_session_cookie):
-        manifest = _make_manifest(
-            "11111111-1111-1111-1111-111111111111",
-            "DB1",
-        )
-
-        mock_manifest_service = AsyncMock()
-        mock_manifest_service.list_active_manifests = AsyncMock(return_value=[manifest])
-
-        mock_perm_service = AsyncMock()
-        mock_perm_service.get_user_role = AsyncMock(return_value=DbRole.writer)
-
-        class DummyJobRegistry:
-            def create_job(self, *args, **kwargs):
-                return None
-
-        class DummyBuilderService:
-            def __init__(self):
-                self.job_registry = DummyJobRegistry()
-
-            async def start_database_build(self, *args, **kwargs):
-                return None
-
-        class DummyPool:
-            async def download_from_input_pool(self, _s3_key: str) -> bytes:
-                return b"dummy"
-
-        class DummyS3Service:
-            def __init__(self):
-                self.pool = DummyPool()
-
-        with (
-            self._patch_auth_as_user(
-                user_id="00000000-0000-0000-0000-000000000001",
-                is_admin=False,
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_similarity_db_manifest_service",
-                return_value=mock_manifest_service,
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_database_permission_service",
-                return_value=mock_perm_service,
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_database_builder_service",
-                return_value=DummyBuilderService(),
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_s3_service",
-                return_value=DummyS3Service(),
-            ),
-        ):
-            response = client.post(
-                "/api/v1/databases/DB1/append",
-                headers=mock_session_cookie,
-                json={
-                    "config_file": "Fichier de configuration GRAAL - DSS - latest.xlsx",
-                    "file_references": [
-                        {
-                            "upload_id": "hash1",
-                            "filename": "file.json",
-                            "file_hash": "hash1",
-                            "s3_key": "pool/hash1-file.json",
-                            "metadata": {
-                                "default_processing_timestamp": 1700000000,
-                                "origin_project": "PLFSS 2024",
-                            },
-                        }
-                    ],
-                },
-            )
-
-        assert response.status_code == status.HTTP_200_OK
-        payload = response.json()
-        assert "job_id" in payload
-
-    @pytest.mark.usefixtures("mock_logging_config")
-    def test_append_unknown_database_returns_404(
-        self, client: TestClient, mock_session_cookie
-    ):
-        mock_manifest_service = AsyncMock()
-        mock_manifest_service.list_active_manifests = AsyncMock(return_value=[])
-
-        mock_perm_service = AsyncMock()
-        mock_perm_service.get_user_role = AsyncMock(return_value=DbRoleEnum.writer)
-
-        with (
-            self._patch_auth_as_user(
-                user_id="00000000-0000-0000-0000-000000000001",
-                is_admin=False,
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_similarity_db_manifest_service",
-                return_value=mock_manifest_service,
-            ),
-            patch(
-                "graal.api.routes.database_builder.get_database_permission_service",
-                return_value=mock_perm_service,
-            ),
-        ):
-            response = client.post(
-                "/api/v1/databases/UNKNOWN_DB/append",
-                headers=mock_session_cookie,
-                json={
-                    "config_file": "Fichier de configuration GRAAL - DSS - latest.xlsx",
-                    "file_references": [
-                        {
-                            "upload_id": "hash1",
-                            "filename": "file.json",
-                            "file_hash": "hash1",
-                            "s3_key": "pool/hash1-file.json",
-                            "metadata": {
-                                "default_processing_timestamp": 1700000000,
-                                "origin_project": "PLFSS 2024",
-                            },
-                        }
-                    ],
-                },
-            )
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestAppendableDatabases:
@@ -326,8 +141,8 @@ class TestAppendableDatabases:
         mock_perm_service.list_databases_for_user_with_roles.assert_not_awaited()
 
 
-class TestDatabaseManifestPermissions:
-    """Tests for GET /api/v1/databases/{name}/manifest permission checks."""
+class TestDatabaseManifestPermissionsById:
+    """Tests for GET /api/v1/databases/by-id/{db_id}/manifest permission checks."""
 
     def _patch_auth_as_user(self, user_id: str, is_admin: bool):
         user = SimpleNamespace(user_id=user_id, is_admin=is_admin)
@@ -349,7 +164,7 @@ class TestDatabaseManifestPermissions:
         )
 
         mock_manifest_service = AsyncMock()
-        mock_manifest_service.list_active_manifests = AsyncMock(return_value=[manifest])
+        mock_manifest_service.get_manifest = AsyncMock(return_value=manifest)
 
         mock_perm_service = AsyncMock()
         mock_perm_service.get_user_role = AsyncMock(return_value=None)
@@ -369,7 +184,7 @@ class TestDatabaseManifestPermissions:
             ),
         ):
             response = client.get(
-                "/api/v1/databases/DB1/manifest",
+                f"/api/v1/databases/by-id/{manifest.id}/manifest",
                 headers=mock_session_cookie,
             )
 
@@ -383,7 +198,7 @@ class TestDatabaseManifestPermissions:
         )
 
         mock_manifest_service = AsyncMock()
-        mock_manifest_service.list_active_manifests = AsyncMock(return_value=[manifest])
+        mock_manifest_service.get_manifest = AsyncMock(return_value=manifest)
 
         mock_perm_service = AsyncMock()
         mock_perm_service.get_user_role = AsyncMock(return_value=DbRoleEnum.reader)
@@ -403,11 +218,226 @@ class TestDatabaseManifestPermissions:
             ),
         ):
             response = client.get(
-                "/api/v1/databases/DB1/manifest",
+                f"/api/v1/databases/by-id/{manifest.id}/manifest",
                 headers=mock_session_cookie,
             )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["database_name"] == "DB1"
-        assert data["total_files"] == 0
+        payload = response.json()
+        assert payload["database_name"] == "DB1"
+
+    @pytest.mark.usefixtures("mock_logging_config")
+    def test_manifest_unknown_database_returns_404(
+        self, client: TestClient, mock_session_cookie
+    ):
+        mock_manifest_service = AsyncMock()
+        mock_manifest_service.get_manifest = AsyncMock(return_value=None)
+
+        with (
+            self._patch_auth_as_user(
+                user_id="00000000-0000-0000-0000-000000000001",
+                is_admin=False,
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_similarity_db_manifest_service",
+                return_value=mock_manifest_service,
+            ),
+        ):
+            response = client.get(
+                "/api/v1/databases/by-id/33333333-3333-3333-3333-333333333333/manifest",
+                headers=mock_session_cookie,
+            )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestAppendDatabasePermissionsById:
+    """Tests for POST /api/v1/databases/by-id/{db_id}/append permission checks."""
+
+    def _patch_auth_as_user(self, user_id: str, is_admin: bool):
+        user = SimpleNamespace(user_id=user_id, is_admin=is_admin)
+        mock_service = AsyncMock()
+        mock_service.get_current_user = AsyncMock(return_value=user)
+        mock_service.require_admin = AsyncMock(return_value=user)
+        return patch(
+            "graal.api.dependencies.auth.get_authorization_service",
+            return_value=mock_service,
+        )
+
+    @pytest.mark.usefixtures("mock_logging_config")
+    def test_append_forbidden_for_reader(self, client: TestClient, mock_session_cookie):
+        manifest = _make_manifest(
+            "11111111-1111-1111-1111-111111111111",
+            "DB1",
+        )
+
+        mock_manifest_service = AsyncMock()
+        mock_manifest_service.get_manifest = AsyncMock(return_value=manifest)
+
+        mock_perm_service = AsyncMock()
+        mock_perm_service.get_user_role = AsyncMock(return_value=DbRoleEnum.reader)
+
+        with (
+            self._patch_auth_as_user(
+                user_id="00000000-0000-0000-0000-000000000001",
+                is_admin=False,
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_similarity_db_manifest_service",
+                return_value=mock_manifest_service,
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_database_permission_service",
+                return_value=mock_perm_service,
+            ),
+        ):
+            response = client.post(
+                f"/api/v1/databases/by-id/{manifest.id}/append",
+                headers=mock_session_cookie,
+                json={
+                    "config_file_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "file_references": [
+                        {
+                            "upload_id": "hash1",
+                            "filename": "file.json",
+                            "file_hash": "hash1",
+                            "s3_key": "pool/hash1-file.json",
+                            "metadata": {
+                                "default_processing_timestamp": 1700000000,
+                                "origin_project": "PLFSS 2024",
+                            },
+                        }
+                    ],
+                },
+            )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    @pytest.mark.usefixtures("mock_logging_config")
+    def test_append_allowed_for_writer(self, client: TestClient, mock_session_cookie):
+        manifest = _make_manifest(
+            "11111111-1111-1111-1111-111111111111",
+            "DB1",
+        )
+
+        mock_manifest_service = AsyncMock()
+        mock_manifest_service.get_manifest = AsyncMock(return_value=manifest)
+
+        mock_perm_service = AsyncMock()
+        mock_perm_service.get_user_role = AsyncMock(return_value=DbRole.writer)
+
+        class DummyJobRegistry:
+            def create_job(self, *args, **kwargs):
+                return None
+
+        class DummyBuilderService:
+            def __init__(self):
+                self.job_registry = DummyJobRegistry()
+
+            async def start_database_build(self, *args, **kwargs):
+                return None
+
+        class DummyPool:
+            async def download_from_input_pool(self, _s3_key: str) -> bytes:
+                return b"dummy"
+
+        class DummyS3Service:
+            def __init__(self):
+                self.similarity_db_folder = "similarity_dbs"
+                self.pool = DummyPool()
+
+        class DummyExcelConfigService:
+            async def get_manifest(self, _config_file_id):
+                return SimpleNamespace(s3_key="configs/config.xlsx")
+
+            async def get_user_permission(self, _config_file_id, _user_id):
+                return True
+
+        with (
+            self._patch_auth_as_user(
+                user_id="00000000-0000-0000-0000-000000000001",
+                is_admin=False,
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_similarity_db_manifest_service",
+                return_value=mock_manifest_service,
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_database_permission_service",
+                return_value=mock_perm_service,
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_database_builder_service",
+                return_value=DummyBuilderService(),
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_s3_service",
+                return_value=DummyS3Service(),
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_excel_config_service",
+                return_value=DummyExcelConfigService(),
+            ),
+        ):
+            response = client.post(
+                f"/api/v1/databases/by-id/{manifest.id}/append",
+                headers=mock_session_cookie,
+                json={
+                    "config_file_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "file_references": [
+                        {
+                            "upload_id": "hash1",
+                            "filename": "file.json",
+                            "file_hash": "hash1",
+                            "s3_key": "pool/hash1-file.json",
+                            "metadata": {
+                                "default_processing_timestamp": 1700000000,
+                                "origin_project": "PLFSS 2024",
+                            },
+                        }
+                    ],
+                },
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        payload = response.json()
+        assert "job_id" in payload
+
+    @pytest.mark.usefixtures("mock_logging_config")
+    def test_append_unknown_database_returns_404(
+        self, client: TestClient, mock_session_cookie
+    ):
+        mock_manifest_service = AsyncMock()
+        mock_manifest_service.get_manifest = AsyncMock(return_value=None)
+
+        with (
+            self._patch_auth_as_user(
+                user_id="00000000-0000-0000-0000-000000000001",
+                is_admin=False,
+            ),
+            patch(
+                "graal.api.routes.database_builder.get_similarity_db_manifest_service",
+                return_value=mock_manifest_service,
+            ),
+        ):
+            response = client.post(
+                "/api/v1/databases/by-id/33333333-3333-3333-3333-333333333333/append",
+                headers=mock_session_cookie,
+                json={
+                    "config_file_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "file_references": [
+                        {
+                            "upload_id": "hash1",
+                            "filename": "file.json",
+                            "file_hash": "hash1",
+                            "s3_key": "pool/hash1-file.json",
+                            "metadata": {
+                                "default_processing_timestamp": 1700000000,
+                                "origin_project": "PLFSS 2024",
+                            },
+                        }
+                    ],
+                },
+            )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND

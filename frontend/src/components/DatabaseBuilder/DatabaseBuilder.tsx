@@ -168,9 +168,9 @@ export const DatabaseBuilder: React.FC = () => {
     isLoading: isLoadingManifest,
     error: manifestQueryError
   } = useQuery({
-    queryKey: ['database-manifest', selectedDatabase],
-    queryFn: () => apiService.getDatabaseManifest(selectedDatabase),
-    enabled: mode === 'append' && selectedDatabase !== '',
+    queryKey: ['database-manifest', selectedDatabaseId],
+    queryFn: () => apiService.getDatabaseManifest(selectedDatabaseId),
+    enabled: mode === 'append' && selectedDatabaseId !== '',
     retry: false
   })
 
@@ -303,7 +303,7 @@ export const DatabaseBuilder: React.FC = () => {
         }
       }))
 
-      return apiService.appendToDatabase(selectedDatabase, {
+      return apiService.appendToDatabase(selectedDatabaseId, {
         config_file_id: databaseBuilder.selectedConfigFile!,
         file_references: newFileReferences
       })
@@ -514,7 +514,7 @@ export const DatabaseBuilder: React.FC = () => {
 
     // Validate append mode specific requirements
     const validateAppendMode = (): string | null => {
-      if (!selectedDatabase) {
+      if (!selectedDatabaseId) {
         return 'Veuillez sélectionner une base de données existante'
       }
       return null
@@ -710,14 +710,14 @@ export const DatabaseBuilder: React.FC = () => {
                 label="Base de données existante"
                 hint="Sélectionnez la base de données à laquelle ajouter des fichiers"
                 nativeSelectProps={{
-                  value: selectedDatabase,
+                  value: selectedDatabaseId,
                   onChange: (e) => {
-                    const nextName = e.target.value
-                    setSelectedDatabase(nextName)
+                    const nextId = e.target.value
                     const nextDb = appendableDatabaseList?.databases.find(
-                      (db) => db.name === nextName
+                      (db) => db.id === nextId
                     )
-                    setSelectedDatabaseId(nextDb?.id ?? '')
+                    setSelectedDatabaseId(nextId)
+                    setSelectedDatabase(nextDb?.name ?? '')
                     setBuildError(null)
                     setManifestError(null)
                   },
@@ -726,7 +726,7 @@ export const DatabaseBuilder: React.FC = () => {
               >
                 <option value="">Sélectionner une base de données</option>
                 {appendableDatabaseList?.databases.map((db) => (
-                  <option key={db.id} value={db.name}>
+                  <option key={db.id} value={db.id}>
                     {db.name}
                   </option>
                 ))}
@@ -815,7 +815,7 @@ export const DatabaseBuilder: React.FC = () => {
                       !databaseBuilder.databaseName
                       ? 0.5
                       : 1
-                    : !databaseBuilder.selectedConfigFile || !selectedDatabase
+                    : !databaseBuilder.selectedConfigFile || !selectedDatabaseId
                       ? 0.5
                       : 1,
                 pointerEvents:
@@ -824,7 +824,7 @@ export const DatabaseBuilder: React.FC = () => {
                       !databaseBuilder.databaseName
                       ? 'none'
                       : 'auto'
-                    : !databaseBuilder.selectedConfigFile || !selectedDatabase
+                    : !databaseBuilder.selectedConfigFile || !selectedDatabaseId
                       ? 'none'
                       : 'auto'
               }}
@@ -855,7 +855,7 @@ export const DatabaseBuilder: React.FC = () => {
                   mode === 'create'
                     ? !databaseBuilder.selectedConfigFile ||
                       !databaseBuilder.databaseName
-                    : !databaseBuilder.selectedConfigFile || !selectedDatabase
+                    : !databaseBuilder.selectedConfigFile || !selectedDatabaseId
                 }
               />
             </button>
@@ -966,7 +966,7 @@ export const DatabaseBuilder: React.FC = () => {
                   pendingFiles.length === 0 ||
                   uploadMutation.isPending
                 : !databaseBuilder.selectedConfigFile ||
-                  !selectedDatabase ||
+                  !selectedDatabaseId ||
                   pendingFiles.length === 0 ||
                   uploadMutation.isPending
             }
@@ -985,7 +985,7 @@ export const DatabaseBuilder: React.FC = () => {
                   fichiers
                 </p>
               )
-            : (!databaseBuilder.selectedConfigFile || !selectedDatabase) && (
+            : (!databaseBuilder.selectedConfigFile || !selectedDatabaseId) && (
                 <p className={fr.cx('fr-text--sm', 'fr-hint-text', 'fr-mt-2w')}>
                   Veuillez compléter les étapes 1 et 2 avant de télécharger des
                   fichiers
@@ -1076,7 +1076,7 @@ export const DatabaseBuilder: React.FC = () => {
                   databaseBuilder.uploadedFiles.length === 0 ||
                   buildMutation.isPending
                 : !databaseBuilder.selectedConfigFile ||
-                  !selectedDatabase ||
+                  !selectedDatabaseId ||
                   databaseBuilder.uploadedFiles.length === 0 ||
                   appendMutation.isPending ||
                   isDbBuildOngoingBlocking

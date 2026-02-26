@@ -343,7 +343,7 @@ export interface paths {
      *
      *     Example request:
      *         {
-     *             "config_file": "Fichier de configuration GRAAL - DSS - latest.xlsx",
+     *             "config_file_id": "550e8400-e29b-41d4-a716-446655440000",
      *             "database_name": "PLFSS_2024",
      *             "files_metadata": [
      *                 {
@@ -397,7 +397,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/v1/databases/{database_name}/append': {
+  '/api/v1/databases/by-id/{db_id}/append': {
     parameters: {
       query?: never
       header?: never
@@ -407,29 +407,17 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Append To Database
-     * @description Append new files to an existing database by rebuilding with all files.
-     *
-     *     This endpoint loads the existing database manifest, combines the existing files
-     *     with the new file references, and triggers a full rebuild of the database.
-     *
-     *     Args:
-     *         database_name: Name of the database to append to
-     *         request: AppendDatabaseRequest with new files and build configuration
-     *         http_request: FastAPI request object
-     *         session: Session cookie value
-     *
-     *     Returns:
-     *         ProcessingResponse: Job information for tracking append progress
+     * Append To Database By Id
+     * @description Append to an existing database by manifest UUID (canonical endpoint).
      */
-    post: operations['append_to_database_api_v1_databases__database_name__append_post']
+    post: operations['append_to_database_by_id_api_v1_databases_by_id__db_id__append_post']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/api/v1/databases/{database_name}/manifest': {
+  '/api/v1/databases/by-id/{db_id}/manifest': {
     parameters: {
       query?: never
       header?: never
@@ -437,20 +425,10 @@ export interface paths {
       cookie?: never
     }
     /**
-     * Get Database Manifest
-     * @description Retrieve the manifest for a database showing all input files.
-     *
-     *     Args:
-     *         database_name: Name of the database
-     *         current_user: Authenticated user (injected by FastAPI)
-     *
-     *     Returns:
-     *         DatabaseManifestResponse: Manifest with list of files and metadata
-     *
-     *     Raises:
-     *         HTTPException: 401 if not authenticated, 404 if database/manifest not found, 500 for other errors
+     * Get Database Manifest By Id
+     * @description Get database manifest by ID (canonical endpoint).
      */
-    get: operations['get_database_manifest_api_v1_databases__database_name__manifest_get']
+    get: operations['get_database_manifest_by_id_api_v1_databases_by_id__db_id__manifest_get']
     put?: never
     post?: never
     delete?: never
@@ -2898,12 +2876,12 @@ export interface operations {
       }
     }
   }
-  append_to_database_api_v1_databases__database_name__append_post: {
+  append_to_database_by_id_api_v1_databases_by_id__db_id__append_post: {
     parameters: {
       query?: never
       header?: never
       path: {
-        database_name: string
+        db_id: string
       }
       cookie?: {
         session?: string | null
@@ -2935,12 +2913,12 @@ export interface operations {
       }
     }
   }
-  get_database_manifest_api_v1_databases__database_name__manifest_get: {
+  get_database_manifest_by_id_api_v1_databases_by_id__db_id__manifest_get: {
     parameters: {
       query?: never
       header?: never
       path: {
-        database_name: string
+        db_id: string
       }
       cookie?: {
         session?: string | null

@@ -864,15 +864,15 @@ class ApiService {
   /**
    * Get database manifest with file references
    */
-  async getDatabaseManifest(databaseName: string): Promise<DatabaseManifest> {
-    console.log(`[API_CLIENT] Fetching manifest for database: ${databaseName}`)
+  async getDatabaseManifest(dbId: string): Promise<DatabaseManifest> {
+    console.log(`[API_CLIENT] Fetching manifest for database id: ${dbId}`)
 
     try {
       const response = await this.client.get<DatabaseManifest>(
-        `/databases/${databaseName}/manifest`
+        `/databases/by-id/${dbId}/manifest`
       )
 
-      console.log(`[API_CLIENT] Manifest retrieved for: ${databaseName}`, {
+      console.log(`[API_CLIENT] Manifest retrieved for id: ${dbId}`, {
         totalFiles: response.data.total_files,
         createdAt: response.data.created_at
       })
@@ -880,7 +880,7 @@ class ApiService {
       return response.data
     } catch (error) {
       console.error(
-        `[API_CLIENT] Failed to get manifest for: ${databaseName}`,
+        `[API_CLIENT] Failed to get manifest for id: ${dbId}`,
         error
       )
       throw error
@@ -891,10 +891,10 @@ class ApiService {
    * Append files to existing database and rebuild
    */
   async appendToDatabase(
-    databaseName: string,
+    dbId: string,
     request: AppendDatabaseRequest
   ): Promise<ProcessJobResponse> {
-    console.log(`[API_CLIENT] Appending to database: ${databaseName}`, {
+    console.log(`[API_CLIENT] Appending to database id: ${dbId}`, {
       fileCount: request.file_references.length,
       configFile: request.config_file_id
     })
@@ -903,7 +903,7 @@ class ApiService {
 
     try {
       const response = await this.client.post<ProcessJobResponse>(
-        `/databases/${databaseName}/append`,
+        `/databases/by-id/${dbId}/append`,
         request,
         {
           timeout: 5 * 60 * 1000 // 5 minutes
@@ -911,7 +911,7 @@ class ApiService {
       )
 
       const appendTime = Date.now() - startTime
-      console.log(`[API_CLIENT] Database append started for: ${databaseName}`, {
+      console.log(`[API_CLIENT] Database append started for id: ${dbId}`, {
         jobId: response.data.job_id,
         status: response.data.status,
         appendTime: `${appendTime}ms`
@@ -920,13 +920,10 @@ class ApiService {
       return response.data
     } catch (error) {
       const appendTime = Date.now() - startTime
-      console.error(
-        `[API_CLIENT] Database append failed for: ${databaseName}`,
-        {
-          appendTime: `${appendTime}ms`,
-          error
-        }
-      )
+      console.error(`[API_CLIENT] Database append failed for id: ${dbId}`, {
+        appendTime: `${appendTime}ms`,
+        error
+      })
       throw error
     }
   }
