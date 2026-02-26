@@ -89,7 +89,8 @@ class TestWebProcessingService:
     def mock_processing_request(self):
         """Mock processing request with default configuration."""
         return ProcessingRequest(
-            config_file="test_config.xlsx", processing_config=ProcessingConfig()
+            config_file_id="550e8400-e29b-41d4-a716-446655440000",
+            processing_config=ProcessingConfig(),
         )
 
     @pytest.fixture
@@ -140,7 +141,10 @@ class TestWebProcessingService:
             mock_uuid.return_value = "test-job-id"
 
             result = await service.start_processing(
-                file_content, filename, mock_processing_request
+                file_content,
+                filename,
+                mock_processing_request,
+                config_s3_key="config_graal/550e8400-e29b-41d4-a716-446655440000.xlsx",
             )
 
         # Verify job creation
@@ -169,7 +173,10 @@ class TestWebProcessingService:
 
         with pytest.raises(ValueError, match="File size .* exceeds maximum"):
             await service.start_processing(
-                file_content, filename, mock_processing_request
+                file_content,
+                filename,
+                mock_processing_request,
+                config_s3_key="config_graal/550e8400-e29b-41d4-a716-446655440000.xlsx",
             )
 
     @pytest.mark.asyncio
@@ -182,7 +189,10 @@ class TestWebProcessingService:
 
         with pytest.raises(ValueError, match="Invalid JSON content"):
             await service.start_processing(
-                file_content, filename, mock_processing_request
+                file_content,
+                filename,
+                mock_processing_request,
+                config_s3_key="config_graal/550e8400-e29b-41d4-a716-446655440000.xlsx",
             )
 
     @pytest.mark.asyncio
@@ -195,7 +205,10 @@ class TestWebProcessingService:
 
         with pytest.raises(ValueError, match="Unable to decode file content as UTF-8"):
             await service.start_processing(
-                file_content, filename, mock_processing_request
+                file_content,
+                filename,
+                mock_processing_request,
+                config_s3_key="config_graal/550e8400-e29b-41d4-a716-446655440000.xlsx",
             )
 
     @pytest.mark.asyncio

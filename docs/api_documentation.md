@@ -542,7 +542,7 @@ Form-data with file upload:
 
 ### 9. Append Files to Database
 
-**Endpoint:** `/databases/{database_name}/append`
+**Endpoint:** `/databases/by-id/{db_id}/append`
 
 **Method:** POST
 
@@ -550,9 +550,9 @@ Form-data with file upload:
 
 **Path Parameters:**
 
-| Parameter     | Type   | Required | Description                   |
-| ------------- | ------ | -------- | ----------------------------- |
-| database_name | string | Yes      | Name of the existing database |
+| Parameter | Type | Required | Description                            |
+| --------- | ---- | -------- | -------------------------------------- |
+| db_id     | uuid | Yes      | Manifest UUID of the existing database |
 
 **Request Body:**
 
@@ -609,7 +609,7 @@ Form-data with file upload:
 
 ### 10. Get Database Manifest
 
-**Endpoint:** `/databases/{database_name}/manifest`
+**Endpoint:** `/databases/by-id/{db_id}/manifest`
 
 **Method:** GET
 
@@ -617,9 +617,9 @@ Form-data with file upload:
 
 **Path Parameters:**
 
-| Parameter     | Type   | Required | Description          |
-| ------------- | ------ | -------- | -------------------- |
-| database_name | string | Yes      | Name of the database |
+| Parameter | Type | Required | Description                   |
+| --------- | ---- | -------- | ----------------------------- |
+| db_id     | uuid | Yes      | Manifest UUID of the database |
 
 **Response:**
 

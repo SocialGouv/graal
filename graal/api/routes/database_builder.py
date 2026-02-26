@@ -1,9 +1,15 @@
-"""API routes for similarity database builder."""
+"""API routes for similarity database builder.
+
+IMPORTANT:
+    - Similarity DB manifests are identified by UUID.
+    - ``SimilarityDBManifest.name`` is a friendly label and can be duplicated.
+"""
 
 import asyncio
 import json
 import logging
 import logging.config
+import uuid
 from pathlib import Path
 from typing import Annotated, Any
 from uuid import UUID
@@ -29,11 +35,11 @@ from graal.api.services.database_builder_service import (
     DatabaseBuilderService,
     create_job_id,
 )
-from graal.api.services.excel_config_service import get_excel_config_service
 from graal.api.services.database_permission_service import (
     DbRole,
     get_database_permission_service,
 )
+from graal.api.services.excel_config_service import get_excel_config_service
 from graal.api.services.similarity_db_manifest_service import (
     get_similarity_db_manifest_service,
 )
@@ -359,10 +365,20 @@ async def build_database(
             "group_by_columns": ["Lecture", "origin_project", "Num article"]
         }
     """
-    logging.info(f"[API] Received database build request: {request.database_name}")
+    logging.info(
+        "[API] Received database build request: display_name=%s",
+        request.database_name,
+    )
 
     try:
         user_id = UUID(current_user.user_id)
+
+        # Create a new manifest ID up-front so we can generate a collision-proof S3 key.
+        manifest_id = uuid.uuid4()
+        s3_database_name = DatabaseBuilderService.make_unique_s3_database_name(
+            request.database_name,
+            manifest_id,
+        )
 
         # Create job
         job_id = create_job_id()
@@ -420,7 +436,10 @@ async def build_database(
                 builder_service.start_database_build(
                     job_id=job_id,
                     config_file=config_s3_key,
-                    database_name=request.database_name,
+                    display_name=request.database_name,
+                    s3_database_name=s3_database_name,
+                    manifest_id=manifest_id,
+                    is_new_manifest=True,
                     files_metadata=files_metadata,
                     drop_empty_columns=request.drop_empty_columns,
                     similarity_threshold=request.similarity_threshold,
@@ -440,7 +459,11 @@ async def build_database(
         )
 
         logging.info(
-            f"[API] Database build job started successfully - job_id: {job_id}, database: {request.database_name}"
+            "[API] Database build job started successfully - job_id=%s, display_name=%s, manifest_id=%s, s3_database_name=%s",
+            job_id,
+            request.database_name,
+            manifest_id,
+            s3_database_name,
         )
         return ProcessingResponse(
             job_id=job_id, status=JobStatus.queued, message="Database build job started"
@@ -496,29 +519,19 @@ async def delete_uploaded_file(upload_id: str, _admin_user: AdminUser = None):
         raise HTTPException(status_code=500, detail="Failed to delete file") from e
 
 
-def _find_manifest_by_name(
-    all_manifests: list[SimilarityDBManifest], database_name: str
-) -> SimilarityDBManifest:
-    """Find manifest by database name.
+def _derive_s3_database_name_from_manifest(manifest: SimilarityDBManifest) -> str:
+    """Derive DatabaseS3Service database_name (relative, no extension) from a manifest."""
 
-    Args:
-        all_manifests: List of all active manifests
-        database_name: Name of the database to find
+    s3_path = (manifest.s3_file_path or "").lstrip("/")
+    s3_service = get_s3_service()
+    folder = s3_service.similarity_db_folder
+    prefix = folder if folder.endswith("/") else f"{folder}/"
 
-    Returns:
-        The matching manifest.
+    relative = s3_path[len(prefix) :] if s3_path.startswith(prefix) else s3_path
+    if relative.endswith(".parquet"):
+        relative = relative[:-8]
 
-    Raises:
-        HTTPException: If manifest not found
-    """
-    for manifest in all_manifests:
-        if manifest.name == database_name:
-            return manifest
-
-    raise HTTPException(
-        status_code=404,
-        detail=f"Database '{database_name}' not found. Create it first using the build endpoint.",
-    )
+    return relative
 
 
 def _extract_existing_files_metadata(manifest) -> list[dict]:
@@ -589,27 +602,26 @@ async def _download_all_files(
         await _download_file_to_temp(s3_service, file_metadata, temp_dir)
 
 
-@router.post("/{database_name}/append", response_model=ProcessingResponse)
-async def append_to_database(
-    database_name: str,
+async def _append_to_database_manifest(
+    *,
+    manifest: SimilarityDBManifest,
     request: AppendDatabaseRequest,
-    current_user: CurrentUser = None,
-):
+    current_user: CurrentUser,
+) -> ProcessingResponse:
     """Append new files to an existing database by rebuilding with all files.
 
     This endpoint loads the existing database manifest, combines the existing files
     with the new file references, and triggers a full rebuild of the database.
 
-    Args:
-        database_name: Name of the database to append to
-        request: AppendDatabaseRequest with new files and build configuration
-        http_request: FastAPI request object
-        session: Session cookie value
-
     Returns:
         ProcessingResponse: Job information for tracking append progress
     """
-    logging.info(f"[API] Received append request for database: {database_name}")
+    database_label = manifest.name
+    logging.info(
+        "[API] Received append request for manifest id=%s (display_name=%s)",
+        manifest.id,
+        database_label,
+    )
 
     # Validate request
     if not request.file_references:
@@ -620,19 +632,6 @@ async def append_to_database(
 
     try:
         user_id = UUID(current_user.user_id)
-
-        # Get PostgreSQL manifest service and find manifest
-        pg_manifest_service = get_similarity_db_manifest_service()
-        all_manifests = await pg_manifest_service.list_active_manifests()
-        manifest = _find_manifest_by_name(all_manifests, database_name)
-
-        # Defensive: _find_manifest_by_name currently raises if missing.
-        # Keep this guard to fail fast if behavior changes in the future.
-        if manifest is None:  # pragma: no cover
-            raise HTTPException(
-                status_code=404,
-                detail=f"Database '{database_name}' not found. Create it first using the build endpoint.",
-            )
 
         # Authorization: admin OR explicit role allowlist (owner/writer)
         if not current_user.is_admin:
@@ -646,7 +645,13 @@ async def append_to_database(
                     detail="Insufficient permissions to append to this database",
                 )
 
-        logging.info(f"[API] Loaded PostgreSQL manifest for {database_name}")
+        logging.info(
+            "[API] Loaded PostgreSQL manifest id=%s (display_name=%s)",
+            manifest.id,
+            manifest.name,
+        )
+
+        s3_database_name = _derive_s3_database_name_from_manifest(manifest)
 
         # Convert new file references to metadata format
         new_files_metadata = [
@@ -678,11 +683,15 @@ async def append_to_database(
         job_id = create_job_id()
         builder_service = get_database_builder_service()
         builder_service.job_registry.create_job(
-            job_id=job_id, input_file_path=f"database_append_{database_name}"
+            job_id=job_id,
+            input_file_path=f"database_append_{manifest.id}",
         )
 
         logging.info(
-            f"[API] Created job {job_id} for appending to database: {database_name}"
+            "[API] Created job %s for appending to manifest id=%s (display_name=%s)",
+            job_id,
+            manifest.id,
+            manifest.name,
         )
 
         # Resolve config_file_id → ExcelConfigManifest → s3_key for append
@@ -714,7 +723,10 @@ async def append_to_database(
             builder_service.start_database_build(
                 job_id=job_id,
                 config_file=append_config_s3_key,
-                database_name=database_name,
+                display_name=manifest.name,
+                s3_database_name=s3_database_name,
+                manifest_id=manifest.id,
+                is_new_manifest=False,
                 files_metadata=all_files_metadata,
                 drop_empty_columns=request.drop_empty_columns,
                 similarity_threshold=request.similarity_threshold,
@@ -728,7 +740,10 @@ async def append_to_database(
         task.add_done_callback(_create_task_completion_callback(job_id, "Append task"))
 
         logging.info(
-            f"[API] Database append job started successfully - job_id: {job_id}, database: {database_name}"
+            "[API] Database append job started successfully - job_id=%s, manifest_id=%s, s3_database_name=%s",
+            job_id,
+            manifest.id,
+            s3_database_name,
         )
         return ProcessingResponse(
             job_id=job_id,
@@ -740,115 +755,88 @@ async def append_to_database(
         raise
     except Exception as e:
         logging.error(
-            f"[API] Error appending to database {database_name}: {e}", exc_info=True
+            "[API] Error appending to database manifest id=%s: %s",
+            manifest.id,
+            e,
+            exc_info=True,
         )
         raise HTTPException(
             status_code=500, detail=f"Failed to append to database: {str(e)}"
         ) from e
 
 
-@router.get("/{database_name}/manifest", response_model=DatabaseManifestResponse)
-async def get_database_manifest(  # noqa: C901
-    database_name: str,
+@router.post("/by-id/{db_id}/append", response_model=ProcessingResponse)
+async def append_to_database_by_id(
+    db_id: UUID,
+    request: AppendDatabaseRequest,
     current_user: CurrentUser,
 ):
-    """Retrieve the manifest for a database showing all input files.
+    """Append to an existing database by manifest UUID (canonical endpoint)."""
 
-    Args:
-        database_name: Name of the database
-        current_user: Authenticated user (injected by FastAPI)
+    pg_manifest_service = get_similarity_db_manifest_service()
+    manifest = await pg_manifest_service.get_manifest(db_id)
+    if manifest is None or not manifest.is_active:
+        raise HTTPException(status_code=404, detail="Database not found")
 
-    Returns:
-        DatabaseManifestResponse: Manifest with list of files and metadata
-
-    Raises:
-        HTTPException: 401 if not authenticated, 404 if database/manifest not found, 500 for other errors
-    """
-    logging.info(
-        f"[API] Retrieving manifest for database: {database_name} (user: {current_user.user_id})"
+    return await _append_to_database_manifest(
+        manifest=manifest,
+        request=request,
+        current_user=current_user,
     )
 
-    try:
-        # Get PostgreSQL manifest service
-        pg_manifest_service = get_similarity_db_manifest_service()
 
-        # Get all active manifests and find the one matching database_name
-        logging.info(f"[API] Loading PostgreSQL manifest for: {database_name}")
-        all_manifests = await pg_manifest_service.list_active_manifests()
+def _manifest_to_response(manifest: SimilarityDBManifest) -> DatabaseManifestResponse:
+    """Convert a SimilarityDBManifest to API response."""
 
-        manifest = None
-        for m in all_manifests:
-            if m.name == database_name:
-                manifest = m
-                break
-
-        if not manifest:
-            raise FileNotFoundError(f"No manifest found for database: {database_name}")
-
-        # Authorization: require at least reader role on the DB (or admin)
-        if not current_user.is_admin:
-            perm_service = get_database_permission_service()
-            user_role = await perm_service.get_user_role(
-                str(manifest.id), current_user.user_id
-            )
-            if user_role is None:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Insufficient permissions to view this database manifest",
+    files: list[FileReferenceInfo] = []
+    if manifest.input_files and "files" in manifest.input_files:
+        for file_data in manifest.input_files["files"]:
+            files.append(
+                FileReferenceInfo(
+                    upload_id=file_data["file_hash"],
+                    filename=file_data["filename"],
+                    file_hash=file_data["file_hash"],
+                    s3_key=file_data["s3_key"],
+                    uploaded_at=file_data["uploaded_at"],
+                    metadata=file_data.get("metadata", {}),
                 )
-
-        logging.info(
-            f"[API] Successfully loaded PostgreSQL manifest for: {database_name}"
-        )
-
-        # Extract input files from the manifest's input_files JSONB field
-        files = []
-        if manifest.input_files and "files" in manifest.input_files:
-            # New format: Full file details in input_files
-            logging.info(
-                f"[API] Loading {len(manifest.input_files['files'])} files from input_files field"
-            )
-            for file_data in manifest.input_files["files"]:
-                files.append(
-                    FileReferenceInfo(
-                        upload_id=file_data["file_hash"],
-                        filename=file_data["filename"],
-                        file_hash=file_data["file_hash"],
-                        s3_key=file_data["s3_key"],
-                        uploaded_at=file_data["uploaded_at"],
-                        metadata=file_data.get("metadata", {}),
-                    )
-                )
-        else:
-            logging.warning(
-                "[API] No input files found in manifest. "
-                "This database was created with old code and must be rebuilt to see files."
             )
 
-        logging.info(
-            f"[API] Retrieved manifest for {database_name} with {len(files)} files"
+    return DatabaseManifestResponse(
+        database_name=manifest.name,
+        created_at=manifest.created_at.isoformat(),
+        last_updated_at=manifest.last_modified.isoformat(),
+        files=files,
+        total_files=len(files),
+    )
+
+
+async def _authorize_manifest_read(
+    *, manifest: SimilarityDBManifest, current_user: CurrentUser
+) -> None:
+    if current_user.is_admin:
+        return
+
+    perm_service = get_database_permission_service()
+    user_role = await perm_service.get_user_role(str(manifest.id), current_user.user_id)
+    if user_role is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Insufficient permissions to view this database manifest",
         )
 
-        return DatabaseManifestResponse(
-            database_name=manifest.name,
-            created_at=manifest.created_at.isoformat(),
-            last_updated_at=manifest.last_modified.isoformat(),
-            files=files,
-            total_files=len(files),
-        )
 
-    except FileNotFoundError as e:
-        logging.warning(f"[API] Manifest not found for database: {database_name}")
-        raise HTTPException(
-            status_code=404,
-            detail=f"Manifest not found for database '{database_name}'.",
-        ) from e
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(
-            f"[API] Error retrieving manifest for {database_name}: {e}", exc_info=True
-        )
-        raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve manifest: {str(e)}"
-        ) from e
+@router.get("/by-id/{db_id}/manifest", response_model=DatabaseManifestResponse)
+async def get_database_manifest_by_id(
+    db_id: UUID,
+    current_user: CurrentUser,
+):
+    """Get database manifest by ID (canonical endpoint)."""
+
+    pg_manifest_service = get_similarity_db_manifest_service()
+    manifest = await pg_manifest_service.get_manifest(db_id)
+    if manifest is None or not manifest.is_active:
+        raise HTTPException(status_code=404, detail="Manifest not found")
+
+    await _authorize_manifest_read(manifest=manifest, current_user=current_user)
+    return _manifest_to_response(manifest)
