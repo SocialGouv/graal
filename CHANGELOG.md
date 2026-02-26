@@ -1,3 +1,10 @@
+## [1.44.1](https://github.com/SocialGouv/graal/compare/v1.44.0...v1.44.1) (2026-02-26)
+
+
+### Bug Fixes
+
+* Make use of config file IDs instead of their names to avoid "ID" collisions ([3d3051a](https://github.com/SocialGouv/graal/commit/3d3051ad37b66b993debeaabbc2bedaaadf083f5))
+
 # [1.44.0](https://github.com/SocialGouv/graal/compare/v1.43.1...v1.44.0) (2026-02-25)
 
 
