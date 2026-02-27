@@ -12,6 +12,9 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# Ensure all ORM models are imported so Base.metadata is fully populated.
+# Without this, autogenerate may incorrectly think tables were removed.
+import graal.database.models  # noqa: F401
 from alembic import context
 
 # Import all models here so Alembic can detect them
