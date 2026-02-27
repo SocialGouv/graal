@@ -1,3 +1,11 @@
+# [1.46.0](https://github.com/SocialGouv/graal/compare/v1.45.0...v1.46.0) (2026-02-27)
+
+
+### Features
+
+* Add llm_configs to db ([93d95c5](https://github.com/SocialGouv/graal/commit/93d95c5c6409459d0af2a9fd22b7038f81cc9290))
+* Backend for llm config ([918d532](https://github.com/SocialGouv/graal/commit/918d532316973da5b19944165f9d129957499713))
+
 # [1.45.0](https://github.com/SocialGouv/graal/compare/v1.44.2...v1.45.0) (2026-02-26)
 
 
