@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiService from '../services/api'
 import type {
   ExcelConfigListResponse,
+  LlmConfigCreate,
+  LlmConfigRead,
+  LlmConfigUpdate,
   S3DeleteResponse,
   S3FileListResponse
 } from '../types/api'
@@ -111,6 +114,72 @@ export const useDeleteInputPoolFile = () => {
     onSuccess: () => {
       // Invalidate and refetch input pool files list
       queryClient.invalidateQueries({ queryKey: ['s3', 'input-pool-files'] })
+    }
+  })
+}
+
+/**
+ * Query hook for fetching LLM configs (all users)
+ */
+export const useLlmConfigs = () => {
+  return useQuery<LlmConfigRead[]>({
+    queryKey: ['llm-configs'],
+    queryFn: () => apiService.listLlmConfigs()
+  })
+}
+
+/**
+ * Query hook for fetching LLM configs (admin view)
+ */
+export const useAdminLlmConfigs = () => {
+  return useQuery<LlmConfigRead[]>({
+    queryKey: ['llm-configs', 'admin'],
+    queryFn: () => apiService.listAdminLlmConfigs()
+  })
+}
+
+/**
+ * Mutation hook for creating an LLM config (admin only)
+ */
+export const useCreateLlmConfig = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<LlmConfigRead, Error, LlmConfigCreate>({
+    mutationFn: (data) => apiService.createLlmConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
+    }
+  })
+}
+
+/**
+ * Mutation hook for updating an LLM config (admin only)
+ */
+export const useUpdateLlmConfig = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<
+    LlmConfigRead,
+    Error,
+    { id: string; data: LlmConfigUpdate }
+  >({
+    mutationFn: ({ id, data }) => apiService.updateLlmConfig(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
+    }
+  })
+}
+
+/**
+ * Mutation hook for deleting an LLM config (admin only)
+ */
+export const useDeleteLlmConfig = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, Error, string>({
+    mutationFn: (id) => apiService.deleteLlmConfig(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
     }
   })
 }

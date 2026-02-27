@@ -222,26 +222,13 @@ export const useProcessingConfigHandlers = () => {
     [setProcessingConfig, processingConfig]
   )
 
-  const handleSummaryGenerationLlmTypeChange = useCallback(
-    (llmType: string) => {
+  const handleSummaryGenerationLlmConfigChange = useCallback(
+    (llmConfigId: string | null) => {
       setProcessingConfig({
         ...processingConfig,
         summaryGeneration: {
           ...processingConfig.summaryGeneration,
-          llm_type: llmType as any
-        }
-      })
-    },
-    [setProcessingConfig, processingConfig]
-  )
-
-  const handleSummaryGenerationCredentialsChange = useCallback(
-    (credentials: any) => {
-      setProcessingConfig({
-        ...processingConfig,
-        summaryGeneration: {
-          ...processingConfig.summaryGeneration,
-          llm_credentials: credentials
+          llm_config_id: llmConfigId
         }
       })
     },
@@ -287,8 +274,7 @@ export const useProcessingConfigHandlers = () => {
     // Summary Generation
     handleSummaryGenerationEnabledChange,
     handleSummaryGenerationShouldOverwriteChange,
-    handleSummaryGenerationLlmTypeChange,
-    handleSummaryGenerationCredentialsChange,
+    handleSummaryGenerationLlmConfigChange,
 
     // Advanced options
     handlePlaceholderAmdtBodyChange

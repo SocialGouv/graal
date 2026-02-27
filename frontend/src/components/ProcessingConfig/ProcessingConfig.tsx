@@ -49,8 +49,7 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
     handleDefaultOpinionShouldOverwriteChange,
     handleSummaryGenerationEnabledChange,
     handleSummaryGenerationShouldOverwriteChange,
-    handleSummaryGenerationLlmTypeChange,
-    handleSummaryGenerationCredentialsChange,
+    handleSummaryGenerationLlmConfigChange,
     handlePlaceholderAmdtBodyChange
   } = useProcessingConfigHandlers()
 
@@ -327,15 +326,11 @@ export const ProcessingConfig: React.FC<ProcessingConfigProps> = ({
               shouldOverwrite={
                 processingConfig.summaryGeneration.should_overwrite
               }
-              llmType={processingConfig.summaryGeneration.llm_type}
-              llmCredentials={
-                processingConfig.summaryGeneration.llm_credentials
-              }
+              llmConfigId={processingConfig.summaryGeneration.llm_config_id}
               onShouldOverwriteChange={
                 handleSummaryGenerationShouldOverwriteChange
               }
-              onLlmTypeChange={handleSummaryGenerationLlmTypeChange}
-              onCredentialsChange={handleSummaryGenerationCredentialsChange}
+              onLlmConfigChange={handleSummaryGenerationLlmConfigChange}
               enabled={processingConfig.summaryGeneration.enabled}
               disabled={disabled || isProcessing}
             />

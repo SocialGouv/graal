@@ -14,6 +14,9 @@ import type {
   ExcelConfigPermission,
   ExcelConfigRole,
   JobStatusResponse,
+  LlmConfigCreate,
+  LlmConfigRead,
+  LlmConfigUpdate,
   ManagedDatabase,
   PreviewResponse,
   ProcessingRequest,
@@ -355,6 +358,113 @@ class ApiService {
       return response.data
     } catch (error) {
       console.error('[API_CLIENT] Failed to fetch similarity databases', error)
+      throw error
+    }
+  }
+
+  /**
+   * List all LLM configs (authenticated users)
+   */
+  async listLlmConfigs(): Promise<LlmConfigRead[]> {
+    console.log('[API_CLIENT] Fetching LLM configs')
+
+    try {
+      const response = await this.client.get<LlmConfigRead[]>('/llm-configs')
+
+      console.log('[API_CLIENT] LLM configs retrieved', {
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch LLM configs', error)
+      throw error
+    }
+  }
+
+  /**
+   * List all LLM configs (admin only)
+   */
+  async listAdminLlmConfigs(): Promise<LlmConfigRead[]> {
+    console.log('[API_CLIENT] Fetching admin LLM configs')
+
+    try {
+      const response =
+        await this.client.get<LlmConfigRead[]>('/admin/llm-configs')
+
+      console.log('[API_CLIENT] Admin LLM configs retrieved', {
+        count: response.data.length
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to fetch admin LLM configs', error)
+      throw error
+    }
+  }
+
+  /**
+   * Create an LLM config (admin only)
+   */
+  async createLlmConfig(data: LlmConfigCreate): Promise<LlmConfigRead> {
+    console.log('[API_CLIENT] Creating LLM config', { name: data.name })
+
+    try {
+      const response = await this.client.post<LlmConfigRead>(
+        '/admin/llm-configs',
+        data
+      )
+
+      console.log('[API_CLIENT] LLM config created', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to create LLM config', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update an LLM config (admin only)
+   */
+  async updateLlmConfig(
+    id: string,
+    data: LlmConfigUpdate
+  ): Promise<LlmConfigRead> {
+    console.log('[API_CLIENT] Updating LLM config', { id })
+
+    try {
+      const response = await this.client.patch<LlmConfigRead>(
+        `/admin/llm-configs/${id}`,
+        data
+      )
+
+      console.log('[API_CLIENT] LLM config updated', {
+        id: response.data.id,
+        name: response.data.name
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to update LLM config', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete an LLM config (admin only)
+   */
+  async deleteLlmConfig(id: string): Promise<void> {
+    console.log('[API_CLIENT] Deleting LLM config', { id })
+
+    try {
+      await this.client.delete(`/admin/llm-configs/${id}`)
+      console.log('[API_CLIENT] LLM config deleted', { id })
+    } catch (error) {
+      console.error('[API_CLIENT] Failed to delete LLM config', error)
       throw error
     }
   }

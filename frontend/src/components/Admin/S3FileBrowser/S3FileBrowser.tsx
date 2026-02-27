@@ -12,6 +12,7 @@ import {
   useDeleteInputPoolFile,
   useInputPoolFiles
 } from '../../../hooks/useS3Files'
+import { AdminLlmConfigs } from '../LlmConfigs/AdminLlmConfigs'
 import { AdminDatabaseTable } from './AdminDatabaseTable'
 import { DeleteConfirmModal, deleteConfirmModal } from './DeleteConfirmModal'
 import { FileListTable } from './FileListTable'
@@ -188,6 +189,10 @@ export const S3FileBrowser = () => {
 
       <Tabs
         tabs={[
+          {
+            label: 'Configurations LLM',
+            content: <AdminLlmConfigs />
+          },
           {
             label: 'Configurations Excel',
             content: (

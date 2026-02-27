@@ -55,23 +55,37 @@ export interface AttributionConfig {
 export interface SummaryGenerationConfig {
   enabled: boolean
   should_overwrite?: boolean
-  llm_type?:
-    | 'scaleway'
-    | 'albert'
-    | 'ollama'
-    | 'vllm'
-    | 'fake'
-    | 'mistral'
-    | null
-  llm_credentials?: {
-    base_url?: string
-    api_key?: string
-    model_name?: string
-    endpoint?: string
-    user?: string
-    password?: string
-  }
+  llm_config_id?: UUID
   timeout?: number
+}
+
+export type LlmProvider = 'albert' // | 'scaleway' | 'mistral' | 'ollama' | 'vllm'
+
+export interface LlmConfigBase {
+  name: string
+  provider: LlmProvider
+  model_name: string
+  base_url?: string
+  api_key?: string
+}
+
+export type LlmConfigCreate = LlmConfigBase
+
+export interface LlmConfigUpdate {
+  name?: string
+  provider?: LlmProvider
+  model_name?: string
+  base_url?: string | null
+  endpoint?: string | null
+  api_key?: string | null
+  user?: string | null
+  password?: string | null
+}
+
+export interface LlmConfigRead extends LlmConfigBase {
+  id: UUID
+  created_at: string
+  updated_at: string
 }
 
 export interface DefaultOpinionConfig {

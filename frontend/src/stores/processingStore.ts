@@ -51,15 +51,7 @@ export interface ProcessingConfig {
   summaryGeneration: {
     enabled: boolean
     should_overwrite: boolean
-    llm_type: 'scaleway' | 'albert' | 'ollama' | 'vllm' | 'fake' | null
-    llm_credentials: {
-      base_url?: string
-      api_key?: string
-      model_name?: string
-      endpoint?: string
-      user?: string
-      password?: string
-    }
+    llm_config_id: UUID | null
   }
   // Processing options (top-level, not nested under any feature)
   placeholder_amdt_body: boolean
@@ -202,8 +194,7 @@ const initialState = {
     summaryGeneration: {
       enabled: true,
       should_overwrite: true,
-      llm_type: null,
-      llm_credentials: {}
+      llm_config_id: null
     },
     // Processing options at top level
     placeholder_amdt_body: false

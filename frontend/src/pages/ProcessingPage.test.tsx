@@ -60,7 +60,7 @@ describe('ProcessingPage - mission filter payload', () => {
           ...state.processingConfig.similaritySearch,
           enabled: false
         },
-        // Summary generation requires an LLM type when enabled; disable for this test.
+        // Summary generation requires an LLM config when enabled; disable for this test.
         summaryGeneration: {
           ...state.processingConfig.summaryGeneration,
           enabled: false

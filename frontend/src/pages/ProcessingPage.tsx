@@ -83,7 +83,7 @@ export const ProcessingPage = () => {
     if (!isAnyFeatureEnabled(processingConfig)) return false
     if (
       processingConfig.summaryGeneration.enabled &&
-      !processingConfig.summaryGeneration.llm_type
+      !processingConfig.summaryGeneration.llm_config_id
     ) {
       return false
     }
@@ -168,8 +168,7 @@ export const ProcessingPage = () => {
           {
             should_overwrite:
               processingConfig.summaryGeneration.should_overwrite,
-            llm_type: processingConfig.summaryGeneration.llm_type,
-            llm_credentials: processingConfig.summaryGeneration.llm_credentials
+            llm_config_id: processingConfig.summaryGeneration.llm_config_id
           }
         ),
         // Processing options at top level
@@ -297,7 +296,8 @@ export const ProcessingPage = () => {
                 {defOp?.enabled && <li>Opinion par défaut</li>}
                 {sum?.enabled && (
                   <li>
-                    Génération de résumés — LLM: {sum.llm_type || 'Non défini'}
+                    Génération de résumés — LLM:{' '}
+                    {sum.llm_config_id || 'Non défini'}
                   </li>
                 )}
                 {!allot?.enabled &&
