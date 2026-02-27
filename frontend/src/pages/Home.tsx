@@ -3,6 +3,7 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert'
 import { Badge } from '@codegouvfr/react-dsfr/Badge'
 import { Tile } from '@codegouvfr/react-dsfr/Tile'
 import { useNavigate } from 'react-router-dom'
+import { DevLoginButtons } from '../components/Auth/DevLoginButtons'
 import { LoginButton } from '../components/Auth/LoginButton'
 import { LogoutButton } from '../components/Auth/LogoutButton'
 import { useAuth } from '../hooks/useAuth'
@@ -40,6 +41,7 @@ export const Home = () => {
             <div className={fr.cx('fr-mt-4w')}>
               <LoginButton />
             </div>
+            <DevLoginButtons />
           </div>
         </div>
       </div>
@@ -63,6 +65,7 @@ export const Home = () => {
             <div className={fr.cx('fr-mt-4w')}>
               <LoginButton />
             </div>
+            <DevLoginButtons />
           </div>
         </div>
       </div>

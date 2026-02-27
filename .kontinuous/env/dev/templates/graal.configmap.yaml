@@ -14,3 +14,5 @@ data:
   PROCONNECT_SCOPES: "openid email profile"
   SESSION_MAX_AGE: "15552000"
   SECURE_COOKIES: "true"
+  BACKEND_ENABLE_DEV_LOGIN: "true"
+  VITE_ENABLE_DEV_LOGIN: "true"
