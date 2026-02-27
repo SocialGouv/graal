@@ -15,6 +15,7 @@ from graal.api.routes import (
     authorization,
     database_builder,
     db_permissions,
+    dev_login,
     excel_configs,
     llm_configs,
     proconnect,
@@ -107,6 +108,14 @@ app.include_router(s3_files.router, prefix="/api/v1")
 app.include_router(db_permissions.router, prefix="/api/v1")
 app.include_router(excel_configs.router, prefix="/api/v1")
 app.include_router(excel_configs.admin_router, prefix="/api/v1")
+
+# Dev-only login routes (only registered when BACKEND_ENABLE_DEV_LOGIN=true)
+if os.getenv("BACKEND_ENABLE_DEV_LOGIN", "false").lower() == "true":
+    logging.warning(
+        "[API] BACKEND_ENABLE_DEV_LOGIN=true: registering dev login routes. "
+        "NEVER enable this in preprod or production!"
+    )
+    app.include_router(dev_login.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn

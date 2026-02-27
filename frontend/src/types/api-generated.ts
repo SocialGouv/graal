@@ -1503,6 +1503,41 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/auth/dev-login': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Dev Login
+     * @description Development-only login endpoint.
+     *
+     *     Creates a session for a predefined dev user (admin or regular user).
+     *
+     *     SECURITY: Only available when BACKEND_ENABLE_DEV_LOGIN=true.
+     *     NEVER set this in preprod or production.
+     *
+     *     Args:
+     *         role: Either 'admin' or 'user'
+     *
+     *     Returns:
+     *         RedirectResponse to frontend with session cookie set
+     *
+     *     Raises:
+     *         HTTPException: 404 if BACKEND_ENABLE_DEV_LOGIN is not set
+     *         HTTPException: 400 if role is invalid
+     */
+    get: operations['dev_login_api_v1_auth_dev_login_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -2089,14 +2124,8 @@ export interface components {
       model_name: string
       /** Base Url */
       base_url?: string | null
-      /** Endpoint */
-      endpoint?: string | null
       /** Api Key */
       api_key?: string | null
-      /** User */
-      user?: string | null
-      /** Password */
-      password?: string | null
     }
     /**
      * LlmConfigRead
@@ -2110,14 +2139,8 @@ export interface components {
       model_name: string
       /** Base Url */
       base_url?: string | null
-      /** Endpoint */
-      endpoint?: string | null
       /** Api Key */
       api_key?: string | null
-      /** User */
-      user?: string | null
-      /** Password */
-      password?: string | null
       /**
        * Id
        * Format: uuid
@@ -2146,14 +2169,8 @@ export interface components {
       model_name?: string | null
       /** Base Url */
       base_url?: string | null
-      /** Endpoint */
-      endpoint?: string | null
       /** Api Key */
       api_key?: string | null
-      /** User */
-      user?: string | null
-      /** Password */
-      password?: string | null
     }
     /**
      * LlmProviderEnum
@@ -4523,6 +4540,38 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  dev_login_api_v1_auth_dev_login_get: {
+    parameters: {
+      query: {
+        /** @description Role to login as: 'admin' or 'user' */
+        role: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
+        }
       }
       /** @description Validation Error */
       422: {
