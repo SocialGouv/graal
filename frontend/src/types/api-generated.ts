@@ -1011,6 +1011,74 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/llm-configs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Llm Configs
+     * @description List LLM configs for authenticated users.
+     */
+    get: operations['list_llm_configs_api_v1_llm_configs_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/llm-configs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Llm Configs Admin
+     * @description List all LLM configs (admin only).
+     */
+    get: operations['list_llm_configs_admin_api_v1_admin_llm_configs_get']
+    put?: never
+    /**
+     * Create Llm Config
+     * @description Create a new LLM config (admin only).
+     */
+    post: operations['create_llm_config_api_v1_admin_llm_configs_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/llm-configs/{config_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Llm Config
+     * @description Delete an LLM config (admin only).
+     */
+    delete: operations['delete_llm_config_api_v1_admin_llm_configs__config_id__delete']
+    options?: never
+    head?: never
+    /**
+     * Update Llm Config
+     * @description Update an LLM config (admin only).
+     */
+    patch: operations['update_llm_config_api_v1_admin_llm_configs__config_id__patch']
+    trace?: never
+  }
   '/api/v1/admin/s3/config-files': {
     parameters: {
       query?: never
@@ -2009,6 +2077,90 @@ export interface components {
      * @enum {string}
      */
     JobStatus: 'queued' | 'running' | 'completed' | 'failed' | 'timeout'
+    /**
+     * LlmConfigCreate
+     * @description Schema for creating an LLM config.
+     */
+    LlmConfigCreate: {
+      /** Name */
+      name: string
+      provider: components['schemas']['LlmProviderEnum']
+      /** Model Name */
+      model_name: string
+      /** Base Url */
+      base_url?: string | null
+      /** Endpoint */
+      endpoint?: string | null
+      /** Api Key */
+      api_key?: string | null
+      /** User */
+      user?: string | null
+      /** Password */
+      password?: string | null
+    }
+    /**
+     * LlmConfigRead
+     * @description Schema for reading an LLM config.
+     */
+    LlmConfigRead: {
+      /** Name */
+      name: string
+      provider: components['schemas']['LlmProviderEnum']
+      /** Model Name */
+      model_name: string
+      /** Base Url */
+      base_url?: string | null
+      /** Endpoint */
+      endpoint?: string | null
+      /** Api Key */
+      api_key?: string | null
+      /** User */
+      user?: string | null
+      /** Password */
+      password?: string | null
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string
+    }
+    /**
+     * LlmConfigUpdate
+     * @description Schema for partial updates of LLM configs.
+     */
+    LlmConfigUpdate: {
+      /** Name */
+      name?: string | null
+      provider?: components['schemas']['LlmProviderEnum'] | null
+      /** Model Name */
+      model_name?: string | null
+      /** Base Url */
+      base_url?: string | null
+      /** Endpoint */
+      endpoint?: string | null
+      /** Api Key */
+      api_key?: string | null
+      /** User */
+      user?: string | null
+      /** Password */
+      password?: string | null
+    }
+    /**
+     * LlmProviderEnum
+     * @description Supported LLM providers for summary generation.
+     * @enum {string}
+     */
+    LlmProviderEnum: 'albert'
     /**
      * ManagedDatabaseResponse
      * @description Response model for databases that can be managed by the user.
@@ -3548,6 +3700,171 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_llm_configs_api_v1_llm_configs_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LlmConfigRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_llm_configs_admin_api_v1_admin_llm_configs_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LlmConfigRead'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_llm_config_api_v1_admin_llm_configs_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LlmConfigCreate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LlmConfigRead']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_llm_config_api_v1_admin_llm_configs__config_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  update_llm_config_api_v1_admin_llm_configs__config_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        config_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LlmConfigUpdate']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LlmConfigRead']
+        }
       }
       /** @description Validation Error */
       422: {

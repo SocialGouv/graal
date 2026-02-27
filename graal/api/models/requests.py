@@ -191,9 +191,16 @@ class SummaryGenerationConfig(BaseModel):
         default=True,
         description="If true, overwrite existing values; if false, preserve existing values",
     )
+    # New UI prefers selecting an admin-managed LLM config.
+    llm_config_id: Optional[UUID] = Field(
+        default=None,
+        description="UUID of an admin-managed LLM config to use when enabled.",
+    )
+
+    # Backward-compatible / advanced option: specify provider + credentials inline.
     llm_type: Optional[LLMType] = Field(
         default=None,
-        description="Type of LLM provider to use. Required when enabled.",
+        description="Type of LLM provider to use. Required when enabled if llm_config_id is not provided.",
     )
     llm_credentials: Optional[LLMCredentials] = Field(
         default=None,
@@ -202,12 +209,26 @@ class SummaryGenerationConfig(BaseModel):
 
     @field_validator("llm_type")
     @classmethod
-    def validate_llm_type_when_enabled(cls, v, info):
-        """Validate that llm_type is provided when enabled."""
-        # Access the 'enabled' field from the model's data
+    def validate_llm_selection_when_enabled(cls, v, info):
+        """Validate that an LLM selection is provided when enabled.
+
+        Accept either:
+        - llm_config_id (preferred)
+        - llm_type (legacy/advanced)
+        """
+
         data = info.data
-        if data.get("enabled") and not v:
-            raise ValueError("llm_type is required when summary generation is enabled")
+        if not data.get("enabled"):
+            return v
+
+        if data.get("llm_config_id") is not None:
+            return v
+
+        if not v:
+            raise ValueError(
+                "llm_config_id or llm_type is required when summary generation is enabled"
+            )
+
         return v
 
 

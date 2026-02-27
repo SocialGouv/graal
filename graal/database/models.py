@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from graal.database.base import Base
-from graal.database.enums import DbRoleEnum, ExcelConfigRoleEnum
+from graal.database.enums import DbRoleEnum, ExcelConfigRoleEnum, LlmProviderEnum
 
 
 def utc_now() -> datetime:
@@ -590,3 +590,73 @@ class OAuthAuthRequest(Base):
 
     def __repr__(self) -> str:
         return f"<OAuthAuthRequest(id={self.id}, state={self.state[:8]}...)>"
+
+
+class LlmConfig(Base):
+    """LLM configuration stored in the database.
+
+    These configs are used by the web UI to let admins manage which LLM providers
+    are available, and by the processing pipeline to instantiate clients with
+    the right credentials.
+    """
+
+    __tablename__ = "llm_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="LLM config identifier",
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        unique=True,
+        index=True,
+        comment="Human-friendly name shown in the UI",
+    )
+
+    provider: Mapped[LlmProviderEnum] = mapped_column(
+        Enum(LlmProviderEnum, name="llmprovider", native_enum=True),
+        nullable=False,
+        index=True,
+        comment="LLM provider type",
+    )
+
+    model_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="Model name as understood by the provider",
+    )
+
+    # OpenAI-compatible providers (scaleway/albert/mistral)
+    base_url: Mapped[str | None] = mapped_column(
+        String(512),
+        nullable=True,
+        comment="Base URL for OpenAI-compatible APIs",
+    )
+
+    api_key: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="API key for OpenAI-compatible providers",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Creation timestamp",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="Last update timestamp",
+    )
+
+    def __repr__(self) -> str:
+        return f"<LlmConfig(id={self.id}, name={self.name}, provider={self.provider})>"

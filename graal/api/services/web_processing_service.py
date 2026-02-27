@@ -33,10 +33,7 @@ logging.config.fileConfig("logging.conf")
 DEFAULT_RATE_LIMITS = {
     "albert": 100,
     "fake": 9999999,
-    "ollama": 500,
     "openai": 500,
-    "scaleway": 500,
-    "vllm": 500,
 }
 
 
@@ -54,7 +51,7 @@ class WebProcessingService:
             set()
         )  # Track background tasks to prevent garbage collection
 
-    def _merge_frontend_config(  # noqa: C901
+    async def _merge_frontend_config(  # noqa: C901
         self, base_config: dict, frontend_config: ProcessingConfig
     ) -> dict:
         """
@@ -184,38 +181,60 @@ class WebProcessingService:
                 "should_overwrite": frontend_config.summary_generation.should_overwrite,
             }
 
-            # Store LLM credentials for later use (when creating LLM clients)
-            if (
-                frontend_config.summary_generation.enabled
-                and frontend_config.summary_generation.llm_type
-            ):
-                # Create llm_clients config section if summary generation is enabled
-                config["llm_clients"] = {
-                    frontend_config.summary_generation.llm_type: {
-                        "nb_instances": 8,  # Default to 8 instances
-                        "timeout": 30,  # Default to 30 seconds
-                        "rate_limit_per_minute": DEFAULT_RATE_LIMITS.get(
-                            frontend_config.summary_generation.llm_type, 500
-                        ),
-                    }
-                }
+            if frontend_config.summary_generation.enabled:
+                # Preferred path: resolve admin-managed config by id
+                if frontend_config.summary_generation.llm_config_id is not None:
+                    from graal.api.services.llm_config_service import (
+                        get_llm_config_service,
+                    )
 
-                # Store credentials separately for passing to llm_factory
-                if frontend_config.summary_generation.llm_credentials:
-                    if "llm_credentials" not in config:
-                        config["llm_credentials"] = {}
+                    llm_config_service = get_llm_config_service()
+                    llm_config = await llm_config_service.get_config(
+                        frontend_config.summary_generation.llm_config_id
+                    )
 
-                    creds = frontend_config.summary_generation.llm_credentials
-                    config["llm_credentials"][
-                        frontend_config.summary_generation.llm_type
-                    ] = {
-                        "base_url": creds.base_url,
-                        "api_key": creds.api_key,
-                        "model_name": creds.model_name,
-                        "endpoint": creds.endpoint,
-                        "user": creds.user,
-                        "password": creds.password,
+                    if llm_config is None:
+                        raise ValueError("Selected LLM config not found")
+
+                    llm_type = llm_config.provider.value
+                    config["llm_clients"] = {
+                        llm_type: {
+                            "nb_instances": 8,
+                            "timeout": 30,
+                            "rate_limit_per_minute": DEFAULT_RATE_LIMITS.get(
+                                llm_type, 500
+                            ),
+                        }
                     }
+
+                    config.setdefault("llm_credentials", {})
+                    config["llm_credentials"][llm_type] = {
+                        "base_url": llm_config.base_url,
+                        "api_key": llm_config.api_key,
+                        "model_name": llm_config.model_name,
+                    }
+                # Backward-compatible path: llm_type + optional llm_credentials
+                elif frontend_config.summary_generation.llm_type:
+                    config["llm_clients"] = {
+                        frontend_config.summary_generation.llm_type: {
+                            "nb_instances": 8,  # Default to 8 instances
+                            "timeout": 30,  # Default to 30 seconds
+                            "rate_limit_per_minute": DEFAULT_RATE_LIMITS.get(
+                                frontend_config.summary_generation.llm_type, 500
+                            ),
+                        }
+                    }
+
+                    if frontend_config.summary_generation.llm_credentials:
+                        config.setdefault("llm_credentials", {})
+                        creds = frontend_config.summary_generation.llm_credentials
+                        config["llm_credentials"][
+                            frontend_config.summary_generation.llm_type
+                        ] = {
+                            "base_url": creds.base_url,
+                            "api_key": creds.api_key,
+                            "model_name": creds.model_name,
+                        }
 
         # Update processing options (pipeline-level)
         if "processing_options" not in config:
@@ -375,7 +394,7 @@ class WebProcessingService:
             logging.info(
                 f"[WEB_SERVICE] Merging frontend configuration - job_id: {job_id}"
             )
-            config = self._merge_frontend_config(
+            config = await self._merge_frontend_config(
                 config, processing_request.processing_config
             )
 

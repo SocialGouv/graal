@@ -16,6 +16,7 @@ from graal.api.routes import (
     database_builder,
     db_permissions,
     excel_configs,
+    llm_configs,
     proconnect,
     s3_files,
     similarity_db_manifests,
@@ -100,6 +101,8 @@ app.include_router(proconnect.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(user_configurations.router, prefix="/api/v1")
 app.include_router(similarity_db_manifests.router, prefix="/api/v1")
+app.include_router(llm_configs.router, prefix="/api/v1")
+app.include_router(llm_configs.admin_router, prefix="/api/v1")
 app.include_router(s3_files.router, prefix="/api/v1")
 app.include_router(db_permissions.router, prefix="/api/v1")
 app.include_router(excel_configs.router, prefix="/api/v1")

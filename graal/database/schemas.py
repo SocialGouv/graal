@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from graal.database.enums import ExcelConfigRoleEnum
+from graal.database.enums import ExcelConfigRoleEnum, LlmProviderEnum
 
 
 class ExcelConfigManifestBase(BaseModel):
@@ -227,6 +227,53 @@ class SimilarityDBManifestRead(SimilarityDBManifestBase):
     last_modified: datetime
     is_active: bool
     created_at: datetime
+
+
+class LlmConfigBase(BaseModel):
+    """Base schema for LLM config stored in DB."""
+
+    model_config = {
+        "protected_namespaces": (),
+    }
+
+    name: str = Field(..., max_length=255)
+    provider: LlmProviderEnum
+    model_name: str = Field(..., max_length=255)
+
+    base_url: str | None = Field(default=None, max_length=512)
+
+    # Credentials. These will be stored in DB for now.
+    api_key: str | None = None
+
+
+class LlmConfigCreate(LlmConfigBase):
+    """Schema for creating an LLM config."""
+
+
+class LlmConfigUpdate(BaseModel):
+    """Schema for partial updates of LLM configs."""
+
+    model_config = {
+        "protected_namespaces": (),
+    }
+
+    name: str | None = Field(default=None, max_length=255)
+    provider: LlmProviderEnum | None = None
+    model_name: str | None = Field(default=None, max_length=255)
+
+    base_url: str | None = Field(default=None, max_length=512)
+
+    api_key: str | None = None
+
+
+class LlmConfigRead(LlmConfigBase):
+    """Schema for reading an LLM config."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
 
 
 class OAuthAuthRequestRead(BaseModel):

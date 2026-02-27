@@ -26,3 +26,9 @@ class ExcelConfigRoleEnum(str, enum.Enum):
 
     owner = "owner"
     reader = "reader"
+
+
+class LlmProviderEnum(str, enum.Enum):
+    """Supported LLM providers for summary generation."""
+
+    albert = "albert"
