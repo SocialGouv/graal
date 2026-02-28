@@ -17,7 +17,11 @@ import {
   type TrackedJob
 } from '../../stores/jobsStore'
 import { useProcessingStore } from '../../stores/processingStore'
-import type { FileReference, FileReferenceWithMetadata } from '../../types/api'
+import type {
+  DeleteFilesFromDatabaseRequest,
+  FileReference,
+  FileReferenceWithMetadata
+} from '../../types/api'
 import { ConfigFileSelector } from '../ConfigFileSelector'
 import { ManageDatabases } from '../ManageDatabases/ManageDatabases'
 
@@ -29,7 +33,7 @@ interface PendingFile {
   dateAutoExtracted?: boolean
 }
 
-type BuildMode = 'create' | 'append'
+type BuildMode = 'create' | 'append' | 'delete'
 
 /**
  * Extract date from amendment JSON file content.
@@ -95,6 +99,9 @@ export const DatabaseBuilder: React.FC = () => {
   const [buildError, setBuildError] = useState<string | null>(null)
   const [manifestError, setManifestError] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState<boolean>(false)
+  const [selectedHashesToDelete, setSelectedHashesToDelete] = useState<
+    Set<string>
+  >(new Set())
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -127,11 +134,11 @@ export const DatabaseBuilder: React.FC = () => {
     refetchInterval: false
   })
 
-  // Query for listing databases the user can append to
+  // Query for listing databases the user can append to (also used for delete mode)
   const { data: appendableDatabaseList } = useQuery({
     queryKey: ['appendable-databases'],
     queryFn: () => apiService.listAppendableDatabases(),
-    enabled: mode === 'append',
+    enabled: mode === 'append' || mode === 'delete',
     refetchInterval: false
   })
 
@@ -141,8 +148,8 @@ export const DatabaseBuilder: React.FC = () => {
       (j) => j.kind === 'database_build' || j.kind === 'database_append'
     )
 
-    // Append mode: strictly by databaseId (as requested)
-    if (mode === 'append' && selectedDatabaseId) {
+    // Append / delete mode: strictly by databaseId
+    if ((mode === 'append' || mode === 'delete') && selectedDatabaseId) {
       return dbJobs.find((j) => j.context?.databaseId === selectedDatabaseId)
     }
 
@@ -160,7 +167,8 @@ export const DatabaseBuilder: React.FC = () => {
   })()
 
   const isDbBuildOngoingBlocking =
-    mode === 'append' && Boolean(activeDbJobForCurrentSelection)
+    (mode === 'append' || mode === 'delete') &&
+    Boolean(activeDbJobForCurrentSelection)
 
   // Query for loading manifest in append mode
   const {
@@ -170,7 +178,7 @@ export const DatabaseBuilder: React.FC = () => {
   } = useQuery({
     queryKey: ['database-manifest', selectedDatabaseId],
     queryFn: () => apiService.getDatabaseManifest(selectedDatabaseId),
-    enabled: mode === 'append' && selectedDatabaseId !== '',
+    enabled: (mode === 'append' || mode === 'delete') && selectedDatabaseId !== '',
     retry: false
   })
 
@@ -201,12 +209,13 @@ export const DatabaseBuilder: React.FC = () => {
       setExistingFiles([])
       setManifestError(null)
     } else {
-      // Reset database name in append mode
+      // Reset database name in append/delete mode
       setDatabaseName('')
       setSelectedDatabase('')
       setSelectedDatabaseId('')
-      // Clear any uploaded files when switching to append
+      // Clear any uploaded files when switching modes
       setPendingFiles([])
+      setSelectedHashesToDelete(new Set())
     }
     // Clear errors when switching modes
     setBuildError(null)
@@ -340,6 +349,43 @@ export const DatabaseBuilder: React.FC = () => {
     mutationFn: (uploadId: string) => apiService.deleteUploadedFile(uploadId),
     onSuccess: (_data, uploadId) => {
       removeUploadedFile(uploadId)
+    }
+  })
+
+  // Mutation for deleting files from an existing database and rebuilding it
+  const deleteFilesMutation = useMutation({
+    mutationFn: () => {
+      const request: DeleteFilesFromDatabaseRequest = {
+        config_file_id: databaseBuilder.selectedConfigFile!,
+        file_hashes_to_delete: Array.from(selectedHashesToDelete)
+      }
+      return apiService.deleteFilesFromDatabase(selectedDatabaseId, request)
+    },
+    onSuccess: (data) => {
+      setJobId(data.job_id)
+      registerJob({
+        jobId: data.job_id,
+        kind: 'database_append',
+        label: `Reconstruction base ${selectedDatabase}`,
+        context: {
+          databaseName: selectedDatabase,
+          databaseId: selectedDatabaseId
+        }
+      })
+      addToast({
+        severity: 'info',
+        title: `Reconstruction base ${selectedDatabase} — démarrée`,
+        description: `Job ${data.job_id}`
+      })
+      setBuildError(null)
+      setSelectedHashesToDelete(new Set())
+    },
+    onError: (error: any) => {
+      setBuildError(
+        error.detail ||
+          error.message ||
+          'Échec de la suppression et reconstruction de la base de données'
+      )
     }
   })
 
@@ -655,6 +701,15 @@ export const DatabaseBuilder: React.FC = () => {
                   setBuildError(null)
                   setManifestError(null)
                 }
+              },
+              {
+                children: 'Supprimer des fichiers',
+                priority: mode === 'delete' ? 'primary' : 'secondary',
+                onClick: () => {
+                  setMode('delete')
+                  setBuildError(null)
+                  setManifestError(null)
+                }
               }
             ]}
             inlineLayoutWhen="always"
@@ -701,7 +756,7 @@ export const DatabaseBuilder: React.FC = () => {
                 </p>
               )}
             </>
-          ) : (
+          ) : mode === 'append' ? (
             <>
               <h2 className={fr.cx('fr-h3')}>
                 2. Sélectionner une base de données existante
@@ -784,8 +839,182 @@ export const DatabaseBuilder: React.FC = () => {
                 />
               )}
             </>
+          ) : (
+            /* delete mode */
+            <>
+              <h2 className={fr.cx('fr-h3')}>
+                2. Sélectionner une base de données existante
+              </h2>
+              <Select
+                label="Base de données existante"
+                hint="Sélectionnez la base de données dont vous souhaitez supprimer des fichiers"
+                nativeSelectProps={{
+                  value: selectedDatabaseId,
+                  onChange: (e) => {
+                    const nextId = e.target.value
+                    const nextDb = appendableDatabaseList?.databases.find(
+                      (db) => db.id === nextId
+                    )
+                    setSelectedDatabaseId(nextId)
+                    setSelectedDatabase(nextDb?.name ?? '')
+                    setSelectedHashesToDelete(new Set())
+                    setBuildError(null)
+                    setManifestError(null)
+                  },
+                  disabled: !databaseBuilder.selectedConfigFile
+                }}
+              >
+                <option value="">Sélectionner une base de données</option>
+                {appendableDatabaseList?.databases.map((db) => (
+                  <option key={db.id} value={db.id}>
+                    {db.name}
+                  </option>
+                ))}
+              </Select>
+              {!databaseBuilder.selectedConfigFile && (
+                <p className={fr.cx('fr-text--sm', 'fr-hint-text', 'fr-mt-1w')}>
+                  Vous devez sélectionner un fichier de configuration pour
+                  continuer
+                </p>
+              )}
+
+              {/* Display existing files with checkboxes for selection */}
+              {existingFiles.length > 0 && (
+                <div className={fr.cx('fr-mt-4w')}>
+                  <h3 className={fr.cx('fr-h6', 'fr-mb-2w')}>
+                    3. Sélectionner les fichiers à supprimer (
+                    {selectedHashesToDelete.size} sélectionné
+                    {selectedHashesToDelete.size > 1 ? 's' : ''} sur{' '}
+                    {existingFiles.length})
+                  </h3>
+                  <Alert
+                    severity="warning"
+                    title="Attention"
+                    description="La suppression de fichiers déclenchera une reconstruction complète de la base de données. Les fichiers supprimés ne seront retirés que de cette base de données."
+                    small
+                    className={fr.cx('fr-mb-2w')}
+                  />
+                  <Table
+                    headers={[
+                      'Supprimer',
+                      'Nom de fichier',
+                      "Projet d'origine",
+                      'Horodatage'
+                    ]}
+                    data={existingFiles.map((file) => [
+                      <input
+                        key={`cb-${file.file_hash}`}
+                        type="checkbox"
+                        checked={selectedHashesToDelete.has(file.file_hash)}
+                        onChange={(e) => {
+                          setSelectedHashesToDelete((prev) => {
+                            const next = new Set(prev)
+                            if (e.target.checked) {
+                              next.add(file.file_hash)
+                            } else {
+                              next.delete(file.file_hash)
+                            }
+                            return next
+                          })
+                        }}
+                        aria-label={`Sélectionner ${file.filename} pour suppression`}
+                        disabled={
+                          // Prevent selecting all files (must keep at least one)
+                          !selectedHashesToDelete.has(file.file_hash) &&
+                          selectedHashesToDelete.size >=
+                            existingFiles.length - 1
+                        }
+                      />,
+                      file.filename,
+                      file.metadata.origin_project,
+                      new Date(
+                        file.metadata.default_processing_timestamp * 1000
+                      ).toLocaleDateString('fr-FR')
+                    ])}
+                  />
+                  {selectedHashesToDelete.size >= existingFiles.length - 1 &&
+                    existingFiles.length > 1 && (
+                      <p
+                        className={fr.cx(
+                          'fr-text--sm',
+                          'fr-hint-text',
+                          'fr-mt-1w'
+                        )}
+                      >
+                        Au moins un fichier doit rester dans la base de données.
+                      </p>
+                    )}
+
+                  {buildError && (
+                    <Alert
+                      severity="error"
+                      title="Erreur"
+                      description={buildError}
+                      className={fr.cx('fr-mt-2w')}
+                    />
+                  )}
+
+                  <div className={fr.cx('fr-mt-3w')}>
+                    <Button
+                      onClick={() => deleteFilesMutation.mutate()}
+                      disabled={
+                        selectedHashesToDelete.size === 0 ||
+                        deleteFilesMutation.isPending ||
+                        isDbBuildOngoingBlocking
+                      }
+                      iconId="fr-icon-delete-line"
+                      iconPosition="left"
+                      priority="secondary"
+                    >
+                      {deleteFilesMutation.isPending
+                        ? 'Reconstruction en cours...'
+                        : `Supprimer ${selectedHashesToDelete.size} fichier${selectedHashesToDelete.size > 1 ? 's' : ''} et reconstruire la BDD`}
+                    </Button>
+                  </div>
+
+                  {activeDbJobForCurrentSelection && (
+                    <Alert
+                      severity="info"
+                      title="Reconstruction en cours"
+                      description={
+                        <div>
+                          <div className={fr.cx('fr-mb-1w')}>
+                            {activeDbJobForCurrentSelection.message ?? '...'}
+                          </div>
+                          <ProgressBar
+                            percent={activeDbJobForCurrentSelection.percent}
+                          />
+                          <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
+                            {activeDbJobForCurrentSelection.percent}%
+                          </div>
+                        </div>
+                      }
+                      className={fr.cx('fr-mt-2w')}
+                    />
+                  )}
+                </div>
+              )}
+
+              {isLoadingManifest && (
+                <p className={fr.cx('fr-text--sm', 'fr-mt-2w')}>
+                  Chargement des fichiers existants...
+                </p>
+              )}
+
+              {manifestError && (
+                <Alert
+                  severity="error"
+                  title="Erreur"
+                  description="Impossible de charger les fichiers existants de cette base de données."
+                  className={fr.cx('fr-mt-2w')}
+                />
+              )}
+            </>
           )}
         </section>
+
+        {/* Steps 3 & 4 are not shown in delete mode */}
+        {mode !== 'delete' && <>
 
         {/* Step 3: Upload Files */}
         <section className={fr.cx('fr-mb-6w')}>
@@ -1120,6 +1349,8 @@ export const DatabaseBuilder: React.FC = () => {
             />
           )}
         </section>
+
+        </>}
 
         {/* Existing Databases */}
         <section className={fr.cx('fr-mb-6w')}>

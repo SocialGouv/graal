@@ -226,6 +226,15 @@ export interface AppendDatabaseRequest {
   group_by_columns?: string[]
 }
 
+export interface DeleteFilesFromDatabaseRequest {
+  config_file_id: string
+  file_hashes_to_delete: string[]
+  drop_empty_columns?: string[]
+  similarity_threshold?: number
+  eps?: number
+  group_by_columns?: string[]
+}
+
 // Similarity Database Manifest types
 export interface SimilarityDBManifestRead {
   id: string
