@@ -23,7 +23,7 @@ export const DevLoginButtons = () => {
         description="Ces boutons de connexion rapide sont uniquement disponibles en environnement de développement et de recette."
         className={fr.cx('fr-mb-2w')}
       />
-      <div className={fr.cx('fr-btns-group', 'fr-btns-group--inline')}>
+      <div>
         <Button
           linkProps={{ href: `${apiUrl}/api/v1/auth/dev-login?role=admin` }}
           iconId="fr-icon-shield-line"
