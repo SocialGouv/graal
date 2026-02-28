@@ -4,6 +4,7 @@ import type {
   AppendDatabaseRequest,
   AssignPermissionRequest,
   BuildDatabaseRequest,
+  DeleteFilesFromDatabaseRequest,
   ConfigFilesResponse,
   DatabaseListResponse,
   DatabaseManifest,
@@ -1034,6 +1035,50 @@ class ApiService {
         appendTime: `${appendTime}ms`,
         error
       })
+      throw error
+    }
+  }
+
+  /**
+   * Delete files from an existing database and rebuild it
+   */
+  async deleteFilesFromDatabase(
+    dbId: string,
+    request: DeleteFilesFromDatabaseRequest
+  ): Promise<ProcessJobResponse> {
+    console.log(`[API_CLIENT] Deleting files from database id: ${dbId}`, {
+      fileCount: request.file_hashes_to_delete.length,
+      configFile: request.config_file_id
+    })
+
+    const startTime = Date.now()
+
+    try {
+      const response = await this.client.post<ProcessJobResponse>(
+        `/databases/by-id/${dbId}/delete-files`,
+        request,
+        {
+          timeout: 5 * 60 * 1000 // 5 minutes
+        }
+      )
+
+      const elapsed = Date.now() - startTime
+      console.log(
+        `[API_CLIENT] Database delete-files started for id: ${dbId}`,
+        {
+          jobId: response.data.job_id,
+          status: response.data.status,
+          elapsed: `${elapsed}ms`
+        }
+      )
+
+      return response.data
+    } catch (error) {
+      const elapsed = Date.now() - startTime
+      console.error(
+        `[API_CLIENT] Database delete-files failed for id: ${dbId}`,
+        { elapsed: `${elapsed}ms`, error }
+      )
       throw error
     }
   }

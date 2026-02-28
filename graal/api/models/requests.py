@@ -573,3 +573,46 @@ class AppendDatabaseRequest(BaseDatabaseOperationRequest):
     ) -> list[FileUploadReference]:
         """Validate that file_references has at least one file."""
         return cls._validate_file_references_list(v)
+
+
+class DeleteFilesFromDatabaseRequest(BaseDatabaseOperationRequest):
+    """Request to delete files from an existing database and rebuild it.
+
+    The files identified by ``file_hashes_to_delete`` are removed from the
+    database manifest and a full rebuild is triggered with the remaining files.
+    Files in the S3 input pool are *not* deleted, because they may be shared
+    with other databases.
+    """
+
+    config_file_id: str = Field(
+        ...,
+        min_length=36,
+        max_length=36,
+        description="UUID of the Excel configuration manifest to use for rebuilding",
+    )
+    file_hashes_to_delete: list[str] = Field(
+        ..., description="SHA-256 hashes of the files to remove from the database"
+    )
+
+    @field_validator("config_file_id")
+    @classmethod
+    def validate_config_file_id(cls, v: str) -> str:
+        """Validate that config_file_id is a valid UUID."""
+        if not v or not v.strip():
+            raise ValueError("config_file_id cannot be empty")
+        v = v.strip()
+        try:
+            UUID(v)
+        except ValueError as exc:
+            raise ValueError("config_file_id must be a valid UUID") from exc
+        return v
+
+    @field_validator("file_hashes_to_delete")
+    @classmethod
+    def validate_file_hashes_to_delete(cls, v: list[str]) -> list[str]:
+        """Validate that at least one hash is provided."""
+        if not v:
+            raise ValueError(
+                "At least one file hash must be provided in file_hashes_to_delete"
+            )
+        return v

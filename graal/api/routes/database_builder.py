@@ -20,6 +20,7 @@ from graal.api.dependencies.auth import AdminUser, CurrentUser
 from graal.api.models.requests import (
     AppendDatabaseRequest,
     DatabaseBuildRequest,
+    DeleteFilesFromDatabaseRequest,
     FileUploadReference,
 )
 from graal.api.models.responses import (
@@ -840,3 +841,196 @@ async def get_database_manifest_by_id(
 
     await _authorize_manifest_read(manifest=manifest, current_user=current_user)
     return _manifest_to_response(manifest)
+
+
+async def _delete_files_from_database_manifest(
+    *,
+    manifest: SimilarityDBManifest,
+    request: DeleteFilesFromDatabaseRequest,
+    current_user: CurrentUser,
+) -> ProcessingResponse:
+    """Remove files from an existing database and rebuild it with the remaining files.
+
+    Files in the S3 input pool are **not** deleted; they may be shared with
+    other databases.  Only the database manifest and the resulting Parquet file
+    on S3 are updated.
+
+    Both the deletion and the rebuild happen as a single background job so that
+    either both succeed or neither takes effect (the manifest is updated only
+    after a successful rebuild).
+    """
+    logging.info(
+        "[API] Received delete-files request for manifest id=%s (display_name=%s)",
+        manifest.id,
+        manifest.name,
+    )
+
+    try:
+        user_id = UUID(current_user.user_id)
+
+        # Authorization: admin OR explicit role allowlist (owner/writer)
+        if not current_user.is_admin:
+            perm_service = get_database_permission_service()
+            user_role = await perm_service.get_user_role(
+                str(manifest.id), current_user.user_id
+            )
+            if user_role not in {DbRole.owner, DbRole.writer}:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Insufficient permissions to modify this database",
+                )
+
+        s3_database_name = _derive_s3_database_name_from_manifest(manifest)
+
+        # Extract existing files metadata from manifest
+        existing_files_metadata = _extract_existing_files_metadata(manifest)
+        logging.info(
+            "[API] Found %d existing files in manifest",
+            len(existing_files_metadata),
+        )
+
+        # Filter out the files to delete
+        hashes_to_delete = set(request.file_hashes_to_delete)
+        remaining_files_metadata = [
+            f for f in existing_files_metadata if f["file_hash"] not in hashes_to_delete
+        ]
+        deleted_count = len(existing_files_metadata) - len(remaining_files_metadata)
+
+        logging.info(
+            "[API] Deleting %d files, %d remaining",
+            deleted_count,
+            len(remaining_files_metadata),
+        )
+
+        if deleted_count == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No matching files found to delete",
+            )
+
+        if len(remaining_files_metadata) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Cannot delete all files from a database. "
+                    "At least one file must remain."
+                ),
+            )
+
+        # Resolve config_file_id → ExcelConfigManifest → s3_key
+        excel_service = get_excel_config_service()
+        config_manifest = await excel_service.get_manifest(
+            UUID(request.config_file_id)
+        )
+        if not config_manifest:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Configuration not found: {request.config_file_id}",
+            )
+        if not current_user.is_admin:
+            config_perm = await excel_service.get_user_permission(
+                UUID(request.config_file_id), user_id
+            )
+            if not config_perm:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied to this configuration",
+                )
+        config_s3_key = config_manifest.s3_key
+
+        # Download remaining files from S3 pool to temp directory for building
+        temp_dir = _ensure_temp_upload_dir()
+        s3_service = get_s3_service()
+        await _download_all_files(s3_service.pool, remaining_files_metadata, temp_dir)
+
+        # Create job for rebuild
+        job_id = create_job_id()
+        builder_service = get_database_builder_service()
+        builder_service.job_registry.create_job(
+            job_id=job_id,
+            input_file_path=f"database_delete_files_{manifest.id}",
+        )
+
+        logging.info(
+            "[API] Created job %s for deleting files from manifest id=%s (display_name=%s)",
+            job_id,
+            manifest.id,
+            manifest.name,
+        )
+
+        # Start background task for rebuild with remaining files
+        task = asyncio.create_task(
+            builder_service.start_database_build(
+                job_id=job_id,
+                config_file=config_s3_key,
+                display_name=manifest.name,
+                s3_database_name=s3_database_name,
+                manifest_id=manifest.id,
+                is_new_manifest=False,
+                files_metadata=remaining_files_metadata,
+                drop_empty_columns=request.drop_empty_columns,
+                similarity_threshold=request.similarity_threshold,
+                eps=request.eps,
+                group_by_columns=request.group_by_columns,
+                user_id=user_id,
+            )
+        )
+        task.add_done_callback(
+            _create_task_completion_callback(job_id, "Delete-files task")
+        )
+
+        logging.info(
+            "[API] Database delete-files job started - job_id=%s, manifest_id=%s, "
+            "deleted_count=%d, remaining_count=%d",
+            job_id,
+            manifest.id,
+            deleted_count,
+            len(remaining_files_metadata),
+        )
+        return ProcessingResponse(
+            job_id=job_id,
+            status=JobStatus.queued,
+            message="Database rebuild job started after file deletion",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(
+            "[API] Error deleting files from database manifest id=%s: %s",
+            manifest.id,
+            e,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete files from database: {str(e)}",
+        ) from e
+
+
+@router.post("/by-id/{db_id}/delete-files", response_model=ProcessingResponse)
+async def delete_files_from_database_by_id(
+    db_id: UUID,
+    request: DeleteFilesFromDatabaseRequest,
+    current_user: CurrentUser,
+):
+    """Delete files from an existing database and rebuild it (canonical endpoint).
+
+    The files identified by ``request.file_hashes_to_delete`` are removed from
+    the database and a full rebuild is triggered with the remaining files.
+    Files in the S3 input pool are *not* deleted because they may be shared
+    with other databases.
+
+    The rebuild runs as a background job; the manifest is updated only after a
+    successful rebuild, ensuring atomicity between the deletion and the rebuild.
+    """
+    pg_manifest_service = get_similarity_db_manifest_service()
+    manifest = await pg_manifest_service.get_manifest(db_id)
+    if manifest is None or not manifest.is_active:
+        raise HTTPException(status_code=404, detail="Database not found")
+
+    return await _delete_files_from_database_manifest(
+        manifest=manifest,
+        request=request,
+        current_user=current_user,
+    )
