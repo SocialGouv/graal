@@ -1,3 +1,10 @@
+# [1.47.0](https://github.com/SocialGouv/graal/compare/v1.46.0...v1.47.0) (2026-02-28)
+
+
+### Features
+
+* add dev-only login buttons for review environments ([846fd14](https://github.com/SocialGouv/graal/commit/846fd14f2da9df411fc7e95713b8a6c0b8393a29))
+
 # [1.46.0](https://github.com/SocialGouv/graal/compare/v1.45.0...v1.46.0) (2026-02-27)
 
 
