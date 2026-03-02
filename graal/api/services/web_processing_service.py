@@ -30,8 +30,9 @@ from graal.utils.json_utils import load_json
 logging.config.fileConfig("logging.conf")
 
 # Default rate limits for LLM clients (requests per minute)
+# TODO: Make this configurable via admin-managed LLM config in the future
 DEFAULT_RATE_LIMITS = {
-    "albert": 100,
+    "albert": 500,
     "fake": 9999999,
     "openai": 500,
 }
