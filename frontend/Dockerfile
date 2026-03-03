@@ -5,7 +5,9 @@ FROM node:24-alpine AS builder
 
 # Accept build argument for API URL
 ARG VITE_API_URL
+ARG VITE_ENABLE_DEV_LOGIN
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_ENABLE_DEV_LOGIN=$VITE_ENABLE_DEV_LOGIN
 
 # Create a non-root user for building
 RUN addgroup -g 1001 -S frontendgroup && \
