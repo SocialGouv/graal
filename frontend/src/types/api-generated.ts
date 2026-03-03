@@ -437,6 +437,34 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/databases/by-id/{db_id}/delete-files': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Delete Files From Database By Id
+     * @description Delete files from an existing database and rebuild it (canonical endpoint).
+     *
+     *     The files identified by ``request.file_hashes_to_delete`` are removed from
+     *     the database and a full rebuild is triggered with the remaining files.
+     *     Files in the S3 input pool are *not* deleted because they may be shared
+     *     with other databases.
+     *
+     *     The rebuild runs as a background job; the manifest is updated only after a
+     *     successful rebuild, ensuring atomicity between the deletion and the rebuild.
+     */
+    post: operations['delete_files_from_database_by_id_api_v1_databases_by_id__db_id__delete_files_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/auth/me': {
     parameters: {
       query?: never
@@ -1843,6 +1871,57 @@ export interface components {
      */
     DbRoleEnum: 'owner' | 'writer' | 'reader'
     /**
+     * DeleteFilesFromDatabaseRequest
+     * @description Request to delete files from an existing database and rebuild it.
+     *
+     *     The files identified by ``file_hashes_to_delete`` are removed from the
+     *     database manifest and a full rebuild is triggered with the remaining files.
+     *     Files in the S3 input pool are *not* deleted, because they may be shared
+     *     with other databases.
+     */
+    DeleteFilesFromDatabaseRequest: {
+      /**
+       * Drop Empty Columns
+       * @description Columns where empty rows should be dropped
+       * @default [
+       *       "Réponse"
+       *     ]
+       */
+      drop_empty_columns: string[]
+      /**
+       * Similarity Threshold
+       * @description Threshold for Levenshtein refinement
+       * @default 0.99
+       */
+      similarity_threshold: number
+      /**
+       * Eps
+       * @description Epsilon value for DBSCAN clustering
+       * @default 0.4
+       */
+      eps: number
+      /**
+       * Group By Columns
+       * @description Columns to group by during clustering
+       * @default [
+       *       "Lecture",
+       *       "origin_project",
+       *       "Num article"
+       *     ]
+       */
+      group_by_columns: string[]
+      /**
+       * Config File Id
+       * @description UUID of the Excel configuration manifest to use for rebuilding
+       */
+      config_file_id: string
+      /**
+       * File Hashes To Delete
+       * @description SHA-256 hashes of the files to remove from the database
+       */
+      file_hashes_to_delete: string[]
+    }
+    /**
      * ExcelConfigListResponse
      * @description Response wrapper for config listings.
      */
@@ -3102,6 +3181,43 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['DatabaseManifestResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_files_from_database_by_id_api_v1_databases_by_id__db_id__delete_files_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        db_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DeleteFilesFromDatabaseRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProcessingResponse']
         }
       }
       /** @description Validation Error */
