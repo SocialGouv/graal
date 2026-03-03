@@ -1,3 +1,10 @@
+# [1.48.0](https://github.com/SocialGouv/graal/compare/v1.47.1...v1.48.0) (2026-03-03)
+
+
+### Features
+
+* allow file deletion from amendment databases with rebuild ([2cda56b](https://github.com/SocialGouv/graal/commit/2cda56b34ade40d22f6dc4c58ae81189e4617c74)), closes [#229](https://github.com/SocialGouv/graal/issues/229)
+
 ## [1.47.1](https://github.com/SocialGouv/graal/compare/v1.47.0...v1.47.1) (2026-02-28)
 
 
