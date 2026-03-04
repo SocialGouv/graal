@@ -46,6 +46,7 @@ jobs:
           buildkit-daemon-address: ${{ vars.BUILDKIT_DAEMON_ADDRESS }}
           build-args: |
             VITE_API_URL=https://api-graal-preprod.ovh.fabrique.social.gouv.fr
+            VITE_ENABLE_DEV_LOGIN=false
 
   build-api:
     environment: build-preproduction
