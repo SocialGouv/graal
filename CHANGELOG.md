@@ -1,3 +1,10 @@
+## [1.48.2](https://github.com/SocialGouv/graal/compare/v1.48.1...v1.48.2) (2026-03-04)
+
+
+### Bug Fixes
+
+* Properly update job store when jobs are done ([71cbcfe](https://github.com/SocialGouv/graal/commit/71cbcfe52a3f34afcd4ac14921e4abe13a8c4c6f))
+
 ## [1.48.1](https://github.com/SocialGouv/graal/compare/v1.48.0...v1.48.1) (2026-03-04)
 
 
