@@ -1,3 +1,10 @@
+## [1.48.1](https://github.com/SocialGouv/graal/compare/v1.48.0...v1.48.1) (2026-03-04)
+
+
+### Bug Fixes
+
+* Properly configure VITE_ENABLE_DEV_LOGIN ([0190356](https://github.com/SocialGouv/graal/commit/019035628c3560996139d3536cbaab42baceeea0))
+
 # [1.48.0](https://github.com/SocialGouv/graal/compare/v1.47.1...v1.48.0) (2026-03-03)
 
 
