@@ -61,6 +61,7 @@ jobs:
           buildkit-daemon-address: ${{ vars.BUILDKIT_DAEMON_ADDRESS }}
           build-args: |
             VITE_API_URL=https://${{ steps.env.outputs.subdomain_api }}.ovh.fabrique.social.gouv.fr
+            VITE_ENABLE_DEV_LOGIN=true
 
   build-api:
     environment: build-review-auto
