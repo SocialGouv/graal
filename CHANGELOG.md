@@ -1,3 +1,10 @@
+# [1.49.0](https://github.com/SocialGouv/graal/compare/v1.48.2...v1.49.0) (2026-03-05)
+
+
+### Features
+
+* Add rate limit per minute to LLM config ([d128676](https://github.com/SocialGouv/graal/commit/d1286766147de46d9a32cc8770a61d7de0719273))
+
 ## [1.48.2](https://github.com/SocialGouv/graal/compare/v1.48.1...v1.48.2) (2026-03-04)
 
 
