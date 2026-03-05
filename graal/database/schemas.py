@@ -245,6 +245,13 @@ class LlmConfigBase(BaseModel):
     # Credentials. These will be stored in DB for now.
     api_key: str | None = None
 
+    rate_limit_per_minute: int = Field(
+        default=500,
+        ge=1,
+        le=10_000,
+        description="Rate limit in requests per minute",
+    )
+
 
 class LlmConfigCreate(LlmConfigBase):
     """Schema for creating an LLM config."""
@@ -264,6 +271,13 @@ class LlmConfigUpdate(BaseModel):
     base_url: str | None = Field(default=None, max_length=512)
 
     api_key: str | None = None
+
+    rate_limit_per_minute: int | None = Field(
+        default=None,
+        ge=1,
+        le=10_000,
+        description="Rate limit in requests per minute",
+    )
 
 
 class LlmConfigRead(LlmConfigBase):

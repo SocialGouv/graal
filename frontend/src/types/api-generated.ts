@@ -2205,6 +2205,12 @@ export interface components {
       base_url?: string | null
       /** Api Key */
       api_key?: string | null
+      /**
+       * Rate Limit Per Minute
+       * @description Rate limit in requests per minute
+       * @default 500
+       */
+      rate_limit_per_minute: number
     }
     /**
      * LlmConfigRead
@@ -2220,6 +2226,12 @@ export interface components {
       base_url?: string | null
       /** Api Key */
       api_key?: string | null
+      /**
+       * Rate Limit Per Minute
+       * @description Rate limit in requests per minute
+       * @default 500
+       */
+      rate_limit_per_minute: number
       /**
        * Id
        * Format: uuid
@@ -2250,6 +2262,11 @@ export interface components {
       base_url?: string | null
       /** Api Key */
       api_key?: string | null
+      /**
+       * Rate Limit Per Minute
+       * @description Rate limit in requests per minute
+       */
+      rate_limit_per_minute?: number | null
     }
     /**
      * LlmProviderEnum

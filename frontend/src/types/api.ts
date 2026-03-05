@@ -56,7 +56,6 @@ export interface SummaryGenerationConfig {
   enabled: boolean
   should_overwrite?: boolean
   llm_config_id?: UUID
-  timeout?: number
 }
 
 export type LlmProvider = 'albert' // | 'scaleway' | 'mistral' | 'ollama' | 'vllm'
@@ -67,6 +66,8 @@ export interface LlmConfigBase {
   model_name: string
   base_url?: string
   api_key?: string
+  /** Requests per minute (1..10_000). Defaults to 500. */
+  rate_limit_per_minute?: number
 }
 
 export type LlmConfigCreate = LlmConfigBase
@@ -76,14 +77,13 @@ export interface LlmConfigUpdate {
   provider?: LlmProvider
   model_name?: string
   base_url?: string | null
-  endpoint?: string | null
   api_key?: string | null
-  user?: string | null
-  password?: string | null
+  rate_limit_per_minute?: number
 }
 
 export interface LlmConfigRead extends LlmConfigBase {
   id: UUID
+  rate_limit_per_minute: number
   created_at: string
   updated_at: string
 }

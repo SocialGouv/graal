@@ -29,6 +29,23 @@
 - Use factory pattern: [`LLMFactory`](graal/summary/llm_factory.py)
 - Client implementations: [`AlbertClient`](graal/summary/llm_clients.py), `OllamaClient`, `ScalewayClient`
 
+## Rate limiting & throughput (common gotcha)
+
+- **Where the RPM comes from**
+  - CLI/YAML pipeline: `config["llm_clients"][provider]["rate_limit_per_minute"]` is read by
+    `get_rate_limiting_config()` (`graal/summary/llm_factory.py`).
+  - Web pipeline: `WebProcessingService._merge_frontend_config()` sets
+    `config["llm_clients"][provider]["rate_limit_per_minute"]` from the selected DB `LlmConfig.rate_limit_per_minute`
+    (DB + Pydantic default is **500**).
+  - `SummaryGenerationLoadBalancer` enforces it with `TokenBucketRateLimiter` **per provider**.
+
+- **If it “feels like 100/min” while configured at 500/min**
+  - You may be **latency/concurrency limited**, not rate-limited.
+  - In the web path, `nb_instances` is currently hard-coded to **8**, so effective throughput is roughly:
+    `min(rate_limit_per_minute, nb_instances / avg_latency_seconds * 60)`.
+    Example: 8 workers and ~5s/call ⇒ ~96 req/min.
+  - Alternatively, the provider may enforce a lower **server-side** limit (look for HTTP 429 / RateLimit errors).
+
 ## Error Handling
 - Handle API timeouts gracefully
 - Log failed requests with context

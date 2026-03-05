@@ -46,6 +46,7 @@ class LlmConfigService:
                 model_name=data.model_name,
                 base_url=data.base_url,
                 api_key=data.api_key,
+                rate_limit_per_minute=data.rate_limit_per_minute,
             )
             session.add(new_config)
             try:
@@ -68,6 +69,8 @@ class LlmConfigService:
             # Partial update
             update_data = updates.model_dump(exclude_unset=True)
             for key, value in update_data.items():
+                if key == "rate_limit_per_minute" and value is None:
+                    raise ValueError("rate_limit_per_minute cannot be null")
                 setattr(config, key, value)
 
             try:

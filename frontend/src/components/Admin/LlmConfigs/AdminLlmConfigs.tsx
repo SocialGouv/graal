@@ -26,12 +26,22 @@ const editModal = createModal({
 
 type LlmConfigFormState = LlmConfigCreate
 
-const defaultFormState: LlmConfigFormState = {
+// `LlmConfigCreate` allows omitting `rate_limit_per_minute` (backend default),
+// but in this admin form we always keep a concrete number in state.
+type LlmConfigFormStateWithRequiredRateLimit = Omit<
+  LlmConfigFormState,
+  'rate_limit_per_minute'
+> & {
+  rate_limit_per_minute: number
+}
+
+const defaultFormState: LlmConfigFormStateWithRequiredRateLimit = {
   name: '',
   provider: 'albert',
   model_name: '',
   base_url: '',
-  api_key: ''
+  api_key: '',
+  rate_limit_per_minute: 500
 }
 
 const providerLabels: Record<LlmProvider, string> = {
@@ -53,7 +63,7 @@ export const AdminLlmConfigs = () => {
 
   const [editingConfig, setEditingConfig] = useState<LlmConfigRead | null>(null)
   const [formState, setFormState] =
-    useState<LlmConfigFormState>(defaultFormState)
+    useState<LlmConfigFormStateWithRequiredRateLimit>(defaultFormState)
   const [formError, setFormError] = useState<string | null>(null)
 
   const showError = Boolean(error)
@@ -80,13 +90,17 @@ export const AdminLlmConfigs = () => {
       provider: config.provider,
       model_name: config.model_name,
       base_url: config.base_url ?? '',
-      api_key: config.api_key ?? ''
+      api_key: config.api_key ?? '',
+      rate_limit_per_minute: config.rate_limit_per_minute
     })
     setFormError(null)
     editModal.open()
   }
 
-  const handleFormChange = (field: keyof LlmConfigFormState, value: string) => {
+  const handleFormChange = (
+    field: keyof LlmConfigFormStateWithRequiredRateLimit,
+    value: string | number
+  ) => {
     setFormState((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -103,6 +117,12 @@ export const AdminLlmConfigs = () => {
     if (showOpenAIFields && !formState.api_key?.trim()) {
       return 'La clé API est obligatoire pour ce fournisseur.'
     }
+
+    const rateLimit = formState.rate_limit_per_minute
+
+    if (!Number.isFinite(rateLimit) || rateLimit < 1 || rateLimit > 10000) {
+      return 'La limite de requêtes/minute doit être comprise entre 1 et 10 000.'
+    }
     return null
   }
 
@@ -118,7 +138,8 @@ export const AdminLlmConfigs = () => {
       provider: formState.provider,
       model_name: formState.model_name.trim(),
       base_url: showOpenAIFields ? formState.base_url?.trim() : undefined,
-      api_key: showOpenAIFields ? formState.api_key?.trim() : undefined
+      api_key: showOpenAIFields ? formState.api_key?.trim() : undefined,
+      rate_limit_per_minute: formState.rate_limit_per_minute
     }
 
     try {
@@ -155,6 +176,7 @@ export const AdminLlmConfigs = () => {
           {providerLabels[config.provider]}
         </Badge>,
         config.model_name,
+        config.rate_limit_per_minute,
         new Date(config.updated_at).toLocaleDateString('fr-FR'),
         <div
           key={`${config.id}-actions`}
@@ -247,7 +269,14 @@ export const AdminLlmConfigs = () => {
           <p>Chargement des configurations...</p>
         ) : configs.length > 0 ? (
           <Table
-            headers={['Nom', 'Fournisseur', 'Modèle', 'Mis à jour', 'Actions']}
+            headers={[
+              'Nom',
+              'Fournisseur',
+              'Modèle',
+              'Limite (req/min)',
+              'Mis à jour',
+              'Actions'
+            ]}
             data={tableRows}
           />
         ) : (
@@ -342,6 +371,24 @@ export const AdminLlmConfigs = () => {
             </div>
           </div>
         )}
+
+        <div className={fr.cx('fr-mt-2w')}>
+          <Input
+            label="Limite (requêtes/minute)"
+            hintText="Entre 1 et 10 000"
+            nativeInputProps={{
+              value: String(formState.rate_limit_per_minute),
+              onChange: (e) =>
+                handleFormChange(
+                  'rate_limit_per_minute',
+                  Number(e.target.value)
+                ),
+              type: 'number',
+              min: 1,
+              max: 10000
+            }}
+          />
+        </div>
 
         <div
           className={fr.cx('fr-mt-3w')}

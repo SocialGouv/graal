@@ -29,14 +29,6 @@ from graal.utils.json_utils import load_json
 
 logging.config.fileConfig("logging.conf")
 
-# Default rate limits for LLM clients (requests per minute)
-# TODO: Make this configurable via admin-managed LLM config in the future
-DEFAULT_RATE_LIMITS = {
-    "albert": 500,
-    "fake": 9999999,
-    "openai": 500,
-}
-
 
 class WebProcessingService:
     """Service for web-based processing of amendments."""
@@ -183,59 +175,34 @@ class WebProcessingService:
             }
 
             if frontend_config.summary_generation.enabled:
-                # Preferred path: resolve admin-managed config by id
-                if frontend_config.summary_generation.llm_config_id is not None:
-                    from graal.api.services.llm_config_service import (
-                        get_llm_config_service,
-                    )
+                from graal.api.services.llm_config_service import (
+                    get_llm_config_service,
+                )
 
-                    llm_config_service = get_llm_config_service()
-                    llm_config = await llm_config_service.get_config(
-                        frontend_config.summary_generation.llm_config_id
-                    )
+                llm_config_service = get_llm_config_service()
+                llm_config = await llm_config_service.get_config(
+                    frontend_config.summary_generation.llm_config_id
+                )
 
-                    if llm_config is None:
-                        raise ValueError("Selected LLM config not found")
+                if llm_config is None:
+                    raise ValueError("Selected LLM config not found")
 
-                    llm_type = llm_config.provider.value
-                    config["llm_clients"] = {
-                        llm_type: {
-                            "nb_instances": 8,
-                            "timeout": 30,
-                            "rate_limit_per_minute": DEFAULT_RATE_LIMITS.get(
-                                llm_type, 500
-                            ),
-                        }
+                llm_type = llm_config.provider.value
+                config["llm_clients"] = {
+                    llm_type: {
+                        "nb_instances": 8,
+                        "timeout": 30,
+                        "rate_limit_per_minute": llm_config.rate_limit_per_minute,
                     }
+                }
 
-                    config.setdefault("llm_credentials", {})
-                    config["llm_credentials"][llm_type] = {
+                config["llm_credentials"] = {
+                    llm_type: {
                         "base_url": llm_config.base_url,
                         "api_key": llm_config.api_key,
                         "model_name": llm_config.model_name,
                     }
-                # Backward-compatible path: llm_type + optional llm_credentials
-                elif frontend_config.summary_generation.llm_type:
-                    config["llm_clients"] = {
-                        frontend_config.summary_generation.llm_type: {
-                            "nb_instances": 8,  # Default to 8 instances
-                            "timeout": 30,  # Default to 30 seconds
-                            "rate_limit_per_minute": DEFAULT_RATE_LIMITS.get(
-                                frontend_config.summary_generation.llm_type, 500
-                            ),
-                        }
-                    }
-
-                    if frontend_config.summary_generation.llm_credentials:
-                        config.setdefault("llm_credentials", {})
-                        creds = frontend_config.summary_generation.llm_credentials
-                        config["llm_credentials"][
-                            frontend_config.summary_generation.llm_type
-                        ] = {
-                            "base_url": creds.base_url,
-                            "api_key": creds.api_key,
-                            "model_name": creds.model_name,
-                        }
+                }
 
         # Update processing options (pipeline-level)
         if "processing_options" not in config:

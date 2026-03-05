@@ -8,7 +8,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from graal.custom_types import LLMType
 from graal.database.enums import DbRoleEnum, ExcelConfigRoleEnum
 
 
@@ -147,40 +146,6 @@ class DefaultOpinionConfig(BaseModel):
     )
 
 
-class LLMCredentials(BaseModel):
-    """Credentials for LLM API clients."""
-
-    model_config = {"protected_namespaces": ()}  # Allow model_ prefix
-
-    # OpenAI-compatible credentials (for scaleway, albert)
-    base_url: Optional[str] = Field(
-        default=None,
-        description="Base URL for OpenAI-compatible APIs (scaleway, albert)",
-    )
-    api_key: Optional[str] = Field(
-        default=None,
-        description="API key for authentication (scaleway, albert)",
-    )
-    model_name: Optional[str] = Field(
-        default=None,
-        description="Model name to use",
-    )
-
-    # Ollama/vLLM credentials
-    endpoint: Optional[str] = Field(
-        default=None,
-        description="Endpoint URL for Ollama or vLLM",
-    )
-    user: Optional[str] = Field(
-        default=None,
-        description="Username for authentication (ollama, vllm)",
-    )
-    password: Optional[str] = Field(
-        default=None,
-        description="Password for authentication (ollama, vllm)",
-    )
-
-
 class SummaryGenerationConfig(BaseModel):
     """Configuration for summary generation (Objet amdt) feature."""
 
@@ -197,36 +162,18 @@ class SummaryGenerationConfig(BaseModel):
         description="UUID of an admin-managed LLM config to use when enabled.",
     )
 
-    # Backward-compatible / advanced option: specify provider + credentials inline.
-    llm_type: Optional[LLMType] = Field(
-        default=None,
-        description="Type of LLM provider to use. Required when enabled if llm_config_id is not provided.",
-    )
-    llm_credentials: Optional[LLMCredentials] = Field(
-        default=None,
-        description="Credentials for the LLM provider. If not provided, uses environment variables.",
-    )
-
-    @field_validator("llm_type")
+    @field_validator("llm_config_id")
     @classmethod
     def validate_llm_selection_when_enabled(cls, v, info):
-        """Validate that an LLM selection is provided when enabled.
-
-        Accept either:
-        - llm_config_id (preferred)
-        - llm_type (legacy/advanced)
-        """
+        """Validate that an LLM config id is provided when summary generation is enabled."""
 
         data = info.data
         if not data.get("enabled"):
             return v
 
-        if data.get("llm_config_id") is not None:
-            return v
-
-        if not v:
+        if v is None:
             raise ValueError(
-                "llm_config_id or llm_type is required when summary generation is enabled"
+                "llm_config_id is required when summary generation is enabled"
             )
 
         return v

@@ -643,6 +643,13 @@ class LlmConfig(Base):
         comment="API key for OpenAI-compatible providers",
     )
 
+    rate_limit_per_minute: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="500",
+        comment="Rate limit in requests per minute",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
