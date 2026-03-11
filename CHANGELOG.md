@@ -1,3 +1,10 @@
+## [1.49.1](https://github.com/SocialGouv/graal/compare/v1.49.0...v1.49.1) (2026-03-11)
+
+
+### Bug Fixes
+
+* lower log level for per-request auth messages from INFO to DEBUG ([4069114](https://github.com/SocialGouv/graal/commit/40691143b1b10a10c39a2cc214b18e58a0c2956c)), closes [#236](https://github.com/SocialGouv/graal/issues/236)
+
 # [1.49.0](https://github.com/SocialGouv/graal/compare/v1.48.2...v1.49.0) (2026-03-05)
 
 

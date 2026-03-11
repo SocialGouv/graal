@@ -18,5 +18,5 @@
         "clean:ts": "tsc --build --clean",
         "install:all": "pnpm install"
     },
-    "version": "1.49.0"
+    "version": "1.49.1"
 }
