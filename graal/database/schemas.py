@@ -252,6 +252,13 @@ class LlmConfigBase(BaseModel):
         description="Rate limit in requests per minute",
     )
 
+    max_concurrent_requests: int = Field(
+        default=6,
+        ge=1,
+        le=100,
+        description="Maximum number of concurrent requests for summary generation",
+    )
+
 
 class LlmConfigCreate(LlmConfigBase):
     """Schema for creating an LLM config."""
@@ -277,6 +284,13 @@ class LlmConfigUpdate(BaseModel):
         ge=1,
         le=10_000,
         description="Rate limit in requests per minute",
+    )
+
+    max_concurrent_requests: int | None = Field(
+        default=None,
+        ge=1,
+        le=100,
+        description="Maximum number of concurrent requests for summary generation",
     )
 
 

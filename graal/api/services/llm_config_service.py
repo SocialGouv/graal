@@ -47,6 +47,7 @@ class LlmConfigService:
                 base_url=data.base_url,
                 api_key=data.api_key,
                 rate_limit_per_minute=data.rate_limit_per_minute,
+                max_concurrent_requests=data.max_concurrent_requests,
             )
             session.add(new_config)
             try:
@@ -71,6 +72,8 @@ class LlmConfigService:
             for key, value in update_data.items():
                 if key == "rate_limit_per_minute" and value is None:
                     raise ValueError("rate_limit_per_minute cannot be null")
+                if key == "max_concurrent_requests" and value is None:
+                    raise ValueError("max_concurrent_requests cannot be null")
                 setattr(config, key, value)
 
             try:

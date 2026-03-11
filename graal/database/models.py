@@ -650,6 +650,13 @@ class LlmConfig(Base):
         comment="Rate limit in requests per minute",
     )
 
+    max_concurrent_requests: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="6",
+        comment="Maximum number of concurrent summary generation requests",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
