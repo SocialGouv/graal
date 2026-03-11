@@ -139,7 +139,7 @@ class DatabaseAuthorizationProvider(AuthorizationProvider):
                 )
                 return None
 
-            logging.info(
+            logging.debug(
                 f"[DatabaseAuthProvider] User {user.id} found (admin={user.is_admin})"
             )
             return UserResponse(
@@ -296,7 +296,7 @@ class AuthorizationService:
                 detail="Admin access required",
             )
 
-        logging.info(
+        logging.debug(
             f"[AuthorizationService] Admin access granted for user: {user.user_id}"
         )
         return user
