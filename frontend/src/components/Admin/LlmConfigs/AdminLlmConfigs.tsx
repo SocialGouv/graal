@@ -33,6 +33,7 @@ type LlmConfigFormStateWithRequiredRateLimit = Omit<
   'rate_limit_per_minute'
 > & {
   rate_limit_per_minute: number
+  max_concurrent_requests: number
 }
 
 const defaultFormState: LlmConfigFormStateWithRequiredRateLimit = {
@@ -41,7 +42,8 @@ const defaultFormState: LlmConfigFormStateWithRequiredRateLimit = {
   model_name: '',
   base_url: '',
   api_key: '',
-  rate_limit_per_minute: 500
+  rate_limit_per_minute: 500,
+  max_concurrent_requests: 6
 }
 
 const providerLabels: Record<LlmProvider, string> = {
@@ -91,7 +93,8 @@ export const AdminLlmConfigs = () => {
       model_name: config.model_name,
       base_url: config.base_url ?? '',
       api_key: config.api_key ?? '',
-      rate_limit_per_minute: config.rate_limit_per_minute
+      rate_limit_per_minute: config.rate_limit_per_minute,
+      max_concurrent_requests: config.max_concurrent_requests
     })
     setFormError(null)
     editModal.open()
@@ -123,6 +126,15 @@ export const AdminLlmConfigs = () => {
     if (!Number.isFinite(rateLimit) || rateLimit < 1 || rateLimit > 10000) {
       return 'La limite de requêtes/minute doit être comprise entre 1 et 10 000.'
     }
+
+    const maxConcurrent = formState.max_concurrent_requests
+    if (
+      !Number.isFinite(maxConcurrent) ||
+      maxConcurrent < 1 ||
+      maxConcurrent > 100
+    ) {
+      return 'Le nombre maximum de requêtes concurrentes doit être compris entre 1 et 100.'
+    }
     return null
   }
 
@@ -139,7 +151,8 @@ export const AdminLlmConfigs = () => {
       model_name: formState.model_name.trim(),
       base_url: showOpenAIFields ? formState.base_url?.trim() : undefined,
       api_key: showOpenAIFields ? formState.api_key?.trim() : undefined,
-      rate_limit_per_minute: formState.rate_limit_per_minute
+      rate_limit_per_minute: formState.rate_limit_per_minute,
+      max_concurrent_requests: formState.max_concurrent_requests
     }
 
     try {
@@ -177,6 +190,7 @@ export const AdminLlmConfigs = () => {
         </Badge>,
         config.model_name,
         config.rate_limit_per_minute,
+        config.max_concurrent_requests,
         new Date(config.updated_at).toLocaleDateString('fr-FR'),
         <div
           key={`${config.id}-actions`}
@@ -274,6 +288,7 @@ export const AdminLlmConfigs = () => {
               'Fournisseur',
               'Modèle',
               'Limite (req/min)',
+              'Concurrence max',
               'Mis à jour',
               'Actions'
             ]}
@@ -386,6 +401,24 @@ export const AdminLlmConfigs = () => {
               type: 'number',
               min: 1,
               max: 10000
+            }}
+          />
+        </div>
+
+        <div className={fr.cx('fr-mt-2w')}>
+          <Input
+            label="Concurrence maximale"
+            hintText="Nombre maximum de requêtes simultanées (1 à 100)"
+            nativeInputProps={{
+              value: String(formState.max_concurrent_requests),
+              onChange: (e) =>
+                handleFormChange(
+                  'max_concurrent_requests',
+                  Number(e.target.value)
+                ),
+              type: 'number',
+              min: 1,
+              max: 100
             }}
           />
         </div>

@@ -2211,6 +2211,12 @@ export interface components {
        * @default 500
        */
       rate_limit_per_minute: number
+      /**
+       * Max Concurrent Requests
+       * @description Maximum number of concurrent requests for summary generation
+       * @default 6
+       */
+      max_concurrent_requests: number
     }
     /**
      * LlmConfigRead
@@ -2232,6 +2238,12 @@ export interface components {
        * @default 500
        */
       rate_limit_per_minute: number
+      /**
+       * Max Concurrent Requests
+       * @description Maximum number of concurrent requests for summary generation
+       * @default 6
+       */
+      max_concurrent_requests: number
       /**
        * Id
        * Format: uuid
@@ -2267,6 +2279,11 @@ export interface components {
        * @description Rate limit in requests per minute
        */
       rate_limit_per_minute?: number | null
+      /**
+       * Max Concurrent Requests
+       * @description Maximum number of concurrent requests for summary generation
+       */
+      max_concurrent_requests?: number | null
     }
     /**
      * LlmProviderEnum

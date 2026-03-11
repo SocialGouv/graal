@@ -68,6 +68,8 @@ export interface LlmConfigBase {
   api_key?: string
   /** Requests per minute (1..10_000). Defaults to 500. */
   rate_limit_per_minute?: number
+  /** Maximum number of concurrent requests. Defaults to 6. */
+  max_concurrent_requests?: number
 }
 
 export type LlmConfigCreate = LlmConfigBase
@@ -79,11 +81,13 @@ export interface LlmConfigUpdate {
   base_url?: string | null
   api_key?: string | null
   rate_limit_per_minute?: number
+  max_concurrent_requests?: number
 }
 
 export interface LlmConfigRead extends LlmConfigBase {
   id: UUID
   rate_limit_per_minute: number
+  max_concurrent_requests: number
   created_at: string
   updated_at: string
 }
