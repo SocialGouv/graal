@@ -87,11 +87,6 @@ default_opinion:
   enabled: false
   should_overwrite: true
 
-# LLM client configuration
-llm_clients:
-  fake:
-    nb_instances: 1
-
 # File paths configuration
 paths:
   # Path to GRAAL configuration Excel file

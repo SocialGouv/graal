@@ -3,49 +3,6 @@ import time
 from typing import Optional
 
 
-class FixedIntervalRateLimiter:
-    """
-    A thread-safe rate limiter that restricts the number of allowed calls per minute.
-
-    This implementation uses a simple fixed-interval technique, where each call is allowed only
-    after a minimum interval has passed since the previous allowed call.
-    The interval is calculated as 60 seconds divided by the desired calls per minute.
-    If a call is attempted before the interval has elapsed, the calling thread will sleep until it
-    is allowed.
-
-    Thread safety is ensured using a lock. The class is also made pickleable by excluding the lock
-    from serialization and recreating it upon deserialization.
-    """
-
-    def __init__(self, calls_per_minute: float):
-        self.interval = 60.0 / calls_per_minute
-        self.lock = threading.Lock()
-        self.next_allowed_time = time.perf_counter()
-
-    def acquire(self):
-        with self.lock:
-            now = time.perf_counter()
-            # If we're too early for the next call, sleep until allowed
-            if now < self.next_allowed_time:
-                time.sleep(self.next_allowed_time - now)
-            # After sleeping or if we were allowed immediately, set the next allowed time
-            self.next_allowed_time = time.perf_counter() + self.interval
-
-    # Implement __getstate__ and __setstate__ to make the class pickleable
-    def __getstate__(self):
-        # Return the instance state without the lock
-        state = self.__dict__.copy()
-        # Remove the lock before pickling
-        state.pop("lock", None)
-        return state
-
-    def __setstate__(self, state):
-        # Restore the instance state from the unpickled dictionary
-        self.__dict__.update(state)
-        # Recreate a new lock since it's not pickleable
-        self.lock = threading.Lock()
-
-
 class TokenBucketRateLimiter:
     """
     TokenBucketRateLimiter implements a token bucket algorithm for rate limiting.

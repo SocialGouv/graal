@@ -25,14 +25,16 @@ class SummaryGenerationFeature(BaseFeature):
 
     def __init__(
         self,
-        summary_gen_load_balancer: SummaryGenerationLoadBalancer = None,
-        acronym_mapping: dict = None,
-        config_excel: dict[str, pd.DataFrame] = None,
+        summary_gen_load_balancer: SummaryGenerationLoadBalancer | None = None,
+        acronym_mapping: dict[str, str] | None = None,
+        config_excel: dict[str, pd.DataFrame] | None = None,
     ):
         super().__init__("summary_generation")
-        self.summary_gen_load_balancer = summary_gen_load_balancer
-        self.acronym_mapping = acronym_mapping or {}
-        self.config_excel = config_excel
+        self.summary_gen_load_balancer: SummaryGenerationLoadBalancer | None = (
+            summary_gen_load_balancer
+        )
+        self.acronym_mapping: dict[str, str] = acronym_mapping or {}
+        self.config_excel: dict[str, pd.DataFrame] | None = config_excel
 
     def get_required_columns(self) -> Set[str]:
         """Summary generation requires these columns."""
@@ -120,8 +122,10 @@ class SummaryGenerationFeature(BaseFeature):
         """
         regex_pattern = r"amendements? d.?appel"
         mask = df["Exposé amdt"].apply(
-            lambda x: isinstance(x, str)
-            and re.search(regex_pattern, x, re.IGNORECASE) is not None
+            lambda x: (
+                isinstance(x, str)
+                and re.search(regex_pattern, x, re.IGNORECASE) is not None
+            )
         ) & (df["Objet amdt"] != "Supprimer cet article.")
 
         df.loc[mask, "Objet amdt"] = "APPEL : " + df.loc[mask, "Objet amdt"]

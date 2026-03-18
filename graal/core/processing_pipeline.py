@@ -12,6 +12,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pandas as pd
 
@@ -31,10 +32,14 @@ from graal.features.similarity_search_feature import SimilaritySearchFeature
 from graal.features.summary_feature import (
     SummaryGenerationFeature,
 )
-from graal.summary.llm_factory import create_llm_api_clients, get_rate_limiting_config
+from graal.summary.llm_factory import (
+    create_llm_api_clients_from_llm_config,
+    get_rate_limiting_config_from_llm_config,
+)
 from graal.summary.summary_generation_load_balancer import SummaryGenerationLoadBalancer
 from graal.utils.amendment_pre_processor import AmendmentPreProcessor
 from graal.utils.config.config_preprocessor import ConfigPreprocessor
+from graal.utils.executors import run_async_on_main_loop
 from graal.utils.sheet_data_loader import SheetDataLoader
 from graal.utils.text_utils import (
     add_placeholders_to_empty_column,
@@ -228,20 +233,45 @@ class ProcessingPipeline:
         )
         logging.debug("[PIPELINE] Common amendment patterns processed")
 
-        # Create LLM clients for summary generation
-        logging.info("[PIPELINE] Creating LLM clients for summary generation")
-        credentials = config.get("llm_credentials")
-        llm_api_clients = create_llm_api_clients(config, credentials=credentials)
-        rate_limiting_config = get_rate_limiting_config(config)
-        summary_gen_load_balancer = SummaryGenerationLoadBalancer(
-            clients=llm_api_clients,
-            queue_timeout=4,
-            max_retries=5,
-            rate_limiting_config=rate_limiting_config,
-        )
-        logging.debug(
-            f"[PIPELINE] LLM load balancer created - clients: {len(llm_api_clients)}"
-        )
+        # Create LLM clients for summary generation (DB-only source of truth)
+        summary_config = config.get("summary_generation", {})
+        summary_enabled = summary_config.get("enabled", False)
+        summary_gen_load_balancer: SummaryGenerationLoadBalancer | None = None
+
+        if summary_enabled:
+            logging.info("[PIPELINE] Creating LLM clients for summary generation")
+
+            llm_config_id_raw = summary_config.get("llm_config_id")
+            if llm_config_id_raw is None:
+                raise ValueError(
+                    "summary_generation.llm_config_id is required when summary generation is enabled"
+                )
+
+            llm_config_id = UUID(str(llm_config_id_raw))
+
+            from graal.api.services.llm_config_service import get_llm_config_service
+
+            llm_config_service = get_llm_config_service()
+            llm_config = run_async_on_main_loop(
+                llm_config_service.get_config(llm_config_id)
+            )
+            if llm_config is None:
+                raise ValueError(f"Selected LLM config not found (id={llm_config_id})")
+
+            llm_api_clients = create_llm_api_clients_from_llm_config(
+                llm_config,
+                timeout=30,
+            )
+            rate_limiting_config = get_rate_limiting_config_from_llm_config(llm_config)
+            summary_gen_load_balancer = SummaryGenerationLoadBalancer(
+                clients=llm_api_clients,
+                queue_timeout=4,
+                max_retries=5,
+                rate_limiting_config=rate_limiting_config,
+            )
+            logging.debug(
+                f"[PIPELINE] LLM load balancer created - clients: {len(llm_api_clients)}"
+            )
 
         # Create all features to determine columns to clear
         logging.info("[PIPELINE] Creating feature instances")

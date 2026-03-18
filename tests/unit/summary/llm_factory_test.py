@@ -1,5 +1,7 @@
 import os
 
+from graal.database.enums import LlmProviderEnum
+from graal.database.models import LlmConfig
 from graal.summary.llm_clients import (
     FakeLLMAPIClient,
     OpenAIAPIClient,
@@ -7,7 +9,8 @@ from graal.summary.llm_clients import (
 from graal.summary.llm_factory import (
     create_albert_client,
     create_fake_client,
-    get_rate_limiting_config,
+    create_llm_api_clients_from_llm_config,
+    get_rate_limiting_config_from_llm_config,
 )
 
 # Individual Factory Function Tests
@@ -72,37 +75,41 @@ def test_create_fake_client():
 # Rate Limiting Tests
 
 
-def test_get_rate_limiting_config():
-    """Test getting rate limiting configuration."""
-    # Create a test configuration
-    config = {
-        "llm_clients": {
-            "albert": {"nb_instances": 1, "rate_limit_per_minute": 20},
-            "fake": {"nb_instances": 1},
-        }
-    }
+def test_create_llm_api_clients_from_llm_config():
+    """Test creating multiple client instances from a DB LlmConfig."""
 
-    # Call the function
-    rate_limiting = get_rate_limiting_config(config)
+    llm_config = LlmConfig(
+        name="test",
+        provider=LlmProviderEnum.albert,
+        model_name="test-albert-model",
+        base_url="https://test-albert.com",
+        api_key="test-etalab-key",  # pragma: allowlist secret
+        rate_limit_per_minute=20,
+        max_concurrent_requests=3,
+    )
 
-    # Verify the result
+    clients = create_llm_api_clients_from_llm_config(llm_config, timeout=45)
+
+    assert len(clients) == 3
+    assert all(isinstance(client, OpenAIAPIClient) for client in clients)
+    assert all(client.type == "albert" for client in clients)
+    assert all(client.model_name == "test-albert-model" for client in clients)
+    assert all(client.timeout == 45 for client in clients)
+
+
+def test_get_rate_limiting_config_from_llm_config():
+    """Test getting rate limiting configuration from a DB LlmConfig."""
+
+    llm_config = LlmConfig(
+        name="test",
+        provider=LlmProviderEnum.albert,
+        model_name="test-albert-model",
+        base_url="https://test-albert.com",
+        api_key="test-etalab-key",  # pragma: allowlist secret
+        rate_limit_per_minute=20,
+        max_concurrent_requests=1,
+    )
+
+    rate_limiting = get_rate_limiting_config_from_llm_config(llm_config)
+
     assert rate_limiting == {"albert": 20}
-
-
-def test_get_rate_limiting_config_empty():
-    """Test getting rate limiting configuration with empty config."""
-    rate_limiting = get_rate_limiting_config({})
-
-    assert rate_limiting == {}
-
-
-def test_get_rate_limiting_config_no_rate_limiting():
-    """Test getting rate limiting configuration with no rate limiting specified."""
-    # Create a test configuration
-    config = {"llm_clients": {"fake": {"nb_instances": 1}}}
-
-    # Call the function
-    rate_limiting = get_rate_limiting_config(config)
-
-    # Verify the result
-    assert rate_limiting == {}

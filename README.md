@@ -186,34 +186,13 @@ allotment:
   similarity_threshold: 0.999  # Threshold above which amendments are considered similar
 ```
 
-#### LLM Client Configuration
+#### LLM Configuration (Web app)
 
-You can configure LLM clients using the `llm_clients` section in your configuration file:
+Summary-generation LLM settings (provider/model/credentials, rate limit, concurrency)
+are managed by admins in the database via the web app.
 
-```yaml
-# LLM client configuration
-llm_clients:
-  scaleway:
-    nb_instances: 6
-    timeout: 30
-  albert:
-    nb_instances: 3
-    rate_limiting: 100
-```
-
-Each client type can have the following parameters:
-
-- `nb_instances`: Number of client instances to create (required)
-- `timeout`: Request timeout in seconds (optional, defaults to 30)
-- `rate_limiting`: Rate limit in requests per minute (optional)
-
-Supported client types:
-
-- `scaleway`: Scaleway API
-- `albert`: Albert API from Etalab
-- `ollama`: Ollama API
-- `fake`: Fake client for testing
-- `vllm`: vLLM API
+The processing pipeline uses the selected `summary_generation.llm_config_id` and
+fetches the corresponding `LlmConfig` from the DB at runtime.
 
 #### Similarity Search Configuration
 
@@ -250,6 +229,7 @@ You can configure the summary generation feature using the `summary_generation` 
 summary_generation:
   enabled: true
   should_overwrite: false
+  llm_config_id: "3f7a8b2c-1234-5678-abcd-ef0123456789"
 ```
 
 Parameters:
@@ -258,6 +238,7 @@ Parameters:
 - `should_overwrite`: Controls how existing summaries are handled:
   - When `true`: All summaries are regenerated, including existing ones
   - When `false`: Only empty summaries are generated, existing summaries are preserved
+- `llm_config_id`: UUID of the admin-managed LLM config to use when enabled
 
 This is particularly useful when you want to preserve manually edited summaries or when you want to regenerate all summaries with an updated prompt or model.
 

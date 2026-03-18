@@ -180,29 +180,23 @@ class WebProcessingService:
                 )
 
                 llm_config_service = get_llm_config_service()
-                llm_config = await llm_config_service.get_config(
-                    frontend_config.summary_generation.llm_config_id
-                )
+                llm_config_id = frontend_config.summary_generation.llm_config_id
+                # Pydantic validation guarantees that llm_config_id is set when the
+                # feature is enabled, but we still defensively guard here so mypy can
+                # narrow the type from UUID | None to UUID.
+                if llm_config_id is None:
+                    raise ValueError(
+                        "llm_config_id is required when summary generation is enabled"
+                    )
+
+                llm_config = await llm_config_service.get_config(llm_config_id)
 
                 if llm_config is None:
                     raise ValueError("Selected LLM config not found")
 
-                llm_type = llm_config.provider.value
-                config["llm_clients"] = {
-                    llm_type: {
-                        "nb_instances": 8,
-                        "timeout": 30,
-                        "rate_limit_per_minute": llm_config.rate_limit_per_minute,
-                    }
-                }
-
-                config["llm_credentials"] = {
-                    llm_type: {
-                        "base_url": llm_config.base_url,
-                        "api_key": llm_config.api_key,
-                        "model_name": llm_config.model_name,
-                    }
-                }
+                # DB-only source of truth: we keep only the selected llm_config_id.
+                # The pipeline will fetch this config from DB and build clients.
+                config["summary_generation"]["llm_config_id"] = str(llm_config.id)
 
         # Update processing options (pipeline-level)
         if "processing_options" not in config:

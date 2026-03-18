@@ -25,25 +25,24 @@
 - Implement retry logic with exponential backoff
 
 ## Provider Management
-- Configure via YAML: endpoint, model, rate limit, timeout
-- Use factory pattern: [`LLMFactory`](graal/summary/llm_factory.py)
-- Client implementations: [`AlbertClient`](graal/summary/llm_clients.py), `OllamaClient`, `ScalewayClient`
+- Configure via DB `LlmConfig` (provider, model, base_url/api_key, rate limit, concurrency)
+- Use factory helpers in [`graal/summary/llm_factory.py`](../graal/summary/llm_factory.py)
+- Client implementations: [`OpenAIAPIClient`](../graal/summary/llm_clients.py), `FakeLLMAPIClient`
 
 ## Rate limiting & throughput (common gotcha)
 
 - **Where the RPM comes from**
-  - CLI/YAML pipeline: `config["llm_clients"][provider]["rate_limit_per_minute"]` is read by
-    `get_rate_limiting_config()` (`graal/summary/llm_factory.py`).
-  - Web pipeline: `WebProcessingService._merge_frontend_config()` sets
-    `config["llm_clients"][provider]["rate_limit_per_minute"]` from the selected DB `LlmConfig.rate_limit_per_minute`
-    (DB + Pydantic default is **500**).
+  - Web/DB pipeline: selected `summary_generation.llm_config_id` is resolved to a DB `LlmConfig`.
+  - RPM comes from `LlmConfig.rate_limit_per_minute` (DB + Pydantic default is **500**) and is enforced by
+    `SummaryGenerationLoadBalancer` with `TokenBucketRateLimiter`.
   - `SummaryGenerationLoadBalancer` enforces it with `TokenBucketRateLimiter` **per provider**.
 
 - **If it “feels like 100/min” while configured at 500/min**
   - You may be **latency/concurrency limited**, not rate-limited.
-  - In the web path, `nb_instances` is currently hard-coded to **8**, so effective throughput is roughly:
-    `min(rate_limit_per_minute, nb_instances / avg_latency_seconds * 60)`.
-    Example: 8 workers and ~5s/call ⇒ ~96 req/min.
+  - In the web path, concurrency comes from the selected DB `LlmConfig.max_concurrent_requests` (default **6**),
+    so effective throughput is roughly:
+    `min(rate_limit_per_minute, max_concurrent_requests / avg_latency_seconds * 60)`.
+    Example: 6 workers and ~5s/call ⇒ ~72 req/min.
   - Alternatively, the provider may enforce a lower **server-side** limit (look for HTTP 429 / RateLimit errors).
 
 ## Error Handling
