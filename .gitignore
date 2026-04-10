@@ -103,3 +103,5 @@ coverage
 
 # Keep .kontinuous config
 !.kontinuous/env
+
+.claude

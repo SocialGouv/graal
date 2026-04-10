@@ -10,6 +10,36 @@ from pydantic import BaseModel, Field, field_validator
 
 from graal.database.enums import DbRoleEnum, ExcelConfigRoleEnum
 
+# Characters forbidden in free-text fields: control chars and HTML/injection vectors.
+# Using a blocklist lets Unicode letters (accents, etc.) pass through naturally.
+_FORBIDDEN_IN_TEXT_FIELD = re.compile(r'[\x00-\x1F\x7F<>&"\\]')
+
+
+def _validate_origin_project(origin_project: Optional[str]) -> str:
+    """Validate and normalise the origin_project field.
+
+    Accepts any Unicode text (including French accented characters) while
+    blocking control characters and common injection vectors.
+    """
+    if not origin_project:
+        raise ValueError("Origin project is required when similarity search is enabled")
+
+    origin_project = origin_project.strip()
+
+    if len(origin_project) < 2:
+        raise ValueError("Origin project must be at least 2 characters long")
+
+    if len(origin_project) > 100:
+        raise ValueError("Origin project cannot exceed 100 characters")
+
+    if _FORBIDDEN_IN_TEXT_FIELD.search(origin_project):
+        raise ValueError(
+            "Origin project contains invalid characters. "
+            'Avoid control characters and HTML special characters (< > & " \\).'
+        )
+
+    return origin_project
+
 
 class AssignPermissionRequest(BaseModel):
     """Request model for assigning database permissions."""
@@ -229,24 +259,7 @@ class ProcessingConfig(BaseModel):
     @classmethod
     def _validate_origin_project(cls, origin_project: Optional[str]) -> str:
         """Validate origin project field."""
-        if not origin_project:
-            raise ValueError(
-                "Origin project is required when similarity search is enabled"
-            )
-
-        origin_project = origin_project.strip()
-
-        if len(origin_project) < 2:
-            raise ValueError("Origin project must be at least 2 characters long")
-
-        if len(origin_project) > 100:
-            raise ValueError("Origin project cannot exceed 100 characters")
-
-        # Security validation: only allow alphanumeric, spaces, hyphens, underscores, and common punctuation
-        if not re.match(r"^[a-zA-Z0-9\s\-_.,()\/]+$", origin_project):
-            raise ValueError("Origin project contains invalid characters")
-
-        return origin_project
+        return _validate_origin_project(origin_project)
 
     @classmethod
     def _validate_threshold_range(cls, threshold: float, context: str) -> None:
@@ -408,6 +421,12 @@ class FileUploadMetadata(BaseModel):
         ..., description="Unix timestamp for processing"
     )
     origin_project: str = Field(..., description="Origin project name")
+
+    @field_validator("origin_project")
+    @classmethod
+    def validate_origin_project_field(cls, v: str) -> str:
+        """Validate origin_project using the shared helper."""
+        return _validate_origin_project(v)
 
 
 class FileUploadReference(BaseModel):

@@ -9,6 +9,11 @@ export interface ValidationResult {
 // Origin project validation rules
 const ORIGIN_PROJECT_MIN_LENGTH = 2
 const ORIGIN_PROJECT_MAX_LENGTH = 100
+// Mirrors the backend blocklist: control chars and HTML/injection vectors.
+// Unicode letters (accents, apostrophes, etc.) are explicitly allowed.
+// NOTE: We use a Unicode property escape instead of explicit ASCII control ranges
+// to satisfy ESLint's `no-control-regex` rule.
+const ORIGIN_PROJECT_FORBIDDEN = /[\p{Cc}<>&"\\]/u
 
 // Allotments validation rules
 const SIMILARITY_THRESHOLD_MIN = 0
@@ -49,6 +54,14 @@ export const useValidation = () => {
           isValid: false,
           errorMessage:
             "Le projet d'origine ne peut pas dépasser 100 caractères."
+        }
+      }
+
+      if (ORIGIN_PROJECT_FORBIDDEN.test(trimmed)) {
+        return {
+          isValid: false,
+          errorMessage:
+            'Le projet d\'origine contient des caractères invalides (évitez < > & " \\).'
         }
       }
 
