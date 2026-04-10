@@ -1352,6 +1352,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/databases/{db_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete Database
+     * @description Delete a similarity database and its S3 file (owner or admin only).
+     *
+     *     Args:
+     *         db_id: Database UUID to delete
+     *         current_user: Authenticated user (injected by FastAPI)
+     *
+     *     Returns:
+     *         204 No Content on success
+     *
+     *     Raises:
+     *         HTTPException: 401 if not authenticated
+     *         HTTPException: 403 if not owner or admin
+     *         HTTPException: 404 if database not found
+     */
+    delete: operations['delete_database_api_v1_databases__db_id__delete']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/databases/{db_id}/permissions': {
     parameters: {
       query?: never
@@ -4290,6 +4322,49 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ManagedDatabaseResponse'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_database_api_v1_databases__db_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        db_id: string
+      }
+      cookie?: {
+        session?: string | null
+      }
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Only database owners (or admins) can delete a database. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /** @example {
+           *       "detail": "Only database owners can delete a database"
+           *     } */
+          'application/json': unknown
         }
       }
       /** @description Validation Error */

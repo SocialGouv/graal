@@ -1,13 +1,14 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert'
-import { ButtonsGroup } from '@codegouvfr/react-dsfr/ButtonsGroup'
+import { Button } from '@codegouvfr/react-dsfr/Button'
 import { Table } from '@codegouvfr/react-dsfr/Table'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useState } from 'react'
 import { apiService } from '../../services/api'
 import type { ManagedDatabase } from '../../types/api'
 import { DatabasePermissions } from '../DatabasePermissions/DatabasePermissions'
 
 export const ManageDatabases: React.FC = () => {
+  const queryClient = useQueryClient()
   const [selectedDatabase, setSelectedDatabase] = useState<{
     id: string
     name: string
@@ -21,6 +22,13 @@ export const ManageDatabases: React.FC = () => {
   } = useQuery<ManagedDatabase[], Error>({
     queryKey: ['managed-databases'],
     queryFn: () => apiService.getManagedDatabases()
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiService.deleteDatabaseForOwner(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['managed-databases'] })
+    }
   })
 
   // Format bytes to human-readable size
@@ -91,19 +99,33 @@ export const ManageDatabases: React.FC = () => {
             }),
             formatNumber(db.row_count),
             formatBytes(db.size_bytes),
-            <ButtonsGroup
+            <div
               key={db.id}
-              buttons={[
-                {
-                  children: 'Gérer les permissions',
-                  priority: 'secondary',
-                  size: 'small',
-                  onClick: () =>
-                    setSelectedDatabase({ id: db.id, name: db.name })
-                }
-              ]}
-              inlineLayoutWhen="always"
-            />
+              style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
+            >
+              <Button
+                priority="secondary"
+                size="small"
+                onClick={() => setSelectedDatabase({ id: db.id, name: db.name })}
+              >
+                Gérer les permissions
+              </Button>
+              <Button
+                priority="tertiary no outline"
+                size="small"
+                iconId="fr-icon-delete-line"
+                title="Supprimer"
+                onClick={() => {
+                  if (
+                    globalThis.confirm(
+                      `Supprimer la base de données « ${db.name} » ?`
+                    )
+                  ) {
+                    deleteMutation.mutate(db.id)
+                  }
+                }}
+              />
+            </div>
           ])}
         />
       ) : (

@@ -175,10 +175,8 @@ export const ExcelConfigManager: React.FC = () => {
           key={config.id}
           style={{
             display: 'flex',
-            justifyContent: 'flex-end',
             alignItems: 'center',
-            gap: '0.5rem',
-            flexWrap: 'wrap'
+            gap: '0.5rem'
           }}
         >
           {canManageConfig(config) && (

@@ -155,6 +155,69 @@ async def list_managed_databases(current_user: CurrentUser):
         ) from e
 
 
+@router.delete(
+    "/{db_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        403: {
+            "description": "Only database owners (or admins) can delete a database.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Only database owners can delete a database"}
+                }
+            },
+        },
+    },
+)
+async def delete_database(db_id: UUID, current_user: CurrentUser):
+    """Delete a similarity database and its S3 file (owner or admin only).
+
+    Args:
+        db_id: Database UUID to delete
+        current_user: Authenticated user (injected by FastAPI)
+
+    Returns:
+        204 No Content on success
+
+    Raises:
+        HTTPException: 401 if not authenticated
+        HTTPException: 403 if not owner or admin
+        HTTPException: 404 if database not found
+    """
+    logging.info(f"[API] Deleting database {db_id} (user: {current_user.user_id})")
+
+    try:
+        perm_service = get_database_permission_service()
+
+        if not current_user.is_admin:
+            user_role = await perm_service.get_user_role(
+                str(db_id), current_user.user_id
+            )
+            if user_role != DbRole.owner:
+                logging.warning(
+                    f"[API] User {current_user.user_id} attempted to delete DB {db_id} without owner role"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only database owners can delete a database",
+                )
+
+        manifest_service = get_similarity_db_manifest_service()
+        await manifest_service.delete_database_by_id(db_id)
+
+        logging.info(f"[API] Deleted database {db_id}")
+        return None
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logging.warning(f"[API] Database not found for deletion: {e}")
+        raise HTTPException(status_code=404, detail="Database not found") from e
+    except Exception as e:
+        logging.error(f"[API] Error deleting database {db_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to delete database") from e
+
+
 @router.get("/{db_id}/permissions", response_model=list[DatabasePermissionResponse])
 async def list_db_permissions(
     db_id: UUID,
