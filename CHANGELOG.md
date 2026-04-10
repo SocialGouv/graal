@@ -1,3 +1,10 @@
+## [1.50.1](https://github.com/SocialGouv/graal/compare/v1.50.0...v1.50.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* Allow accents for "projet d'origine" ([ce7412f](https://github.com/SocialGouv/graal/commit/ce7412f9d4fffe6a42dcfa14a76f47b666154329))
+
 # [1.50.0](https://github.com/SocialGouv/graal/compare/v1.49.1...v1.50.0) (2026-03-18)
 
 
