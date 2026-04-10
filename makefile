@@ -3,7 +3,7 @@ test:
 	$(MAKE) front-test
 
 back-test:
-	poetry run pytest tests/unit
+	poetry run pytest tests/unit --cov=graal --cov-report=lcov:lcov.info --cov-report=json:coverage.json --cov-report=
 	python scripts/check_coverage.py coverage.json  || true
 	@rm -f .coverage.* || true
 	@echo "===== Finished running backend unit tests ====="

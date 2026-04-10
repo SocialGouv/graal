@@ -75,10 +75,6 @@ norecursedirs = ["dist", "build", "dev", "typings"]
 asyncio_default_fixture_loop_scope = "function"
 addopts = [
     "-n 4",
-    "--cov=graal",
-    "--cov-report=lcov:lcov.info",
-    "--cov-report=json:coverage.json",
-    "--cov-report=",
     "--capture=no",
     "--log-cli-level=INFO",
     "--color=yes",
