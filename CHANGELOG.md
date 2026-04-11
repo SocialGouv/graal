@@ -1,3 +1,10 @@
+# [1.51.0](https://github.com/SocialGouv/graal/compare/v1.50.1...v1.51.0) (2026-04-11)
+
+
+### Features
+
+* Let users delete their own databases and config files ([36f58e7](https://github.com/SocialGouv/graal/commit/36f58e71fbf73506841093487371f20882e02163))
+
 ## [1.50.1](https://github.com/SocialGouv/graal/compare/v1.50.0...v1.50.1) (2026-04-10)
 
 
