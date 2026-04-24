@@ -12,7 +12,7 @@ include:
   file: 'main.yml'
   ref: 'v1.0.0'
 
-# Shared rules with environment variables for builds/deploys
+  # Shared rules with environment variables for builds/deploys
 .rules-with-env-vars:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "chore/deploy"
@@ -127,6 +127,7 @@ release:
 
 build_app:
   extends: .configure_and_login_docker
+  stage: build
   rules: !reference [.rules-with-env-vars, rules]
   script:
     - IMAGE_REPOSITORY="${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/frontend"
@@ -137,6 +138,7 @@ build_app:
 
 build_api:
   extends: .configure_and_login_docker
+  stage: build
   rules: !reference [.rules-with-env-vars, rules]
   script:
     - IMAGE_REPOSITORY="${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/api"
