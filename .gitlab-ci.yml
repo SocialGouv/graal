@@ -1,0 +1,153 @@
+stages:
+  - quality
+  - release
+  - build
+  - deploy
+
+variables:
+  PNPM_VERSION: "10.27.0"
+
+include:
+  project: 'socialgouv/produits-dnum/studio-tech/devops/sdpsn-devops-ci-utils'
+  file: 'main.yml'
+  ref: 'v1.0.0'
+
+# Shared rules with environment variables for builds/deploys
+.rules-with-env-vars:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "chore/deploy"
+      variables:
+        DEPLOYMENT_ENV: "dev"
+        FRONTEND_ENABLE_DEV_LOGIN: "true"
+    - if: $CI_COMMIT_BRANCH == "main"
+      variables:
+        DEPLOYMENT_ENV: "integration"
+        FRONTEND_ENABLE_DEV_LOGIN: "true"
+    - if: $CI_COMMIT_BRANCH == "chore/deploy"
+      variables:
+        DEPLOYMENT_ENV: "test"
+        FRONTEND_ENABLE_DEV_LOGIN: "true"
+    - if: $CI_PIPELINE_SOURCE == "web" && $DEPLOY_ENVIRONMENT == "preproduction"
+      when: manual
+      variables:
+        DEPLOYMENT_ENV: "preproduction"
+        FRONTEND_ENABLE_DEV_LOGIN: "false"
+    - if: $CI_PIPELINE_SOURCE == "web" && $DEPLOY_ENVIRONMENT == "production"
+      when: manual
+      variables:
+        DEPLOYMENT_ENV: "production"
+        FRONTEND_ENABLE_DEV_LOGIN: "false"
+
+.quality_rules:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+.release_rules:
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|alpha|beta|next)$/'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+      allow_failure: true
+
+.node_job:
+  stage: quality
+  extends: .configure_docker_with_node
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store/
+  before_script:
+    - corepack enable
+    - corepack prepare "pnpm@${PNPM_VERSION}" --activate
+    - pnpm config set store-dir .pnpm-store
+    - pnpm fetch
+    - pnpm install --offline --frozen-lockfile
+
+.deploy_job:
+  stage: deploy
+  image: alpine/helm:3.17.3
+  extends: .clone_gitops_repo
+  before_script:
+    - apk add --no-cache git
+    - !reference [.clone_gitops_repo, before_script]
+  script:
+    - envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
+    - mkdir -p "gitops-repo/${DEPLOYMENT_ENV}"
+    - helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml \ 
+      -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > "dist/gitops-repo/${GITOPS_PATH}/${DEPLOYMENT_ENV}/graal.yaml"
+    - cd gitops-repo
+    - git add "${GITOPS_PATH}/${DEPLOYMENT_ENV}/graal.yaml"
+    - git diff --staged --quiet && exit 0
+    - git commit -m "Deploy ${CI_PROJECT_NAME} ${DEPLOYMENT_ENV} from ${CI_COMMIT_SHA}"
+    - git push origin main
+
+web_build:
+  extends: .node_job
+  rules: !reference [.quality_rules, rules]
+  script:
+    - pnpm --filter frontend build
+
+web_lint:
+  extends: .node_job
+  rules: !reference [.quality_rules, rules]
+  script:
+    - pnpm --filter frontend lint
+
+web_type_check:
+  extends: .node_job
+  rules: !reference [.quality_rules, rules]
+  script:
+    - pnpm --filter frontend typecheck
+
+docker_lint:
+  stage: quality
+  image: hadolint/hadolint:v2.13.1-debian
+  rules: !reference [.quality_rules, rules]
+  script:
+    - hadolint --ignore DL3008 --ignore DL3059 Dockerfile
+    - hadolint --ignore DL3008 --ignore DL3059 frontend/Dockerfile
+
+release:
+  stage: release
+  image: alpine/git:2.47.2
+  rules: !reference [.release_rules, rules]
+  variables:
+    GIT_STRATEGY: clone
+  before_script:
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
+    - git remote set-url origin "${CI_REPOSITORY_URL}"
+    - git fetch origin --tags --force
+  script:
+    - git for-each-ref refs/notes/semantic-release | cut -f2 | xargs -r git update-ref -d || true
+    - git push origin --delete refs/notes/semantic-release || true
+    - sh -lc "${RELEASE_COMMAND}"
+
+build_app:
+  extends: .configure_and_login_docker
+  rules: !reference [.rules-with-env-vars, rules]
+  script:
+    - IMAGE_REPOSITORY="${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/frontend"
+    - IMAGE_TAG="${CI_COMMIT_TAG:-${DEPLOYMENT_ENV}-${CI_COMMIT_SHA}}"
+    - docker build --file frontend/Dockerfile --tag "${IMAGE_REPOSITORY}:${IMAGE_TAG}" --tag "${IMAGE_REPOSITORY}:sha-${CI_COMMIT_SHA}" --build-arg "VITE_API_URL=${FRONTEND_API_URL:-https://${API_HOST}}" --build-arg "VITE_ENABLE_DEV_LOGIN=${FRONTEND_ENABLE_DEV_LOGIN}" .
+    - docker push "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
+    - docker push "${IMAGE_REPOSITORY}:sha-${CI_COMMIT_SHA}"
+
+build_api:
+  extends: .configure_and_login_docker
+  rules: !reference [.rules-with-env-vars, rules]
+  script:
+    - IMAGE_REPOSITORY="${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/api"
+    - IMAGE_TAG="${CI_COMMIT_TAG:-${DEPLOYMENT_ENV}-${CI_COMMIT_SHA}}"
+    - docker build --file Dockerfile --tag "${IMAGE_REPOSITORY}:${IMAGE_TAG}" --tag "${IMAGE_REPOSITORY}:sha-${CI_COMMIT_SHA}" .
+    - docker push "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
+    - docker push "${IMAGE_REPOSITORY}:sha-${CI_COMMIT_SHA}"
+
+deploy:
+  extends: .deploy_job
+  rules: !reference [.rules-with-env-vars, rules]
+  needs:
+    - build_app
+    - build_api

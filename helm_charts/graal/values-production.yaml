@@ -1,0 +1,31 @@
+configMap:
+  data:
+    VITE_ENABLE_DEV_LOGIN: "false"
+    BACKEND_ENABLE_DEV_LOGIN: "false"
+
+app:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+api:
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "3"
+      memory: 4Gi
+  container:
+    envFrom:
+      - configMapRef:
+          name: graal
+      - secretRef:
+          name: graal-prod-app-access-key
+      - secretRef:
+          name: graal-prod
+      - secretRef:
+          name: pg-app

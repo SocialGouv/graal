@@ -1,0 +1,188 @@
+nameOverride: ""
+fullnameOverride: ""
+
+configMap:
+  enabled: true
+  data:
+    VITE_ENABLE_DEV_LOGIN: "true"
+    DATA_FOLDER: "/app/data"
+    ETALAB_API_KEY: "xxxxxxxxxxxxxxxxxxx"
+    ETALAB_BASE_URL: "https://albert.api.etalab.gouv.fr/v1"
+    ETALAB_MODEL_NAME: "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    S3_SIMILARITY_DB_FOLDER: "similarity_dbs"
+    S3_CONFIG_FOLDER: "config_graal"
+    S3_INPUT_POOL_FOLDER: "input_files/pool"
+    PROCONNECT_DISCOVERY_URL: "https://fca.integ01.dev-agentconnect.fr/api/v2/.well-known/openid-configuration"
+    PROCONNECT_SCOPES: "openid email profile"
+    SESSION_MAX_AGE: "15552000"
+    SECURE_COOKIES: "true"
+    BACKEND_ENABLE_DEV_LOGIN: "true"
+
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: SecretStore
+    name: local-secret-store
+  secrets:
+    - name: graal-secret
+      dataFromKey: graal-secret
+      template:
+        S3_BUCKET_ENDPOINT: "{{ .bucket_endpoint }}"
+        PROCONNECT_CLIENT_ID: "{{ .PROCONNECT_CLIENT_ID }}"
+        PROCONNECT_CLIENT_SECRET: "{{ .PROCONNECT_CLIENT_SECRET }}"
+        SESSION_SECRET_KEY: "{{ .SESSION_SECRET_KEY }}"
+    - name: dbcluster-developpement
+      dataFromKey: database-clusters/dbcluster-developpement
+      template:
+        DATABASE_NAME: "{{ .dbname }}"
+        DATABASE_HOST: "{{ .host }}"
+        DATABASE_PASSWORD: "{{ .password }}"
+        DATABASE_PORT: "{{ .port }}"
+        DATABASE_URL: "{{ .url }}"
+    - name: graal-developpement-s3
+      dataFromKey: buckets/graal-developpement-s3
+      template:
+        S3_BUCKET_ACCESS_KEY: "{{ .accessKey }}"
+        S3_BUCKET_NAME: "{{ .name }}"
+        S3_BUCKET_SECRET_KEY: "{{ .secretKey }}"
+
+app:
+  enabled: true
+  name: app
+  component: app
+  replicaCount: 1
+  image:
+    repository: harbor.fabrique.social.gouv.fr/graal/graal/frontend
+    tag: preprod-ca18dba50f15ce776757a21419738e544a3c6711
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+    portName: http
+  ingress:
+    enabled: true
+    name: app
+    ingressClassName: public
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      cert-manager.io/private-key-size: "4096"
+    host: graal.developpement.graal.sdpsn.dev.atlas.fabrique.social.gouv.fr
+    tls:
+      enabled: true
+      secretName: wildcard-crt
+  container:
+    name: app
+    port: 8080
+    env: []
+    envFrom:
+      - configMapRef:
+          name: graal
+  probes:
+    liveness:
+      httpGet:
+        path: /live
+        port: http
+      failureThreshold: 15
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 5
+    readiness:
+      httpGet:
+        path: /live
+        port: http
+      failureThreshold: 15
+      initialDelaySeconds: 1
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+    startup:
+      httpGet:
+        path: /live
+        port: http
+      failureThreshold: 12
+      periodSeconds: 5
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: "0.041"
+      memory: 121Mi
+
+api:
+  enabled: true
+  name: api
+  component: api
+  replicaCount: 1
+  image:
+    repository: harbor.fabrique.social.gouv.fr/graal/graal/api
+    tag: preprod-ca18dba50f15ce776757a21419738e544a3c6711
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+    portName: http
+  ingress:
+    enabled: true
+    name: api
+    ingressClassName: public
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      cert-manager.io/private-key-size: "4096"
+    host: api.developpement.graal.sdpsn.dev.atlas.fabrique.social.gouv.fr
+    tls:
+      enabled: true
+      secretName: wildcard-crt
+  container:
+    name: app
+    port: 8000
+    env:
+      - name: FRONTEND_URL
+        value: https://graal.developpement.graal.sdpsn.dev.atlas.fabrique.social.gouv.fr
+      - name: PROCONNECT_REDIRECT_URI
+        value: https://api.developpement.graal.sdpsn.dev.atlas.fabrique.social.gouv.fr/api/v1/auth/callback
+      - name: USE_S3_CONFIG
+        value: "true"
+    envFrom:
+      - configMapRef:
+          name: graal
+      - secretRef:
+          name: graal-developpement-s3
+      - secretRef:
+          name: graal-secret
+      - secretRef:
+          name: dbcluster-developpement
+  probes:
+    liveness:
+      httpGet:
+        path: /api/v1/health
+        port: http
+      failureThreshold: 15
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      timeoutSeconds: 5
+    readiness:
+      httpGet:
+        path: /api/v1/health
+        port: http
+      failureThreshold: 15
+      initialDelaySeconds: 1
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+    startup:
+      httpGet:
+        path: /api/v1/health
+        port: http
+      failureThreshold: 12
+      periodSeconds: 5
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: "0.041"
+      memory: 121Mi

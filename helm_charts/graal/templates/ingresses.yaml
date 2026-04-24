@@ -1,0 +1,11 @@
+{{- $appIngressEnabled := and .Values.app.enabled .Values.app.ingress.enabled -}}
+{{- $apiIngressEnabled := and .Values.api.enabled .Values.api.ingress.enabled -}}
+{{- if $appIngressEnabled }}
+{{ include "graal.ingress" (dict "root" . "resource" .Values.app) }}
+{{- end }}
+{{- if and $appIngressEnabled $apiIngressEnabled }}
+---
+{{- end }}
+{{- if $apiIngressEnabled }}
+{{ include "graal.ingress" (dict "root" . "resource" .Values.api) }}
+{{- end }}

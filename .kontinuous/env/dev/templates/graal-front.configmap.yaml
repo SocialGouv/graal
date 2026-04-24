@@ -1,6 +1,0 @@
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: graal-front
-data:
-  VITE_ENABLE_DEV_LOGIN: "true"

@@ -1,0 +1,9 @@
+{{- if .Values.app.enabled }}
+{{ include "graal.service" (dict "root" . "resource" .Values.app) }}
+{{- end }}
+{{- if and .Values.app.enabled .Values.api.enabled }}
+---
+{{- end }}
+{{- if .Values.api.enabled }}
+{{ include "graal.service" (dict "root" . "resource" .Values.api) }}
+{{- end }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: graal
+description: Helm chart generated from the Kubernetes manifests in developpement/
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

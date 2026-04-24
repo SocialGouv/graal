@@ -1,0 +1,3 @@
+{{- if .Values.configMap.enabled }}
+{{ include "graal.configmap" . }}
+{{- end }}

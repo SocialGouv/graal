@@ -1,0 +1,4 @@
+configMap:
+  data:
+    VITE_ENABLE_DEV_LOGIN: "false"
+    BACKEND_ENABLE_DEV_LOGIN: "false"
