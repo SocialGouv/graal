@@ -1,0 +1,20 @@
+name: Release
+
+on:
+  push:
+    branches: [main, alpha, beta, next]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git remote set-url origin "${{ github.server_url }}/${{ github.repository }}"
+          git fetch origin --tags --force
+          git for-each-ref refs/notes/semantic-release | cut -f2 | xargs -r git update-ref -d || true
+          git push origin --delete refs/notes/semantic-release || true
+          sh -lc "${{ secrets.RELEASE_COMMAND }}"

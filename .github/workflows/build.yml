@@ -1,0 +1,83 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      DEPLOY_ENVIRONMENT:
+        description: Target environment
+        required: true
+        type: choice
+        options: [preproduction, production]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      deployment_env: ${{ steps.env.outputs.deployment_env }}
+      frontend_enable_dev_login: ${{ steps.env.outputs.frontend_enable_dev_login }}
+    steps:
+      - id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "deployment_env=${{ inputs.DEPLOY_ENVIRONMENT }}" >> $GITHUB_OUTPUT
+            echo "frontend_enable_dev_login=false" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            echo "deployment_env=integration" >> $GITHUB_OUTPUT
+            echo "frontend_enable_dev_login=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "chore/deploy" ]; then
+            echo "deployment_env=test" >> $GITHUB_OUTPUT
+            echo "frontend_enable_dev_login=true" >> $GITHUB_OUTPUT
+          else
+            echo "deployment_env=dev" >> $GITHUB_OUTPUT
+            echo "frontend_enable_dev_login=true" >> $GITHUB_OUTPUT
+          fi
+
+  build_app:
+    needs: setup
+    runs-on: ubuntu-latest
+    env:
+      DEPLOYMENT_ENV: ${{ needs.setup.outputs.deployment_env }}
+      FRONTEND_ENABLE_DEV_LOGIN: ${{ needs.setup.outputs.frontend_enable_dev_login }}
+      FRONTEND_API_URL: ${{ secrets.FRONTEND_API_URL }}
+      API_HOST: ${{ secrets.API_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login "${{ secrets.CI_REGISTRY }}" -u "${{ secrets.CI_REGISTRY_USER }}" --password-stdin
+      - run: |
+          IMAGE_REPOSITORY="${{ secrets.CI_REGISTRY }}/${{ github.repository }}/frontend"
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            IMAGE_TAG="${{ github.ref_name }}"
+          else
+            IMAGE_TAG="${DEPLOYMENT_ENV}-${{ github.sha }}"
+          fi
+          docker build --file frontend/Dockerfile \
+            --tag "${IMAGE_REPOSITORY}:${IMAGE_TAG}" \
+            --tag "${IMAGE_REPOSITORY}:sha-${{ github.sha }}" \
+            --build-arg "VITE_API_URL=${FRONTEND_API_URL:-https://${API_HOST}}" \
+            --build-arg "VITE_ENABLE_DEV_LOGIN=${FRONTEND_ENABLE_DEV_LOGIN}" \
+            .
+          docker push "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
+          docker push "${IMAGE_REPOSITORY}:sha-${{ github.sha }}"
+
+  build_api:
+    needs: setup
+    runs-on: ubuntu-latest
+    env:
+      DEPLOYMENT_ENV: ${{ needs.setup.outputs.deployment_env }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login "${{ secrets.CI_REGISTRY }}" -u "${{ secrets.CI_REGISTRY_USER }}" --password-stdin
+      - run: |
+          IMAGE_REPOSITORY="${{ secrets.CI_REGISTRY }}/${{ github.repository }}/api"
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            IMAGE_TAG="${{ github.ref_name }}"
+          else
+            IMAGE_TAG="${DEPLOYMENT_ENV}-${{ github.sha }}"
+          fi
+          docker build --file Dockerfile \
+            --tag "${IMAGE_REPOSITORY}:${IMAGE_TAG}" \
+            --tag "${IMAGE_REPOSITORY}:sha-${{ github.sha }}" \
+            .
+          docker push "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
+          docker push "${IMAGE_REPOSITORY}:sha-${{ github.sha }}"

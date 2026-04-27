@@ -1,0 +1,77 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [Build]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      DEPLOY_ENVIRONMENT:
+        description: Target environment
+        required: true
+        type: choice
+        options: [preproduction, production]
+
+jobs:
+  setup:
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      deployment_env: ${{ steps.env.outputs.deployment_env }}
+    steps:
+      - id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "deployment_env=${{ inputs.DEPLOY_ENVIRONMENT }}" >> $GITHUB_OUTPUT
+          else
+            BRANCH="${{ github.event.workflow_run.head_branch }}"
+            if [ "$BRANCH" = "main" ]; then
+              echo "deployment_env=integration" >> $GITHUB_OUTPUT
+            elif [ "$BRANCH" = "chore/deploy" ]; then
+              echo "deployment_env=test" >> $GITHUB_OUTPUT
+            else
+              echo "deployment_env=dev" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  helm_template:
+    needs: setup
+    runs-on: ubuntu-latest
+    env:
+      DEPLOYMENT_ENV: ${{ needs.setup.outputs.deployment_env }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: azure/setup-helm@v4
+      - run: sudo apt-get install -y gettext-base
+      - run: |
+          envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
+          mkdir -p rendered
+          helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > "rendered/${DEPLOYMENT_ENV}.yaml"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rendered
+          path: rendered/
+
+  deploy:
+    needs: [setup, helm_template]
+    runs-on: ubuntu-latest
+    env:
+      DEPLOYMENT_ENV: ${{ needs.setup.outputs.deployment_env }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: rendered
+          path: rendered/
+      - run: git clone "${{ secrets.GITOPS_REPO_URL }}" gitops-repo
+      - run: |
+          rm -f gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/*.yaml
+          cp -f ./rendered/* ./gitops-repo/deployment-targets/${DEPLOYMENT_ENV}
+          cd gitops-repo
+          git config user.email "ci@github.com"
+          git config user.name "GitHub CI"
+          git add .
+          git diff --staged --quiet && exit 0
+          git commit -m "update deployment-targets/${DEPLOYMENT_ENV} ${{ github.event.workflow_run.head_sha || github.sha }}"
+          git push origin main
