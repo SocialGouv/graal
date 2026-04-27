@@ -163,7 +163,7 @@ deploy:
   extends: .clone_gitops_repo
   script:
     - rm -f gitops-repo/deployment-targets/${ENV}/*.yaml
-    - cp -f ./helm_charts/sartre/rendered/* ./gitops-repo/deployment-targets/${ENV}
+    - cp -f ./helm_charts/graal/rendered/* ./gitops-repo/deployment-targets/${ENV}
     - cd ./gitops-repo
     - git add .
     - git commit -am "update deployment-targets/${ENV} ${CI_COMMIT_SHA}"
