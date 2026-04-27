@@ -138,7 +138,9 @@ deploy:
     - build_api
   stage: deploy
   extends: .clone_gitops_repo
-  image: alpine/helm:latest
+  image:
+    name: alpine/helm:latest
+    entrypoint: [""]
   before_script:
     - apk add --no-cache git
     - !reference [ .clone_gitops_repo, before_script ]
