@@ -157,7 +157,9 @@ deploy:
   needs:
     - helm_template
   stage: deploy
-  image: alpine/git:latest
+  image:
+    name: alpine/git:latest
+    entrypoint: [""]
   extends: .clone_gitops_repo
   script:
     - rm -f gitops-repo/deployment-targets/${ENV}/*.yaml
