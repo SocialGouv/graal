@@ -6,6 +6,7 @@ stages:
 
 variables:
   PNPM_VERSION: "10.27.0"
+  NODE_VERSION: "22.14.0"
 
 include:
   project: 'socialgouv/produits-dnum/studio-tech/devops/sdpsn-devops-ci-utils'
