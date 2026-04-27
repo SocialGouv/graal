@@ -138,8 +138,8 @@ deploy:
     - build_api
   stage: deploy
   extends: .clone_gitops_repo
+  image: alpine/helm:3.10.4-git
   before_script:
-    - apk add --no-cache git
     - !reference [ .clone_gitops_repo, before_script ]
   script:
     - envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
