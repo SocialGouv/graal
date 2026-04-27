@@ -67,24 +67,6 @@ include:
     - pnpm fetch
     - pnpm install --offline --frozen-lockfile
 
-.deploy_job:
-  stage: deploy
-  image: alpine/helm:3.17.3
-  extends: .clone_gitops_repo
-  before_script:
-    - apk add --no-cache git
-    - !reference [.clone_gitops_repo, before_script]
-  script:
-    - envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
-    - mkdir -p "gitops-repo/${DEPLOYMENT_ENV}"
-    - helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml \ 
-      -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > "dist/gitops-repo/${GITOPS_PATH}/${DEPLOYMENT_ENV}/graal.yaml"
-    - cd gitops-repo
-    - git add "${GITOPS_PATH}/${DEPLOYMENT_ENV}/graal.yaml"
-    - git diff --staged --quiet && exit 0
-    - git commit -m "Deploy ${CI_PROJECT_NAME} ${DEPLOYMENT_ENV} from ${CI_COMMIT_SHA}"
-    - git push origin main
-
 web_build:
   extends: .node_job
   rules: !reference [.quality_rules, rules]
@@ -150,8 +132,22 @@ build_api:
     - docker push "${IMAGE_REPOSITORY}:sha-${CI_COMMIT_SHA}"
 
 deploy:
-  extends: .deploy_job
   rules: !reference [.rules-with-env-vars, rules]
   needs:
     - build_app
     - build_api
+  stage: deploy
+  extends: .clone_gitops_repo
+  before_script:
+    - apk add --no-cache git
+    - !reference [ .clone_gitops_repo, before_script ]
+  script:
+    - envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
+    - mkdir -p "gitops-repo/${DEPLOYMENT_ENV}"
+    - helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml \
+      -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > "dist/gitops-repo/${DEPLOYMENT_ENV}/graal.yaml"
+    - cd gitops-repo
+    - git add "${DEPLOYMENT_ENV}/graal.yaml"
+    - git diff --staged --quiet && exit 0
+    - git commit -m "Deploy ${CI_PROJECT_NAME} ${DEPLOYMENT_ENV} from ${CI_COMMIT_SHA}"
+    - git push origin main
