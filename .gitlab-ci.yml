@@ -130,27 +130,40 @@ build_api:
     - docker build --file Dockerfile --tag "${IMAGE_REPOSITORY}:${IMAGE_TAG}" --tag "${IMAGE_REPOSITORY}:sha-${CI_COMMIT_SHA}" .
     - docker push "${IMAGE_REPOSITORY}:${IMAGE_TAG}"
     - docker push "${IMAGE_REPOSITORY}:sha-${CI_COMMIT_SHA}"
+  tags:
+    - socialgouv-linux-small-amd64
 
-deploy:
+helm_template:
   rules: !reference [.rules-with-env-vars, rules]
   needs:
     - build_app
     - build_api
   stage: deploy
-  extends: .clone_gitops_repo
   image:
     name: alpine/helm:latest
     entrypoint: [""]
   before_script:
-    - apk add --no-cache git
-    - !reference [ .clone_gitops_repo, before_script ]
+    - apk add --no-cache gettext
   script:
     - envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
-    - mkdir -p "gitops-repo/${DEPLOYMENT_ENV}"
+    - mkdir -p rendered
     - helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml \
-      -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > "dist/gitops-repo/${DEPLOYMENT_ENV}/graal.yaml"
-    - cd gitops-repo
-    - git add "${DEPLOYMENT_ENV}/graal.yaml"
-    - git diff --staged --quiet && exit 0
-    - git commit -m "Deploy ${CI_PROJECT_NAME} ${DEPLOYMENT_ENV} from ${CI_COMMIT_SHA}"
+      -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > rendered/${DEPLOYMENT_ENV}.yaml
+  artifacts:
+    paths:
+      - rendered/graal.yaml
+
+deploy:
+  rules: !reference [.rules-with-env-vars, rules]
+  needs:
+    - helm_template
+  stage: deploy
+  image: alpine/git:latest
+  extends: .clone_gitops_repo
+  script:
+    - rm -f gitops-repo/deployment-targets/${ENV}/*.yaml
+    - cp -f ./helm_charts/sartre/rendered/* ./gitops-repo/deployment-targets/${ENV}
+    - cd ./gitops-repo
+    - git add .
+    - git commit -am "update deployment-targets/${ENV} ${CI_COMMIT_SHA}"
     - git push origin main
