@@ -71,7 +71,7 @@ app:
     host: graal.developpement.graal.sdpsn.dev.atlas.fabrique.social.gouv.fr
     tls:
       enabled: true
-      secretName: wildcard-crt
+      secretName: app-crt
   container:
     name: app
     port: 8080
@@ -135,7 +135,7 @@ api:
     host: api.developpement.graal.sdpsn.dev.atlas.fabrique.social.gouv.fr
     tls:
       enabled: true
-      secretName: wildcard-crt
+      secretName: api-crt
   container:
     name: app
     port: 8000
