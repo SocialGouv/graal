@@ -32,8 +32,8 @@ externalSecrets:
         PROCONNECT_CLIENT_ID: "{{ .PROCONNECT_CLIENT_ID }}"
         PROCONNECT_CLIENT_SECRET: "{{ .PROCONNECT_CLIENT_SECRET }}"
         SESSION_SECRET_KEY: "{{ .SESSION_SECRET_KEY }}"
-    - name: graal-pull-secret
-      dataFromKey: graal-pull-secret
+    - name: registry-secret
+      dataFromKey: registry-secret
       template:
         data:
           .dockerconfigjson: '{"auths":{"{{ .host }}":{"auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}'
