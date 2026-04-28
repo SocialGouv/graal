@@ -32,6 +32,14 @@ externalSecrets:
         PROCONNECT_CLIENT_ID: "{{ .PROCONNECT_CLIENT_ID }}"
         PROCONNECT_CLIENT_SECRET: "{{ .PROCONNECT_CLIENT_SECRET }}"
         SESSION_SECRET_KEY: "{{ .SESSION_SECRET_KEY }}"
+    - name: graal-pull-secret
+      dataFromKey: graal-pull-secret
+      template:
+        data:
+          .dockerconfigjson: '{"auths":{"{{ .host }}":{"auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}'
+        engineVersion: v2
+        mergePolicy: Replace
+        type: kubernetes.io/dockerconfigjson
     - name: dbcluster-developpement
       dataFromKey: database-clusters/dbcluster-developpement
       template:

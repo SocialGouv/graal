@@ -16,6 +16,8 @@ spec:
       labels:
         {{- include "graal.componentLabels" (dict "root" .root "component" .resource.component) | nindent 8 }}
     spec:
+      imagePullSecrets:
+        - name: registry-secret
       containers:
         - name: {{ .resource.container.name }}
           image: "{{ .resource.image.repository }}:{{ .resource.image.tag }}"
