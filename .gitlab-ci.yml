@@ -146,8 +146,8 @@ helm_template:
     - apk add --no-cache gettext yq
   script:
     - envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
-    - mkdir -p rendered
-    - helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" | yq -s '"rendered/" + .kind + "." + .metadata.name + ".yml"' -
+    - mkdir -p rendered/${DEPLOYMENT_ENV}
+    - helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" | yq -s '"rendered/" + env(DEPLOYMENT_ENV) + "/" + .kind + "." + .metadata.name + ".yml"' -
   artifacts:
     paths:
       - rendered/
@@ -162,8 +162,8 @@ deploy:
     entrypoint: [""]
   extends: .clone_gitops_repo
   script:
-    - rm -f gitops-repo/deployment-targets/${ENV}/*.yml
-    - cp -rf ./rendered/* ./gitops-repo/deployment-targets
+    - rm -f gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/*.yml
+    - cp -rf ./rendered/${DEPLOYMENT_ENV}/* ./gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/
     - cd ./gitops-repo
     - git add .
     - git commit -am "update deployment-targets/${ENV} ${CI_COMMIT_SHA}"

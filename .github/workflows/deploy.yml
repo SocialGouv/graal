@@ -46,8 +46,8 @@ jobs:
       - uses: azure/setup-helm@v4
       - run: sudo apt-get install -y gettext-base
       - run: envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
-      - run: mkdir -p rendered
-      - run: helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" | yq -s '"rendered/" + .kind + "." + .metadata.name + ".yml"' -
+      - run: mkdir -p rendered/${DEPLOYMENT_ENV}
+      - run: helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" | yq -s '"rendered/" + env(DEPLOYMENT_ENV) + "/" + .kind + "." + .metadata.name + ".yml"' -
       - uses: actions/upload-artifact@v4
         with:
           name: rendered
@@ -66,7 +66,7 @@ jobs:
       - run: git clone "${{ secrets.GITOPS_REPO_URL }}" gitops-repo
       - run: |
           rm -f gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/*.yml
-          cp -f ./rendered/* ./gitops-repo/deployment-targets/${DEPLOYMENT_ENV}
+          cp -f ./rendered/${DEPLOYMENT_ENV}/* ./gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/
           cd gitops-repo
           git config user.email "ci@github.com"
           git config user.name "GitHub CI"
