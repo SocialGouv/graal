@@ -18,7 +18,7 @@ include:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "chore/deploy"
       variables:
-        DEPLOYMENT_ENV: "dev"
+        DEPLOYMENT_ENV: "developpement"
         FRONTEND_ENABLE_DEV_LOGIN: "true"
     - if: $CI_COMMIT_BRANCH == "main"
       variables:
