@@ -32,7 +32,7 @@ externalSecrets:
         PROCONNECT_CLIENT_ID: "{{ .PROCONNECT_CLIENT_ID }}"
         PROCONNECT_CLIENT_SECRET: "{{ .PROCONNECT_CLIENT_SECRET }}"
         SESSION_SECRET_KEY: "{{ .SESSION_SECRET_KEY }}"
-    - name: registry-secret
+    - name: graal-registry-secret
       dataFromKey: registry-secret
       template:
         data:
