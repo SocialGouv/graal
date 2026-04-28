@@ -7,9 +7,10 @@ metadata:
     {{- include "graal.labels" .root | nindent 4 }}
     component: {{ .resource.component }}
   annotations:
-    {{- toYaml .resource.ingress.annotations | nindent 4 }}
+      cert-manager.io/cluster-issuer: letsencrypt
+      cert-manager.io/private-key-size: "4096"
 spec:
-  ingressClassName: {{ .resource.ingress.ingressClassName }}
+  ingressClassName: public
   rules:
     - host: {{ .resource.ingress.host }}
       http:
@@ -21,10 +22,8 @@ spec:
                 name: {{ .resource.name }}
                 port:
                   name: {{ .resource.service.portName }}
-  {{- if .resource.ingress.tls.enabled }}
   tls:
     - hosts:
         - {{ .resource.ingress.host }}
       secretName: {{ .resource.ingress.tls.secretName }}
-  {{- end }}
 {{- end -}}
