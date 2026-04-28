@@ -146,7 +146,7 @@ helm_template:
     - apk add --no-cache gettext
   script:
     - envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
-    - mkdir -p rendered
+    - mkdir -p rendered/${DEPLOYMENT_ENV}
     - helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > rendered/${DEPLOYMENT_ENV}/${DEPLOYMENT_ENV}.yaml
   artifacts:
     paths:
