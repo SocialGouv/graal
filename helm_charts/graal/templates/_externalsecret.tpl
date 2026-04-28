@@ -16,8 +16,12 @@ spec:
   target:
     name: {{ .secret.name }}
     template:
+      {{- if hasKey .secret.template "data" }}
+      {{- toYaml .secret.template | nindent 6 }}
+      {{- else }}
       data:
         {{- range $key, $value := .secret.template }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}
+      {{- end }}
 {{- end -}}

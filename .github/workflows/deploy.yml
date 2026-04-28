@@ -45,10 +45,9 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: azure/setup-helm@v4
       - run: sudo apt-get install -y gettext-base
-      - run: |
-          envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
-          mkdir -p rendered
-          helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" > "rendered/${DEPLOYMENT_ENV}.yaml"
+      - run: envsubst < helm_charts/graal/values-ci.yaml.tpl > /tmp/values-ci.yaml
+      - run: mkdir -p rendered
+      - run: helm template graal helm_charts/graal -f helm_charts/graal/values.yaml -f /tmp/values-ci.yaml -f "helm_charts/graal/values-${DEPLOYMENT_ENV}.yaml" | yq -s '"rendered/" + .kind + "." + .metadata.name + ".yml"' -
       - uses: actions/upload-artifact@v4
         with:
           name: rendered
@@ -66,7 +65,7 @@ jobs:
           path: rendered/
       - run: git clone "${{ secrets.GITOPS_REPO_URL }}" gitops-repo
       - run: |
-          rm -f gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/*.yaml
+          rm -f gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/*.yml
           cp -f ./rendered/* ./gitops-repo/deployment-targets/${DEPLOYMENT_ENV}
           cd gitops-repo
           git config user.email "ci@github.com"
