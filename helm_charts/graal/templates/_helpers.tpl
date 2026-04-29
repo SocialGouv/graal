@@ -26,3 +26,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{ include "graal.selectorLabels" .root }}
 component: {{ .component }}
 {{- end -}}
+
+{{- define "graal.resourceLabels" -}}
+{{ include "graal.labels" .root }}
+component: {{ .component }}
+{{- end -}}

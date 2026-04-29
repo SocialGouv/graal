@@ -1,6 +1,15 @@
 nameOverride: ""
 fullnameOverride: ""
 
+imagePullSecrets:
+  - name: graal-registry-secret
+
+ingressDefaults:
+  className: public
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    cert-manager.io/private-key-size: "4096"
+
 configMap:
   enabled: true
   data:
@@ -27,33 +36,44 @@ externalSecrets:
   secrets:
     - name: graal-secret
       dataFromKey: graal-secret
-      template:
-        S3_BUCKET_ENDPOINT: "{{ .bucket_endpoint }}"
-        PROCONNECT_CLIENT_ID: "{{ .PROCONNECT_CLIENT_ID }}"
-        PROCONNECT_CLIENT_SECRET: "{{ .PROCONNECT_CLIENT_SECRET }}"
-        SESSION_SECRET_KEY: "{{ .SESSION_SECRET_KEY }}"
+      target:
+        name: graal-secret
+        template:
+          data:
+            S3_BUCKET_ENDPOINT: "{{ .bucket_endpoint }}"
+            PROCONNECT_CLIENT_ID: "{{ .PROCONNECT_CLIENT_ID }}"
+            PROCONNECT_CLIENT_SECRET: "{{ .PROCONNECT_CLIENT_SECRET }}"
+            SESSION_SECRET_KEY: "{{ .SESSION_SECRET_KEY }}"
     - name: graal-registry-secret
       dataFromKey: registry-secret
-      template:
-        data:
-          .dockerconfigjson: '{"auths":{"{{ .host }}":{"auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}'
-        engineVersion: v2
-        mergePolicy: Replace
-        type: kubernetes.io/dockerconfigjson
+      target:
+        name: graal-registry-secret
+        template:
+          data:
+            .dockerconfigjson: '{"auths":{"{{ .host }}":{"auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}'
+          engineVersion: v2
+          mergePolicy: Replace
+          type: kubernetes.io/dockerconfigjson
     - name: dbcluster-developpement
       dataFromKey: database-clusters/dbcluster-developpement
-      template:
-        DATABASE_NAME: "{{ .dbname }}"
-        DATABASE_HOST: "{{ .host }}"
-        DATABASE_PASSWORD: "{{ .password }}"
-        DATABASE_PORT: "{{ .port }}"
-        DATABASE_URL: "{{ .url }}"
+      target:
+        name: dbcluster-developpement
+        template:
+          data:
+            DATABASE_NAME: "{{ .dbname }}"
+            DATABASE_HOST: "{{ .host }}"
+            DATABASE_PASSWORD: "{{ .password }}"
+            DATABASE_PORT: "{{ .port }}"
+            DATABASE_URL: "{{ .url }}"
     - name: graal-developpement-s3
       dataFromKey: buckets/graal-developpement-s3
-      template:
-        S3_BUCKET_ACCESS_KEY: "{{ .accessKey }}"
-        S3_BUCKET_NAME: "{{ .name }}"
-        S3_BUCKET_SECRET_KEY: "{{ .secretKey }}"
+      target:
+        name: graal-developpement-s3
+        template:
+          data:
+            S3_BUCKET_ACCESS_KEY: "{{ .accessKey }}"
+            S3_BUCKET_NAME: "{{ .name }}"
+            S3_BUCKET_SECRET_KEY: "{{ .secretKey }}"
 
 app:
   enabled: true

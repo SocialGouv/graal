@@ -4,12 +4,11 @@ kind: Service
 metadata:
   name: {{ .resource.name }}
   labels:
-    {{- include "graal.labels" .root | nindent 4 }}
-    component: {{ .resource.component }}
+{{ include "graal.resourceLabels" (dict "root" .root "component" .resource.component) | indent 4 }}
 spec:
   type: {{ .resource.service.type }}
   selector:
-    {{- include "graal.componentLabels" (dict "root" .root "component" .resource.component) | nindent 4 }}
+{{ include "graal.componentLabels" (dict "root" .root "component" .resource.component) | indent 4 }}
   ports:
     - name: {{ .resource.service.portName }}
       port: {{ .resource.service.port }}

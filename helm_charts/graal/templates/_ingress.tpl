@@ -4,13 +4,13 @@ kind: Ingress
 metadata:
   name: {{ .resource.ingress.name }}
   labels:
-    {{- include "graal.labels" .root | nindent 4 }}
-    component: {{ .resource.component }}
+{{ include "graal.resourceLabels" (dict "root" .root "component" .resource.component) | indent 4 }}
+{{- with .root.Values.ingressDefaults.annotations }}
   annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-      cert-manager.io/private-key-size: "4096"
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
-  ingressClassName: public
+  ingressClassName: {{ .root.Values.ingressDefaults.className }}
   rules:
     - host: {{ .resource.ingress.host }}
       http:

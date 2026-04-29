@@ -4,7 +4,7 @@ kind: ExternalSecret
 metadata:
   name: {{ .secret.name }}
   labels:
-    {{- include "graal.labels" .root | nindent 4 }}
+{{ include "graal.labels" .root | indent 4 }}
 spec:
   dataFrom:
     - extract:
@@ -14,14 +14,5 @@ spec:
     kind: {{ .root.Values.externalSecrets.secretStoreRef.kind }}
     name: {{ .root.Values.externalSecrets.secretStoreRef.name }}
   target:
-    name: {{ .secret.name }}
-    template:
-      {{- if hasKey .secret.template "data" }}
-      {{- toYaml .secret.template | nindent 6 }}
-      {{- else }}
-      data:
-        {{- range $key, $value := .secret.template }}
-        {{ $key }}: {{ $value | quote }}
-        {{- end }}
-      {{- end }}
+{{ toYaml .secret.target | indent 4 }}
 {{- end -}}

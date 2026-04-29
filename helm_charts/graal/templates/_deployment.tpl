@@ -4,20 +4,21 @@ kind: Deployment
 metadata:
   name: {{ .resource.name }}
   labels:
-    {{- include "graal.labels" .root | nindent 4 }}
-    component: {{ .resource.component }}
+{{ include "graal.resourceLabels" (dict "root" .root "component" .resource.component) | indent 4 }}
 spec:
   replicas: {{ .resource.replicaCount }}
   selector:
     matchLabels:
-      {{- include "graal.componentLabels" (dict "root" .root "component" .resource.component) | nindent 6 }}
+{{ include "graal.componentLabels" (dict "root" .root "component" .resource.component) | indent 6 }}
   template:
     metadata:
       labels:
-        {{- include "graal.componentLabels" (dict "root" .root "component" .resource.component) | nindent 8 }}
+{{ include "graal.componentLabels" (dict "root" .root "component" .resource.component) | indent 8 }}
     spec:
+{{- with .root.Values.imagePullSecrets }}
       imagePullSecrets:
-        - name: graal-registry-secret
+{{ toYaml . | indent 8 }}
+{{- end }}
       containers:
         - name: {{ .resource.container.name }}
           image: "{{ .resource.image.repository }}:{{ .resource.image.tag }}"
@@ -26,19 +27,19 @@ spec:
             - name: {{ .resource.service.portName }}
               containerPort: {{ .resource.container.port }}
           livenessProbe:
-            {{- toYaml .resource.probes.liveness | nindent 12 }}
+{{ toYaml .resource.probes.liveness | indent 12 }}
           readinessProbe:
-            {{- toYaml .resource.probes.readiness | nindent 12 }}
+{{ toYaml .resource.probes.readiness | indent 12 }}
           startupProbe:
-            {{- toYaml .resource.probes.startup | nindent 12 }}
-          {{- if .resource.container.env }}
+{{ toYaml .resource.probes.startup | indent 12 }}
+{{- with .resource.container.env }}
           env:
-            {{- toYaml .resource.container.env | nindent 12 }}
-          {{- end }}
-          {{- if .resource.container.envFrom }}
+{{ toYaml . | indent 12 }}
+{{- end }}
+{{- with .resource.container.envFrom }}
           envFrom:
-            {{- toYaml .resource.container.envFrom | nindent 12 }}
-          {{- end }}
+{{ toYaml . | indent 12 }}
+{{- end }}
           resources:
-            {{- toYaml .resource.resources | nindent 12 }}
+{{ toYaml .resource.resources | indent 12 }}
 {{- end -}}
