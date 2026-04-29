@@ -90,9 +90,8 @@ docker_lint:
   image: hadolint/hadolint:v2.13.1-debian
   rules: !reference [.quality_rules, rules]
   script:
-   - echo "Hello world !"
-#    - hadolint --ignore DL3008 --ignore DL3059 Dockerfile
-#    - hadolint --ignore DL3008 --ignore DL3059 frontend/Dockerfile
+    - hadolint --ignore DL3008 --ignore DL3059 Dockerfile
+    - hadolint --ignore DL3008 --ignore DL3059 frontend/Dockerfile
 
 release:
   stage: release

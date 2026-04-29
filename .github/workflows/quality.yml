@@ -59,4 +59,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Hello world !"
+      - run: hadolint --ignore DL3008 --ignore DL3059 Dockerfile
+      - run: hadolint --ignore DL3008 --ignore DL3059 frontend/Dockerfile
