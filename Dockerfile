@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Multi-stage build pour optimiser la taille finale
-FROM python:3.14-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Variables d'environnement pour optimiser pip
 ENV PIP_NO_CACHE_DIR=1 \
@@ -34,7 +34,7 @@ RUN poetry lock --no-update && \
     rm -rf "$POETRY_CACHE_DIR"
 
 # Stage final - image de runtime
-FROM python:3.14-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 # Variables d'environnement
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -52,7 +52,7 @@ RUN groupadd -r -g 1000 appuser && useradd -r -u 1000 -g appuser appuser
 WORKDIR /app
 
 # Copie des dépendances Python depuis le builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Téléchargement des données NLTK nécessaires
