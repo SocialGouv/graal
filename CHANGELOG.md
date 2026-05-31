@@ -1,3 +1,10 @@
+## [1.51.1](https://github.com/SocialGouv/graal/compare/v1.51.0...v1.51.1) (2026-05-31)
+
+
+### Bug Fixes
+
+* Downgrade python package to avoid build failures ([b4ee2f0](https://github.com/SocialGouv/graal/commit/b4ee2f016a020092326b2e120e4c8dcc23a58c15))
+
 # [1.51.0](https://github.com/SocialGouv/graal/compare/v1.50.1...v1.51.0) (2026-04-11)
 
 
