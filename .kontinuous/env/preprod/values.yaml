@@ -10,7 +10,7 @@ api:
       memory: 3Gi
   annotations:
     oblik.socialgouv.io/min-limit-cpu: "5"
-    oblik.socialgouv.io/min-request-cpu: "5"
+    oblik.socialgouv.io/min-request-cpu: "2"
     oblik.socialgouv.io/min-request-memory: "3Gi"
   livenessProbe:
     httpGet:
