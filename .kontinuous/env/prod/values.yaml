@@ -10,11 +10,14 @@ app:
 api:
   resources:
     requests:
-      cpu: "1"
+      cpu: "2"
       memory: 2Gi
     limits:
-      cpu: "3"
-      memory: 4Gi
+      cpu: "4"
+      memory: 5Gi
+  livenessProbe:
+    failureThreshold: 20
+    periodSeconds: 60
   envFrom:
     - configMapRef:
         name: graal
