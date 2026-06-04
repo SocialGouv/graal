@@ -7,6 +7,7 @@ api:
     oblik.socialgouv.io/min-limit-cpu: "3"
     oblik.socialgouv.io/min-request-cpu: "1"
     oblik.socialgouv.io/min-request-memory: "3Gi"
+    oblik.socialgouv.io/min-limit-memory: "3Gi"
   envFrom:
     - configMapRef:
         name: graal
