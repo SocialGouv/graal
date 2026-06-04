@@ -13,6 +13,9 @@ api:
     oblik.socialgouv.io/min-request-cpu: "5"
     oblik.socialgouv.io/min-request-memory: "3Gi"
   livenessProbe:
+    httpGet:
+      path: /api/v1/health
+      port: 8000
     failureThreshold: 20
     periodSeconds: 60
   envFrom:
