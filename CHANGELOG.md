@@ -1,3 +1,10 @@
+## [1.51.2](https://github.com/SocialGouv/graal/compare/v1.51.1...v1.51.2) (2026-06-04)
+
+
+### Bug Fixes
+
+* livenessProbe config missing handler ([c1841dd](https://github.com/SocialGouv/graal/commit/c1841dde91610d1197e4bc3a5c32a6628a940eaf))
+
 ## [1.51.1](https://github.com/SocialGouv/graal/compare/v1.51.0...v1.51.1) (2026-05-31)
 
 
