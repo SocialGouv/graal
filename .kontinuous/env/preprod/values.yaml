@@ -1,17 +1,17 @@
 app:
   annotations:
-    oblik.socialgouv.io/min-limit-cpu: 2
+    oblik.socialgouv.io/min-limit-cpu: 5
 
 api:
   resources:
     requests:
-      memory: 6Gi
+      memory: 3Gi
     limits:
-      memory: 6Gi
+      memory: 3Gi
   annotations:
-    oblik.socialgouv.io/min-limit-cpu: "3"
-    oblik.socialgouv.io/min-request-cpu: "3"
-    oblik.socialgouv.io/min-request-memory: "6Gi"
+    oblik.socialgouv.io/min-limit-cpu: "5"
+    oblik.socialgouv.io/min-request-cpu: "5"
+    oblik.socialgouv.io/min-request-memory: "3Gi"
   envFrom:
     - configMapRef:
         name: graal
