@@ -1,3 +1,10 @@
+## [1.51.3](https://github.com/SocialGouv/graal/compare/v1.51.2...v1.51.3) (2026-06-09)
+
+
+### Bug Fixes
+
+* Prod deployment ([7a90155](https://github.com/SocialGouv/graal/commit/7a901558b8395f20dfcb2e0081c2aac67f3c753e))
+
 ## [1.51.2](https://github.com/SocialGouv/graal/compare/v1.51.1...v1.51.2) (2026-06-04)
 
 
